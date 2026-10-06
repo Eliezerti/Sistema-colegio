@@ -352,6 +352,16 @@ class SystemTests(unittest.TestCase):
         self.assertEqual(response.read(),(Path(__file__).resolve().parent.parent/'static'/LOGO_FILE).read_bytes())
         conn.close()
 
+    def test_receipt_paper_can_change_without_changing_the_saved_payment(self):
+        payment=self.request('payments',self.payment())['id']
+        before=self.request(f'receipt/{payment}')
+        small=self.request(f'receipt/{payment}.pdf?paper=half-letter')
+        full=self.request(f'receipt/{payment}.pdf?paper=a4')
+        self.assertTrue(b'/MediaBox [0 0 612 396]' in small,'Debe ser media carta real')
+        self.assertTrue(b'/MediaBox [0 0 595 842]' in full,'Debe conservar A4 como opción')
+        self.assertEqual(self.request(f'receipt/{payment}'),before)
+        self.request(f'receipt/{payment}.pdf?paper=invalid',status=400)
+
     def test_missing_past_month_uses_old_tariff_before_student_edit(self):
         on=f'{self.year+1}-06'
         with sqlite3.connect(self.path) as db:

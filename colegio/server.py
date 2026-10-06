@@ -462,7 +462,8 @@ class Handler(BaseHTTPRequestHandler):
                   'allocations': rows(db, '''SELECT a.amount,c.concept,c.period FROM allocations a JOIN charges c
                       ON c.id=a.charge_id WHERE a.payment_id=?''', (target,))}
                 if pdf:
-                    self.respond(200, render_pdf('receipt', document), 'application/pdf',
+                    paper = parse_qs(url.query).get('paper',['a4'])[0]
+                    self.respond(200, render_pdf('receipt', document, paper), 'application/pdf',
                                  {'Content-Disposition': f'attachment; filename="recibo-R-{target:06d}.pdf"'})
                 else:
                     self.respond(200, document)

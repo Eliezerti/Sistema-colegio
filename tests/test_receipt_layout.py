@@ -16,6 +16,27 @@ def document(currency='VES', rows=1, voided=False, notes=''):
 
 
 class ReceiptLayoutTests(unittest.TestCase):
+    def test_half_letter_has_true_half_sheet_dimensions_and_complete_single_page(self):
+        for currency in ('USD','VES'):
+            with self.subTest(currency=currency):
+                data=document(currency)
+                data['payment']['guardian_address']='Calle 48, sector Centro, Barquismeto.'
+                pdf=render_pdf('receipt',data,'half-letter')
+                for value in (b'/MediaBox [0 0 612 396]',b'/Count 1 ',b'USD 10,00',
+                              b'Firma del representante',b'Registrado por:',b'RIF: J-50835934-8'):
+                    self.assertTrue(value in pdf,f'Falta en el recibo media carta: {value!r}')
+
+    def test_half_letter_continuations_preserve_all_concepts_status_and_money(self):
+        pdf=render_pdf('receipt',document(rows=40,voided=True,notes='FIN DE OBSERVACIONES'),'half-letter')
+        pages=int(re.search(rb'/Count (\d+)',pdf).group(1))
+        self.assertGreater(pages,1)
+        for i in range(40):
+            self.assertTrue(f'Mensualidad detalle {i:02d}'.encode() in pdf,f'Falta el concepto {i}')
+        for value in (b'FIN DE OBSERVACIONES',b'USD 400,00',b'Firma del representante'):
+            self.assertTrue(value in pdf,f'Falta información: {value!r}')
+        self.assertEqual(pdf.count(b'/MediaBox [0 0 612 396]'),pages)
+        self.assertEqual(pdf.count(b'(ANULADO)'),pages)
+
     def test_manual_charge_period_is_printed_without_treating_it_as_a_date(self):
         data=document()
         data['allocations'][0]['period']='Inscripcion inicial'

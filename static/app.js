@@ -2,6 +2,7 @@
 const $ = (s, root = document) => root.querySelector(s);
 const app = $('#app'), modal = $('#modal');
 let state, session, page = 'dashboard', filters = {}, reportFrom = '', reportTo = '';
+let receiptPaper = 'half-letter';
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const number = n => new Intl.NumberFormat('es-VE', {minimumFractionDigits:2, maximumFractionDigits:2}).format(n);
 const usd = cents => `$ ${number(cents / 100)}`;
@@ -269,9 +270,21 @@ function schoolHeader(s,title,code,on) {
   const address=s.fiscal_address||s.address;
   return `<header class="document-header"><div class="school-emblem">${logo}</div><div class="school-info"><h1>${esc(s.legal_name||s.school_name)}</h1>${s.rif?`<p class="school-rif">RIF: ${esc(s.rif)}</p>`:''}${address?`<p class="fiscal-address"><b>Domicilio fiscal:</b> ${esc(address)}</p>`:''}${[s.phone,s.email,s.website].some(Boolean)?`<p class="school-contact">${[s.phone,s.email,s.website].filter(Boolean).map(esc).join(' · ')}</p>`:''}</div><div class="document-number"><span>${esc(title)}</span><b class="receipt-number">${esc(code)}</b><span>${dateLabel(on)}</span></div></header>`;
 }
-function documentActions(path) {return `<div class="actions document-actions"><a class="btn primary" href="/api/${path}.pdf" download>${icon('download')} Descargar PDF</a>${btn(`${icon('print')} Imprimir`,'print-receipt')}</div>`;}
+function documentActions(path) {
+  const isReceipt=path.startsWith('receipt/');
+  return `<div class="actions document-actions">${isReceipt?`<label class="receipt-paper-control">Tamaño del recibo<select id="receipt-paper"><option value="half-letter" ${receiptPaper==='half-letter'?'selected':''}>Media carta · horizontal</option><option value="a4" ${receiptPaper==='a4'?'selected':''}>A4 · vertical</option></select></label>`:''}<a class="btn primary" href="/api/${path}.pdf${isReceipt?'?paper='+receiptPaper:''}" download>${icon('download')} Descargar PDF</a>${btn(`${icon('print')} Imprimir`,'print-receipt')}</div>${isReceipt?'<p class="receipt-paper-help" id="receipt-paper-help"></p>':''}`;
+}
+function setReceiptPaper(paper) {
+  receiptPaper=paper==='a4'?'a4':'half-letter';
+  document.querySelectorAll('.payment-receipt').forEach(el=>el.classList.toggle('receipt-half-letter',receiptPaper==='half-letter'));
+  const link=modal.querySelector('.document-actions a[download]');
+  if(link){const url=new URL(link.href);url.searchParams.set('paper',receiptPaper);link.href=url.pathname+url.search;}
+  const help=$('#receipt-paper-help');
+  if(help)help.textContent=receiptPaper==='half-letter'?'21,59 × 13,97 cm. Al imprimir, usa tamaño real (100 %) para que no se amplíe a toda la hoja.':'A4 vertical. Recomendado para muchos conceptos u observaciones extensas.';
+}
 function showDocument(title,path,markup) {
   showModal(title,'Documento listo para descargar o imprimir.',documentActions(path)+markup);modal.classList.toggle('document-modal',markup.includes('payment-receipt'));$('#print-area').innerHTML=markup;
+  if(path.startsWith('receipt/'))setReceiptPaper(receiptPaper);
 }
 async function enrollmentDocument(studentId,documentId) {
   const id=documentId||state.enrollments.find(e=>e.student_id===Number(studentId))?.id;
@@ -352,6 +365,7 @@ document.addEventListener('input',event=>{
   if(el.closest('form[data-endpoint="payments"], form[data-endpoint="expenses"]'))updateConversion();
 });
 document.addEventListener('change',event=>{
+  if(event.target.id==='receipt-paper'){setReceiptPaper(event.target.value);return;}
   const el=event.target;
   if(el.id==='grade-filter'){filters.grade=el.value;$('#page-content').innerHTML=pageBody();}
   if(el.id==='report-from'||el.id==='report-to'){

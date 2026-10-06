@@ -45,9 +45,15 @@ Los documentos guardados conservan la razón social, el RIF, el domicilio y la v
 
 El recibo presenta el membrete sin bordes exteriores, datos del representante y del alumno en columnas, conceptos con importes alineados y un bloque destacado para el **importe recibido**. El total aplicado en USD y la tasa BCV se muestran juntos. Las referencias, direcciones y observaciones aparecen cuando tienen contenido. El diseño sirve tanto para pagos completos como para abonos; indica lo aplicado en esta operación.
 
-El PDF descargable usa **A4 vertical** e incorpora sus fuentes para conservar la tipografía en otras computadoras. Si hay muchos conceptos u observaciones, continúa en otras páginas con el membrete, el número de recibo y los encabezados de la tabla repetidos. Los recibos anulados se identifican en todas las páginas. Mejorar el diseño no modifica los importes ni los datos históricos guardados.
+En el recibo, **Tamaño del recibo** permite elegir **Media carta horizontal (21,59 × 13,97 cm)** o **A4 vertical**. Se abre inicialmente en media carta; puedes cambiar el formato antes de **Descargar PDF** o **Imprimir**, sin alterar el pago. Media carta se recomienda para los cobros habituales y A4 para recibos con muchos conceptos, direcciones u observaciones extensas.
+
+El PDF usa el tamaño físico seleccionado e incorpora sus fuentes para conservar la tipografía en otras computadoras. Al imprimirlo en una hoja carta, selecciona **Tamaño real / escala 100 %**; evita **Ajustar a página**, que puede ampliar el recibo hasta ocupar toda la hoja. Revisa el tamaño de papel y la vista previa de tu impresora. El botón Imprimir del programa también prepara la página en el formato elegido.
+
+Si hay muchos conceptos u observaciones, el PDF continúa en otras páginas del mismo tamaño con el membrete, el número de recibo y los encabezados de la tabla repetidos. Los recibos anulados se identifican en todas las páginas. Mejorar el diseño o cambiar su tamaño no modifica los importes ni los datos históricos guardados.
 
 [Ver una muestra del recibo con datos ficticios](https://github.com/Eliezerti/Sistema-colegio/blob/main/docs/recibo-ejemplo.png).
+
+[Ver la muestra en media carta](https://github.com/Eliezerti/Sistema-colegio/blob/main/docs/recibo-media-carta.png).
 
 ## Flujo diario
 

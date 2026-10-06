@@ -421,7 +421,153 @@ class ReceiptPDF(PDF):
         return self.output()
 
 
-def render_pdf(kind, data):
+class HalfLetterReceiptPDF(ReceiptPDF):
+    """Readable half-letter landscape stationery, continuing instead of clipping."""
+    def __init__(self, data):
+        self.payment, self.school = data['payment'], data['settings']
+        self.w, self.h, self.pages = 612, 396, []
+        self.title = 'Comprobante de pago'
+        self.logo = pdf_logo(self.school.get('logo',''))
+        self.new_page()
+
+    def new_page(self):
+        self.commands = []
+        self.pages.append(self.commands)
+        x = 26
+        if self.logo:
+            w,h,_ = self.logo
+            self.commands.append(f'q {42*w/h:.3f} 0 0 42 26 {self.h-62} cm /Logo Do Q')
+            x = 78
+        y = self.paragraph(self.school.get('legal_name') or self.school.get('school_name','Colegio'),x,28,350,11,True,self.blue)
+        if self.school.get('rif'):
+            self.text(x,y,'RIF: '+self.school['rif'],8,True,self.muted)
+            y += 12
+        address = self.school.get('fiscal_address') or self.school.get('address','')
+        if address:
+            y = self.paragraph('Domicilio fiscal: '+address,x,y,350,7.5,color=self.muted)
+        contact = ' | '.join(str(self.school.get(k,'')) for k in ('phone','email','website') if self.school.get(k))
+        if contact:
+            y = self.paragraph(contact,x,y,350,7.5,color=self.muted)
+        self.label(self.title,448,28)
+        self.text(448,44,f"R-{self.payment['id']:06d}",12,True,self.blue)
+        on = datetime.fromisoformat(self.payment['paid_on']).strftime('%d/%m/%Y')
+        self.text(448,59,'Fecha: '+on,8,color=self.muted)
+        if self.payment['voided']:
+            self.text(448,72,'ANULADO',8,True,'0.65 0.23 0.22')
+        self.y = max(74,y+3)
+        self.rule(26,self.y,560)
+        self.y += 13
+        self.rule(26,374,560)
+        self.text(26,386,'Comprobante administrativo. No sustituye una factura fiscal.',7,color=self.muted)
+        self.text(539,386,f'Página {len(self.pages)}',7,color=self.muted)
+
+    def ensure(self, height):
+        if self.y+height>366:
+            self.new_page()
+            return True
+        return False
+
+    def flow(self,value,size=8.5,color=None,bold=False):
+        for line in self.wrap(value,560,size):
+            self.ensure(size+3)
+            self.text(26,self.y,line,size,bold,color or self.ink)
+            self.y += size+3
+
+    def parties(self):
+        p = self.payment
+        contact = ' | Teléfono: '+p['guardian_phone'] if p.get('guardian_phone') else ''
+        columns = [('Representante legal',p['guardian_name'],'Cédula: '+p['guardian_document']+contact,''),
+                   ('Alumno',p['student_name'],'Código: '+p.get('student_code',p['student_document']),'')]
+        heights = [14+len(self.wrap(name,264,10))*14+len(self.wrap(document,264,8))*12+
+                   (len(self.wrap(phone,264,8))*12 if phone else 0) for _,name,document,phone in columns]
+        self.ensure(max(heights)+6)
+        bottom = self.y
+        for x,(label,name,document,phone) in zip((26,322),columns):
+            self.label(label,x,self.y)
+            y = self.paragraph(name,x,self.y+15,264,10,True)
+            y = self.paragraph(document,x,y,264,8,color=self.muted)
+            if phone:
+                y = self.paragraph(phone,x,y,264,8,color=self.muted)
+            bottom = max(bottom,y)
+        self.y = bottom+5
+        if p.get('guardian_address'):
+            self.flow('Dirección del representante: '+p['guardian_address'],8,self.muted)
+            self.y += 3
+
+    def allocations(self,rows):
+        self.ensure(52)
+        self.label('Conceptos abonados',26,self.y)
+        self.y += 11
+        def header():
+            self.shade(26,self.y,560,19,'0.96 0.97 0.98')
+            for x,value in ((34,'Descripción'),(343,'Período'),(492,'Aplicado · USD')):
+                self.label(value,x,self.y+13)
+            self.y += 19
+        header()
+        for row in rows:
+            descriptions = self.wrap(row['concept'],296,9)
+            periods = self.wrap(period_label(row['period']),133,8)
+            height = max(len(descriptions)*12,len(periods)*11)+10
+            if self.ensure(height+5):
+                header()
+            for i,line in enumerate(descriptions):
+                self.text(34,self.y+14+i*12,line,9,color=self.ink)
+            for i,line in enumerate(periods):
+                self.text(343,self.y+14+i*11,line,8,color=self.muted)
+            value = amount(row['amount'])
+            self.text(578-text_width(value,9,True),self.y+14,value,9,True,self.ink)
+            self.y += height
+            self.rule(26,self.y,560)
+        self.y += 10
+
+    def payment_summary(self):
+        p = self.payment
+        reference = self.wrap(p.get('reference',''),268,8) if p.get('reference') else []
+        height = max(80 if p['currency']=='VES' else 69,53+len(reference)*11)
+        self.ensure(height+6)
+        top = self.y
+        self.label('Método de pago',26,top+11)
+        self.text(26,top+26,p['method'],10,True,self.ink)
+        if reference:
+            self.label('Referencia / comprobante',26,top+44)
+            for i,line in enumerate(reference):
+                self.text(26,top+58+i*11,line,8,color=self.ink)
+        self.shade(322,top,264,height)
+        self.label('Importe recibido · '+('Bolívares' if p['currency']=='VES' else 'USD'),335,top+16)
+        value = amount(p['received_amount'],'Bs' if p['currency']=='VES' else 'USD')
+        self.text(335,top+39,value,18,True,self.blue)
+        self.rule(335,top+49,238)
+        self.text(335,top+62,'Total aplicado en USD',8,color=self.muted)
+        applied = amount(p['amount'])
+        self.text(573-text_width(applied,9,True),top+62,applied,9,True,self.blue)
+        if p['currency']=='VES':
+            self.text(335,top+74,f"Tasa BCV aplicada: Bs {p['exchange_rate']} por USD",7.5,color=self.muted)
+        self.y += height+8
+
+    def render(self,data):
+        p = self.payment
+        if p['voided']:
+            self.flow('ANULADO: '+p['void_reason'],8.5,'0.65 0.23 0.22',True)
+            self.y += 5
+        self.parties()
+        self.allocations(data['allocations'])
+        self.payment_summary()
+        if p['notes']:
+            self.ensure(25)
+            self.label('Observaciones',26,self.y)
+            self.y += 13
+            self.flow(p['notes'],8,self.muted)
+        self.ensure(61)
+        self.y += 23
+        for x,label in ((26,'Firma de administración'),(322,'Firma del representante')):
+            self.rule(x,self.y,264)
+            self.text(x,self.y+11,label,8,color=self.muted)
+        self.y += 27
+        self.flow('Registrado por: '+p['operator'],7.5,self.muted)
+        return self.output()
+
+
+def render_pdf(kind, data, paper='a4'):
     if kind == 'enrollment':
         s = data['student']; pdf = PDF(f"CONSTANCIA DE MATRÍCULA · M-{data['id']:06d}", data['school'])
         pdf.line('Fecha de emisión: '+data.get('issued_on', data['created_at'][:10]))
@@ -446,6 +592,10 @@ def render_pdf(kind, data):
             [210,200,160,86,110])
         pdf.total(f"TOTAL PROPUESTO: {amount(data['total_usd'])} | {amount(data['total_ves'],'Bs')}")
     else:
+        if paper not in ('a4','half-letter'):
+            raise ValidationError('Formato de recibo inválido. Selecciona media carta o A4.')
+        if paper=='half-letter':
+            return HalfLetterReceiptPDF(data).render(data)
         return ReceiptPDF(data).render(data)
     pdf.signature('Preparado por administración' if kind=='payroll-plan' else 'Firma de administración',
                   'Aprobado por' if kind=='payroll-plan' else 'Firma del representante legal',
