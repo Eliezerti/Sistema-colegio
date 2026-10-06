@@ -528,6 +528,11 @@ def main():
         data_lock = DataLock(path.parent)
     except RuntimeError as error:
         raise SystemExit(str(error))
+    if not path.exists() and any((path.parent / 'backups').glob('*.sqlite3')):
+        data_lock.close()
+        raise SystemExit('No se encuentra la base de datos, pero hay respaldos anteriores. '
+                         'Ejecuta Restaurar-respaldo.bat para recuperar tus datos antes de abrir Aula. '
+                         'No se ha creado una base vacía.')
     if path.exists():
         with closing(connect(path)) as existing:
             needs_upgrade = existing.execute('PRAGMA user_version').fetchone()[0] < 3

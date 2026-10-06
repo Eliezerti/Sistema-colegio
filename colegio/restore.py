@@ -1,5 +1,6 @@
 import argparse
 import os
+import shutil
 import sqlite3
 import tempfile
 from datetime import datetime
@@ -27,13 +28,34 @@ def restore(backup, directory):
         if db.execute('PRAGMA foreign_key_check').fetchone():
             raise ValueError('El respaldo contiene referencias inválidas.')
     with DataLock(directory):
-        if target.exists():
-            preserved = directory / 'backups' / f'antes-restauracion-{datetime.now():%Y%m%d-%H%M%S-%f}.sqlite3'
-            consistent_backup(target, preserved)
         with tempfile.TemporaryDirectory(dir=directory) as temp:
+            temp = Path(temp)
             replacement = Path(temp) / 'restaurado.sqlite3'
+            # Prepare a checked replacement before touching the current database.
             consistent_backup(backup, replacement)
-            for suffix in ('-wal','-shm'):
+            originals = [target.with_name(target.name + suffix) for suffix in ('', '-wal', '-shm', '-journal')]
+            originals = [file for file in originals if file.exists()]
+            if originals:
+                stamp = f'{datetime.now():%Y%m%d-%H%M%S-%f}'
+                backups = directory / 'backups'
+                backups.mkdir(parents=True, exist_ok=True)
+                raw = temp / 'estado-original'
+                raw.mkdir()
+                # Preserve exact files before SQLite attempts to read a damaged DB.
+                for original in originals:
+                    shutil.copy2(original, raw / original.name)
+                previous = temp / 'anterior.sqlite3'
+                try:
+                    if not target.exists():
+                        raise sqlite3.DatabaseError('Falta la base principal; se conservan sus archivos auxiliares.')
+                    consistent_backup(target, previous)
+                except (sqlite3.DatabaseError, RuntimeError):
+                    # A corrupt current DB must not prevent restoring a valid backup.
+                    # This is forensic preservation, not a usable SQLite backup.
+                    os.replace(raw, backups / f'danado-antes-restauracion-{stamp}')
+                else:
+                    os.replace(previous, backups / f'antes-restauracion-{stamp}.sqlite3')
+            for suffix in ('-wal','-shm','-journal'):
                 target.with_name(target.name + suffix).unlink(missing_ok=True)
             os.replace(replacement, target)
     return target
@@ -58,7 +80,7 @@ def main():
     if not backup:
         return
     print(f'Se restaurará: {backup}\nDestino: {Path(args.data_dir).resolve()}')
-    print('Los datos actuales se conservarán en un respaldo previo a la restauración.')
+    print('Se conservará una copia del estado actual antes de reemplazarlo, incluso si la base está dañada.')
     if input('Escribe RESTAURAR para continuar: ').strip() != 'RESTAURAR':
         print('Restauración cancelada.')
         return

@@ -90,8 +90,25 @@ Las contraseñas se almacenan con PBKDF2-SHA256 y sal aleatoria. Las sesiones ve
 
 - En **Tasas y respaldo** al entrar o en **Configuración → Respaldo**, descarga una copia consistente de toda la base, incluso con el sistema abierto. Guarda copias periódicas en otro dispositivo.
 - Al iniciar se guarda una copia automática por día en la subcarpeta `backups`; se conservan las últimas 30 copias diarias. Son copias del estado **al abrir el sistema**, no de cada operación. Para respaldar los cobros del día, descarga una copia al finalizar la jornada.
-- Para restaurar, cierra Aula y ejecuta **Restaurar-respaldo.bat**. Selecciona el archivo `.sqlite3` y escribe `RESTAURAR`. La herramienta comprueba su integridad y compatibilidad, conserva una copia previa de los datos actuales y bloquea la restauración mientras Aula utiliza esa carpeta.
+- Para restaurar, cierra Aula y ejecuta **Restaurar-respaldo.bat**. Selecciona el archivo `.sqlite3` y escribe `RESTAURAR`. La herramienta comprueba la integridad y compatibilidad del respaldo, prepara la recuperación antes de reemplazar los datos y bloquea la restauración mientras Aula utiliza esa carpeta. Si la base actual está sana, conserva un respaldo previo; si está dañada, conserva los archivos originales en una carpeta `backups/danado-antes-restauracion-*` y permite recuperar el respaldo válido. Esa carpeta conserva evidencia para una revisión técnica, no es un respaldo utilizable.
 - Los respaldos no conservan sesiones autenticadas. Tras restaurar, inicia sesión con las cuentas que contiene el respaldo. El respaldo conserva sus contraseñas, por lo que debe almacenarse de forma segura.
+
+### Si falla el programa o se pierden datos
+
+Un cierre inesperado no significa que se haya perdido la base: primero vuelve a abrir Aula y verifica el último pago antes de ingresarlo de nuevo. Los pagos y sus abonos se guardan en una misma transacción.
+
+Si necesitas recuperar la base:
+
+1. Cierra Aula y conserva la carpeta de datos actual; no la borres ni elimines sus respaldos.
+2. Busca la copia válida más reciente en `%LOCALAPPDATA%\AulaColegio\backups` o en el dispositivo externo donde hayas guardado una descarga.
+3. Ejecuta **Restaurar-respaldo.bat**, selecciona el archivo `.sqlite3` y confirma con `RESTAURAR`.
+4. Abre Aula, entra con las cuentas del respaldo y comprueba el último recibo, fecha, cobros y saldos. Concilia los movimientos posteriores a esa copia con sus recibos y referencias bancarias.
+
+Si desapareció el archivo principal pero siguen existiendo respaldos locales, Aula avisa y no crea silenciosamente una base vacía. Usa la herramienta de restauración para recuperarla.
+
+**Límite de recuperación:** restaurar devuelve todos los datos al momento de la copia y no combina registros. Los movimientos posteriores al respaldo no reaparecen automáticamente. Las copias automáticas se crean al abrir, una por fecha; no se crean después de cada pago ni periódicamente si el programa permanece abierto varios días.
+
+**Falla del disco o pérdida de la computadora:** los respaldos locales pueden perderse junto con la base. Descarga copias durante la jornada de cobros y al finalizarla, y conserva una copia reciente en otro dispositivo o almacenamiento privado externo. Guarda los archivos de respaldo descargados; no sincronices la base SQLite activa mediante Drive o Dropbox. Esta versión todavía no realiza copias externas automáticas.
 
 También puedes restaurar desde la terminal:
 
@@ -120,7 +137,7 @@ En Linux puede ser necesario usar `python3`; en Windows, `py -3`. La ejecución 
 python -m colegio.server --data-dir /ruta/a/datos --port 8765
 ```
 
-Las pruebas integradas usan bases temporales y verifican conversiones, abonos, distribución entre cargos, reintentos, anulaciones, tasas y recibos históricos, descuentos, códigos únicos para hermanos, constancias PDF, tasa obligatoria, nómina de 15 empleados con cuentas bancarias y redondeos, migración de registros anteriores, mensualidades automáticas, cambios de mes, becas completas, años escolares, capacidad, permisos, CSRF, exportación y restauración. No escriben en la base real.
+Las pruebas integradas usan bases temporales y verifican conversiones, abonos, distribución entre cargos, reintentos, anulaciones, tasas y recibos históricos, descuentos, códigos únicos para hermanos, constancias PDF, tasa obligatoria, nómina de 15 empleados con cuentas bancarias y redondeos, migración de registros anteriores, mensualidades automáticas, cambios de mes, becas completas, años escolares, capacidad, permisos, CSRF, exportación, restauración de una base dañada, conservación de archivos originales y recuperación tras borrado del archivo principal. No escriben en la base real.
 
 Validación opcional de interfaz, con Node, Playwright y Chromium disponibles:
 
