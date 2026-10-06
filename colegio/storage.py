@@ -62,7 +62,10 @@ def consistent_backup(source, destination):
                 dst.execute('DELETE FROM sessions')
             if dst.execute('PRAGMA integrity_check').fetchone()[0] != 'ok':
                 raise RuntimeError('El respaldo no superó la verificación de integridad.')
-        with open(temporary,'rb') as saved: os.fsync(saved.fileno())
+        # Windows _commit (used by os.fsync) requires a writable descriptor.
+        with open(temporary,'r+b') as saved:
+            saved.flush()
+            os.fsync(saved.fileno())
         os.replace(temporary,destination)
     finally:
         if Path(temporary).exists(): Path(temporary).unlink()
@@ -113,7 +116,9 @@ def automatic_backup(database):
             handle,temporary=tempfile.mkstemp(prefix='.aula-copy-',suffix='.tmp',dir=dest)
             os.close(handle); handle=None
             shutil.copyfile(path,temporary)
-            with open(temporary,'rb') as saved: os.fsync(saved.fileno())
+            with open(temporary,'r+b') as saved:
+                saved.flush()
+                os.fsync(saved.fileno())
             os.replace(temporary,dest/path.name)
             status.update(secondary_at=now,secondary_error='')
             for old in sorted(dest.glob('aula-auto-????????-??????-??????.sqlite3'))[:-90]: old.unlink()
