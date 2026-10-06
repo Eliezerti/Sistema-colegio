@@ -190,7 +190,11 @@ La tasa BCV pide confirmación adicional si cambia más del **10 %** respecto a 
 
 En **Morosidad → Convenio** o en la cuenta del alumno puedes distribuir su deuda vencida en hasta 60 cuotas, con fechas e importes. Deben sumar exactamente la deuda. El convenio **no crea deuda adicional, no cobra intereses y no borra la mora**: organiza los cargos existentes. Los cobros habituales se aplican primero al cargo más antiguo y actualizan el cumplimiento; anularlos vuelve a dejar pendientes las cuotas. Solo puede haber un convenio pendiente por alumno. Administración puede cancelarlo con motivo; se conserva el documento y la deuda. Los cargos de un convenio deben liberarse cancelando el convenio antes de poder anularlos.
 
-El PDF conserva las condiciones iniciales; el cumplimiento actual se consulta en pantalla. El panel de inicio destaca cobros de hoy, vencimientos en los próximos siete días y alumnos cuya primera deuda actualmente vencida aparece en los últimos siete días. Estas cifras se calculan con los datos registrados, no con cobros externos.
+El PDF conserva las condiciones iniciales; el cumplimiento actual se consulta en pantalla.
+
+El **Resumen** reúne las cifras en un solo bloque: **Cobrado hoy** (equivalente USD y dinero realmente recibido por moneda) y **Deuda vencida**. Debajo aparecen el cobrado del mes, el saldo pendiente total y los alumnos activos. Dos enlaces permiten revisar los vencimientos de los próximos siete días y los alumnos nuevos en mora; los detalles de cobros y cuentas están más abajo. Si no hay atrasos, se muestra un mensaje claro en lugar de barras vacías. Estas cifras se calculan con los datos registrados. Un alumno nuevo en mora es aquel cuya primera deuda actualmente vencida corresponde a los últimos siete días.
+
+[Ver el nuevo resumen con datos ficticios de prueba](docs/resumen-colegio.png).
 
 Los avisos de cobranza incluyen **Abrir WhatsApp con el aviso** para teléfonos venezolanos válidos. Puedes editar el texto antes de abrirlo; el enlace `wa.me` no envía automáticamente el mensaje.
 

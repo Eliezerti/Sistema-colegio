@@ -95,12 +95,12 @@ function pageBody() {
 }
 function dashboard() {
   const s = state.summary;
+  const activity = dashboardActivity();
   const pending = state.students.filter(x => x.overdue > 0).sort((a,b) => b.overdue-a.overdue).slice(0,5);
   const recent = state.payments.filter(p => !p.voided).slice(0,5);
   const setup = !state.students.length && admin() ? `<div class="notice">${icon('book')}<div><b>Tu colegio empieza aquí</b>Configura tus datos, crea un grado y un representante; después matricula al primer alumno.<div class="steps"><button class="step" data-action="nav" data-id="settings">1. Datos del colegio</button><button class="step" data-action="grade">2. Grados</button><button class="step" data-action="guardian">3. Representantes</button><button class="step" data-action="student">4. Alumnos</button></div></div></div>` : '';
-  return heading('Resumen de tu colegio', `Este es el estado de tu colegio · ${monthLabel(state.today.slice(0,7))}`, writable() ? btn(`${icon('plus')} Registrar pago`,'payment','primary') : '') + setup + dailyDashboard() +
-    `<div class="stats">${stat('Cobrado este mes',usd(s.income), 'Equivalente USD de pagos válidos','payments','featured')}${stat('Saldo pendiente',usd(s.pending), 'Incluye cargos vencidos y por vencer','billing')}${stat('Deuda vencida',usd(s.overdue), `${s.debtors} alumnos con mensualidades o cargos vencidos`,'arrears','alert')}${stat('Alumnos activos',s.active_students, 'Matrículas activas registradas','students')}</div>` +
-    `<div class="grid-two"><div>${card('Cobros recientes',table(['Alumno / recibo','Recibido','Fecha'],recent,p=>`<td><button class="btn ghost" data-action="receipt" data-id="${p.id}">${esc(p.student_name)}</button><span class="sub">R-${String(p.id).padStart(6,'0')} · ${esc(p.method)}</span></td><td class="money">${p.currency === 'VES' ? bs(p.received_amount) : usd(p.amount)}<span class="sub">${p.currency === 'VES' ? usd(p.amount) + ' · equivalente' : 'Dólares'}</span></td><td>${dateLabel(p.paid_on)}</td>`,'Tu primer cobro aparecerá aquí'),btn('Ver caja →','nav','ghost','payments'))}${card('Prioridad de cobranza',table(['Alumno / representante','Vencido',''],pending,x=>`<td><b>${esc(x.name)}</b><span class="sub">${esc(x.guardian_name)} · ${esc(x.grade_name)}</span></td><td class="money text-red">${usd(x.overdue)}</td><td>${btn('Ver cuenta','account','small',x.id)}</td>`,'No hay deuda vencida'),btn('Ver morosidad →','nav','ghost','arrears'))}</div><div>${card('Antigüedad de la deuda',`<div class="card-body"><div class="balance-hero"><small>Total vencido · USD</small><div class="total">${usd(s.overdue)}</div><small>${todayRate() ? `Referencia hoy: ${bs(Math.round(s.overdue * Number(todayRate().rate)))}` : 'Registra la tasa de hoy para consultar el equivalente en Bs'}</small></div>${['1–30 días','31–60 días','61–90 días','Más de 90'].map((label,i)=>`<div class="aging-row"><span>${label}</span><div class="bar-track"><div class="bar" style="width:${s.overdue ? s.aging[i]/s.overdue*100 : 0}%"></div></div><b>${usd(s.aging[i])}</b></div>`).join('')}<div class="collection-note">Los abonos se aplican al cargo pendiente más antiguo. La deuda se mantiene en USD y los pagos conservan su tasa original.</div></div>`,icon('clock'))}${card('Movimiento del mes',`<div class="card-body"><div class="list-line"><span>Ingresos por cobros</span><b class="text-green">${usd(s.income)}</b></div><div class="list-line"><span>Egresos registrados</span><b>${usd(s.expenses)}</b></div><div class="list-line"><span><b>Balance operativo</b><small>Ingresos menos egresos; equivalente USD</small></span><b>${usd(s.net)}</b></div></div>`,btn('Reportes →','nav','ghost','reports'))}</div></div>`;
+  return heading('Resumen de tu colegio', `Cobros y cuentas por atender · ${dateLabel(state.today)}`, writable() ? btn(`${icon('plus')} Registrar pago`,'payment','primary') : '') + setup + dashboardOverview(activity) +
+    `<div class="grid-two"><div>${card('Cobros recientes',table(['Alumno / recibo','Recibido','Fecha'],recent,p=>`<td><button class="btn ghost" data-action="receipt" data-id="${p.id}">${esc(p.student_name)}</button><span class="sub">R-${String(p.id).padStart(6,'0')} · ${esc(p.method)}</span></td><td class="money">${p.currency === 'VES' ? bs(p.received_amount) : usd(p.amount)}<span class="sub">${p.currency === 'VES' ? usd(p.amount) + ' · equivalente' : 'Dólares'}</span></td><td>${dateLabel(p.paid_on)}</td>`,'Tu primer cobro aparecerá aquí'),btn('Ver caja →','nav','ghost','payments'))}${card('Pagos por atender',table(['Alumno / representante','Vencido',''],pending,x=>`<td><b>${esc(x.name)}</b><span class="sub">${esc(x.guardian_name)} · ${esc(x.grade_name)}</span></td><td class="money text-red">${usd(x.overdue)}</td><td>${btn('Ver cuenta','account','small',x.id)}</td>`,'No hay deuda vencida'),btn('Ver morosidad →','nav','ghost','arrears'))}</div><div>${dashboardUpcoming(activity.due)}${card('Antigüedad de la deuda',`<div class="card-body">${s.overdue ? `<p class="dashboard-aging-note">${todayRate() ? `Deuda vencida a la tasa de hoy: <b>${bs(Math.round(s.overdue * Number(todayRate().rate)))}</b>` : 'Registra la tasa de hoy para consultar el equivalente en Bs'}</p>${['1–30 días','31–60 días','61–90 días','Más de 90'].map((label,i)=>`<div class="aging-row"><span>${label}</span><div class="bar-track"><div class="bar" style="width:${s.overdue ? s.aging[i]/s.overdue*100 : 0}%"></div></div><b>${usd(s.aging[i])}</b></div>`).join('')}<div class="collection-note">Los abonos se aplican al cargo pendiente más antiguo. La deuda se mantiene en USD y los pagos conservan su tasa original.</div>` : `<div class="dashboard-clear">${icon('check')}<div><b>No hay deudas vencidas</b><p>Las cuentas están al día. Aquí verás los atrasos cuando existan.</p></div></div>`}</div>`,icon('clock'))}${card('Movimiento del mes',`<div class="card-body"><div class="list-line"><span>Ingresos por cobros</span><b class="text-green">${usd(s.income)}</b></div><div class="list-line"><span>Egresos registrados</span><b>${usd(s.expenses)}</b></div><div class="list-line"><span><b>Balance operativo</b><small>Ingresos menos egresos; equivalente USD</small></span><b>${usd(s.net)}</b></div></div>`,btn('Reportes →','nav','ghost','reports'))}</div></div>`;
 }
 function searchToolbar(placeholder, grade = false, extra = '') {
   return `<div class="toolbar"><input id="search" aria-label="Buscar" placeholder="${placeholder}" value="${esc(filters.search || '')}">${grade ? `<select id="grade-filter" aria-label="Filtrar por grado"><option value="">Todos los grados</option>${state.grades.map(g=>`<option value="${g.id}" ${String(g.id) === filters.grade ? 'selected' : ''}>${esc(g.name)}</option>`).join('')}</select>` : ''}${extra}<span class="table-count" id="table-count"></span></div>`;
@@ -542,12 +542,49 @@ async function planDocument(id){
 }
 
 function isoDay(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;}
-function dailyDashboard(){
+function dashboardActivity(){
   const today=state.today,end=new Date(today+'T12:00:00'),start=new Date(today+'T12:00:00');end.setDate(end.getDate()+6);start.setDate(start.getDate()-7);
-  const due=state.charges.filter(c=>c.balance>0&&c.due_date>=today&&c.due_date<=isoDay(end));
+  const due=state.charges.filter(c=>c.balance>0&&c.due_date>=today&&c.due_date<=isoDay(end)).sort((a,b)=>a.due_date.localeCompare(b.due_date)||a.id-b.id);
   const newDebtors=state.students.filter(s=>{const overdue=state.charges.filter(c=>c.student_id===s.id&&c.overdue);return overdue.length&&overdue.every(c=>c.due_date>=isoDay(start));});
   const paid=state.payments.filter(p=>!p.voided&&p.paid_on===today);
-  return `<div class="stats daily-stats">${stat('Cobrado hoy',usd(paid.reduce((a,p)=>a+p.amount,0)),`${usd(paid.filter(p=>p.currency==='USD').reduce((a,p)=>a+p.received_amount,0))} recibidos · ${bs(paid.filter(p=>p.currency==='VES').reduce((a,p)=>a+p.received_amount,0))} recibidos`,'payments')}${stat('Vencen en los próximos 7 días',usd(due.reduce((a,c)=>a+c.balance,0)),`${due.length} cargos pendientes, desde hoy`,'clock')}${stat('Morosos nuevos · 7 días',newDebtors.length,'Primera deuda actualmente vencida en los últimos 7 días','arrears')}</div>${due.length?card('Vencimientos próximos',table(['Alumno / grado','Concepto / período','Vence','Saldo USD',''],due.slice(0,8),c=>`<td>${esc(c.student_name)}<span class="sub">${esc(c.grade_name)}</span></td><td>${esc(c.concept)}<span class="sub">${esc(c.period)}</span></td><td>${dateLabel(c.due_date)}</td><td>${usd(c.balance)}</td><td>${btn('Cuenta','account','small',c.student_id)}</td>`),btn('Ver todos los cargos','nav','ghost','billing')):''}`;
+  return {due,newDebtors,paid};
+}
+function dashboardOverview({due,newDebtors,paid}){
+  const s=state.summary,amount=paid.reduce((sum,p)=>sum+p.amount,0);
+  const dollars=paid.filter(p=>p.currency==='USD').reduce((sum,p)=>sum+p.received_amount,0);
+  const bolivars=paid.filter(p=>p.currency==='VES').reduce((sum,p)=>sum+p.received_amount,0);
+  return `<section class="dashboard-overview" aria-label="Resumen de cobros y deudas">
+    <div class="dashboard-main-metrics">
+      <div class="dashboard-collected">
+        <div class="dashboard-metric-label">${icon('payments')}<h2>Cobrado hoy</h2><span class="dashboard-today-tag">Hoy</span></div>
+        <div class="dashboard-amount" id="dashboard-today">${usd(amount)}</div>
+        <p class="dashboard-unit">Equivalente en USD · ${paid.length} ${paid.length===1?'cobro':'cobros'}</p>
+        <p class="dashboard-received">Recibido: <b>${usd(dollars)}</b> y <b>${bs(bolivars)}</b></p>
+      </div>
+      <div class="dashboard-overdue">
+        <div class="dashboard-metric-label">${icon(s.overdue?'arrears':'check')}<h2>Deuda vencida</h2></div>
+        <div class="dashboard-amount ${s.overdue?'text-red':''}">${usd(s.overdue)}</div>
+        <p class="dashboard-unit">${s.debtors ? `${s.debtors} ${s.debtors===1?'alumno con pagos atrasados':'alumnos con pagos atrasados'}` : 'No hay pagos atrasados'}</p>
+        ${btn(s.overdue?'Ver cuentas por atender →':'Consultar morosidad →','nav','ghost dashboard-link','arrears')}
+      </div>
+    </div>
+    <dl class="dashboard-context">
+      <div><dt>Cobrado este mes</dt><dd>${usd(s.income)} <small>USD · ${monthLabel(state.today.slice(0,7))}</small></dd></div>
+      <div><dt>Saldo pendiente total</dt><dd>${usd(s.pending)} <small>USD · vencido y por vencer</small></dd></div>
+      <div><dt>Alumnos activos</dt><dd>${s.active_students} <small>matrículas activas</small></dd></div>
+    </dl>
+  </section>
+  <div class="dashboard-alerts" aria-label="Seguimiento de la semana">
+    <button type="button" class="dashboard-alert" data-action="nav" data-id="billing">
+      ${icon('clock')}<span><b>Vencen en los próximos 7 días</b><small>${due.length ? `${due.length} ${due.length===1?'cargo pendiente':'cargos pendientes'} · ${usd(due.reduce((sum,c)=>sum+c.balance,0))} USD` : 'Sin vencimientos pendientes esta semana'}</small></span>${icon('arrow')}
+    </button>
+    <button type="button" class="dashboard-alert" data-action="nav" data-id="arrears" title="Alumnos cuya primera deuda actualmente vencida corresponde a los últimos 7 días">
+      ${icon('arrears')}<span><b>Morosos nuevos</b><small>${newDebtors.length ? `${newDebtors.length} ${newDebtors.length===1?'alumno nuevo':'alumnos nuevos'} en mora en los últimos 7 días` : 'Sin nuevos alumnos en mora en los últimos 7 días'}</small></span>${icon('arrow')}
+    </button>
+  </div>`;
+}
+function dashboardUpcoming(due){
+  return due.length ? card('Vencimientos de esta semana',`<div class="dashboard-upcoming">${table(['Alumno / grado','Vence','Saldo USD'],due.slice(0,5),c=>`<td><button class="btn ghost" data-action="account" data-id="${c.student_id}">${esc(c.student_name)}</button><span class="sub">${esc(c.grade_name)} · ${esc(c.concept)} · ${esc(c.period)}</span></td><td>${dateLabel(c.due_date)}</td><td class="money">${usd(c.balance)}</td>`)}</div>`,btn('Ver cargos →','nav','ghost','billing')) : '';
 }
 
 function whatsappLink(phone,text){
