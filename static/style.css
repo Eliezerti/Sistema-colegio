@@ -18,3 +18,37 @@
 .document-number{background:#f1f5fa;border:1px solid #d4deea;border-radius:6px;padding:10px 12px;max-width:170px}.document-number b{font-variant-numeric:tabular-nums;font-size:20px}.document-number>span:first-child{text-transform:uppercase;font-size:9px;letter-spacing:.6px;line-height:1.4}.school-document{border-color:#165181;border-radius:8px}
 @media(max-width:600px){.document-header{display:grid;grid-template-columns:56px minmax(0,1fr);gap:12px}.school-emblem{width:56px;height:60px}.document-number{grid-column:1/-1;justify-self:end;text-align:right}.school-info h1{font-size:15px}.branding-preview{padding:18px;gap:12px}.branding-preview img{width:64px;height:68px}}
 @media print{.school-emblem{display:grid;width:72px;height:77px}.document-header{display:flex;gap:15px}.school-info h1{font-size:16px}.document-number{padding:8px 10px}.school-document{border-color:#165181}.school-emblem img{print-color-adjust:exact}}
+
+/* Payment receipt: quiet stationery, clear amounts and generous spacing. */
+dialog.document-modal{width:min(860px,94vw)}
+.payment-receipt{border:0;border-radius:0;padding:30px 24px;color:#243449;font-size:12px;line-height:1.6}
+.payment-receipt .document-header{gap:18px;align-items:flex-start;border-bottom:1px solid #dbe3eb;padding-bottom:24px;margin-bottom:28px}
+.payment-receipt .school-emblem{width:66px;height:70px}
+.payment-receipt .school-info h1{font-size:16px;line-height:1.4;letter-spacing:0;color:#173f65}
+.payment-receipt .school-info p{font-size:10px;line-height:1.65;margin:5px 0;color:#657385}
+.payment-receipt .school-info .school-rif{font-size:10px;font-weight:600;letter-spacing:0;color:#3b536d}
+.payment-receipt .fiscal-address b{font-weight:400}
+.payment-receipt .document-number{padding:0;border:0;border-radius:0;background:none;gap:7px;max-width:155px;min-width:135px;color:#657385}
+.payment-receipt .document-number b{font-size:20px;color:#173f65;letter-spacing:.5px;line-height:1.3}
+.payment-receipt .document-number>span:first-child{font-size:9px;letter-spacing:.8px;font-weight:600}
+.receipt-label{display:block;color:#6a798a;font-size:9px!important;letter-spacing:1px;text-transform:uppercase;font-weight:600;line-height:1.6}
+.receipt-parties{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin:0 0 28px;break-inside:avoid}
+.receipt-parties section{min-width:0}.receipt-parties h2{font-size:15px;font-weight:600;line-height:1.5;margin:7px 0 4px;color:#243449;overflow-wrap:anywhere}
+.receipt-parties p{margin:3px 0;color:#657385;font-size:11px;overflow-wrap:anywhere}
+.receipt-address{font-size:11px;color:#657385;margin:-12px 0 25px;overflow-wrap:anywhere}.receipt-address span{display:block;color:#6a798a;font-size:9px;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.receipt-charges>h3{margin:0 0 10px}.payment-receipt .table-wrap{border:0;border-radius:0;margin:0 0 28px;overflow:visible}.payment-receipt table{width:100%;table-layout:fixed;margin:0;border-collapse:collapse}
+.payment-receipt th{background:#f5f7fa;font-size:9px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:#617287;padding:12px 14px;border:0}
+.payment-receipt td{font-size:12px;padding:15px 14px;color:#243449;border:0;border-bottom:1px solid #e5ebf0;line-height:1.6}
+.payment-receipt th:first-child{width:47%}.payment-receipt th:nth-child(2){width:29%}.payment-receipt th:last-child{width:24%}.payment-receipt th:last-child,.payment-receipt td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.receipt-payment{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start;margin-top:4px;break-inside:avoid}
+.receipt-method{padding-top:12px;min-width:0}.receipt-method p{font-size:12px;margin:5px 0 20px;overflow-wrap:anywhere}.receipt-method .receipt-method-name{font-size:14px;font-weight:600}
+.receipt-amount{padding:20px 22px;background:#f3f7fa;border-radius:8px;border:1px solid #e6edf3;min-width:0}
+.receipt-amount-value{font-size:29px;line-height:1.4;letter-spacing:-.5px;color:#173f65;font-weight:650;margin:8px 0 16px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.receipt-applied{display:flex;justify-content:space-between;gap:12px;font-size:11px;padding-top:14px;border-top:1px solid #dce5ed;color:#52677e;flex-wrap:wrap}.receipt-applied b{font-size:13px;color:#173f65;font-variant-numeric:tabular-nums}
+.receipt-rate{margin:10px 0 0;font-size:10px;color:#6a798a;line-height:1.7;overflow-wrap:anywhere}
+.receipt-notes{padding-top:24px;margin:0 0 8px}.receipt-notes p{margin:6px 0;font-size:11px;color:#657385;white-space:pre-wrap;overflow-wrap:anywhere}
+.payment-receipt .signature-row{gap:48px;margin-top:58px;padding-top:0;break-inside:avoid}.payment-receipt .signature-row span{border-color:#ccd6e0;padding-top:10px;font-size:10px;color:#6a798a}
+.receipt-bottom{margin-top:28px;padding-top:16px;border-top:1px solid #edf0f4;color:#7c8896;font-size:9px;line-height:1.6;display:flex;justify-content:space-between;gap:20px;break-inside:avoid}.receipt-bottom p{margin:0;overflow-wrap:anywhere}
+.receipt-void{border-left:3px solid #b9504b;background:#fff6f5;color:#a13f3c;padding:12px 16px;margin-bottom:22px;font-size:11px}.receipt-void p{margin:4px 0 0;overflow-wrap:anywhere}
+@media(max-width:600px){.payment-receipt{padding:12px 0}.payment-receipt .document-header{grid-template-columns:52px minmax(0,1fr);gap:12px;padding-bottom:18px;margin-bottom:22px}.payment-receipt .school-emblem{width:52px;height:56px}.payment-receipt .school-info h1{font-size:14px}.payment-receipt .document-number{grid-column:1/-1;display:flex;flex-direction:row;flex-wrap:wrap;justify-self:stretch;justify-content:space-between;align-items:center;max-width:none;min-width:0;text-align:left;gap:8px;padding-top:8px}.payment-receipt .document-number b{font-size:18px}.receipt-parties{gap:18px}.receipt-parties h2{font-size:13px}.receipt-payment{grid-template-columns:1fr;gap:6px}.receipt-amount-value{font-size:27px}.payment-receipt td,.payment-receipt th{padding:10px 7px;font-size:10px}.payment-receipt th:nth-child(2){width:30%}.payment-receipt th:last-child{width:27%}.payment-receipt th:first-child{width:43%}.receipt-bottom{display:block}.receipt-bottom p+p{margin-top:7px}.payment-receipt .signature-row{gap:22px;margin-top:42px}}
+@media print{.payment-receipt{padding:0;border:0;box-shadow:none}.payment-receipt .document-header{display:flex;gap:16px;padding-bottom:20px;margin-bottom:24px}.payment-receipt .school-emblem{width:60px;height:64px}.payment-receipt .document-number{flex-direction:column;text-align:right;max-width:135px;min-width:120px;gap:7px;padding:0}.payment-receipt .school-info h1{font-size:14px}.receipt-parties{display:grid;grid-template-columns:1fr 1fr;gap:28px}.receipt-payment{display:grid;grid-template-columns:1fr 1fr;gap:28px}.receipt-amount{print-color-adjust:exact}.payment-receipt .table-wrap{overflow:visible}.payment-receipt table{margin:0}.payment-receipt th,.payment-receipt td{padding:11px 10px}.payment-receipt th{print-color-adjust:exact}.receipt-bottom{display:flex}.payment-receipt .signature-row{margin-top:50px}.payment-receipt .document-header,.receipt-parties,.receipt-amount{break-inside:avoid}}

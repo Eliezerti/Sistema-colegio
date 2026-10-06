@@ -41,6 +41,14 @@ El nombre comercial del colegio se configura aparte de la razón social. La dire
 
 Los documentos guardados conservan la razón social, el RIF, el domicilio y la versión del logo existentes al emitirlos. Cambiar Configuración afecta documentos nuevos; las aperturas posteriores no sobrescriben tus cambios. Los comprobantes anteriores a esta versión conservan sus datos y su emblema anteriores.
 
+### Diseño del recibo de pago
+
+El recibo presenta el membrete sin bordes exteriores, datos del representante y del alumno en columnas, conceptos con importes alineados y un bloque destacado para el **importe recibido**. El total aplicado en USD y la tasa BCV se muestran juntos. Las referencias, direcciones y observaciones aparecen cuando tienen contenido. El diseño sirve tanto para pagos completos como para abonos; indica lo aplicado en esta operación.
+
+El PDF descargable usa **A4 vertical** e incorpora sus fuentes para conservar la tipografía en otras computadoras. Si hay muchos conceptos u observaciones, continúa en otras páginas con el membrete, el número de recibo y los encabezados de la tabla repetidos. Los recibos anulados se identifican en todas las páginas. Mejorar el diseño no modifica los importes ni los datos históricos guardados.
+
+[Ver una muestra del recibo con datos ficticios](https://github.com/Eliezerti/Sistema-colegio/blob/main/docs/recibo-ejemplo.png).
+
 ## Flujo diario
 
 1. Al abrir o iniciar sesión, revisa y confirma la **tasa BCV del día** en **Tasas y respaldo**. La pantalla permite descargar un respaldo si eres administrador. Las operaciones quedan bloqueadas hasta confirmar la tasa; al cambiar el día hay que confirmarla nuevamente. Consulta puede confirmar una tasa ya registrada, pero administración o caja debe cargarla si falta. Crea los **grados / secciones** y su capacidad.
@@ -136,7 +144,7 @@ Los recibos son **comprobantes administrativos**: no implementan facturación fi
 
 ## Desarrollo y validación
 
-Python 3.10+ y un navegador moderno (Edge, Chrome o Firefox). El programa no tiene dependencias externas, servicios remotos, credenciales de terceros ni pasos de compilación.
+Python 3.10+ y un navegador moderno (Edge, Chrome o Firefox). El programa no tiene dependencias externas, servicios remotos, credenciales de terceros ni pasos de compilación. Las fuentes Liberation Sans de los PDF se distribuyen sin modificaciones bajo SIL Open Font License 1.1; su licencia está incluida en `colegio/fonts/LICENSE.txt`.
 
 ```bash
 python -m colegio.server

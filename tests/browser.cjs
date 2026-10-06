@@ -69,7 +69,7 @@ const fs = require('node:fs');
     await page.locator('dialog[open]').getByRole('button',{name:'Cancelar',exact:true}).click();
     assert.equal(await page.evaluate(async()=> (await(await fetch('/api/state')).json()).payments.length),1,'Cancel must not submit a payment');
     await nav('arrears');
-    await page.getByText('Sofía Pérez',{exact:true}).waitFor();
+    await page.locator('#page-content').getByText('Sofía Pérez',{exact:true}).waitFor();
     await click('collection');const balanceState=await page.evaluate(async()=>await(await fetch('/api/state')).json());assert.ok((await page.locator('#collection-text').inputValue()).includes(new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(balanceState.students[0].overdue/100)));await page.locator('dialog[open] [data-action="close"]').first().click();
     await click('followup');await fill('note','Representante contactado; acordó abonar esta semana.');await submit();
     await nav('employees');await click('positions');await fill('name','Docente');await submit();await click('employee');await fill('name','José Docente');await fill('document','V-87654321');await page.locator('dialog[open] [name="position_id"]').selectOption({label:'Docente'});await fill('bank','Banco Prueba');await fill('bank_account','01020000000012345678');await fill('salary','100');await submit();
