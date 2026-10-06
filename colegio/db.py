@@ -3,6 +3,7 @@ import hashlib
 import json
 import secrets
 import sqlite3
+from contextlib import closing
 from datetime import date, datetime, timezone, timedelta
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
@@ -104,7 +105,7 @@ def connect(path):
 
 def initialize(path):
     Path(path).parent.mkdir(parents=True, exist_ok=True)
-    with connect(path) as db:
+    with closing(connect(path)) as db, db:
         db.execute('PRAGMA journal_mode=WAL')
         db.executescript('''
         CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -150,8 +151,38 @@ def initialize(path):
         CREATE INDEX IF NOT EXISTS allocations_charge ON allocations(charge_id);
         ''')
         defaults = {'school_name': 'Mi colegio', 'currency': 'USD', 'due_day': '10', 'start_month': '9',
-                    'school_year': str(local_today().year if local_today().month >= 9 else local_today().year - 1), 'address': '', 'phone': ''}
+                    'school_year': str(local_today().year if local_today().month >= 9 else local_today().year - 1), 'address': '', 'phone': '', 'rif': '', 'email': '', 'website': ''}
         db.executemany('INSERT OR IGNORE INTO settings VALUES(?,?)', defaults.items())
+        # Additive upgrades preserve IDs, balances and historical receipts.
+        additions = {
+            'sessions': {'rate_confirmed_on': "TEXT NOT NULL DEFAULT ''"},
+            'students': {'student_code': "TEXT NOT NULL DEFAULT ''"},
+            'employees': {'position_id': 'INTEGER REFERENCES positions(id)',
+                'bank': "TEXT NOT NULL DEFAULT ''", 'bank_account': "TEXT NOT NULL DEFAULT ''",
+                'account_holder': "TEXT NOT NULL DEFAULT ''", 'holder_document': "TEXT NOT NULL DEFAULT ''",
+                'account_type': "TEXT NOT NULL DEFAULT ''"}}
+        db.execute('CREATE TABLE IF NOT EXISTS positions(id INTEGER PRIMARY KEY,name TEXT UNIQUE NOT NULL)')
+        for table, columns in additions.items():
+            existing = {r['name'] for r in db.execute(f'PRAGMA table_info({table})')}
+            for name, definition in columns.items():
+                if name not in existing:
+                    db.execute(f'ALTER TABLE {table} ADD COLUMN {name} {definition}')
+        for student in db.execute("SELECT id FROM students WHERE student_code='' ").fetchall():
+            db.execute('UPDATE students SET student_code=? WHERE id=?', (f"AL-{student['id']:06d}", student['id']))
+        db.execute('CREATE UNIQUE INDEX IF NOT EXISTS students_code ON students(student_code)')
+        for employee in db.execute('SELECT id,position FROM employees WHERE position_id IS NULL').fetchall():
+            db.execute('INSERT OR IGNORE INTO positions(name) VALUES(?)', (employee['position'],))
+            db.execute('UPDATE employees SET position_id=(SELECT id FROM positions WHERE name=?) WHERE id=?',
+                       (employee['position'], employee['id']))
+        db.executescript("""
+            CREATE TABLE IF NOT EXISTS enrollment_documents(id INTEGER PRIMARY KEY,
+                student_id INTEGER NOT NULL REFERENCES students(id),snapshot_json TEXT NOT NULL,
+                created_at TEXT NOT NULL,created_by INTEGER NOT NULL REFERENCES users(id));
+            CREATE TABLE IF NOT EXISTS payroll_plans(id INTEGER PRIMARY KEY,snapshot_json TEXT NOT NULL,
+                created_at TEXT NOT NULL,created_by INTEGER NOT NULL REFERENCES users(id));
+        """)
+        db.execute('PRAGMA user_version=2')
+
 
 
 def audit(db, user_id, action, details):
@@ -226,8 +257,8 @@ def record_payment(db, data, user_id):
     total = sum(c['balance'] for c in pending)
     if amount > total:
         raise ValidationError('El pago supera la deuda. Crea primero el cargo correspondiente al anticipo.')
-    person = db.execute('''SELECT s.name AS student_name,s.document AS student_document,g.name AS guardian_name,
-       g.document AS guardian_document FROM students s JOIN guardians g ON g.id=s.guardian_id WHERE s.id=?''', (student_id,)).fetchone()
+    person = db.execute('''SELECT s.name AS student_name,s.document AS student_document,s.student_code,g.name AS guardian_name,
+       g.document AS guardian_document,g.address AS guardian_address,g.phone AS guardian_phone FROM students s JOIN guardians g ON g.id=s.guardian_id WHERE s.id=?''', (student_id,)).fetchone()
     receipt_snapshot = json.dumps({'person': dict(person), 'school': dict(db.execute('SELECT key,value FROM settings')),
                                   'operator': db.execute('SELECT name FROM users WHERE id=?', (user_id,)).fetchone()[0]}, ensure_ascii=False)
     result = db.execute('''INSERT INTO payments(student_id,amount,paid_on,method,reference,notes,created_by,created_at,request_key,currency,received_amount,exchange_rate,receipt_snapshot)

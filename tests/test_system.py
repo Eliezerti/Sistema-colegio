@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from pathlib import Path
 
-from colegio.db import initialize, money, valid_rate, ValidationError
+from colegio.db import initialize, money, valid_rate, ValidationError, local_today
 from colegio.server import SchoolServer
 from colegio.storage import DataLock, daily_backup
 from colegio.restore import restore
@@ -38,6 +38,7 @@ class SystemTests(unittest.TestCase):
         self.year = date.today().year - 1
         self.request('setup', {'name':'Directora','username':'admin','password':'Una-clave-segura'})
         self.csrf = self.request('session')['user']['csrf']
+        self.request('confirm-rate', {'rate_date':local_today().isoformat(),'rate':'100'})
         self.request('settings', {'school_name':'Colegio Prueba','school_year':self.year,'due_day':10,'start_month':9})
         self.grade = self.request('grades', {'name':'Primaria A','capacity':2})['id']
         self.guardian = self.request('guardians', {'name':'Representante Uno','document':'V-123','phone':'04120000000'})['id']
@@ -148,6 +149,8 @@ class SystemTests(unittest.TestCase):
         self.request('login',{'username':'reader','password':'wrong'},status=401)
         self.request('login',{'username':'reader','password':'Otra-clave-segura'})
         self.csrf=self.request('session')['user']['csrf']
+        self.request('state',status=428)
+        self.request('confirm-rate',{'rate_date':local_today().isoformat()})
         self.request('rates',{'rate_date':'2020-01-01','rate':'1'},status=403)
         self.request('backup',status=403)
         self.assertEqual(self.request('state')['users'],[])
@@ -162,6 +165,107 @@ class SystemTests(unittest.TestCase):
         state = self.request('state')
         self.assertEqual(len(state['payments']),1)
         self.assertEqual(state['students'][0]['balance'],0)
+
+    def test_siblings_automatic_codes_and_frozen_enrollment_pdf(self):
+        first = self.request('students', self.student_data(id=self.student, document='', monthly_fee='100', discount=10))
+        sibling = self.request('students', self.student_data(name='Hermano Dos', document=''))
+        self.assertNotEqual(first['student_code'], sibling['student_code'])
+        self.assertEqual(first['student_code'], 'AL-000001')
+        document = self.request('enrollment/'+str(first['document_id']))
+        self.assertEqual(document['student']['net_fee'], 9000)
+        self.assertEqual(document['student']['guardian_id'], self.guardian)
+        self.request('students', self.student_data(id=self.student, name='Nombre cambiado', monthly_fee='200'))
+        self.assertEqual(self.request('enrollment/'+str(first['document_id']))['student']['name'], 'Alumno Uno')
+        self.assertEqual(self.request('enrollment/'+str(first['document_id']))['student']['net_fee'], 9000)
+        pdf = self.request('enrollment/'+str(first['document_id'])+'.pdf')
+        self.assertTrue(pdf.startswith(b'%PDF-1.4'))
+        self.assertIn(b'AL-000001', pdf)
+        self.generate()
+        receipt = self.request('payments',self.payment())['id']
+        self.assertTrue(self.request(f'receipt/{receipt}.pdf').startswith(b'%PDF-1.4'))
+
+    def test_rate_checkpoint_login_reader_and_date_change(self):
+        self.request('logout', {})
+        self.request('login', {'username':'admin','password':'Una-clave-segura'})
+        self.csrf=self.request('session')['user']['csrf']
+        self.request('state', status=428)
+        self.request('grades', {'name':'Blocked','capacity':20}, status=428)
+        self.assertEqual(self.request('rate-gate')['today'],local_today().isoformat())
+        self.request('backup')  # Backup remains accessible at the checkpoint.
+        self.request('confirm-rate', {'rate_date':'2000-01-01','rate':'123'},status=400)
+        self.request('confirm-rate', {'rate_date':local_today().isoformat(),'rate':'123'},csrf=False,status=403)
+        self.request('confirm-rate', {'rate_date':local_today().isoformat(),'rate':'123'})
+        self.assertTrue(self.request('state')['students'])
+        with sqlite3.connect(self.path) as db:
+            db.execute("UPDATE sessions SET rate_confirmed_on='2000-01-01'")
+        self.request('state',status=428)
+        self.request('expenses', {'concept':'Bloqueado'},status=428)
+
+    def test_consolidated_payroll_banks_rounding_and_frozen_plan(self):
+        position=self.request('positions',{'name':'Docente'})['id']
+        lines=[]
+        for i in range(15):
+            emp=self.request('employees',{'name':f'Empleado {i:02}', 'document':f'V-{i+100}',
+                'position_id':position,'salary':'120','bank':'Banco Prueba',
+                'bank_account':'01020000000012345678','account_holder':f'Titular {i:02}',
+                'holder_document':f'V-{i+100}','account_type':'Corriente'})['id']
+            lines.append({'employee_id':emp,'amount':'120.01' if i==0 else '120'})
+        on=local_today().isoformat()
+        self.request('rates', {'rate_date':on,'rate':'100.125'})
+        data={'name':'Pago quincenal','pay_date':on,'lines':lines}
+        plan=self.request('payroll-plans',data)['id']
+        frozen=self.request('payroll-plan/'+str(plan))
+        self.assertEqual(len(frozen['lines']),15)
+        self.assertEqual(frozen['lines'][0]['amount_ves'],1201600)
+        self.assertEqual(frozen['total_usd'],180001)
+        self.assertEqual(frozen['total_ves'],18022600)
+        self.assertEqual(frozen['lines'][0]['bank_account'],'01020000000012345678')
+        self.assertEqual(len(self.request('state')['expenses']),0)
+        self.assertEqual(self.request('state')['employees'][0]['salary'],12000)
+        self.request('rates', {'rate_date':on,'rate':'200'})
+        self.request('positions',{'id':position,'name':'Profesor'})
+        self.assertTrue(all(e['position']=='Profesor' for e in self.request('state')['employees']))
+        self.assertEqual(self.request('payroll-plan/'+str(plan))['rate'],'100.125')
+        self.assertEqual(self.request('payroll-plan/'+str(plan))['lines'][0]['position'],'Docente')
+        pdf=self.request(f'payroll-plan/{plan}.pdf')
+        self.assertTrue(pdf.startswith(b'%PDF'))
+        self.assertIn(b'Empleado 14',pdf)
+        self.assertIn(b'/Count 3',pdf)  # 15 detailed employees span 3 pages with headers.
+        self.request('payroll-plans',dict(data,lines=[lines[0],lines[0]]),status=400)
+        self.request('payroll-plans',dict(data,pay_date='2000-01-01'),status=400)
+        self.request('employees',{'name':'Inválido','document':'V-x','position_id':position,'salary':'120','bank_account':'123'},status=400)
+
+    def test_additive_upgrade_preserves_old_records_and_balances(self):
+        self.request('employees',{'name':'Empleado anterior','document':'V-ant','position':'Secretaría','salary':'155.50'})
+        self.generate()
+        receipt=self.request('payments',self.payment())['id']
+        with sqlite3.connect(self.path) as db:
+            before=db.execute('SELECT COUNT(*),SUM(amount) FROM payments').fetchone()
+            db.execute('DROP TABLE enrollment_documents')
+            db.execute('DROP TABLE payroll_plans')
+            db.execute('DROP INDEX students_code')
+            db.execute('ALTER TABLE students DROP COLUMN student_code')
+            db.execute('ALTER TABLE sessions DROP COLUMN rate_confirmed_on')
+            for column in ('position_id','bank','bank_account','account_holder','holder_document','account_type'):
+                db.execute(f'ALTER TABLE employees DROP COLUMN {column}')
+            db.execute('DROP TABLE positions')
+            db.execute('PRAGMA user_version=0')
+        initialize(self.path)
+        initialize(self.path)
+        with sqlite3.connect(self.path) as db:
+            self.assertEqual(db.execute('SELECT COUNT(*),SUM(amount) FROM payments').fetchone(),before)
+            self.assertEqual(db.execute('SELECT student_code FROM students').fetchone()[0],'AL-000001')
+            self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],2)
+            employee=db.execute('SELECT position,position_id,salary,bank_account FROM employees').fetchone()
+            self.assertEqual(employee[0],'Secretaría')
+            self.assertIsNotNone(employee[1])
+            self.assertEqual(employee[2],15550)
+            self.assertEqual(employee[3],'')
+        self.request('state',status=428)
+        self.request('confirm-rate', {'rate_date':local_today().isoformat(),'rate':'100'})
+        self.assertEqual(self.request('state')['students'][0]['balance'],2250)
+        self.assertEqual(self.request(f'receipt/{receipt}')['payment']['amount'],2250)
 
     def test_expenses_csv_backup_and_restore(self):
         on=f'{self.year+1}-02-10'

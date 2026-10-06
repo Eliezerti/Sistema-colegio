@@ -50,6 +50,7 @@ async function api(path, data) {
   let result;
   try { result = await response.json(); } catch { throw new Error('El servidor no respondió. Comprueba que la ventana de Aula esté abierta.'); }
   if (!response.ok) {
+    if (response.status === 428) { await openRateGate(); }
     if (response.status === 401 && path !== 'login') { state = undefined; await boot(); }
     throw new Error(result.error || 'No se pudo completar la operación.');
   }
@@ -64,8 +65,13 @@ async function boot() {
     const result = await api('session');
     session = result.user;
     if (!session) { auth(result.needs_setup); return; }
-    await refresh();
+    await openRateGate();
   } catch (error) { app.innerHTML = `<div class="loading"><h2>No se pudo abrir Aula</h2><p>${esc(error.message)}</p>${btn('Reintentar','boot')}</div>`; }
+}
+async function openRateGate() {
+  const gate = await api('rate-gate');
+  state=undefined; modal.close(); $('#print-area').replaceChildren();
+  app.innerHTML=`<div class="rate-screen"><section class="card gate-card"><div class="brand"><img src="/favicon.svg" alt=""><div><b>aula.</b><small>Tasas y respaldo</small></div></div><div class="eyebrow">${dateLabel(gate.today)}</div><h1>Confirma la tasa de hoy</h1><p>Antes de comenzar, revisa la tasa oficial vigente. Se usará para convertir los pagos y la nómina en bolívares.</p><form data-endpoint="confirm-rate"><input type="hidden" name="rate_date" value="${gate.today}">${field('Bolívares por 1 USD','rate',gate.rate,'number',`required min="0.000001" max="1000000" step="0.000001" ${gate.role==='reader'?'readonly':''}`)}<p class="hint">${gate.role==='reader'?'Consulta puede confirmar la tasa registrada. Si falta, administración o caja debe registrarla.':'Consulta bcv.org.ve y registra la tasa vigente, incluso en fines de semana y feriados. La actualización es manual.'}</p><div class="error" role="alert"></div><button class="btn primary" type="submit" ${gate.role==='reader'&&!gate.rate?'disabled':''}>Confirmar tasa y entrar</button></form><div class="gate-footer">${gate.role==='admin'?'<a class="btn" href="/api/backup" download>Descargar respaldo</a>':''}${btn('Cerrar sesión','logout')}</div></section></div>`;
 }
 function auth(setup) {
   state=undefined;modal.close();$('#print-area').replaceChildren();
@@ -95,10 +101,10 @@ function dashboard() {
 function searchToolbar(placeholder, grade = false, extra = '') {
   return `<div class="toolbar"><input id="search" aria-label="Buscar" placeholder="${placeholder}" value="${esc(filters.search || '')}">${grade ? `<select id="grade-filter" aria-label="Filtrar por grado"><option value="">Todos los grados</option>${state.grades.map(g=>`<option value="${g.id}" ${String(g.id) === filters.grade ? 'selected' : ''}>${esc(g.name)}</option>`).join('')}</select>` : ''}${extra}<span class="table-count" id="table-count"></span></div>`;
 }
-function matches(s) { const q = (filters.search || '').toLocaleLowerCase(); return (!filters.grade || String(s.grade_id) === filters.grade) && [s.name,s.document,s.guardian_name,s.phone,s.position].some(v=>String(v||'').toLocaleLowerCase().includes(q)); }
+function matches(s) { const q = (filters.search || '').toLocaleLowerCase(); return (!filters.grade || String(s.grade_id) === filters.grade) && [s.name,s.document,s.student_code,s.guardian_name,s.phone,s.position].some(v=>String(v||'').toLocaleLowerCase().includes(q)); }
 function studentsPage() {
   const records = state.students.filter(matches);
-  return heading('Alumnos y matrículas','Expedientes, representantes, mensualidades y becas por alumno.',`${exportBtn('students')}${admin()?btn(`${icon('plus')} Matricular alumno`,'student','primary'):''}`) + card('Directorio de alumnos', searchToolbar('Buscar alumno, documento o representante…',true) + table(['Alumno','Grado / año','Mensualidad USD','Estado','Saldo USD',''],records,s=>`<td><b>${esc(s.name)}</b><span class="sub">${esc(s.document)} · ${esc(s.guardian_name)}</span></td><td>${esc(s.grade_name)}<span class="sub">${s.school_year}–${s.school_year+1}</span></td><td class="money">${usd(Math.floor((s.monthly_fee*(100-s.discount)+50)/100))}<span class="sub">${s.discount ? `Beca / descuento: ${s.discount}%` : 'Tarifa sin descuento'}</span></td><td>${badge(s.status==='active'?'Activo':'Inactivo',s.status==='active'?'':'neutral')}</td><td class="money ${s.overdue?'text-red':''}">${usd(s.balance)}</td><td>${actionsCell(btn('Cuenta','account','small',s.id)+(admin()?btn('Editar','student','small',s.id):''))}</td>`,'Aún no hay alumnos matriculados'), `<span class="muted">${records.length} alumnos</span>`);
+  return heading('Alumnos y matrículas','Expedientes, representantes, mensualidades y becas por alumno.',`${exportBtn('students')}${admin()?btn(`${icon('plus')} Matricular alumno`,'student','primary'):''}`) + card('Directorio de alumnos', searchToolbar('Buscar alumno, documento o representante…',true) + table(['Alumno','Grado / año','Mensualidad USD','Estado','Saldo USD',''],records,s=>`<td><b>${esc(s.name)}</b><span class="sub">${esc(s.student_code)} · ${esc(s.guardian_name)}</span></td><td>${esc(s.grade_name)}<span class="sub">${s.school_year}–${s.school_year+1}</span></td><td class="money">${usd(Math.floor((s.monthly_fee*(100-s.discount)+50)/100))}<span class="sub">${s.discount ? `Beca / descuento: ${s.discount}%` : 'Tarifa sin descuento'}</span></td><td>${badge(s.status==='active'?'Activo':'Inactivo',s.status==='active'?'':'neutral')}</td><td class="money ${s.overdue?'text-red':''}">${usd(s.balance)}</td><td>${actionsCell(btn('Cuenta','account','small',s.id)+btn('Constancia','enrollment','small',s.id)+(admin()?btn('Editar','student','small',s.id):''))}</td>`,'Aún no hay alumnos matriculados'), `<span class="muted">${records.length} alumnos</span>`);
 }
 function guardiansPage() {
   const records = state.guardians.filter(matches);
@@ -122,7 +128,7 @@ function arrearsPage() {
 }
 function employeesPage() {
   const records = state.employees.filter(matches);
-  return heading('Personal del colegio','Directorio del equipo y salario de referencia en dólares.',admin()?btn(`${icon('plus')} Nuevo empleado`,'employee','primary'):'')+card('Equipo administrativo y docente',searchToolbar('Buscar empleado, documento o cargo…')+table(['Empleado','Cargo','Teléfono','Salario USD','Estado',''],records,e=>`<td><b>${esc(e.name)}</b><span class="sub">${esc(e.document)}</span></td><td>${esc(e.position)}</td><td>${esc(e.phone)||'—'}</td><td class="money">${usd(e.salary)}</td><td>${badge(e.status==='active'?'Activo':'Inactivo',e.status==='active'?'':'neutral')}</td><td>${actionsCell((admin()?btn('Editar','employee','small',e.id):'')+(writable()?btn('Pagar nómina','payroll','small',e.id):''))}</td>`,'Registra el personal del colegio'));
+  return heading('Personal del colegio','Salarios en USD, pagos en Bs y datos bancarios del equipo.',(admin()?btn('Cargos','positions')+btn('Preparar nómina','payroll-plan'):'')+(admin()?btn(`${icon('plus')} Nuevo empleado`,'employee','primary'):''))+card('Equipo administrativo y docente',searchToolbar('Buscar empleado, documento o cargo…')+table(['Empleado','Cargo','Banco / cuenta','Salario USD / Bs','Estado',''],records,e=>`<td><b>${esc(e.name)}</b><span class="sub">${esc(e.document)}</span></td><td>${esc(e.position)}</td><td>${esc(e.bank)||'Pendiente'}<span class="sub">${esc(e.bank_account)||'Sin cuenta'}</span></td><td class="money">${usd(e.salary)}<span class="sub">${bs(Math.round(e.salary*Number(todayRate()?.rate||0)))}</span></td><td>${badge(e.status==='active'?'Activo':'Inactivo',e.status==='active'?'':'neutral')}</td><td>${actionsCell((admin()?btn('Editar','employee','small',e.id):'')+(writable()?btn('Pagar nómina','payroll','small',e.id):''))}</td>`,'Registra el personal del colegio'))+card('Relaciones de pago guardadas',table(['Documento','Fecha / tasa','Total USD / Bs',''],state.payroll_plans,p=>`<td>${esc(p.name)}<span class="sub">N-${String(p.id).padStart(6,'0')}</span></td><td>${dateLabel(p.pay_date)}<span class="sub">Bs ${esc(p.rate)} / USD</span></td><td>${usd(p.total_usd)}<span class="sub">${bs(p.total_ves)}</span></td><td>${btn('Ver documento','payroll-document','small',p.id)}</td>`,'Aún no hay relaciones de pago'));
 }
 function expensesPage() {
   const records=state.expenses.filter(e=>[e.concept,e.category,e.reference,e.employee_name||''].some(v=>v.toLowerCase().includes((filters.search||'').toLowerCase())));
@@ -136,7 +142,7 @@ function reportsPage() {
 }
 function settingsPage() {
   const s=state.settings;
-  return heading('Configuración','Datos del colegio, año escolar, usuarios y respaldos.')+card('Datos del colegio',`<form class="card-body" data-endpoint="settings"><div class="form-grid">${field('Nombre del colegio','school_name',s.school_name,'text','required maxlength="200"')}${field('Teléfono','phone',s.phone)}${field('Dirección','address',s.address)}${field('Año de inicio del año escolar','school_year',s.school_year,'number','required min="2000" max="2100"',`Ejemplo: 2026 para el año 2026–2027.`)}${select('Mes de inicio del año escolar','start_month',Array.from({length:12},(_,i)=>[i+1,new Date(2020,i,1).toLocaleDateString('es-VE',{month:'long'})]),s.start_month)}${field('Día de vencimiento mensual','due_day',s.due_day,'number','required min="1" max="31"','Si el mes tiene menos días, se usa el último día.')}</div><p class="hint">Moneda base: USD. Pagos y egresos: USD o bolívares. Cambiar la configuración no recalcula cargos ni pagos ya registrados.</p><div class="error" role="alert"></div><div class="form-actions"><button class="btn primary" type="submit">Guardar configuración</button></div></form>`)+`<div class="grid-two">${card('Usuarios y permisos',table(['Nombre / usuario','Perfil',''],state.users,u=>`<td><b>${esc(u.name)}</b><span class="sub">${esc(u.username)}</span></td><td>${roleLabel(u.role)}</td><td>${btn('Contraseña','password','small',u.id)}</td>`),btn('Crear usuario','user','small'))}${card('Tasas y respaldo',`<div class="card-body"><div class="list-line"><span>Tasas BCV por fecha<small>Registro manual; cada operación conserva su tasa.</small></span>${btn('Gestionar','rates','small')}</div><div class="list-line"><span>Base de datos completa<small>Incluye usuarios, cobros y expedientes.</small></span><a class="btn small" href="/api/backup" download>${icon('download')} Respaldo</a></div><p class="hint">Guarda respaldos periódicos en un dispositivo distinto. La restauración se realiza con el sistema cerrado; sigue las instrucciones del archivo README.</p></div>`)}</div>`+card('Bitácora de operaciones',table(['Fecha','Usuario','Operación','Detalle'],state.audit,a=>`<td>${esc(new Date(a.created_at).toLocaleString('es-VE',{timeZone:'America/Caracas'}))}</td><td>${esc(a.operator)||'—'}</td><td>${esc(a.action)}</td><td class="audit-detail" title="${esc(a.details)}">${esc(a.details)}</td>`,'Sin operaciones'),'<small>Últimas 300 operaciones</small>');
+  return heading('Configuración','Datos del colegio, año escolar, usuarios y respaldos.')+card('Datos del colegio',`<form class="card-body" data-endpoint="settings"><div class="form-grid">${field('Nombre del colegio','school_name',s.school_name,'text','required maxlength="200"')}${field('RIF del colegio','rif',s.rif)}${field('Correo del colegio','email',s.email,'email')}${field('Sitio web','website',s.website)}${field('Teléfono','phone',s.phone)}${field('Dirección','address',s.address)}${field('Año de inicio del año escolar','school_year',s.school_year,'number','required min="2000" max="2100"',`Ejemplo: 2026 para el año 2026–2027.`)}${select('Mes de inicio del año escolar','start_month',Array.from({length:12},(_,i)=>[i+1,new Date(2020,i,1).toLocaleDateString('es-VE',{month:'long'})]),s.start_month)}${field('Día de vencimiento mensual','due_day',s.due_day,'number','required min="1" max="31"','Si el mes tiene menos días, se usa el último día.')}</div><p class="hint">Moneda base: USD. Pagos y egresos: USD o bolívares. Cambiar la configuración no recalcula cargos ni pagos ya registrados.</p><div class="error" role="alert"></div><div class="form-actions"><button class="btn primary" type="submit">Guardar configuración</button></div></form>`)+`<div class="grid-two">${card('Usuarios y permisos',table(['Nombre / usuario','Perfil',''],state.users,u=>`<td><b>${esc(u.name)}</b><span class="sub">${esc(u.username)}</span></td><td>${roleLabel(u.role)}</td><td>${btn('Contraseña','password','small',u.id)}</td>`),btn('Crear usuario','user','small'))}${card('Tasas y respaldo',`<div class="card-body"><div class="list-line"><span>Tasas BCV por fecha<small>Registro manual; cada operación conserva su tasa.</small></span>${btn('Gestionar','rates','small')}</div><div class="list-line"><span>Base de datos completa<small>Incluye usuarios, cobros y expedientes.</small></span><a class="btn small" href="/api/backup" download>${icon('download')} Respaldo</a></div><p class="hint">Guarda respaldos periódicos en un dispositivo distinto. La restauración se realiza con el sistema cerrado; sigue las instrucciones del archivo README.</p></div>`)}</div>`+card('Bitácora de operaciones',table(['Fecha','Usuario','Operación','Detalle'],state.audit,a=>`<td>${esc(new Date(a.created_at).toLocaleString('es-VE',{timeZone:'America/Caracas'}))}</td><td>${esc(a.operator)||'—'}</td><td>${esc(a.action)}</td><td class="audit-detail" title="${esc(a.details)}">${esc(a.details)}</td>`,'Sin operaciones'),'<small>Últimas 300 operaciones</small>');
 }
 function showModal(title, subtitle, body) {
   $('#modal-content').innerHTML=`<header class="modal-header"><div><h2>${title}</h2>${subtitle?`<p>${subtitle}</p>`:''}</div><button class="close" data-action="close" aria-label="Cerrar">×</button></header><div class="modal-body">${body}</div>`;
@@ -157,11 +163,41 @@ function openStudent(id) {
   const start=`${year}-${String(startMonth).padStart(2,'0')}-01`;
   // Avoid locale-dependent ISO formatting on Windows browser installations.
   const endDate=new Date(year+1,startMonth-1,0,12), endISO=`${endDate.getFullYear()}-${String(endDate.getMonth()+1).padStart(2,'0')}-${String(endDate.getDate()).padStart(2,'0')}`;
-  showModal(r.id?'Editar matrícula':'Matricular alumno','El descuento se aplica al generar cargos nuevos; los cargos existentes se conservan.',recordForm('students',field('Nombre completo','name',r.name,'text','required maxlength="200"')+field('Cédula / código del alumno','document',r.document,'text','required maxlength="200"')+field('Fecha de nacimiento','birth_date',r.birth_date,'date',`required max="${state.today}"`)+select('Representante','guardian_id',state.guardians.map(g=>[g.id,g.name]),r.guardian_id,'required')+select('Grado / sección','grade_id',state.grades.map(g=>[g.id,g.name]),r.grade_id,'required')+field('Año de inicio del año escolar','school_year',r.school_year??year,'number','required min="2000" max="2100"')+field('Mensualidad base · USD','monthly_fee',r.id?(r.monthly_fee/100).toFixed(2):'','number','required min="0" max="999999999" step="0.01"')+field('Beca / descuento · %','discount',r.discount??0,'number','required min="0" max="100"')+field('Inicio de matrícula','enrollment_start',r.enrollment_start||(state.today>start?state.today:start),'date','required')+field('Fin de matrícula','enrollment_end',r.enrollment_end||endISO,'date','required')+select('Estado','status',statusOptions,r.status||'active')+textarea('Observaciones','notes',r.notes),r,'Guardar matrícula'));
+  showModal(r.id?'Editar matrícula':'Matricular alumno','El descuento se aplica al generar cargos nuevos; los cargos existentes se conservan.',recordForm('students',field('Nombre completo','name',r.name,'text','required maxlength="200"')+field('Código único del alumno','student_code',r.student_code||'Se asignará al guardar','text','readonly', 'Cada hermano recibe su propio código.')+field('Cédula del alumno (si tiene)','document',r.document===r.student_code?'':r.document,'text','maxlength="200"', 'Opcional. No uses la cédula del representante.')+field('Fecha de nacimiento','birth_date',r.birth_date,'date',`required max="${state.today}"`)+field('Buscar representante por nombre o cédula','guardian_search','','search','id="guardian-search" autocomplete="off"')+select('Representante','guardian_id',[['','Selecciona un representante'],...state.guardians.map(g=>[g.id,`${g.document} · ${g.name}`])],r.guardian_id||'','required')+select('Grado / sección','grade_id',state.grades.map(g=>[g.id,g.name]),r.grade_id,'required')+field('Año de inicio del año escolar','school_year',r.school_year??year,'number','required min="2000" max="2100"')+field('Mensualidad base · USD','monthly_fee',r.id?(r.monthly_fee/100).toFixed(2):'','number','required min="0" max="999999999" step="0.01"')+field('Beca / descuento · %','discount',r.discount??0,'number','required min="0" max="100"')+`<div class="conversion full" id="tuition-preview" role="status"></div>`+field('Inicio de matrícula','enrollment_start',r.enrollment_start||(state.today>start?state.today:start),'date','required')+field('Fin de matrícula','enrollment_end',r.enrollment_end||endISO,'date','required')+select('Estado','status',statusOptions,r.status||'active')+textarea('Observaciones','notes',r.notes),r,'Guardar matrícula'));
+  updateTuition();
 }
 function openEmployee(id) {
+  if(!state.positions.length){toast('Crea primero un cargo para el personal.');openPositions();return;}
   const r=state.employees.find(e=>e.id===Number(id))||{};
-  showModal(r.id?'Editar empleado':'Nuevo empleado','El salario es una referencia; cada pago de nómina se registra como egreso.',recordForm('employees',field('Nombre completo','name',r.name,'text','required maxlength="200"')+field('Cédula / documento','document',r.document,'text','required maxlength="200"')+field('Cargo','position',r.position,'text','required maxlength="200"')+field('Teléfono','phone',r.phone,'tel')+field('Salario de referencia · USD','salary',r.id?(r.salary/100).toFixed(2):'','number','required min="0" step="0.01" max="999999999"')+select('Estado','status',statusOptions,r.status||'active'),r));
+  showModal(r.id?'Editar empleado':'Nuevo empleado','Sueldo de referencia en dólares; los pagos se preparan en bolívares.',recordForm('employees',field('Nombre completo','name',r.name,'text','required maxlength="200"')+field('Cédula / documento','document',r.document,'text','required maxlength="200"')+select('Cargo','position_id',state.positions.map(p=>[p.id,p.name]),r.position_id||state.positions[0].id,'required')+field('Teléfono','phone',r.phone,'tel')+field('Salario de referencia · USD','salary',r.id?(r.salary/100).toFixed(2):'','number','required min="0" step="0.01" max="999999999"')+select('Estado','status',statusOptions,r.status||'active')+field('Banco','bank',r.bank,'text','maxlength="100"')+field('Número de cuenta bancaria','bank_account',r.bank_account,'text','inputmode="numeric" pattern="[0-9]{20}" maxlength="20"','20 dígitos. Se conservan los ceros iniciales.')+select('Tipo de cuenta','account_type',[['','Selecciona'],['Corriente','Corriente'],['Ahorro','Ahorro']],r.account_type)+field('Titular de la cuenta','account_holder',r.account_holder||r.name,'text','maxlength="200"')+field('Cédula del titular','holder_document',r.holder_document||r.document,'text','maxlength="200"'),r));
+}
+function openPositions(id) {
+  const r=state.positions.find(p=>p.id===Number(id))||{};
+  showModal('Cargos del personal','Los cargos se reutilizan; el salario se define para cada empleado.',recordForm('positions',field('Nombre del cargo','name',r.name,'text','required maxlength="200"'),r)+table(['Cargo',''],state.positions,p=>`<td>${esc(p.name)}</td><td>${btn('Editar','positions','small',p.id)}</td>`));
+}
+function updateTuition() {
+  const form=$('form[data-endpoint="students"]',modal);if(!form)return;
+  const base=Math.round(Number(form.elements.monthly_fee.value||0)*100), discount=Number(form.elements.discount.value||0), fee=Math.floor((base*(100-discount)+50)/100);
+  $('#tuition-preview').innerHTML=`Mensualidad base: ${usd(base)} · Descuento: ${esc(discount)} %<strong>Mensualidad final del alumno: ${usd(fee)}</strong>`;
+}
+function searchGuardian() {
+  const form=$('form[data-endpoint="students"]',modal), select=form.elements.guardian_id, previous=select.value;
+  const norm=v=>String(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(), query=norm($('#guardian-search').value).trim();
+  const list=state.guardians.filter(g=>norm(g.name).includes(query)||norm(g.document).replace(/[^a-z0-9]/g,'').includes(query.replace(/[^a-z0-9]/g,'')));
+  select.innerHTML=`<option value="">${list.length?'Selecciona un representante':'Sin coincidencias'}</option>`+list.map(g=>`<option value="${g.id}">${esc(g.document)} · ${esc(g.name)}</option>`).join('');
+  if(list.some(g=>String(g.id)===previous))select.value=previous;
+}
+function openPayrollPlan() {
+  const list=state.employees.filter(e=>e.status==='active');
+  if(!list.length){toast('Registra empleados activos primero.',true);return;}
+  showModal('Preparar nómina consolidada','Ajusta el monto de cada empleado. Generar el documento no registra pagos.',`<form data-endpoint="payroll-plans"><div class="form-grid">${field('Descripción / período','name','Nómina · '+monthLabel(state.today.slice(0,7)),'text','required maxlength="200"')}${field('Fecha de pago','pay_date',state.today,'date','required')}</div><p class="hint">Revisa las cuentas pendientes en Personal. Los montos propuestos pueden diferir del salario de referencia.</p>${table(['Empleado / banco','Cuenta','Monto USD','Monto Bs'],list,e=>`<td><b>${esc(e.name)}</b><span class="sub">${esc(e.document)} · ${esc(e.bank)||'BANCO PENDIENTE'}</span></td><td>${esc(e.bank_account)||'CUENTA PENDIENTE'}</td><td><input aria-label="Monto USD de ${esc(e.name)}" data-payroll-employee="${e.id}" type="number" min="0" max="999999999" step="0.01" required value="${(e.salary/100).toFixed(2)}"></td><td class="money" data-payroll-bs="${e.id}"></td>`)}<div class="conversion" id="payroll-total"></div>${formFoot('Generar relación de pago')}</form>`);
+  updatePayroll();
+}
+function updatePayroll() {
+  const form=$('form[data-endpoint="payroll-plans"]',modal);if(!form)return;
+  const rate=state.rates.find(r=>r.rate_date===form.elements.pay_date.value);let total=0,totalBs=0;
+  form.querySelectorAll('[data-payroll-employee]').forEach(input=>{const cents=Math.round(Number(input.value||0)*100), ves=Math.round(cents*Number(rate?.rate||0));total+=cents;totalBs+=ves;form.querySelector(`[data-payroll-bs="${input.dataset.payrollEmployee}"]`).textContent=rate?bs(ves):'Falta tasa';});
+  $('#payroll-total').innerHTML=rate?`BCV: Bs ${esc(rate.rate)} por USD<strong>Total: ${usd(total)} · ${bs(totalBs)}</strong>`:'Registra primero la tasa para esta fecha en Tasas y respaldo.';
 }
 function openPayment(id) {
   const candidates=state.students.filter(s=>s.balance>0);
@@ -180,7 +216,7 @@ function updateConversion() {
 }
 function openExpense(employeeId) {
   const emp=state.employees.find(e=>e.id===Number(employeeId));
-  showModal(emp?'Registrar pago de nómina':'Registrar egreso','Conserva el importe original, su moneda y la tasa BCV de la fecha.',`<form data-endpoint="expenses"><div class="form-grid">${field('Concepto','concept',emp?`Nómina · ${emp.name}`:'','text','required maxlength="200"')}${select('Categoría','category',['Operación','Nómina','Servicios','Mantenimiento','Materiales','Otro'].map(x=>[x,x]),emp?'Nómina':'Operación')}${field('Fecha del egreso','spent_on',state.today,'date',`required max="${state.today}"`)}${select('Empleado asociado','employee_id',[['','No aplica'],...state.employees.map(e=>[e.id,e.name])],emp?.id||'')}${select('Moneda pagada','currency',[['USD','Dólares · USD'],['VES','Bolívares · Bs']],'USD')}${field('Importe pagado','amount',emp?(emp.salary/100).toFixed(2):'','number','required min="0.01" step="0.01" max="999999999"')}${field('Referencia / comprobante','reference','','text','maxlength="200"')}<div class="conversion" id="conversion"></div></div><div class="actions" style="margin-top:15px">${btn('Registrar tasa BCV','rate-inline','small')}</div>${formFoot('Registrar egreso')}</form>`);updateConversion();
+  showModal(emp?'Registrar pago de nómina':'Registrar egreso','Conserva el importe original, su moneda y la tasa BCV de la fecha.',`<form data-endpoint="expenses"><div class="form-grid">${field('Concepto','concept',emp?`Nómina · ${emp.name}`:'','text','required maxlength="200"')}${select('Categoría','category',['Operación','Nómina','Servicios','Mantenimiento','Materiales','Otro'].map(x=>[x,x]),emp?'Nómina':'Operación')}${field('Fecha del egreso','spent_on',state.today,'date',`required max="${state.today}"`)}${select('Empleado asociado','employee_id',[['','No aplica'],...state.employees.map(e=>[e.id,e.name])],emp?.id||'')}${select('Moneda pagada','currency',[['USD','Dólares · USD'],['VES','Bolívares · Bs']],emp?'VES':'USD')}${field('Importe pagado','amount',emp?(Math.round(emp.salary*Number(todayRate()?.rate||0))/100).toFixed(2):'','number','required min="0.01" step="0.01" max="999999999"')}${field('Referencia / comprobante','reference','','text','maxlength="200"')}<div class="conversion" id="conversion"></div></div><div class="actions" style="margin-top:15px">${btn('Registrar tasa BCV','rate-inline','small')}</div>${formFoot('Registrar egreso')}</form>`);updateConversion();
 }
 function openCharge(id) {
   if(!state.students.length) {toast('Matricula al menos un alumno primero.',true);return;}
@@ -225,11 +261,27 @@ function openPassword(id) {
   const user=state.users.find(u=>u.id===Number(id));
   showModal('Cambiar contraseña',`Usuario: ${esc(user.name)}. Sus sesiones se cerrarán.`,recordForm('password',`<input type="hidden" name="user_id" value="${user.id}">`+field('Nueva contraseña','password','','password','required minlength="10" maxlength="256" autocomplete="new-password"'),{},'Cambiar contraseña'));
 }
+function schoolHeader(s,title,code,on) {
+  return `<header class="document-header"><div class="school-emblem">${icon('book')}</div><div class="school-info"><h1>${esc(s.school_name)}</h1><p>${[s.rif&&'RIF: '+s.rif,s.address,s.phone,s.email,s.website].filter(Boolean).map(esc).join(' · ')}</p></div><div class="document-number"><b class="receipt-number">${esc(code)}</b><span>${esc(title)}</span><span>${dateLabel(on)}</span></div></header>`;
+}
+function documentActions(path) {return `<div class="actions document-actions"><a class="btn primary" href="/api/${path}.pdf" download>${icon('download')} Descargar PDF</a>${btn(`${icon('print')} Imprimir`,'print-receipt')}</div>`;}
+function showDocument(title,path,markup) {
+  showModal(title,'Documento listo para descargar o imprimir.',documentActions(path)+markup);$('#print-area').innerHTML=markup;
+}
+async function enrollmentDocument(studentId,documentId) {
+  const id=documentId||state.enrollments.find(e=>e.student_id===Number(studentId))?.id;
+  if(!id){toast('Guarda la matrícula para generar su primera constancia.',true);return;}
+  const d=await api('enrollment/'+id),s=d.student;
+  showDocument('Constancia de matrícula','enrollment/'+id,`<article class="receipt school-document">${schoolHeader(d.school,'Constancia de matrícula','M-'+String(id).padStart(6,'0'),d.issued_on||d.created_at.slice(0,10))}<div class="document-section"><h3>Datos del alumno</h3><dl><dt>Nombre completo</dt><dd>${esc(s.name)}</dd><dt>Código único</dt><dd>${esc(s.student_code)}</dd><dt>Cédula / documento</dt><dd>${s.document===s.student_code?'Sin cédula propia':esc(s.document)}</dd><dt>Nacimiento</dt><dd>${dateLabel(s.birth_date)}</dd><dt>Grado / año escolar</dt><dd>${esc(s.grade_name)} · ${s.school_year}–${s.school_year+1}</dd><dt>Vigencia</dt><dd>${dateLabel(s.enrollment_start)} al ${dateLabel(s.enrollment_end)} · ${s.status==='active'?'Activo':'Inactivo'}</dd></dl></div><div class="document-section"><h3>Representante legal</h3><dl><dt>Nombre / cédula</dt><dd>${esc(s.guardian_name)} · ${esc(s.guardian_document)}</dd><dt>Contacto</dt><dd>${esc(s.guardian_phone)} · ${esc(s.guardian_email)}</dd><dt>Dirección</dt><dd>${esc(s.guardian_address)}</dd></dl></div>${table(['Mensualidad base USD','Beca / descuento','Mensualidad final USD'],[s],r=>`<td>${usd(r.monthly_fee)}</td><td>${r.discount} %</td><td><strong>${usd(r.net_fee)}</strong></td>`)}<p class="hint">La tarifa se aplica a cargos nuevos. Los cargos existentes conservan su importe.</p><p>Observaciones: ${esc(s.notes)||'—'}</p><div class="signature-row"><span>Administración</span><span>Representante legal</span></div><p class="document-footer">Registrado por ${esc(d.operator)} · Constancia administrativa de matrícula</p></article>`);
+}
+async function payrollDocument(id) {
+  const d=await api('payroll-plan/'+id);
+  showDocument('Relación de pago consolidada','payroll-plan/'+id,`<article class="receipt school-document payroll-document">${schoolHeader(d.school,'Relación de pago','N-'+String(id).padStart(6,'0'),d.pay_date)}<h3>${esc(d.name)}</h3><p>BCV aplicada: Bs ${esc(d.rate)} por USD · ${dateLabel(d.pay_date)}</p><p class="hint">Preparación de nómina. Este documento no registra egresos ni acredita pagos realizados.</p>${table(['Empleado / cédula / cargo','Banco / tipo / cuenta','Titular / cédula','Monto USD','Monto Bs'],d.lines,r=>`<td>${esc(r.name)}<span class="sub">${esc(r.document)} · ${esc(r.position)}</span></td><td>${esc(r.bank)||'BANCO PENDIENTE'}<span class="sub">${esc(r.account_type)} · ${esc(r.bank_account)||'CUENTA PENDIENTE'}</span></td><td>${esc(r.account_holder||r.name)}<span class="sub">${esc(r.holder_document||r.document)}</span></td><td>${usd(r.amount_usd)}</td><td>${bs(r.amount_ves)}</td>`)}<div class="receipt-total">Total propuesto: <b>${usd(d.total_usd)} · ${bs(d.total_ves)}</b></div><div class="signature-row"><span>Preparado por ${esc(d.operator)}</span><span>Aprobado por</span></div></article>`);
+}
 async function receipt(id) {
-  const r=await api('receipt/'+id), p=r.payment, s=r.settings;
-  const markup=`<article class="receipt"><div class="receipt-head"><div><h1>${esc(s.school_name)}</h1><p>${esc(s.address)}</p><p>${esc(s.phone)}</p></div><div><div class="receipt-number">R-${String(p.id).padStart(6,'0')}</div><p>Comprobante de pago</p><p>${dateLabel(p.paid_on)}</p></div></div>${p.voided?`<div class="error">ANULADO · ${esc(p.void_reason)}</div>`:''}<dl><dt>Alumno</dt><dd>${esc(p.student_name)} · ${esc(p.student_document)}</dd><dt>Representante</dt><dd>${esc(p.guardian_name)} · ${esc(p.guardian_document)}</dd><dt>Método de pago</dt><dd>${esc(p.method)}</dd><dt>Referencia</dt><dd>${esc(p.reference)||'—'}</dd><dt>Importe recibido</dt><dd><b>${p.currency==='VES'?bs(p.received_amount):usd(p.received_amount)}</b></dd>${p.currency==='VES'?`<dt>Tasa BCV aplicada</dt><dd>Bs ${esc(p.exchange_rate)} por USD · ${dateLabel(p.paid_on)}</dd>`:''}<dt>Equivalente USD</dt><dd><b>${usd(p.amount)}</b></dd><dt>Registrado por</dt><dd>${esc(p.operator)}</dd></dl>${table(['Concepto','Período','Abono USD'],r.allocations,a=>`<td>${esc(a.concept)}</td><td>${esc(a.period)}</td><td>${usd(a.amount)}</td>`)}<div class="receipt-total">Total aplicado: <b>${usd(p.amount)}</b></div>${p.notes?`<p class="hint">${esc(p.notes)}</p>`:''}<div class="signature">Recibido por administración</div><p class="hint">Comprobante administrativo de pago. No sustituye una factura fiscal.</p></article>`;
-  showModal('Comprobante de pago','Puedes imprimirlo o guardarlo como PDF desde Windows.',`<div class="actions">${btn(`${icon('print')} Imprimir / PDF`,'print-receipt','primary')}</div>${markup}`);
-  $('#print-area').innerHTML=markup;
+  const r=await api('receipt/'+id), p=r.payment;
+  const markup=`<article class="receipt school-document">${schoolHeader(r.settings,'Comprobante de pago','R-'+String(p.id).padStart(6,'0'),p.paid_on)}${p.voided?`<div class="error">ANULADO · ${esc(p.void_reason)}</div>`:''}<div class="document-section"><dl><dt>Representante legal</dt><dd>${esc(p.guardian_name)} · ${esc(p.guardian_document)}</dd><dt>Alumno</dt><dd>${esc(p.student_name)} · ${esc(p.student_code||p.student_document)}</dd><dt>Dirección / teléfono</dt><dd>${esc(p.guardian_address)} · ${esc(p.guardian_phone)}</dd></dl></div>${table(['Descripción del cargo','Período','Abono USD'],r.allocations,a=>`<td>${esc(a.concept)}</td><td>${esc(a.period)}</td><td class="money">${usd(a.amount)}</td>`)}<div class="payment-summary"><div><h3>Detalle del pago</h3><p>${esc(p.method)} · Referencia: ${esc(p.reference)||'—'}</p><p>Registrado por: ${esc(p.operator)}</p><p>Observaciones: ${esc(p.notes)||'—'}</p></div><dl><dt>Importe recibido</dt><dd><b>${p.currency==='VES'?bs(p.received_amount):usd(p.received_amount)}</b></dd>${p.currency==='VES'?`<dt>Tasa BCV aplicada</dt><dd>Bs ${esc(p.exchange_rate)} por USD</dd>`:''}<dt>Total aplicado USD</dt><dd><strong>${usd(p.amount)}</strong></dd></dl></div><div class="signature-row"><span>Firma de administración</span><span>Firma del representante</span></div><p class="document-footer">COMPROBANTE ADMINISTRATIVO · No sustituye una factura fiscal.</p></article>`;
+  showDocument('Comprobante de pago','receipt/'+id,markup);
 }
 function printReport() {
   const income=state.payments.filter(p=>!p.voided&&p.paid_on>=reportFrom&&p.paid_on<=reportTo).reduce((t,p)=>t+p.amount,0), expenses=state.expenses.filter(e=>!e.voided&&e.spent_on>=reportFrom&&e.spent_on<=reportTo).reduce((t,e)=>t+e.amount,0);
@@ -245,7 +297,7 @@ document.addEventListener('click',async event=>{
       case 'boot':await boot();break;
       case 'logout':await api('logout',{});modal.close();await boot();break;
       case 'guardian':openGuardian(id);break;case 'grade':openGrade(id);break;case 'student':openStudent(id);break;
-      case 'employee':openEmployee(id);break;case 'payment':openPayment(id);break;case 'expense':openExpense();break;
+      case 'positions':openPositions(id);break;case 'payroll-plan':openPayrollPlan();break;case 'payroll-document':await payrollDocument(id);break;case 'enrollment':await enrollmentDocument(id);break;case 'employee':openEmployee(id);break;case 'payment':openPayment(id);break;case 'expense':openExpense();break;
       case 'payroll':openExpense(id);break;case 'charge':openCharge(id);break;case 'generate':openGenerate();break;
       case 'rates':openRates();break;case 'account':account(id);break;case 'collection':collection(id);break;case 'followup':openFollowup(id);break;
       case 'void-payment':case 'void-expense':case 'cancel-charge':openVoid(action,id);break;
@@ -268,13 +320,17 @@ document.addEventListener('click',async event=>{
 document.addEventListener('submit',async event=>{
   const form=event.target;if(!form.dataset.endpoint)return;
   event.preventDefault();const endpoint=form.dataset.endpoint, data=Object.fromEntries(new FormData(form));
+  if(endpoint==='payroll-plans') data.lines=Array.from(form.querySelectorAll('[data-payroll-employee]')).map(input=>({employee_id:input.dataset.payrollEmployee,amount:input.value}));
   const submit=form.querySelector('[type="submit"]'), errorBox=$('.error',form);submit.disabled=true;errorBox.textContent='';
   try {
     const result=await api(endpoint,data);
     if(['login','setup'].includes(endpoint)){await boot();return;}
+    if(endpoint==='confirm-rate'){await refresh();return;}
     if(endpoint==='password'&&Number(data.user_id)===state.user.id){modal.close();await boot();return;}
     await refresh();if(endpoint!=='rates')modal.close();
     if(endpoint==='payments'){toast(result.duplicate?'El pago ya estaba registrado.':'Pago registrado correctamente.');await receipt(result.id);}
+    else if(endpoint==='students'){toast(`Matrícula guardada · ${result.student_code}`);await enrollmentDocument(result.id,result.document_id);}
+    else if(endpoint==='payroll-plans'){await payrollDocument(result.id);}
     else if(endpoint==='generate')toast(`${result.created} mensualidades creadas. Los cargos existentes no se duplicaron.`);
     else {toast('Registro guardado correctamente.');if(endpoint==='rates')openRates();}
   }catch(error){errorBox.textContent=error.message;}finally{submit.disabled=false;}
@@ -284,6 +340,9 @@ document.addEventListener('input',event=>{
   if(el.id==='search'){
     const pos=el.selectionStart;filters.search=el.value;$('#page-content').innerHTML=pageBody();$('#search').focus();$('#search').setSelectionRange(pos,pos);
   }
+  if(el.id==='guardian-search')searchGuardian();
+  if(el.closest('form[data-endpoint="students"]'))updateTuition();
+  if(el.closest('form[data-endpoint="payroll-plans"]'))updatePayroll();
   if(el.closest('form[data-endpoint="payments"], form[data-endpoint="expenses"]'))updateConversion();
 });
 document.addEventListener('change',event=>{
@@ -294,8 +353,17 @@ document.addEventListener('change',event=>{
     if(!from||!to||from>to){toast('Elige un rango de fechas válido.',true);return;}
     reportFrom=from;reportTo=to;$('#page-content').innerHTML=pageBody();
   }
+  if(el.id==='guardian-search')searchGuardian();
+  if(el.closest('form[data-endpoint="students"]'))updateTuition();
+  if(el.closest('form[data-endpoint="payroll-plans"]'))updatePayroll();
   if(el.closest('form[data-endpoint="payments"], form[data-endpoint="expenses"]'))updateConversion();
 });
 modal.addEventListener('click',event=>{if(event.target===modal){const r=modal.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)modal.close();}});
 modal.addEventListener('close',()=>{if(!modal.open)$('#modal-content').replaceChildren();});
+async function checkDay() {
+  if(!state||document.hidden)return;
+  try {const gate=await api('rate-gate');if(state&&gate.today!==state.today)await openRateGate();}catch(error){toast(error.message,true);}
+}
+setInterval(checkDay,60000);
+document.addEventListener('visibilitychange',checkDay);
 boot();

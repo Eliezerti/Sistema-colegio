@@ -9,6 +9,7 @@ import tempfile
 import time
 import traceback
 import webbrowser
+from contextlib import closing
 from datetime import date, datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -18,6 +19,7 @@ from .db import (ValidationError, audit, charges, check_password, connect, conve
                  generate_month, hash_password, initialize, integer, money, record_payment,
                  required, valid_date, valid_rate, local_today)
 from .storage import DataLock, consistent_backup, daily_backup
+from .documents import enrollment, payroll, load_document, render_pdf
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -65,6 +67,9 @@ def snapshot(db, user):
             'guardians': rows(db, 'SELECT * FROM guardians ORDER BY name'),
             'grades': rows(db, 'SELECT * FROM grades ORDER BY name'),
             'employees': rows(db, 'SELECT * FROM employees ORDER BY name'),
+            'positions': rows(db, 'SELECT * FROM positions ORDER BY name'),
+            'enrollments': rows(db, 'SELECT id,student_id,created_at FROM enrollment_documents ORDER BY id DESC'),
+            'payroll_plans': [dict(json.loads(r['snapshot_json']), id=r['id']) for r in db.execute('SELECT * FROM payroll_plans ORDER BY id DESC LIMIT 30')],
             'charges': charge_list, 'payments': payments, 'expenses': expenses,
             'rates': rows(db, 'SELECT * FROM exchange_rates ORDER BY rate_date DESC'),
             'collections': rows(db, '''SELECT c.*,u.name AS operator FROM collection_notes c
@@ -94,9 +99,11 @@ def save_record(db, table, fields, data):
 
 def mutate(db, endpoint, data, user):
     uid = user['id']
-    admin_paths = {'settings','grades','guardians','students','employees','users','password','void-payment','void-expense','cancel-charge'}
+    admin_paths = {'settings','grades','guardians','students','employees','users','password','void-payment','void-expense','cancel-charge','positions','payroll-plans'}
     if user['role'] == 'reader' or (endpoint in admin_paths and user['role'] != 'admin'):
         raise PermissionError('Tu perfil no permite esta operación.')
+    if endpoint == 'payroll-plans':
+        return payroll(db, data, uid)
     if endpoint == 'generate':
         return generate_month(db, data, uid)
     if endpoint == 'payments':
@@ -112,7 +119,7 @@ def mutate(db, endpoint, data, user):
     if endpoint == 'rates':
         on = valid_date(data.get('rate_date'))
         rate = valid_rate(data.get('rate'))
-        db.execute('INSERT INTO exchange_rates VALUES(?,?,?) ON CONFLICT(rate_date) DO UPDATE SET rate=excluded.rate,source=excluded.source',
+        db.execute('INSERT INTO exchange_rates(rate_date,rate,source) VALUES(?,?,?) ON CONFLICT(rate_date) DO UPDATE SET rate=excluded.rate,source=excluded.source',
                    (on, rate, 'BCV · registro manual'))
         audit(db, uid, 'rate', {'date': on, 'rate': rate})
         return {'rate_date': on}
@@ -121,11 +128,16 @@ def mutate(db, endpoint, data, user):
                   'school_year': str(integer(data.get('school_year'), 2000, 2100)),
                   'start_month': str(integer(data.get('start_month', 9), 1, 12)),
                   'due_day': str(integer(data.get('due_day'), 1, 31)),
-                  'address': str(data.get('address', ''))[:500], 'phone': str(data.get('phone', ''))[:100]}
+                  'address': str(data.get('address', ''))[:500], 'phone': str(data.get('phone', ''))[:100],
+                  'rif': str(data.get('rif', ''))[:100], 'email': str(data.get('email', ''))[:200], 'website': str(data.get('website', ''))[:200]}
         db.executemany('UPDATE settings SET value=? WHERE key=?', [(v, k) for k, v in fields.items()])
         audit(db, uid, 'settings', fields)
         return {'saved': True}
-    if endpoint == 'grades':
+    if endpoint == 'positions':
+        fields = {'name': required(data, 'name')}
+        if data.get('id'):
+            db.execute('UPDATE employees SET position=? WHERE position_id=?', (fields['name'], data['id']))
+    elif endpoint == 'grades':
         fields = {'name': required(data, 'name'), 'capacity': integer(data.get('capacity'), 1, 500)}
         if data.get('id') and db.execute("""SELECT 1 FROM students WHERE grade_id=? AND status='active'
            GROUP BY school_year HAVING COUNT(*)>?""", (integer(data['id'], 1, 2147483647), fields['capacity'])).fetchone():
@@ -135,13 +147,25 @@ def mutate(db, endpoint, data, user):
                   'phone': str(data.get('phone', ''))[:100], 'email': str(data.get('email', ''))[:200],
                   'address': str(data.get('address', ''))[:500]}
     elif endpoint == 'students':
-        fields = {'name': required(data, 'name'), 'document': required(data, 'document'),
+        existing = db.execute('SELECT student_code FROM students WHERE id=?', (data.get('id'),)).fetchone() if data.get('id') else None
+        next_id = db.execute('SELECT COALESCE(MAX(id),0)+1 FROM students').fetchone()[0]
+        code = existing['student_code'] if existing else f'AL-{next_id:06d}'
+        # A legacy document may resemble an automatic code; skip it without changing legacy IDs.
+        while not existing and db.execute('SELECT id FROM students WHERE document=? OR student_code=?', (code, code)).fetchone():
+            next_id += 1
+            code = f'AL-{next_id:06d}'
+        document = str(data.get('document', '')).strip() or code
+        if len(document)>200:
+            raise ValidationError('Documento demasiado largo.')
+        fields = {'name': required(data, 'name'), 'document': document,
                   'birth_date': valid_date(data.get('birth_date')),
                   'guardian_id': integer(data.get('guardian_id'), 1, 2147483647),
                   'grade_id': integer(data.get('grade_id'), 1, 2147483647),
                   'school_year': integer(data.get('school_year'), 2000, 2100),
                   'monthly_fee': money(data.get('monthly_fee')), 'discount': integer(data.get('discount', 0), 0, 100),
                   'status': data.get('status', 'active'), 'notes': str(data.get('notes', ''))[:2000]}
+        if not data.get('id'):
+            fields.update(id=next_id, student_code=code)
         fields['enrollment_start'] = valid_date(data.get('enrollment_start'))
         fields['enrollment_end'] = valid_date(data.get('enrollment_end'))
         if fields['enrollment_end'] < fields['enrollment_start']:
@@ -161,9 +185,24 @@ def mutate(db, endpoint, data, user):
         if fields['status'] == 'active' and occupied >= grade['capacity']:
             raise ValidationError('El grado alcanzó su capacidad para ese año escolar.')
     elif endpoint == 'employees':
+        if data.get('position_id'):
+            position = db.execute('SELECT * FROM positions WHERE id=?', (integer(data['position_id'], 1, 2147483647),)).fetchone()
+            if not position:
+                raise ValidationError('Selecciona un cargo existente.')
+        else:
+            name = required(data, 'position')  # Compatibility with earlier saved clients.
+            db.execute('INSERT OR IGNORE INTO positions(name) VALUES(?)', (name,))
+            position = db.execute('SELECT * FROM positions WHERE name=?', (name,)).fetchone()
+        account = str(data.get('bank_account', '')).strip()
+        if account and (len(account)!=20 or not account.isascii() or not account.isdigit()):
+            raise ValidationError('La cuenta bancaria venezolana debe tener 20 dígitos.')
         fields = {'name': required(data, 'name'), 'document': required(data, 'document'),
-                  'position': required(data, 'position'), 'phone': str(data.get('phone', ''))[:100],
-                  'salary': money(data.get('salary')), 'status': data.get('status', 'active')}
+                  'position': position['name'], 'position_id': position['id'], 'phone': str(data.get('phone', ''))[:100],
+                  'salary': money(data.get('salary')), 'status': data.get('status', 'active'),
+                  'bank': str(data.get('bank', ''))[:100], 'bank_account': account,
+                  'account_holder': str(data.get('account_holder', '')).strip()[:200],
+                  'holder_document': str(data.get('holder_document', '')).strip()[:200],
+                  'account_type': str(data.get('account_type', ''))[:100]}
     elif endpoint == 'users':
         role = data.get('role')
         if role not in ('admin','cashier','reader'):
@@ -221,7 +260,11 @@ def mutate(db, endpoint, data, user):
         raise ValidationError('Operación desconocida.')
     record_id = save_record(db, endpoint, fields, data)
     audit(db, uid, endpoint, {'id': record_id, 'operation': 'update' if data.get('id') else 'create'})
-    return {'id': record_id}
+    result = {'id': record_id}
+    if endpoint == 'students':
+        result['document_id'] = enrollment(db, record_id, uid)
+        result['student_code'] = db.execute('SELECT student_code FROM students WHERE id=?', (record_id,)).fetchone()[0]
+    return result
 
 
 class SchoolServer(ThreadingHTTPServer):
@@ -263,7 +306,7 @@ class Handler(BaseHTTPRequestHandler):
         for part in self.headers.get('Cookie', '').split(';'):
             if part.strip().startswith('school_session='):
                 token = part.strip().split('=', 1)[1]
-        result = db.execute('''SELECT u.id,u.name,u.username,u.role,s.csrf,s.token FROM sessions s
+        result = db.execute('''SELECT u.id,u.name,u.username,u.role,s.csrf,s.token,s.rate_confirmed_on FROM sessions s
           JOIN users u ON u.id=s.user_id WHERE token=? AND expires>?''', (token, int(time.time()))).fetchone()
         return dict(result) if result else None
 
@@ -332,17 +375,37 @@ class Handler(BaseHTTPRequestHandler):
                     self.server.login_attempts[self.client_address[0]] = []
                 token, csrf = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
                 db.execute('DELETE FROM sessions WHERE expires<=?', (int(time.time()),))
-                db.execute('INSERT INTO sessions VALUES(?,?,?,?)', (token, user_id, csrf, int(time.time()) + 12*3600))
+                db.execute('INSERT INTO sessions(token,user_id,csrf,expires) VALUES(?,?,?,?)', (token, user_id, csrf, int(time.time()) + 12*3600))
                 db.commit()
                 self.respond(200, {'ok': True}, extra={'Set-Cookie': f'school_session={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200'})
                 return
             if not user:
                 self.respond(401, {'error': 'Inicia sesión para continuar.'})
                 return
+            if not post and endpoint == 'rate-gate':
+                on = local_today().isoformat()
+                rate = db.execute('SELECT rate FROM exchange_rates WHERE rate_date=?', (on,)).fetchone()
+                self.respond(200, {'today': on, 'rate': rate['rate'] if rate else '', 'role': user['role']})
+                return
+            if endpoint not in ('confirm-rate','rate-gate','logout','backup','health') and user['rate_confirmed_on'] != local_today().isoformat():
+                self.respond(428, {'error': 'Confirma la tasa BCV de hoy antes de continuar.'})
+                return
             if post:
                 if not secrets.compare_digest(self.headers.get('X-CSRF-Token', ''), user['csrf']):
                     raise PermissionError('Sesión inválida. Recarga la página.')
-                if endpoint == 'logout':
+                if endpoint == 'confirm-rate':
+                    on = local_today().isoformat()
+                    if data.get('rate_date') != on:
+                        raise ValidationError('Confirma la tasa para la fecha actual.')
+                    if user['role'] == 'reader':
+                        if not db.execute('SELECT 1 FROM exchange_rates WHERE rate_date=?', (on,)).fetchone():
+                            raise ValidationError('Administración o caja debe registrar la tasa de hoy primero.')
+                    else:
+                        mutate(db, 'rates', {'rate_date': on, 'rate': data.get('rate')}, user)
+                    db.execute('UPDATE sessions SET rate_confirmed_on=? WHERE token=?', (on, user['token']))
+                    audit(db, user['id'], 'confirm_rate', {'date': on})
+                    result = {'ok': True}
+                elif endpoint == 'logout':
                     db.execute('DELETE FROM sessions WHERE token=?', (user['token'],))
                     result = {'ok': True}
                 else:
@@ -353,8 +416,20 @@ class Handler(BaseHTTPRequestHandler):
             public_user = {k:v for k,v in user.items() if k not in ('token', 'csrf')}
             if endpoint == 'state':
                 self.respond(200, snapshot(db, public_user))
+            elif endpoint.startswith(('enrollment/', 'payroll-plan/')):
+                kind, raw = endpoint.split('/')
+                pdf = raw.endswith('.pdf')
+                target = integer(raw.removesuffix('.pdf'), 1, 2147483647)
+                document = load_document(db, kind, target)
+                if pdf:
+                    self.respond(200, render_pdf(kind, document), 'application/pdf',
+                                 {'Content-Disposition': f'attachment; filename="{kind}-{target:06d}.pdf"'})
+                else:
+                    self.respond(200, document)
             elif endpoint.startswith('receipt/'):
-                target = integer(endpoint.split('/')[-1], 1, 2147483647)
+                raw = endpoint.split('/')[-1]
+                pdf = raw.endswith('.pdf')
+                target = integer(raw.removesuffix('.pdf'), 1, 2147483647)
                 payment = db.execute('''SELECT p.*,s.name AS student_name,s.document AS student_document,g.name AS guardian_name,
                   g.document AS guardian_document,u.name AS operator FROM payments p JOIN students s ON s.id=p.student_id
                   JOIN guardians g ON g.id=s.guardian_id JOIN users u ON u.id=p.created_by WHERE p.id=?''', (target,)).fetchone()
@@ -366,9 +441,14 @@ class Handler(BaseHTTPRequestHandler):
                 payment.pop('request_key', None)
                 payment.update(frozen['person'])
                 payment['operator'] = frozen['operator']
-                self.respond(200, {'payment': payment, 'settings': frozen['school'],
+                document = {'payment': payment, 'settings': frozen['school'],
                   'allocations': rows(db, '''SELECT a.amount,c.concept,c.period FROM allocations a JOIN charges c
-                      ON c.id=a.charge_id WHERE a.payment_id=?''', (target,))})
+                      ON c.id=a.charge_id WHERE a.payment_id=?''', (target,))}
+                if pdf:
+                    self.respond(200, render_pdf('receipt', document), 'application/pdf',
+                                 {'Content-Disposition': f'attachment; filename="recibo-R-{target:06d}.pdf"'})
+                else:
+                    self.respond(200, document)
             elif endpoint == 'export':
                 state = snapshot(db, public_user)
                 kind = parse_qs(url.query).get('type', ['arrears'])[0]
@@ -383,10 +463,10 @@ class Handler(BaseHTTPRequestHandler):
                       'Metodo': p['method'], 'Referencia': p['reference'], 'Estado': 'Anulado' if p['voided'] else 'Valido'} for p in state['payments']]
                     columns = ['Recibo','Fecha','Alumno','Moneda','Recibido','Tasa Bs por USD','Equivalente USD','Metodo','Referencia','Estado']
                 elif kind == 'students':
-                    entries = [{'Alumno': s['name'], 'Documento': s['document'], 'Grado': s['grade_name'], 'Ano escolar': s['school_year'],
+                    entries = [{'Alumno': s['name'], 'Codigo': s['student_code'], 'Documento': s['document'], 'Grado': s['grade_name'], 'Ano escolar': s['school_year'],
                       'Representante': s['guardian_name'], 'Telefono': s['guardian_phone'], 'Estado': s['status'],
                       'Saldo USD': f"{s['balance']/100:.2f}"} for s in state['students']]
-                    columns = ['Alumno','Documento','Grado','Ano escolar','Representante','Telefono','Estado','Saldo USD']
+                    columns = ['Alumno','Codigo','Documento','Grado','Ano escolar','Representante','Telefono','Estado','Saldo USD']
                 elif kind == 'expenses':
                     entries = [{'Fecha': e['spent_on'], 'Concepto': e['concept'], 'Categoria': e['category'], 'Moneda': e['currency'],
                       'Pagado': f"{e['received_amount']/100:.2f}", 'Tasa Bs por USD': e['exchange_rate'],
@@ -439,6 +519,11 @@ def main():
         data_lock = DataLock(path.parent)
     except RuntimeError as error:
         raise SystemExit(str(error))
+    if path.exists():
+        with closing(connect(path)) as existing:
+            needs_upgrade = existing.execute('PRAGMA user_version').fetchone()[0] < 2
+        if needs_upgrade:
+            consistent_backup(path, path.parent / 'backups' / f'antes-actualizacion-{datetime.now():%Y%m%d-%H%M%S}.sqlite3')
     initialize(path)
     daily_backup(path)
     try:
