@@ -1,0 +1,462 @@
+import argparse
+import csv
+import io
+import json
+import mimetypes
+import secrets
+import sqlite3
+import tempfile
+import time
+import traceback
+import webbrowser
+from datetime import date, datetime, timezone
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
+
+from .db import (ValidationError, audit, charges, check_password, connect, convert_received,
+                 generate_month, hash_password, initialize, integer, money, record_payment,
+                 required, valid_date, valid_rate, local_today)
+from .storage import DataLock, consistent_backup, daily_backup
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def rows(db, sql, params=()):
+    return [dict(row) for row in db.execute(sql, params)]
+
+
+def snapshot(db, user):
+    settings = dict(db.execute('SELECT key,value FROM settings'))
+    students = rows(db, '''SELECT s.*,g.name AS guardian_name,g.phone AS guardian_phone,g.email AS guardian_email,
+      gr.name AS grade_name FROM students s JOIN guardians g ON g.id=s.guardian_id
+      JOIN grades gr ON gr.id=s.grade_id ORDER BY s.name''')
+    charge_list = charges(db)
+    student_map = {s['id']: s for s in students}
+    today = local_today().isoformat()
+    for student in students:
+        student['balance'] = student['overdue'] = 0
+    for charge in charge_list:
+        student = student_map[charge['student_id']]
+        student['balance'] += charge['balance']
+        if charge['overdue']:
+            student['overdue'] += charge['balance']
+        charge['student_name'] = student['name']
+        charge['guardian_name'] = student['guardian_name']
+        charge['guardian_phone'] = student['guardian_phone']
+        charge['grade_name'] = student['grade_name']
+        charge['days_overdue'] = max(0, (local_today() - date.fromisoformat(charge['due_date'])).days) if charge['balance'] else 0
+    payments = rows(db, '''SELECT p.*,s.name AS student_name,u.name AS operator FROM payments p
+       JOIN students s ON s.id=p.student_id JOIN users u ON u.id=p.created_by ORDER BY p.id DESC''')
+    for payment in payments:
+        payment.pop('receipt_snapshot', None)
+        payment.pop('request_key', None)
+    expenses = rows(db, '''SELECT e.*,emp.name AS employee_name FROM expenses e
+       LEFT JOIN employees emp ON emp.id=e.employee_id ORDER BY e.spent_on DESC,e.id DESC''')
+    month = today[:7]
+    income = sum(p['amount'] for p in payments if not p['voided'] and p['paid_on'].startswith(month))
+    outgo = sum(e['amount'] for e in expenses if not e['voided'] and e['spent_on'].startswith(month))
+    aging = [0, 0, 0, 0]
+    for c in charge_list:
+        if c['overdue']:
+            d = c['days_overdue']
+            aging[0 if d <= 30 else 1 if d <= 60 else 2 if d <= 90 else 3] += c['balance']
+    return {'settings': settings, 'today': today, 'user': user, 'students': students,
+            'guardians': rows(db, 'SELECT * FROM guardians ORDER BY name'),
+            'grades': rows(db, 'SELECT * FROM grades ORDER BY name'),
+            'employees': rows(db, 'SELECT * FROM employees ORDER BY name'),
+            'charges': charge_list, 'payments': payments, 'expenses': expenses,
+            'rates': rows(db, 'SELECT * FROM exchange_rates ORDER BY rate_date DESC'),
+            'collections': rows(db, '''SELECT c.*,u.name AS operator FROM collection_notes c
+                 JOIN users u ON u.id=c.created_by ORDER BY c.id DESC'''),
+            'users': rows(db, 'SELECT id,name,username,role FROM users ORDER BY name') if user['role'] == 'admin' else [],
+            'audit': rows(db, '''SELECT a.*,u.name AS operator FROM audit a LEFT JOIN users u ON u.id=a.user_id
+               ORDER BY a.id DESC LIMIT 300''') if user['role'] == 'admin' else [],
+            'summary': {'active_students': sum(s['status'] == 'active' for s in students),
+                        'pending': sum(c['balance'] for c in charge_list),
+                        'overdue': sum(c['balance'] for c in charge_list if c['overdue']),
+                        'debtors': sum(s['overdue'] > 0 for s in students),
+                        'income': income, 'expenses': outgo, 'net': income - outgo, 'aging': aging}}
+
+
+def save_record(db, table, fields, data):
+    record_id = data.get('id')
+    if record_id is not None:
+        record_id = integer(record_id, 1, 2147483647)
+        if not db.execute(f'SELECT id FROM {table} WHERE id=?', (record_id,)).fetchone():
+            raise ValidationError('Registro inexistente.')
+        db.execute(f'UPDATE {table} SET ' + ','.join(f'{k}=?' for k in fields) + ' WHERE id=?',
+                   [*fields.values(), record_id])
+        return record_id
+    result = db.execute(f'INSERT INTO {table}(' + ','.join(fields) + ') VALUES(' + ','.join('?' for _ in fields) + ')', list(fields.values()))
+    return result.lastrowid
+
+
+def mutate(db, endpoint, data, user):
+    uid = user['id']
+    admin_paths = {'settings','grades','guardians','students','employees','users','password','void-payment','void-expense','cancel-charge'}
+    if user['role'] == 'reader' or (endpoint in admin_paths and user['role'] != 'admin'):
+        raise PermissionError('Tu perfil no permite esta operación.')
+    if endpoint == 'generate':
+        return generate_month(db, data, uid)
+    if endpoint == 'payments':
+        return record_payment(db, data, uid)
+    if endpoint == 'collections':
+        student_id = integer(data.get('student_id'), 1, 2147483647)
+        note = required(data, 'note', 2000)
+        promised_on = valid_date(data['promised_on']) if data.get('promised_on') else None
+        result = db.execute('INSERT INTO collection_notes(student_id,note,promised_on,created_by,created_at) VALUES(?,?,?,?,?)',
+                            (student_id, note, promised_on, uid, datetime.now(timezone.utc).isoformat()))
+        audit(db, uid, 'collection', {'id': result.lastrowid, 'student_id': student_id, 'promised_on': promised_on})
+        return {'id': result.lastrowid}
+    if endpoint == 'rates':
+        on = valid_date(data.get('rate_date'))
+        rate = valid_rate(data.get('rate'))
+        db.execute('INSERT INTO exchange_rates VALUES(?,?,?) ON CONFLICT(rate_date) DO UPDATE SET rate=excluded.rate,source=excluded.source',
+                   (on, rate, 'BCV · registro manual'))
+        audit(db, uid, 'rate', {'date': on, 'rate': rate})
+        return {'rate_date': on}
+    if endpoint == 'settings':
+        fields = {'school_name': required(data, 'school_name'), 'currency': 'USD',
+                  'school_year': str(integer(data.get('school_year'), 2000, 2100)),
+                  'start_month': str(integer(data.get('start_month', 9), 1, 12)),
+                  'due_day': str(integer(data.get('due_day'), 1, 31)),
+                  'address': str(data.get('address', ''))[:500], 'phone': str(data.get('phone', ''))[:100]}
+        db.executemany('UPDATE settings SET value=? WHERE key=?', [(v, k) for k, v in fields.items()])
+        audit(db, uid, 'settings', fields)
+        return {'saved': True}
+    if endpoint == 'grades':
+        fields = {'name': required(data, 'name'), 'capacity': integer(data.get('capacity'), 1, 500)}
+        if data.get('id') and db.execute("""SELECT 1 FROM students WHERE grade_id=? AND status='active'
+           GROUP BY school_year HAVING COUNT(*)>?""", (integer(data['id'], 1, 2147483647), fields['capacity'])).fetchone():
+            raise ValidationError('La capacidad no puede ser menor que las matrículas activas de un año escolar.')
+    elif endpoint == 'guardians':
+        fields = {'name': required(data, 'name'), 'document': required(data, 'document'),
+                  'phone': str(data.get('phone', ''))[:100], 'email': str(data.get('email', ''))[:200],
+                  'address': str(data.get('address', ''))[:500]}
+    elif endpoint == 'students':
+        fields = {'name': required(data, 'name'), 'document': required(data, 'document'),
+                  'birth_date': valid_date(data.get('birth_date')),
+                  'guardian_id': integer(data.get('guardian_id'), 1, 2147483647),
+                  'grade_id': integer(data.get('grade_id'), 1, 2147483647),
+                  'school_year': integer(data.get('school_year'), 2000, 2100),
+                  'monthly_fee': money(data.get('monthly_fee')), 'discount': integer(data.get('discount', 0), 0, 100),
+                  'status': data.get('status', 'active'), 'notes': str(data.get('notes', ''))[:2000]}
+        fields['enrollment_start'] = valid_date(data.get('enrollment_start'))
+        fields['enrollment_end'] = valid_date(data.get('enrollment_end'))
+        if fields['enrollment_end'] < fields['enrollment_start']:
+            raise ValidationError('El fin de la matrícula debe ser posterior al inicio.')
+        settings = dict(db.execute('SELECT key,value FROM settings'))
+        academic_start = date(fields['school_year'], int(settings['start_month']), 1).isoformat()
+        academic_end = date(fields['school_year'] + 1, int(settings['start_month']), 1).isoformat()
+        if not academic_start <= fields['enrollment_start'] <= fields['enrollment_end'] < academic_end:
+            raise ValidationError('Las fechas de matrícula deben estar dentro del año escolar seleccionado.')
+        if fields['birth_date'] > local_today().isoformat():
+            raise ValidationError('La fecha de nacimiento no puede ser futura.')
+        grade = db.execute('SELECT capacity FROM grades WHERE id=?', (fields['grade_id'],)).fetchone()
+        if not grade:
+            raise ValidationError('Selecciona un grado existente.')
+        occupied = db.execute("SELECT COUNT(*) FROM students WHERE grade_id=? AND school_year=? AND status='active' AND id<>?",
+                              (fields['grade_id'], fields['school_year'], data.get('id', 0))).fetchone()[0]
+        if fields['status'] == 'active' and occupied >= grade['capacity']:
+            raise ValidationError('El grado alcanzó su capacidad para ese año escolar.')
+    elif endpoint == 'employees':
+        fields = {'name': required(data, 'name'), 'document': required(data, 'document'),
+                  'position': required(data, 'position'), 'phone': str(data.get('phone', ''))[:100],
+                  'salary': money(data.get('salary')), 'status': data.get('status', 'active')}
+    elif endpoint == 'users':
+        role = data.get('role')
+        if role not in ('admin','cashier','reader'):
+            raise ValidationError('Perfil inválido.')
+        fields = {'name': required(data, 'name'), 'username': required(data, 'username', 80).lower(),
+                  'password': hash_password(data.get('password')), 'role': role}
+        if 'id' in data:
+            raise ValidationError('Crea usuarios nuevos aquí; usa el cambio de contraseña para cuentas existentes.')
+    elif endpoint == 'password':
+        target = integer(data.get('user_id'), 1, 2147483647)
+        if not db.execute('SELECT id FROM users WHERE id=?', (target,)).fetchone():
+            raise ValidationError('Usuario inexistente.')
+        db.execute('UPDATE users SET password=? WHERE id=?', (hash_password(data.get('password')), target))
+        db.execute('DELETE FROM sessions WHERE user_id=?', (target,))
+        audit(db, uid, 'password_changed', {'user_id': target})
+        return {'saved': True}
+    elif endpoint == 'charges':
+        student_id = integer(data.get('student_id'), 1, 2147483647)
+        amount = money(data.get('amount'))
+        if not amount:
+            raise ValidationError('El cargo debe ser mayor a cero.')
+        result = db.execute('INSERT INTO charges(student_id,period,concept,amount,due_date) VALUES(?,?,?,?,?)',
+                           (student_id, required(data, 'period', 40), required(data, 'concept'), amount, valid_date(data.get('due_date'))))
+        audit(db, uid, 'charge', {'id': result.lastrowid, 'student_id': student_id, 'amount': amount})
+        return {'id': result.lastrowid}
+    elif endpoint in ('void-payment', 'void-expense', 'cancel-charge'):
+        target = integer(data.get('id'), 1, 2147483647)
+        reason = required(data, 'reason', 500)
+        if endpoint == 'cancel-charge':
+            charge = next((c for c in charges(db) if c['id'] == target), None)
+            if not charge:
+                raise ValidationError('Cargo inexistente o ya anulado.')
+            if charge['paid']:
+                raise ValidationError('Anula primero los pagos asociados al cargo.')
+            db.execute('UPDATE charges SET cancelled=1 WHERE id=?', (target,))
+        else:
+            table = 'payments' if endpoint == 'void-payment' else 'expenses'
+            result = db.execute(f'UPDATE {table} SET voided=1,void_reason=? WHERE id=? AND voided=0', (reason, target))
+            if not result.rowcount:
+                raise ValidationError('Registro inexistente o ya anulado.')
+        audit(db, uid, endpoint, {'id': target, 'reason': reason})
+        return {'saved': True}
+    elif endpoint == 'expenses':
+        on = valid_date(data.get('spent_on'))
+        if on > local_today().isoformat():
+            raise ValidationError('La fecha del egreso no puede ser futura.')
+        amount, currency, received, rate = convert_received(db, data, on)
+        fields = {'concept': required(data, 'concept'), 'category': required(data, 'category'), 'amount': amount,
+                  'spent_on': on, 'reference': str(data.get('reference', ''))[:200],
+                  'employee_id': integer(data['employee_id'], 1, 2147483647) if data.get('employee_id') else None,
+                  'created_by': uid, 'currency': currency, 'received_amount': received, 'exchange_rate': rate}
+        if data.get('id'):
+            raise ValidationError('Los egresos se corrigen anulándolos y creando uno nuevo.')
+    else:
+        raise ValidationError('Operación desconocida.')
+    record_id = save_record(db, endpoint, fields, data)
+    audit(db, uid, endpoint, {'id': record_id, 'operation': 'update' if data.get('id') else 'create'})
+    return {'id': record_id}
+
+
+class SchoolServer(ThreadingHTTPServer):
+    daemon_threads = True
+
+    def __init__(self, address, db_path):
+        super().__init__(address, Handler)
+        self.db_path = db_path
+        self.login_attempts = {}
+
+
+class Handler(BaseHTTPRequestHandler):
+    server_version = 'ColegioLocal/1.0'
+
+    def log_message(self, fmt, *args):
+        # Do not log request bodies, credentials or cookie values.
+        print(f'{self.log_date_time_string()} {self.command} {urlsplit(self.path).path} {args[1] if len(args)>1 else ""}')
+
+    def respond(self, status, body, content_type='application/json; charset=utf-8', extra=None):
+        if isinstance(body, (dict, list)):
+            body = json.dumps(body, ensure_ascii=False).encode()
+        if isinstance(body, str):
+            body = body.encode()
+        self.send_response(status)
+        self.send_header('Content-Type', content_type)
+        self.send_header('Content-Length', str(len(body)))
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('X-Content-Type-Options', 'nosniff')
+        self.send_header('X-Frame-Options', 'DENY')
+        self.send_header('Referrer-Policy', 'same-origin')
+        self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+        for key, value in (extra or {}).items():
+            self.send_header(key, value)
+        self.end_headers()
+        self.wfile.write(body)
+
+    def session(self, db):
+        token = ''
+        for part in self.headers.get('Cookie', '').split(';'):
+            if part.strip().startswith('school_session='):
+                token = part.strip().split('=', 1)[1]
+        result = db.execute('''SELECT u.id,u.name,u.username,u.role,s.csrf,s.token FROM sessions s
+          JOIN users u ON u.id=s.user_id WHERE token=? AND expires>?''', (token, int(time.time()))).fetchone()
+        return dict(result) if result else None
+
+    def do_GET(self):
+        self.handle_request(False)
+
+    def do_POST(self):
+        self.handle_request(True)
+
+    def handle_request(self, post):
+        db = None
+        try:
+            host = self.headers.get('Host', '')
+            allowed_hosts = {f'127.0.0.1:{self.server.server_port}', f'localhost:{self.server.server_port}'}
+            if host not in allowed_hosts:
+                self.respond(403, {'error': 'El sistema solo acepta acceso local.'})
+                return
+            url = urlsplit(self.path)
+            endpoint = url.path.removeprefix('/api/')
+            if not post and not url.path.startswith('/api/'):
+                assets = {'/': 'index.html', '/app.js': 'app.js', '/style.css': 'style.css', '/favicon.svg': 'favicon.svg'}
+                if url.path not in assets:
+                    self.respond(404, {'error': 'Página inexistente.'})
+                    return
+                file = ROOT / 'static' / assets[url.path]
+                self.respond(200, file.read_bytes(), mimetypes.guess_type(file.name)[0] + '; charset=utf-8')
+                return
+            db = connect(self.server.db_path)
+            if post:
+                if self.headers.get('Origin') not in (None, f'http://{host}'):
+                    raise PermissionError('Origen no permitido.')
+                length = int(self.headers.get('Content-Length', '0'))
+                if not 0 < length <= 65536 or 'application/json' not in self.headers.get('Content-Type', ''):
+                    raise ValidationError('Envía un objeto JSON válido (máximo 64 KB).')
+                data = json.loads(self.rfile.read(length))
+                if not isinstance(data, dict):
+                    raise ValidationError('Se esperaba un objeto JSON.')
+                db.execute('BEGIN IMMEDIATE')
+            user = self.session(db)
+            needs_setup = not db.execute('SELECT 1 FROM users LIMIT 1').fetchone()
+            if not post and endpoint == 'session':
+                self.respond(200, {'needs_setup': needs_setup, 'user': {k:v for k,v in user.items() if k != 'token'} if user else None})
+                return
+            if post and endpoint in ('setup', 'login'):
+                if endpoint == 'setup':
+                    if not needs_setup:
+                        raise ValidationError('El administrador ya está configurado.')
+                    result = db.execute('INSERT INTO users(username,name,password,role) VALUES(?,?,?,?)',
+                                        (required(data, 'username', 80).lower(), required(data, 'name'), hash_password(data.get('password')), 'admin'))
+                    user_id = result.lastrowid
+                    audit(db, user_id, 'setup', {'user_id': user_id})
+                else:
+                    now = time.time()
+                    attempts = [t for t in self.server.login_attempts.get(self.client_address[0], []) if now - t < 60]
+                    if len(attempts) >= 10:
+                        self.respond(429, {'error': 'Demasiados intentos. Espera un minuto.'})
+                        return
+                    attempts.append(now)
+                    self.server.login_attempts[self.client_address[0]] = attempts
+                    found = db.execute('SELECT * FROM users WHERE username=?', (required(data, 'username', 80).lower(),)).fetchone()
+                    password = data.get('password', '')
+                    if not isinstance(password, str) or len(password) > 256 or not found or not check_password(password, found['password']):
+                        self.respond(401, {'error': 'Usuario o contraseña incorrectos.'})
+                        return
+                    user_id = found['id']
+                    self.server.login_attempts[self.client_address[0]] = []
+                token, csrf = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
+                db.execute('DELETE FROM sessions WHERE expires<=?', (int(time.time()),))
+                db.execute('INSERT INTO sessions VALUES(?,?,?,?)', (token, user_id, csrf, int(time.time()) + 12*3600))
+                db.commit()
+                self.respond(200, {'ok': True}, extra={'Set-Cookie': f'school_session={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200'})
+                return
+            if not user:
+                self.respond(401, {'error': 'Inicia sesión para continuar.'})
+                return
+            if post:
+                if not secrets.compare_digest(self.headers.get('X-CSRF-Token', ''), user['csrf']):
+                    raise PermissionError('Sesión inválida. Recarga la página.')
+                if endpoint == 'logout':
+                    db.execute('DELETE FROM sessions WHERE token=?', (user['token'],))
+                    result = {'ok': True}
+                else:
+                    result = mutate(db, endpoint, data, user)
+                db.commit()
+                self.respond(200, result)
+                return
+            public_user = {k:v for k,v in user.items() if k not in ('token', 'csrf')}
+            if endpoint == 'state':
+                self.respond(200, snapshot(db, public_user))
+            elif endpoint.startswith('receipt/'):
+                target = integer(endpoint.split('/')[-1], 1, 2147483647)
+                payment = db.execute('''SELECT p.*,s.name AS student_name,s.document AS student_document,g.name AS guardian_name,
+                  g.document AS guardian_document,u.name AS operator FROM payments p JOIN students s ON s.id=p.student_id
+                  JOIN guardians g ON g.id=s.guardian_id JOIN users u ON u.id=p.created_by WHERE p.id=?''', (target,)).fetchone()
+                if not payment:
+                    self.respond(404, {'error': 'Recibo inexistente.'})
+                    return
+                payment = dict(payment)
+                frozen = json.loads(payment.pop('receipt_snapshot'))
+                payment.pop('request_key', None)
+                payment.update(frozen['person'])
+                payment['operator'] = frozen['operator']
+                self.respond(200, {'payment': payment, 'settings': frozen['school'],
+                  'allocations': rows(db, '''SELECT a.amount,c.concept,c.period FROM allocations a JOIN charges c
+                      ON c.id=a.charge_id WHERE a.payment_id=?''', (target,))})
+            elif endpoint == 'export':
+                state = snapshot(db, public_user)
+                kind = parse_qs(url.query).get('type', ['arrears'])[0]
+                if kind == 'arrears':
+                    entries = [{'Alumno': c['student_name'], 'Representante': c['guardian_name'], 'Telefono': c['guardian_phone'],
+                      'Grado': c['grade_name'], 'Concepto': c['concept'], 'Periodo': c['period'], 'Vencimiento': c['due_date'],
+                      'Dias': c['days_overdue'], 'Deuda USD': f"{c['balance']/100:.2f}"} for c in state['charges'] if c['overdue']]
+                    columns = ['Alumno','Representante','Telefono','Grado','Concepto','Periodo','Vencimiento','Dias','Deuda USD']
+                elif kind == 'payments':
+                    entries = [{'Recibo': f"R-{p['id']:06}", 'Fecha': p['paid_on'], 'Alumno': p['student_name'], 'Moneda': p['currency'],
+                      'Recibido': f"{p['received_amount']/100:.2f}", 'Tasa Bs por USD': p['exchange_rate'], 'Equivalente USD': f"{p['amount']/100:.2f}",
+                      'Metodo': p['method'], 'Referencia': p['reference'], 'Estado': 'Anulado' if p['voided'] else 'Valido'} for p in state['payments']]
+                    columns = ['Recibo','Fecha','Alumno','Moneda','Recibido','Tasa Bs por USD','Equivalente USD','Metodo','Referencia','Estado']
+                elif kind == 'students':
+                    entries = [{'Alumno': s['name'], 'Documento': s['document'], 'Grado': s['grade_name'], 'Ano escolar': s['school_year'],
+                      'Representante': s['guardian_name'], 'Telefono': s['guardian_phone'], 'Estado': s['status'],
+                      'Saldo USD': f"{s['balance']/100:.2f}"} for s in state['students']]
+                    columns = ['Alumno','Documento','Grado','Ano escolar','Representante','Telefono','Estado','Saldo USD']
+                elif kind == 'expenses':
+                    entries = [{'Fecha': e['spent_on'], 'Concepto': e['concept'], 'Categoria': e['category'], 'Moneda': e['currency'],
+                      'Pagado': f"{e['received_amount']/100:.2f}", 'Tasa Bs por USD': e['exchange_rate'],
+                      'Equivalente USD': f"{e['amount']/100:.2f}", 'Estado': 'Anulado' if e['voided'] else 'Valido'} for e in state['expenses']]
+                    columns = ['Fecha','Concepto','Categoria','Moneda','Pagado','Tasa Bs por USD','Equivalente USD','Estado']
+                else:
+                    raise ValidationError('Reporte desconocido.')
+                buffer = io.StringIO(newline='')
+                writer = csv.DictWriter(buffer, fieldnames=columns, delimiter=';')
+                writer.writeheader()
+                for entry in entries:
+                    writer.writerow({k: "'" + v if isinstance(v, str) and v.lstrip().startswith(('=', '+', '-', '@')) else v for k,v in entry.items()})
+                self.respond(200, buffer.getvalue().encode('utf-8-sig'), 'text/csv; charset=utf-8',
+                             {'Content-Disposition': f'attachment; filename="{kind}-{local_today()}.csv"'})
+            elif endpoint == 'backup':
+                if user['role'] != 'admin':
+                    raise PermissionError('Solo administración puede descargar respaldos.')
+                with tempfile.TemporaryDirectory() as temp:
+                    path = Path(temp) / 'colegio.sqlite3'
+                    consistent_backup(self.server.db_path, path)
+                    payload = path.read_bytes()
+                self.respond(200, payload, 'application/octet-stream',
+                             {'Content-Disposition': f'attachment; filename="colegio-{local_today()}.sqlite3"'})
+            elif endpoint == 'health':
+                self.respond(200, {'ok': db.execute('PRAGMA quick_check').fetchone()[0] == 'ok'})
+            else:
+                self.respond(404, {'error': 'Operación inexistente.'})
+        except PermissionError as error:
+            self.respond(403, {'error': str(error)})
+        except (ValidationError, json.JSONDecodeError, ValueError, TypeError, KeyError) as error:
+            self.respond(400, {'error': str(error) if isinstance(error, ValidationError) else 'Datos inválidos.'})
+        except sqlite3.IntegrityError:
+            self.respond(400, {'error': 'Registro duplicado, referencia inexistente o estado inválido. Revisa los datos.'})
+        except Exception:
+            traceback.print_exc()
+            self.respond(500, {'error': 'No se pudo completar la operación. Consulta el registro del servidor.'})
+        finally:
+            if db is not None:
+                db.close()  # Rolls back uncommitted writes on errors.
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Administración escolar para una computadora Windows.')
+    parser.add_argument('--port', type=int, default=8765)
+    parser.add_argument('--data-dir', default=str(ROOT / 'data'))
+    parser.add_argument('--open-browser', action='store_true')
+    args = parser.parse_args()
+    path = Path(args.data_dir).resolve() / 'colegio.sqlite3'
+    try:
+        data_lock = DataLock(path.parent)
+    except RuntimeError as error:
+        raise SystemExit(str(error))
+    initialize(path)
+    daily_backup(path)
+    try:
+        server = SchoolServer(('127.0.0.1', args.port), str(path))
+    except OSError as error:
+        raise SystemExit(f'No se pudo iniciar: {error}. Verifica si el sistema ya está abierto o usa otro puerto.')
+    print(f'Colegio abierto en http://127.0.0.1:{args.port} · datos: {path}')
+    print('Mantén esta ventana abierta. Ctrl+C para cerrar de forma segura.')
+    if args.open_browser:
+        webbrowser.open(f'http://127.0.0.1:{args.port}')
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+        data_lock.close()
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,68 @@
+// Optional end-to-end validation. Requires Playwright and Chromium.
+// Run only against a NEW temporary data directory: creates fictional records.
+const {chromium} = require('playwright');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+
+(async()=>{
+  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||(fs.existsSync('/usr/bin/chromium')?'/usr/bin/chromium':undefined),headless:true,args:['--no-sandbox']});
+  const context=await browser.newContext({viewport:{width:1440,height:1050}});
+  const page=await context.newPage(), errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  page.on('console',msg=>{if(msg.type()==='error')errors.push(msg.text());});
+  const click=async action=>page.locator(`[data-action="${action}"]`).first().click();
+  const fill=async (name,value)=>page.locator(`dialog[open] [name="${name}"]`).fill(value);
+  const submit=async()=>{await page.locator('dialog[open] button[type="submit"]').click();await page.waitForFunction(()=>!document.querySelector('dialog').open);};
+  const nav=async id=>{await page.locator(`.nav-button[data-id="${id}"]`).click();};
+  try {
+    await page.goto(process.env.AULA_TEST_URL||'http://127.0.0.1:8765');
+    await page.getByLabel('Nombre del administrador').fill('María Administradora');
+    await page.getByLabel('Usuario',{exact:true}).fill('admin');
+    await page.getByLabel(/^Contraseña/).fill('Prueba-segura-2026');
+    await page.getByRole('button',{name:'Crear mi cuenta'}).click();
+    await page.locator('.layout').waitFor();
+    await nav('settings');
+    await page.getByLabel('Nombre del colegio').fill('Colegio Los Cedros');
+    await page.locator('form[data-endpoint="settings"] button[type="submit"]').click();
+    await page.getByText('Registro guardado correctamente.').waitFor();
+    const current=await page.evaluate(async()=>await(await fetch('/api/state')).json());
+    const year=Number(current.settings.school_year), month=String(Number(current.settings.start_month)).padStart(2,'0');
+    await nav('grades');await click('grade');await fill('name','Primaria · Sección A');await submit();
+    await nav('guardians');await click('guardian');await fill('name','Ana Pérez');await fill('document','V-12345678');await fill('phone','04121234567');await submit();
+    await nav('students');await click('student');await fill('name','Sofía Pérez');await fill('document','AL-001');await fill('birth_date','2015-02-10');await fill('monthly_fee','50');await fill('discount','10');await fill('enrollment_start',`${year}-${month}-01`);await submit();
+    await nav('billing');await click('generate');await fill('period',`${year}-${month}`);await submit();
+    await page.getByText('45,00',{exact:false}).first().waitFor();
+    await click('rates');await fill('rate','100');await page.locator('dialog[open] button[type="submit"]').click();await page.locator('dialog[open] td').filter({hasText:'100'}).waitFor();
+    await page.locator('dialog[open] [data-action="close"]').first().click();
+    await nav('payments');await click('payment');await page.locator('dialog[open] [name="currency"]').selectOption('VES');await fill('amount','1000');await fill('reference','TR-001');
+    await page.locator('dialog[open] button[type="submit"]').click();
+    await page.locator('dialog[open] .receipt-number').waitFor();
+    assert.match(await page.locator('dialog[open] .receipt').innerText(),/10,00/);
+    assert.match(await page.locator('dialog[open] .receipt').innerText(),/100 por USD/);
+    await page.locator('dialog[open] [data-action="close"]').first().click();
+    await click('payment');await fill('amount','5');
+    await page.locator('dialog[open]').getByRole('button',{name:'Cancelar',exact:true}).click();
+    assert.equal(await page.evaluate(async()=> (await(await fetch('/api/state')).json()).payments.length),1,'Cancel must not submit a payment');
+    await nav('arrears');
+    await page.getByText('Sofía Pérez',{exact:true}).waitFor();
+    await click('collection');assert.match(await page.locator('#collection-text').inputValue(),/35,00/);await page.locator('dialog[open] [data-action="close"]').first().click();
+    await click('followup');await fill('note','Representante contactado; acordó abonar esta semana.');await submit();
+    await nav('employees');await click('employee');await fill('name','José Docente');await fill('document','V-87654321');await fill('position','Docente');await fill('salary','100');await submit();
+    await click('payroll');await fill('amount','25');await submit();
+    await nav('reports');await page.getByRole('heading',{name:'Reportes administrativos'}).waitFor();
+    await nav('dashboard');
+    fs.mkdirSync('/tmp/aula-artifacts',{recursive:true});
+    await page.evaluate(()=>document.querySelector('#toast').className='');
+    await page.screenshot({path:'/tmp/aula-artifacts/dashboard.png',fullPage:true});
+    await page.setViewportSize({width:390,height:844});
+    await page.screenshot({path:'/tmp/aula-artifacts/mobile.png',fullPage:true});
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'Mobile page overflow');
+    await page.setViewportSize({width:1440,height:1050});
+    await nav('settings');await click('user');await fill('name','Usuario Consulta');await fill('username','consulta');await fill('password','Consulta-segura');await page.locator('dialog[open] [name="role"]').selectOption('reader');await submit();
+    await click('logout');await page.locator('.auth-form').getByLabel('Usuario',{exact:true}).fill('consulta');await page.locator('.auth-form').getByLabel(/^Contraseña/).fill('Consulta-segura');await page.getByRole('button',{name:'Iniciar sesión'}).click();await page.locator('.layout').waitFor();
+    assert.equal(await page.locator('.nav-button[data-id="settings"]').count(),0);
+    assert.equal(await page.locator('[data-action="payment"]').count(),0);
+    assert.deepEqual(errors,[]);
+    console.log('PASS: initial setup, enrollment, monthly fees, BCV payment, receipt, arrears, payroll, reports, responsive layout, read-only role.');
+  }finally{await browser.close();}
+})().catch(error=>{console.error(error);process.exitCode=1;});
