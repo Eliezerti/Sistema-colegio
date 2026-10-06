@@ -12,6 +12,7 @@ from colegio.db import initialize, money, valid_rate, ValidationError, local_tod
 from colegio.server import SchoolServer
 from colegio.storage import DataLock, daily_backup
 from colegio.restore import restore
+from colegio.branding import SCHOOL_PROFILE, LOGO_FILE, SCHEMA_VERSION
 
 
 class MoneyTests(unittest.TestCase):
@@ -257,7 +258,7 @@ class SystemTests(unittest.TestCase):
             self.assertEqual(db.execute('SELECT COUNT(*),SUM(amount) FROM payments').fetchone(),before)
             self.assertEqual(db.execute('SELECT student_code FROM students').fetchone()[0],'AL-000001')
             self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],3)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],4)
             employee=db.execute('SELECT position,position_id,salary,bank_account FROM employees').fetchone()
             self.assertEqual(employee[0],'Secretaría')
             self.assertIsNotNone(employee[1])
@@ -289,6 +290,67 @@ class SystemTests(unittest.TestCase):
         csv=self.request('export?type=arrears').decode('utf-8-sig')
         self.assertIn(f'{self.year+1}-01',csv)
         self.assertEqual(self.request('receipt/'+str(receipt))['payment']['student_name'],'Alumno Uno')
+
+    def test_fiscal_identity_and_png_are_in_new_frozen_documents(self):
+        first = self.request('payments', self.payment())['id']
+        original = self.request(f'receipt/{first}')
+        for key, value in SCHOOL_PROFILE.items():
+            self.assertEqual(original['settings'][key], value)
+        self.request('settings', {'school_name':'Nombre comercial editable','school_year':self.year,
+            'due_day':10,'start_month':9,'legal_name':'Razón social actualizada, C.A.',
+            'rif':'J-12345678-9','fiscal_address':'Dirección fiscal actualizada'})
+        second = self.request('payments', self.payment(key='fiscal-second'))['id']
+        self.assertEqual(self.request(f'receipt/{first}'), original)
+        self.assertEqual(self.request(f'receipt/{second}')['settings']['legal_name'], 'Razón social actualizada, C.A.')
+        for kind, target in (('receipt',first), ('enrollment',1)):
+            pdf = self.request(f'{kind}/{target}.pdf')
+            self.assertIn(b'/Subtype /Image', pdf)
+            self.assertIn(b'/Predictor 15', pdf)
+            self.assertIn(b'ALEJANDRO VON HUMBOLDT, C.A.', pdf)
+            self.assertIn(b'RIF: J-50835934-8', pdf)
+            self.assertIn(b'local Nro. 16-46', pdf)
+        self.assertIn(b'Direcci', self.request(f'receipt/{second}.pdf'))
+
+    def test_v3_branding_upgrade_preserves_finances_and_issued_receipts(self):
+        receipt = self.request('payments', self.payment())['id']
+        with sqlite3.connect(self.path) as db:
+            historical = json.loads(db.execute('SELECT receipt_snapshot FROM payments WHERE id=?',(receipt,)).fetchone()[0])
+            historical['school'] = {'school_name':'Colegio antes de actualizar','rif':'RIF anterior','address':'Dirección anterior'}
+            frozen = json.dumps(historical,ensure_ascii=False)
+            db.execute('UPDATE payments SET receipt_snapshot=? WHERE id=?',(frozen,receipt))
+            db.execute("DELETE FROM settings WHERE key IN ('legal_name','fiscal_address','logo')")
+            db.execute("UPDATE settings SET value='04120001234' WHERE key='phone'")
+            db.execute('PRAGMA user_version=3')
+            tables = ('students','guardians','charges','payments','allocations','monthly_assessments','employees','expenses')
+            before = {t:db.execute(f'SELECT * FROM {t}').fetchall() for t in tables}
+        initialize(self.path)
+        initialize(self.path)
+        with sqlite3.connect(self.path) as db:
+            after = {t:db.execute(f'SELECT * FROM {t}').fetchall() for t in tables}
+            self.assertEqual(after, before)
+            settings = dict(db.execute('SELECT key,value FROM settings'))
+            self.assertEqual(settings['phone'],'04120001234')
+            self.assertEqual(settings['school_year'],str(self.year))
+            self.assertEqual(settings['school_name'],'Colegio Prueba')
+            for key,value in SCHOOL_PROFILE.items():
+                self.assertEqual(settings[key],value)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],SCHEMA_VERSION)
+            self.assertEqual(db.execute('SELECT receipt_snapshot FROM payments WHERE id=?',(receipt,)).fetchone()[0],frozen)
+            db.execute("UPDATE settings SET value='Cambio manual' WHERE key='legal_name'")
+        initialize(self.path)
+        self.assertEqual(self.request('state')['settings']['legal_name'],'Cambio manual')
+        old_pdf = self.request(f'receipt/{receipt}.pdf')
+        self.assertIn(b'Colegio antes de actualizar',old_pdf)
+        self.assertNotIn(b'ALEJANDRO VON HUMBOLDT',old_pdf)
+
+    def test_public_logo_has_binary_png_content_type(self):
+        conn = http.client.HTTPConnection('127.0.0.1',self.server.server_port)
+        conn.request('GET','/'+LOGO_FILE)
+        response = conn.getresponse()
+        self.assertEqual(response.status,200)
+        self.assertEqual(response.getheader('Content-Type'),'image/png')
+        self.assertEqual(response.read(),(Path(__file__).resolve().parent.parent/'static'/LOGO_FILE).read_bytes())
+        conn.close()
 
     def test_missing_past_month_uses_old_tariff_before_student_edit(self):
         on=f'{self.year+1}-06'

@@ -4,6 +4,7 @@ import textwrap
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from .db import ValidationError, audit, integer, money, required, valid_date, local_today
+from .branding import pdf_logo
 
 
 def converted(cents, rate):
@@ -79,6 +80,7 @@ class PDF:
     def __init__(self, title, school, landscape=False):
         self.w, self.h = (842, 595) if landscape else (595, 842)
         self.title, self.school, self.pages = title, school, []
+        self.logo = pdf_logo(school.get('logo', ''))
         self.new_page()
 
     def text(self, x, y, value, size=10, bold=False, color='0.10 0.18 0.32'):
@@ -95,21 +97,33 @@ class PDF:
         self.commands = []
         self.pages.append(self.commands)
         self.box(24, 24, self.w-48, self.h-48)
-        self.box(38, 36, 40, 40, '0.94 0.96 0.99')
-        self.box(46, 44, 12, 22)
-        self.box(58, 44, 12, 22)
-        name_lines = self.wrap(self.school.get('school_name','Colegio'), self.w-180, 15)
+        if self.logo:
+            w, h, _ = self.logo
+            height, width = 78, 78*w/h
+            self.commands.append(f'q {width:.3f} 0 0 {height} 38 {self.h-36-height} cm /Logo Do Q')
+        else:
+            self.box(38, 36, 40, 40, '0.94 0.96 0.99')
+            self.box(46, 44, 12, 22)
+            self.box(58, 44, 12, 22)
+        x = 126 if self.logo else 90
+        width = self.w-x-45
+        name_lines = self.wrap(self.school.get('legal_name') or self.school.get('school_name','Colegio'), width, 14)
         for i, line in enumerate(name_lines):
-            self.text(90, 49+i*18, line, 15, True)
-        header_y = max(70, 49+len(name_lines)*18)
-        contact = ' | '.join(str(self.school.get(k,'')) for k in ('rif','phone','email') if self.school.get(k))
-        for line in self.wrap(contact, self.w-180, 9):
-            self.text(90, header_y, line, 9)
+            self.text(x, 49+i*18, line, 14, True)
+        header_y = 49+len(name_lines)*18
+        if self.school.get('rif'):
+            self.text(x, header_y, 'RIF: '+self.school['rif'], 10, True)
+            header_y += 15
+        address = self.school.get('fiscal_address') or self.school.get('address','')
+        for line in self.wrap('Domicilio fiscal: '+address if address else '', width, 9):
+            self.text(x, header_y, line, 9)
             header_y += 12
-        for line in self.wrap(self.school.get('address',''), self.w-180, 9):
-            self.text(90, header_y, line, 9)
-            header_y += 12
-        self.y = max(100, header_y+12)
+        contact = ' | '.join(str(self.school.get(k,'')) for k in ('phone','email','website') if self.school.get(k))
+        for line in self.wrap(contact, width, 8):
+            if line:
+                self.text(x, header_y, line, 8)
+                header_y += 11
+        self.y = max(126 if self.logo else 100, header_y+12)
         self.box(38, self.y, self.w-76, 27, '0.94 0.96 0.99')
         self.text(46, self.y+18, self.title, 12, True)
         self.text(self.w-97, self.h-35, f'Página {len(self.pages)}', 8)
@@ -176,10 +190,19 @@ class PDF:
                    b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>',
                    b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>']
         kids = []
+        logo_resources = ''
+        if self.logo:
+            w, h, stream = self.logo
+            logo_index = len(objects)+1
+            objects.append((f'<< /Type /XObject /Subtype /Image /Width {w} /Height {h} '
+                f'/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode '
+                f'/DecodeParms << /Predictor 15 /Colors 3 /BitsPerComponent 8 /Columns {w} >> '
+                f'/Length {len(stream)} >>\nstream\n').encode()+stream+b'\nendstream')
+            logo_resources = f' /XObject << /Logo {logo_index} 0 R >>'
         for commands in self.pages:
             index = len(objects)+1
             kids.append(f'{index} 0 R')
-            objects.append(f'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {self.w} {self.h}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents {index+1} 0 R >>'.encode())
+            objects.append(f'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {self.w} {self.h}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>{logo_resources} >> /Contents {index+1} 0 R >>'.encode())
             stream = '\n'.join(commands).encode('ascii')
             objects.append(f'<< /Length {len(stream)} >>\nstream\n'.encode()+stream+b'\nendstream')
         objects[1] = f'<< /Type /Pages /Count {len(kids)} /Kids [{" ".join(kids)}] >>'.encode()

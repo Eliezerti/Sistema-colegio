@@ -20,6 +20,7 @@ from .db import (ValidationError, audit, charges, check_password, connect, conve
                  required, valid_date, valid_rate, local_today, synchronize_monthly_charges)
 from .storage import DataLock, consistent_backup, daily_backup
 from .documents import enrollment, payroll, load_document, render_pdf
+from .branding import SCHEMA_VERSION, LOGO_FILE
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -135,9 +136,12 @@ def mutate(db, endpoint, data, user):
         fields = {'school_name': required(data, 'school_name'), 'currency': 'USD',
                   'school_year': str(integer(data.get('school_year'), 2000, 2100)),
                   'start_month': str(integer(data.get('start_month', 9), 1, 12)),
-                  'due_day': str(integer(data.get('due_day'), 1, 31)),
-                  'address': str(data.get('address', ''))[:500], 'phone': str(data.get('phone', ''))[:100],
-                  'rif': str(data.get('rif', ''))[:100], 'email': str(data.get('email', ''))[:200], 'website': str(data.get('website', ''))[:200]}
+                  'due_day': str(integer(data.get('due_day'), 1, 31))}
+        # An omitted optional field must not erase the configured fiscal identity.
+        for key, limit in (('address',500), ('phone',100), ('rif',100), ('email',200),
+                           ('website',200), ('legal_name',200), ('fiscal_address',500)):
+            if key in data:
+                fields[key] = str(data[key]).strip()[:limit]
         db.executemany('UPDATE settings SET value=? WHERE key=?', [(v, k) for k, v in fields.items()])
         audit(db, uid, 'settings', fields)
         return {'saved': True}
@@ -336,12 +340,16 @@ class Handler(BaseHTTPRequestHandler):
             url = urlsplit(self.path)
             endpoint = url.path.removeprefix('/api/')
             if not post and not url.path.startswith('/api/'):
-                assets = {'/': 'index.html', '/app.js': 'app.js', '/style.css': 'style.css', '/favicon.svg': 'favicon.svg'}
+                assets = {'/': 'index.html', '/app.js': 'app.js', '/style.css': 'style.css', '/favicon.svg': 'favicon.svg',
+                          '/'+LOGO_FILE: LOGO_FILE}
                 if url.path not in assets:
                     self.respond(404, {'error': 'Página inexistente.'})
                     return
                 file = ROOT / 'static' / assets[url.path]
-                self.respond(200, file.read_bytes(), mimetypes.guess_type(file.name)[0] + '; charset=utf-8')
+                content_type = mimetypes.guess_type(file.name)[0] or 'application/octet-stream'
+                if content_type.startswith('text/') or content_type in ('application/javascript','image/svg+xml'):
+                    content_type += '; charset=utf-8'
+                self.respond(200, file.read_bytes(), content_type)
                 return
             db = connect(self.server.db_path)
             if post:
@@ -535,7 +543,7 @@ def main():
                          'No se ha creado una base vacía.')
     if path.exists():
         with closing(connect(path)) as existing:
-            needs_upgrade = existing.execute('PRAGMA user_version').fetchone()[0] < 3
+            needs_upgrade = existing.execute('PRAGMA user_version').fetchone()[0] < SCHEMA_VERSION
         if needs_upgrade:
             consistent_backup(path, path.parent / 'backups' / f'antes-actualizacion-{datetime.now():%Y%m%d-%H%M%S}.sqlite3')
     initialize(path)

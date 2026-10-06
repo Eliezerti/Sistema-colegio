@@ -7,6 +7,7 @@ from contextlib import closing
 from datetime import date, datetime, timezone, timedelta
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
+from .branding import SCHEMA_VERSION, SCHOOL_PROFILE
 
 
 class ValidationError(ValueError):
@@ -150,8 +151,9 @@ def initialize(path):
         CREATE INDEX IF NOT EXISTS payments_student ON payments(student_id);
         CREATE INDEX IF NOT EXISTS allocations_charge ON allocations(charge_id);
         ''')
-        defaults = {'school_name': 'Mi colegio', 'currency': 'USD', 'due_day': '10', 'start_month': '9',
+        defaults = {'school_name': 'U.E.C. Alejandro Von Humboldt', 'currency': 'USD', 'due_day': '10', 'start_month': '9',
                     'school_year': str(local_today().year if local_today().month >= 9 else local_today().year - 1), 'address': '', 'phone': '', 'rif': '', 'email': '', 'website': ''}
+        defaults.update(legal_name='', fiscal_address='', logo='')
         db.executemany('INSERT OR IGNORE INTO settings VALUES(?,?)', defaults.items())
         # Additive upgrades preserve IDs, balances and historical receipts.
         additions = {
@@ -185,7 +187,13 @@ def initialize(path):
                 amount INTEGER NOT NULL CHECK(amount>=0),charge_id INTEGER REFERENCES charges(id),
                 assessed_at TEXT NOT NULL,PRIMARY KEY(student_id,period));
         """)
-        db.execute('PRAGMA user_version=3')
+        if db.execute('PRAGMA user_version').fetchone()[0] < SCHEMA_VERSION:
+            # Apply the owner's fiscal identity once, without altering issued snapshots
+            # or operational settings. Later manual edits survive every restart.
+            db.executemany('UPDATE settings SET value=? WHERE key=?', [(v,k) for k,v in SCHOOL_PROFILE.items()])
+            db.execute("UPDATE settings SET value='U.E.C. Alejandro Von Humboldt' WHERE key='school_name' AND value='Mi colegio'")
+            audit(db, None, 'school-profile', SCHOOL_PROFILE)
+        db.execute(f'PRAGMA user_version={SCHEMA_VERSION}')
 
 
 

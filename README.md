@@ -14,7 +14,7 @@ El ZIP incluye los archivos del programa y los lanzadores para Windows; no inclu
 2. Descomprime la carpeta del sistema en una ubicación permanente, por ejemplo `C:\Aula`.
 3. Haz doble clic en **Iniciar-Aula.bat**. Se abrirá la interfaz en tu navegador. Mantén abierta la ventana de comandos durante el uso; ciérrala con **Ctrl+C** cuando termines.
 4. En la primera apertura crea tu usuario administrador con una contraseña de al menos diez caracteres. No existe una contraseña predeterminada.
-5. Confirma la **tasa BCV de hoy** en la pantalla **Tasas y respaldo**. Después, en **Configuración**, registra nombre del colegio, RIF, teléfono, correo, dirección, año escolar, mes de inicio y día de vencimiento. Estos datos aparecen en los documentos nuevos.
+5. Confirma la **tasa BCV de hoy** en la pantalla **Tasas y respaldo**. Después revisa **Configuración**: el logo, la razón social, el RIF y el domicilio fiscal del colegio ya están incorporados. Completa teléfono, correo, dirección de contacto, año escolar, mes de inicio y día de vencimiento. Estos datos aparecen en los documentos nuevos.
 
 Los datos de Windows quedan en `%LOCALAPPDATA%\AulaColegio\colegio.sqlite3`, separados del código. **Abrir-carpeta-de-datos.bat** abre esa carpeta. Actualizar o mover los archivos del programa no borra los datos. Usa la misma cuenta de Windows para abrir el sistema: cada cuenta tiene su propia carpeta local.
 
@@ -25,9 +25,21 @@ La interfaz utiliza el navegador de Windows; el servidor y la base de datos func
 1. En Aula, descarga un respaldo de tu base y cierra el programa con **Ctrl+C**.
 2. Descarga el ZIP actualizado y usa **Extraer todo** en una carpeta nueva, por ejemplo `C:\Aula-actualizado`. También puedes reemplazar los archivos del programa anterior con Aula cerrado.
 3. Abre **Iniciar-Aula.bat** desde la carpeta nueva, con la **misma cuenta de Windows**. Usa tu usuario habitual: los alumnos, representantes, cobros y egresos permanecen en `%LOCALAPPDATA%\AulaColegio`.
-4. La primera apertura crea un respaldo `antes-actualizacion-*.sqlite3` y amplía la base automáticamente. Los alumnos anteriores reciben un código único y los cargos del personal se incorporan al catálogo. Completa sus datos bancarios en **Personal**.
+4. La primera apertura crea un respaldo `antes-actualizacion-*.sqlite3` y amplía la base automáticamente. Esta versión incorpora una sola vez el logo y los datos fiscales suministrados del colegio. Conserva el nombre comercial configurado, el año escolar, los contactos, alumnos, cobros y documentos anteriores. Los alumnos de versiones antiguas reciben un código único y los cargos del personal se incorporan al catálogo. Completa sus datos bancarios en **Personal**.
 
 Si usabas otro directorio de datos con un comando personalizado, conserva ese `--data-dir`; el lanzador estándar solo abre `%LOCALAPPDATA%\AulaColegio`.
+
+### Identidad del colegio y membrete fiscal
+
+El logo PNG está incluido en el programa y aparece al entrar, en el menú y en los membretes de los documentos nuevos. No necesita internet. En **Configuración → Datos del colegio** puedes descargar el PNG y editar los datos fiscales:
+
+- **Razón social:** ALEJANDRO VON HUMBOLDT, C.A.
+- **RIF:** J-50835934-8.
+- **Domicilio fiscal:** Calle 48 entre carreras 16 y 17, local Nro. 16-46, sector Centro, Barquisimeto, Lara. Zona postal 3001.
+
+El nombre comercial del colegio se configura aparte de la razón social. La dirección de contacto también se mantiene separada del domicilio fiscal. Los recibos de pagos completos y abonos, las constancias de matrícula, las relaciones de nómina y el resumen administrativo impreso usan el mismo membrete. Los PDF descargables llevan el logo incorporado en el propio archivo y repiten el membrete cuando hay varias páginas.
+
+Los documentos guardados conservan la razón social, el RIF, el domicilio y la versión del logo existentes al emitirlos. Cambiar Configuración afecta documentos nuevos; las aperturas posteriores no sobrescriben tus cambios. Los comprobantes anteriores a esta versión conservan sus datos y su emblema anteriores.
 
 ## Flujo diario
 
