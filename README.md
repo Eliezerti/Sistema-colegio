@@ -20,6 +20,26 @@ Los datos de Windows quedan en `%LOCALAPPDATA%\AulaColegio\colegio.sqlite3`, sep
 
 La interfaz utiliza el navegador de Windows; el servidor y la base de datos funcionan en la misma computadora. El servidor escucha exclusivamente en `127.0.0.1` y no está preparado para acceso desde otras computadoras. Los registros y consultas funcionan sin internet. La tasa BCV requiere consultarla y registrarla manualmente.
 
+## Probar sin mezclar datos del colegio
+
+Haz doble clic en **Iniciar-Pruebas.bat** y pulsa **Entrar como administrador de prueba**. Tendrás permisos de administrador y una base **vacía y separada**, creada para esa sesión. Confirma una tasa de prueba y registra los alumnos, empleados, cobros y pagos que quieras. La franja **Modo prueba** permanece visible. Los recibos y PDF se identifican con **PRUEBA SIN VALIDEZ**.
+
+Para terminar, pulsa **Cerrar y borrar pruebas**. También se cierra al salir de la última pestaña de prueba: espera unos cinco segundos. Recargar la página conserva los registros mientras siga abierta la sesión. Se pueden mantener varias pestañas; cerrar una no borra datos si queda otra. Si el navegador deja de responder sin avisar al servidor, la falta de señales de sus pestañas se detecta después de diez minutos. Puedes cerrar la ventana del programa con **Ctrl+C** para terminar antes.
+
+Cada nueva apertura empieza vacía. Los datos temporales se eliminan al cerrar normalmente; si ocurre un corte de energía o un cierre forzado, cualquier carpeta de prueba pendiente se limpia **antes de la siguiente apertura**. Los PDF y CSV que descargues permanecen en tu carpeta de descargas: bórralos allí si ya no los necesitas. El modo de prueba no guarda respaldos ni copia datos al USB o a Drive.
+
+**Iniciar-Aula.bat** abre los datos reales en el puerto 8765. **Iniciar-Pruebas.bat** usa el puerto 8766, otra cookie de acceso y una carpeta temporal independiente. No copia ni lee la base del colegio. No acepta `--data-dir`, para impedir que una sesión de prueba apunte a los datos reales. También puedes crear accesos directos a ambos lanzadores en el escritorio.
+
+## Vaciar registros existentes del colegio
+
+Actualizar el programa **no borra automáticamente** la base instalada en tu PC. Si quieres eliminar los registros cargados previamente, entra como administrador y abre **Configuración → Administración avanzada · vaciar registros → Revisar vaciado de registros**.
+
+Se muestra la cantidad de registros que desaparecerán. Debes introducir tu contraseña, escribir **VACIAR REGISTROS** y marcar la confirmación. Antes de borrar, Aula genera un respaldo verificado `antes-vaciar-…sqlite3` en la carpeta local de respaldos y en el segundo destino si está configurado. Si falla alguna copia, se conserva la base. Esas copias no entran en la rotación de respaldos automáticos; consérvalas para poder restaurar el estado anterior.
+
+Se eliminan alumnos, representantes, grados, empleados y sus cargos, mensualidades, pagos, egresos, cierres, tasas, convenios, seguimientos y documentos guardados. **Se conservan los usuarios, las contraseñas, el logo, los datos fiscales y la configuración.** Se cierran todas las sesiones y debes volver a entrar y confirmar la tasa. Los números de cobros, egresos y alumnos continúan después del último usado. La bitácora conserva el evento de vaciado y la ruta del respaldo; los movimientos anteriores quedan en esa copia.
+
+Esta opción sirve para un reinicio deliberado. Para experimentar o repetir pruebas, usa **Iniciar-Pruebas.bat**, que se limpia solo. Para recuperar un vaciado, cierra el programa y usa **Restaurar-respaldo.bat** con el archivo `antes-vaciar-…sqlite3`.
+
 ## Actualizar una instalación existente
 
 1. En Aula, descarga un respaldo de tu base y cierra el programa con **Ctrl+C**.
@@ -78,6 +98,16 @@ En **Personal → Preparar nómina**, elige descripción y fecha, y ajusta manua
 **Generar relación de pago** guarda una sola relación con todos los empleados: nombre, cédula, cargo, banco, tipo y número de cuenta, titular, cédula del titular, monto USD, monto Bs y totales. **Descargar PDF** genera un único archivo, con tantas páginas como necesite; **Imprimir** permite llevarlo en físico. Se señalan las cuentas o bancos pendientes para completarlos antes de transferir. Las últimas 30 relaciones se pueden abrir desde **Personal**.
 
 La conversión USD → Bs se redondea por empleado al centavo, con mitad hacia arriba; el total Bs suma esos importes. La relación conserva los datos, montos y tasa usados al generarla. **Preparar o descargar una nómina no registra egresos ni marca empleados como pagados**: registra los pagos realizados con **Pagar nómina** y su referencia bancaria.
+
+### Recibo individual de sueldo para firmar
+
+Al pulsar **Personal → Pagar nómina**, indica el período pagado **desde / hasta**, la hora de entrada, la hora de salida y las observaciones. El importe se puede ajustar antes de registrar el pago. Guardar crea el egreso y su recibo juntos; si no se puede emitir el documento, el pago no se guarda parcialmente.
+
+Se abre un **Recibo de sueldo**, descargable en PDF e imprimible: logo y membrete fiscal, empleado, cédula, cargo, período, horario informado, fecha, importe recibido, equivalente USD, tasa, método, referencia y datos bancarios registrados. Incluye declaración de recepción, espacios para las firmas de administración y del empleado, fecha de firma y huella. El horario se introduce manualmente; este recibo no sustituye un registro diario de asistencia. La conformidad del empleado se acredita con su firma física.
+
+En **Egresos y nómina → Recibo de sueldo** puedes volver a abrirlo. El documento conserva los datos originales aunque después cambies el empleado, su sueldo, banco o los datos fiscales. Anular el egreso identifica su recibo como anulado. Para pagos de nómina anteriores sin recibo, **Emitir recibo** permite completar período y horario sin registrar otro pago; utiliza los datos del empleado y colegio disponibles al emitirlo.
+
+[Ver un recibo de sueldo generado en modo prueba](docs/recibo-sueldo-prueba.png).
 
 ### Mensualidades y morosidad automáticas
 
@@ -231,8 +261,9 @@ Validación opcional de interfaz, con Node, Playwright y Chromium disponibles:
 
 ```bash
 python tests/run_browser.py
+python tests/run_browser.py --demo
 ```
 
-Este comando crea datos ficticios en una carpeta temporal, inicia su propio servidor y valida matrícula, mensualidades, cobro en Bs, recibo, morosidad, egresos, reportes, diseño adaptable y permisos de consulta. Para usar otro Chromium, define `CHROMIUM_PATH`. La prueba opcional no es una dependencia del programa.
+Estos comandos crean datos ficticios en carpetas temporales e inician sus propios servidores. El primero valida matrícula, mensualidades, cobro en Bs, recibos de alumnos y empleados, morosidad, egresos, reportes, diseño adaptable, permisos y vaciado protegido. El segundo comprueba el administrador de prueba, PDF identificado como prueba, recarga y varias pestañas, cierre de la última pestaña y eliminación física de los datos temporales. Las pruebas integradas también comprueban reinicio tras proceso matado, rechazo de un directorio real en modo prueba, respaldo antes de vaciar, fallo del segundo destino y conservación de numeraciones. Para usar otro Chromium, define `CHROMIUM_PATH`. Las pruebas opcionales no son una dependencia del programa.
 
 El funcionamiento del servidor y la interfaz se verifica en Linux durante el desarrollo. Los lanzadores y la ruta de bloqueo de archivos para Windows requieren una prueba final en una computadora Windows antes de utilizar datos reales.

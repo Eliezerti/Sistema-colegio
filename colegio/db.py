@@ -111,11 +111,22 @@ def connect(path):
     return db
 
 
+def next_record_id(db, table):
+    if table not in ('payments', 'expenses', 'students'):
+        raise ValueError('Correlativo desconocido.')
+    floor = db.execute('SELECT value FROM settings WHERE key=?', ('id_floor_'+table,)).fetchone()
+    largest = db.execute(f'SELECT COALESCE(MAX(id),0) FROM {table}').fetchone()[0]
+    return max(largest, int(floor[0]) if floor else 0) + 1
+
+
 def initialize(path):
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     with closing(connect(path)) as db, db:
         db.execute('PRAGMA journal_mode=WAL')
         db.executescript('''
+            CREATE TABLE IF NOT EXISTS salary_receipts(id INTEGER PRIMARY KEY,
+                expense_id INTEGER UNIQUE NOT NULL REFERENCES expenses(id),snapshot_json TEXT NOT NULL,
+                created_at TEXT NOT NULL,created_by INTEGER NOT NULL REFERENCES users(id));
             CREATE TABLE IF NOT EXISTS year_transitions(id INTEGER PRIMARY KEY,
                 snapshot_json TEXT NOT NULL,created_at TEXT NOT NULL,created_by INTEGER NOT NULL REFERENCES users(id));
             CREATE TABLE IF NOT EXISTS payment_plans(id INTEGER PRIMARY KEY,
@@ -352,8 +363,8 @@ def record_payment(db, data, user_id):
        WHERE s.id=?''', (student_id,)).fetchone()
     receipt_snapshot = json.dumps({'person': dict(person), 'school': dict(db.execute('SELECT key,value FROM settings')),
                                   'operator': db.execute('SELECT name FROM users WHERE id=?', (user_id,)).fetchone()[0]}, ensure_ascii=False)
-    result = db.execute('''INSERT INTO payments(student_id,amount,paid_on,method,reference,notes,created_by,created_at,request_key,currency,received_amount,exchange_rate,receipt_snapshot)
-      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)''', (student_id, amount, paid_on, method, reference,
+    result = db.execute('''INSERT INTO payments(id,student_id,amount,paid_on,method,reference,notes,created_by,created_at,request_key,currency,received_amount,exchange_rate,receipt_snapshot)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (next_record_id(db,'payments'), student_id, amount, paid_on, method, reference,
       notes, user_id, datetime.now(timezone.utc).isoformat(), request_key, currency, received, rate, receipt_snapshot))
     remaining = amount
     for charge in pending:

@@ -107,6 +107,13 @@ dialog.document-modal{width:min(860px,94vw)}
 @media print{#print-area .receipt-ticket{padding:0;max-width:none;margin:0}#print-area .receipt-ticket-58{page:receipt-ticket-58}#print-area .receipt-ticket-80{page:receipt-ticket-80}}
 
 /* One overview, with a clear distinction between today's receipts and debt. */
+.demo-banner{display:flex;align-items:center;justify-content:space-between;gap:20px;background:#fff4dc;border:1px solid #ebd8ac;color:#725219;padding:14px 20px;border-radius:10px;margin-bottom:24px}
+.demo-banner b{font-size:14px}.demo-banner p{font-size:12px;line-height:1.6;margin-top:3px}.demo-banner .btn{flex-shrink:0;background:#fffaf0;color:#725219;border-color:#e4d4ad}
+[hidden]{display:none!important}
+.salary-document .document-section{margin:22px 0}.salary-document .receipt-amount{margin:20px 0}.salary-document .salary-concept{margin-top:20px}.salary-acknowledgement{margin:24px 0;line-height:1.9}.salary-notes{white-space:pre-wrap;overflow-wrap:anywhere}
+.reset-settings{border-top:1px solid var(--line);margin-top:35px;padding:20px 0;color:var(--muted);font-size:12px}.reset-settings summary{cursor:pointer;font-weight:600}.reset-settings p{margin:16px 0;line-height:1.8;max-width:700px}.btn.danger{background:#a33e34;border-color:#a33e34;color:white}.reset-warning{border-left:3px solid var(--red);padding:12px;background:#fff7f5;margin-bottom:20px}.reset-warning>b{display:block;margin-bottom:12px}.reset-warning td{padding:9px 12px}
+body>#app>.demo-banner{margin:15px 24px 0}.demo-banner+.rate-screen{min-height:calc(100vh - 100px)}
+@media(max-width:700px){.demo-banner{align-items:flex-start;flex-direction:column;gap:12px;padding:15px}body>#app>.demo-banner{margin:12px 15px 0}}
 .dashboard-overview{background:var(--white);border:1px solid #dde6df;border-radius:16px;overflow:hidden}
 .dashboard-main-metrics{display:grid;grid-template-columns:1.15fr 1fr}
 .dashboard-collected,.dashboard-overdue{min-width:0;padding:28px 32px}

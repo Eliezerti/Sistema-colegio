@@ -709,6 +709,35 @@ def signed_amount(cents,currency):
 
 
 def render_pdf(kind, data, paper='a4'):
+    if kind == 'salary-receipt':
+        e, employee = data['expense'], data['employee']
+        received_label = amount(e['received_amount'], 'Bs' if e['currency']=='VES' else 'USD')
+        pdf = AdministrativePDF(f"RECIBO DE SUELDO · E-{e['id']:06d}", data['school'])
+        if e['voided']:
+            pdf.line('RECIBO ANULADO: '+e['void_reason'], True)
+        pdf.line('Fecha del pago: '+e['spent_on'], True)
+        pdf.line('Empleado: '+employee['name'], True)
+        pdf.line('Cédula: '+employee['document']+' | Cargo: '+employee['position'])
+        pdf.table(['Período pagado: desde','Hasta','Entrada','Salida'],
+                  [[data['period_start'],data['period_end'],data['entry_time'],data['exit_time']]], [175,174,85,85])
+        pdf.line('Concepto: '+e['concept'])
+        pdf.total('Importe recibido: '+received_label)
+        pdf.line('Equivalente USD: '+amount(e['amount'])+(' | Tasa aplicada: Bs '+e['exchange_rate']+' por USD' if e['currency']=='VES' else ''))
+        pdf.line('Método: '+e['method']+' | Referencia: '+(e['reference'] or 'Sin referencia'))
+        if e['method']=='Transferencia':
+            pdf.line('Banco registrado: '+(employee['bank'] or 'No registrado'))
+            pdf.line('Cuenta registrada: '+(employee['bank_account'] or 'No registrada'))
+            pdf.line('Titular: '+(employee['account_holder'] or employee['name'])+' | Cédula: '+(employee['holder_document'] or employee['document']))
+        pdf.line('Horario informado para el período: entrada '+data['entry_time']+' y salida '+data['exit_time']+'.')
+        pdf.line('Yo, '+employee['name']+', titular de la cédula '+employee['document']+', declaro haber recibido '+
+                 received_label+' por el sueldo correspondiente al período del '+
+                 data['period_start']+' al '+data['period_end']+'.')
+        if data['notes']:
+            pdf.line('Observaciones: '+data['notes'])
+        pdf.line('La conformidad de recepción se acredita con la firma del empleado.')
+        pdf.signature('Pagado por administración','Recibí conforme · Firma del empleado',data['operator'])
+        pdf.line('Fecha de firma: ____________________    Huella: ____________________')
+        return pdf.output()
     if kind in ('year-transition','payment-plan'):
         title='ACTA DE PASE DE AÑO' if kind=='year-transition' else 'CONVENIO DE PAGO'
         pdf=AdministrativePDF(f"{title} · {data['id']:06d}",data['school'])

@@ -13,6 +13,7 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 
+from colegio.branding import SCHEMA_VERSION
 from colegio.db import connect, initialize, record_payment
 from colegio.restore import restore
 from colegio.storage import consistent_backup, automatic_backup
@@ -181,7 +182,7 @@ class RecoveryTests(unittest.TestCase):
             self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],4)
             self.assertEqual(dict(db.execute('SELECT * FROM payments').fetchone()),self.payment)
         with closing(connect(self.target)) as db:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],5)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],SCHEMA_VERSION)
             self.assertEqual(dict(db.execute('SELECT * FROM payments').fetchone()),self.payment)
 
     def test_secondary_sync_failure_keeps_local_and_previous_external_backup(self):

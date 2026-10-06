@@ -4,6 +4,7 @@ import io
 import json
 import mimetypes
 import secrets
+import signal
 import sqlite3
 import tempfile
 import time
@@ -20,12 +21,16 @@ from urllib.parse import parse_qs, urlsplit
 from .db import (ValidationError, RateConfirmationRequired, audit, charges, check_password, connect, convert_received,
                  generate_month, hash_password, initialize, integer, money, record_payment,
                  required, valid_date, valid_rate, local_today, synchronize_monthly_charges)
+from .db import next_record_id
 from .storage import DataLock, consistent_backup, daily_backup, automatic_backup, backup_status
 from .administration import (import_roster, import_template, cash_summary, close_cash, reopen_cash,
     ensure_open_day, guardian_account, issue_guardian_document, load_administrative_document)
 from .documents import enrollment, payroll, load_document, render_pdf
 from .branding import SCHEMA_VERSION, LOGO_FILE
 from .lifecycle import roster_for_year, transition_year, create_plan, cancel_plan, plan_status
+from .demo import DemoWorkspace
+from .salary import details as salary_details, issue_salary_receipt, load_salary_receipt
+from .reset_records import reset_preview, reset_records
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -65,8 +70,9 @@ def snapshot(db, user):
     for payment in payments:
         payment.pop('receipt_snapshot', None)
         payment.pop('request_key', None)
-    expenses = rows(db, '''SELECT e.*,emp.name AS employee_name FROM expenses e
-       LEFT JOIN employees emp ON emp.id=e.employee_id ORDER BY e.spent_on DESC,e.id DESC''')
+    expenses = rows(db, '''SELECT e.*,emp.name AS employee_name,r.id AS salary_receipt_id FROM expenses e
+       LEFT JOIN employees emp ON emp.id=e.employee_id LEFT JOIN salary_receipts r ON r.expense_id=e.id
+       ORDER BY e.spent_on DESC,e.id DESC''')
     month = today[:7]
     income = sum(p['amount'] for p in payments if not p['voided'] and p['paid_on'].startswith(month))
     outgo = sum(e['amount'] for e in expenses if not e['voided'] and e['spent_on'].startswith(month))
@@ -111,6 +117,8 @@ def save_record(db, table, fields, data):
         db.execute(f'UPDATE {table} SET ' + ','.join(f'{k}=?' for k in fields) + ' WHERE id=?',
                    [*fields.values(), record_id])
         return record_id
+    if table in ('students', 'expenses'):
+        fields = dict(fields, id=next_record_id(db, table))
     result = db.execute(f'INSERT INTO {table}(' + ','.join(fields) + ') VALUES(' + ','.join('?' for _ in fields) + ')', list(fields.values()))
     return result.lastrowid
 
@@ -141,6 +149,8 @@ def mutate(db, endpoint, data, user, *, synchronize=True):
         if prior: ensure_open_day(db,prior[0])
     if endpoint == 'payroll-plans':
         return payroll(db, data, uid)
+    if endpoint == 'salary-receipts':
+        return {'id': issue_salary_receipt(db, data.get('expense_id'), data, uid)}
     if endpoint == 'generate':
         return generate_month(db, data, uid)
     if endpoint == 'payments':
@@ -199,7 +209,7 @@ def mutate(db, endpoint, data, user, *, synchronize=True):
                   'address': str(data.get('address', ''))[:500]}
     elif endpoint == 'students':
         existing = db.execute('SELECT student_code FROM students WHERE id=?', (data.get('id'),)).fetchone() if data.get('id') else None
-        next_id = db.execute('SELECT COALESCE(MAX(id),0)+1 FROM students').fetchone()[0]
+        next_id = next_record_id(db, 'students')
         code = existing['student_code'] if existing else f'AL-{next_id:06d}'
         # A legacy document may resemble an automatic code; skip it without changing legacy IDs.
         while not existing and db.execute('SELECT id FROM students WHERE document=? OR student_code=?', (code, code)).fetchone():
@@ -312,6 +322,10 @@ def mutate(db, endpoint, data, user, *, synchronize=True):
         if method not in ('Efectivo','Transferencia','Tarjeta','Otro','No especificado'):
             raise ValidationError('Método de pago inválido.')
         fields['method']=method
+        if fields['category'] == 'Nómina':
+            if not fields['employee_id']:
+                raise ValidationError('Selecciona el empleado para emitir su recibo de sueldo.')
+            salary_details(data)
         if data.get('id'):
             raise ValidationError('Los egresos se corrigen anulándolos y creando uno nuevo.')
     else:
@@ -323,13 +337,21 @@ def mutate(db, endpoint, data, user, *, synchronize=True):
         if synchronize: synchronize_monthly_charges(db)
         result['document_id'] = enrollment(db, record_id, uid)
         result['student_code'] = db.execute('SELECT student_code FROM students WHERE id=?', (record_id,)).fetchone()[0]
+    elif endpoint == 'expenses' and fields['category'] == 'Nómina':
+        result['salary_receipt_id'] = issue_salary_receipt(db, record_id, data, uid)
     return result
 
 
 class SchoolServer(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, address, db_path):
+    def __init__(self, address, db_path, demo=False):
+        self.demo = demo
+        self.daemon_threads = not demo
+        self.demo_stop = threading.Event()
+        self.demo_thread = None
+        self.backup_stop = threading.Event()
+        self.backup_thread = None
         super().__init__(address, Handler)
         self.db_path = db_path
         self.login_attempts = {}
@@ -337,8 +359,69 @@ class SchoolServer(ThreadingHTTPServer):
         self.backup_stop=threading.Event()
         self.backup_thread=threading.Thread(target=self.backup_loop,daemon=True)
         self.backup_thread.start()
+        self.demo_token = secrets.token_urlsafe(32) if demo else ''
+        self.demo_clients = {}
+        self.demo_clients_lock = threading.Lock()
+        self.demo_closed_at = None
+        self.demo_stop = threading.Event()
+        self.demo_thread = None
+        if demo:
+            self.demo_thread = threading.Thread(target=self.demo_loop, daemon=True)
+            self.demo_thread.start()
+
+    @property
+    def cookie_name(self):
+        return 'school_demo_session' if self.demo else 'school_session'
+
+    def get_request(self):
+        connection, address = super().get_request()
+        if self.demo:
+            connection.settimeout(15)
+        return connection, address
+
+    def demo_presence(self, client, action):
+        if not isinstance(client, str) or not 1 <= len(client) <= 80 or action not in ('alive', 'close'):
+            raise ValidationError('Identificación de pestaña de prueba inválida.')
+        with self.demo_clients_lock:
+            if action == 'alive':
+                self.demo_clients[client] = time.monotonic()
+                self.demo_closed_at = None
+            elif client in self.demo_clients:
+                del self.demo_clients[client]
+                if not self.demo_clients:
+                    self.demo_closed_at = time.monotonic()
+
+    def demo_loop(self):
+        while not self.demo_stop.wait(0.5):
+            now = time.monotonic()
+            with self.demo_clients_lock:
+                stale = [client for client, last in self.demo_clients.items() if now-last > 600]
+                for client in stale:
+                    del self.demo_clients[client]
+                if stale and not self.demo_clients and self.demo_closed_at is None:
+                    self.demo_closed_at = now
+                closed = self.demo_closed_at is not None and now-self.demo_closed_at >= 5
+            if closed:
+                self.shutdown()
+                return
+
+    def mark_document(self, document):
+        if self.demo:
+            document['demo'] = True
+            key = 'school' if 'school' in document else 'settings'
+            school = dict(document[key])
+            school['legal_name'] = 'PRUEBA SIN VALIDEZ - ' + (school.get('legal_name') or school.get('school_name', 'Colegio'))
+            document[key] = school
+        return document
+
+    def backup_status(self):
+        if self.demo:
+            return {'demo': True, 'data_path': str(Path(self.db_path).resolve())}
+        return backup_status(self.db_path)
 
     def make_backup(self):
+        if self.demo:
+            return self.backup_status()
         with self.backup_lock:
             try: return automatic_backup(self.db_path)
             except Exception:
@@ -348,8 +431,12 @@ class SchoolServer(ThreadingHTTPServer):
         while not self.backup_stop.wait(300): self.make_backup()
 
     def server_close(self):
+        self.demo_stop.set()
+        if self.demo_thread:
+            self.demo_thread.join(timeout=5)
         self.backup_stop.set()
-        self.backup_thread.join(timeout=5)
+        if self.backup_thread:
+            self.backup_thread.join(timeout=5)
         super().server_close()
 
 
@@ -381,7 +468,7 @@ class Handler(BaseHTTPRequestHandler):
     def session(self, db):
         token = ''
         for part in self.headers.get('Cookie', '').split(';'):
-            if part.strip().startswith('school_session='):
+            if part.strip().startswith(self.server.cookie_name+'='):
                 token = part.strip().split('=', 1)[1]
         result = db.execute('''SELECT u.id,u.name,u.username,u.role,s.csrf,s.token,s.rate_confirmed_on FROM sessions s
           JOIN users u ON u.id=s.user_id WHERE token=? AND expires>?''', (token, int(time.time()))).fetchone()
@@ -427,13 +514,27 @@ class Handler(BaseHTTPRequestHandler):
                 if not isinstance(data, dict):
                     raise ValidationError('Se esperaba un objeto JSON.')
                 db.execute('BEGIN IMMEDIATE')
+            if post and endpoint == 'demo-presence':
+                if not self.server.demo:
+                    raise PermissionError('Esta instalación no está en modo prueba.')
+                token = data.get('token', '')
+                if not isinstance(token, str) or not secrets.compare_digest(token, self.server.demo_token):
+                    raise PermissionError('Sesión de prueba inválida.')
+                self.server.demo_presence(data.get('client'), data.get('action'))
+                self.respond(200, {'ok': True})
+                return
             user = self.session(db)
             needs_setup = not db.execute('SELECT 1 FROM users LIMIT 1').fetchone()
             if not post and endpoint == 'session':
-                self.respond(200, {'needs_setup': needs_setup, 'user': {k:v for k,v in user.items() if k != 'token'} if user else None})
+                self.respond(200, {'needs_setup': needs_setup, 'user': {k:v for k,v in user.items() if k != 'token'} if user else None,
+                                   'demo': self.server.demo, 'demo_token': self.server.demo_token})
                 return
-            if post and endpoint in ('setup', 'login'):
-                if endpoint == 'setup':
+            if post and endpoint in ('setup', 'login', 'demo-login'):
+                if endpoint == 'demo-login':
+                    if not self.server.demo:
+                        raise PermissionError('El acceso de prueba no está disponible en el sistema real.')
+                    user_id = self.server.demo_admin_id
+                elif endpoint == 'setup':
                     if not needs_setup:
                         raise ValidationError('El administrador ya está configurado.')
                     result = db.execute('INSERT INTO users(username,name,password,role) VALUES(?,?,?,?)',
@@ -459,7 +560,7 @@ class Handler(BaseHTTPRequestHandler):
                 db.execute('DELETE FROM sessions WHERE expires<=?', (int(time.time()),))
                 db.execute('INSERT INTO sessions(token,user_id,csrf,expires) VALUES(?,?,?,?)', (token, user_id, csrf, int(time.time()) + 12*3600))
                 db.commit()
-                self.respond(200, {'ok': True}, extra={'Set-Cookie': f'school_session={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200'})
+                self.respond(200, {'ok': True}, extra={'Set-Cookie': f'{self.server.cookie_name}={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200'})
                 return
             if not user:
                 self.respond(401, {'error': 'Inicia sesión para continuar.'})
@@ -469,12 +570,29 @@ class Handler(BaseHTTPRequestHandler):
                 rate = db.execute('SELECT rate FROM exchange_rates WHERE rate_date=?', (on,)).fetchone()
                 self.respond(200, {'today': on, 'rate': rate['rate'] if rate else '', 'role': user['role']})
                 return
-            if endpoint not in ('confirm-rate','rate-gate','logout','backup','health') and user['rate_confirmed_on'] != local_today().isoformat():
+            if endpoint not in ('confirm-rate','rate-gate','logout','backup','health','demo-exit') and user['rate_confirmed_on'] != local_today().isoformat():
                 self.respond(428, {'error': 'Confirma la tasa BCV de hoy antes de continuar.'})
                 return
             if post:
                 if not secrets.compare_digest(self.headers.get('X-CSRF-Token', ''), user['csrf']):
                     raise PermissionError('Sesión inválida. Recarga la página.')
+                if endpoint == 'demo-exit':
+                    if not self.server.demo:
+                        raise PermissionError('Solo puedes borrar una sesión de prueba.')
+                    db.rollback()
+                    self.respond(200, {'ok': True})
+                    threading.Thread(target=self.server.shutdown, daemon=True).start()
+                    return
+                if self.server.demo and endpoint == 'settings' and data.get('backup_directory'):
+                    raise ValidationError('Las pruebas no se copian a USB ni a la nube. Deja vacía la segunda carpeta de respaldos.')
+                if endpoint == 'reset-records':
+                    if self.server.demo:
+                        raise ValidationError('Cierra el modo prueba para borrar sus datos. No se vacía la base real desde aquí.')
+                    with self.server.backup_lock:
+                        result = reset_records(db, data, user)
+                    db.commit()
+                    self.respond(200, result)
+                    return
                 if endpoint == 'confirm-rate':
                     on = local_today().isoformat()
                     if data.get('rate_date') != on:
@@ -496,7 +614,7 @@ class Handler(BaseHTTPRequestHandler):
                         if status.get('local_error'): raise ValidationError('No se puede importar sin completar primero un respaldo local.')
                     result = mutate(db, endpoint, data, user)
                 db.commit()
-                if endpoint in ('payments','expenses','void-payment','void-expense','close-cash','reopen-cash','settings','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
+                if endpoint in ('payments','expenses','salary-receipts','void-payment','void-expense','close-cash','reopen-cash','settings','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
                     status=self.server.make_backup()
                     if status.get('local_error') or status.get('secondary_error'):
                         result['backup_warning']=status.get('local_error') or status.get('secondary_error')
@@ -505,8 +623,13 @@ class Handler(BaseHTTPRequestHandler):
             public_user = {k:v for k,v in user.items() if k not in ('token', 'csrf')}
             if endpoint == 'state':
                 result=snapshot(db, public_user)
-                result['backup']=backup_status(self.server.db_path)
+                result['backup']=self.server.backup_status()
+                result['demo']=self.server.demo
                 self.respond(200, result)
+            elif endpoint == 'reset-preview':
+                if self.server.demo or user['role'] != 'admin':
+                    raise PermissionError('Esta operación solo está disponible para administración en el sistema real.')
+                self.respond(200, reset_preview(db))
             elif endpoint=='import-template':
                 if user['role']!='admin': raise PermissionError('Solo administración puede importar alumnos.')
                 xlsx=parse_qs(url.query).get('format',['csv'])[0]=='xlsx'
@@ -515,7 +638,7 @@ class Handler(BaseHTTPRequestHandler):
             elif endpoint=='cash-preview':
                 self.respond(200,cash_summary(db,parse_qs(url.query).get('date',[local_today().isoformat()])[0]))
             elif endpoint=='backup-status':
-                self.respond(200,backup_status(self.server.db_path))
+                self.respond(200,self.server.backup_status())
             elif endpoint=='year-roster':
                 if user['role']!='admin': raise PermissionError('Solo administración puede realizar el pase de año.')
                 self.respond(200,roster_for_year(db,parse_qs(url.query).get('year',[''])[0]))
@@ -525,6 +648,7 @@ class Handler(BaseHTTPRequestHandler):
                 r=db.execute(f'SELECT * FROM {table} WHERE id=?',(target,)).fetchone()
                 if not r: raise ValidationError('Documento inexistente.')
                 document=dict(json.loads(r['snapshot_json']),id=target)
+                self.server.mark_document(document)
                 if kind=='payment-plan':document.update(cancelled=r['cancelled'],cancel_reason=r['cancel_reason'])
                 if raw.endswith('.pdf'):
                     self.respond(200,render_pdf(kind,document),'application/pdf',{'Content-Disposition':f'attachment; filename="{kind}-{target:06d}.pdf"'})
@@ -534,15 +658,17 @@ class Handler(BaseHTTPRequestHandler):
             elif endpoint.startswith(('guardian-document/','cash-close/')):
                 kind,raw=endpoint.split('/'); target=integer(raw.removesuffix('.pdf'),1,2147483647)
                 document=load_administrative_document(db,kind,target)
+                self.server.mark_document(document)
                 if raw.endswith('.pdf'):
                     self.respond(200,render_pdf(kind,document),'application/pdf',
                         {'Content-Disposition':f'attachment; filename="{kind}-{target:06d}.pdf"'})
                 else: self.respond(200,document)
-            elif endpoint.startswith(('enrollment/', 'payroll-plan/')):
+            elif endpoint.startswith(('enrollment/', 'payroll-plan/', 'salary-receipt/')):
                 kind, raw = endpoint.split('/')
                 pdf = raw.endswith('.pdf')
                 target = integer(raw.removesuffix('.pdf'), 1, 2147483647)
-                document = load_document(db, kind, target)
+                document = load_salary_receipt(db, target) if kind == 'salary-receipt' else load_document(db, kind, target)
+                self.server.mark_document(document)
                 if pdf:
                     self.respond(200, render_pdf(kind, document), 'application/pdf',
                                  {'Content-Disposition': f'attachment; filename="{kind}-{target:06d}.pdf"'})
@@ -575,6 +701,7 @@ class Handler(BaseHTTPRequestHandler):
                 document = {'payment': payment, 'settings': frozen['school'],
                   'allocations': rows(db, '''SELECT a.amount,c.concept,c.period FROM allocations a JOIN charges c
                       ON c.id=a.charge_id WHERE a.payment_id=?''', (target,))}
+                self.server.mark_document(document)
                 if pdf:
                     paper = parse_qs(url.query).get('paper',['a4'])[0]
                     self.respond(200, render_pdf('receipt', document, paper), 'application/pdf',
@@ -614,6 +741,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(200, buffer.getvalue().encode('utf-8-sig'), 'text/csv; charset=utf-8',
                              {'Content-Disposition': f'attachment; filename="{kind}-{local_today()}.csv"'})
             elif endpoint == 'backup':
+                if self.server.demo:
+                    raise PermissionError('Los datos de prueba son temporales y no se exportan como respaldos del colegio.')
                 if user['role'] != 'admin':
                     raise PermissionError('Solo administración puede descargar respaldos.')
                 with tempfile.TemporaryDirectory() as temp:
@@ -642,47 +771,72 @@ class Handler(BaseHTTPRequestHandler):
                 db.close()  # Rolls back uncommitted writes on errors.
 
 
+def run_server(path, args, demo=False):
+    with DataLock(path.parent):
+        if not path.exists() and any((path.parent / 'backups').glob('*.sqlite3')):
+            raise SystemExit('No se encuentra la base de datos, pero hay respaldos anteriores. '
+                             'Ejecuta Restaurar-respaldo.bat para recuperar tus datos antes de abrir Aula. '
+                             'No se ha creado una base vacía.')
+        if path.exists():
+            with closing(connect(path)) as existing:
+                needs_upgrade = existing.execute('PRAGMA user_version').fetchone()[0] < SCHEMA_VERSION
+            if needs_upgrade:
+                consistent_backup(path, path.parent / 'backups' / f'antes-actualizacion-{datetime.now():%Y%m%d-%H%M%S}.sqlite3')
+        initialize(path)
+        with closing(connect(path)) as db, db:
+            synchronize_monthly_charges(db)
+            if demo:
+                demo_admin = db.execute('INSERT INTO users(username,name,password,role) VALUES(?,?,?,?)',
+                    ('__prueba__', 'Administrador de prueba', hash_password(secrets.token_urlsafe(32)), 'admin')).lastrowid
+        if not demo:
+            daily_backup(path)
+            automatic_backup(path)
+        try:
+            server = SchoolServer(('127.0.0.1', args.port), str(path), demo=demo)
+        except OSError as error:
+            raise SystemExit(f'No se pudo iniciar: {error}. Verifica si el sistema ya está abierto o usa otro puerto.')
+        if demo:
+            server.demo_admin_id = demo_admin
+        print(f'{"MODO PRUEBA" if demo else "Colegio"} abierto en http://127.0.0.1:{server.server_port} · datos: {path}', flush=True)
+        print('Mantén esta ventana abierta. Ctrl+C para cerrar de forma segura.', flush=True)
+        try:
+            if args.open_browser:
+                webbrowser.open(f'http://127.0.0.1:{server.server_port}')
+            server.serve_forever()
+        except KeyboardInterrupt:
+            pass
+        finally:
+            server.server_close()
+
+
 def main():
     parser = argparse.ArgumentParser(description='Administración escolar para una computadora Windows.')
-    parser.add_argument('--port', type=int, default=8765)
-    parser.add_argument('--data-dir', default=str(ROOT / 'data'))
+    parser.add_argument('--port', type=int)
+    parser.add_argument('--data-dir')
     parser.add_argument('--open-browser', action='store_true')
+    parser.add_argument('--demo', action='store_true', help='Administrador de prueba con datos temporales y aislados.')
     args = parser.parse_args()
-    path = Path(args.data_dir).resolve() / 'colegio.sqlite3'
+    if args.demo and args.data_dir is not None:
+        parser.error('--demo no admite --data-dir: nunca se abre una base existente en modo prueba.')
+    if args.port is None:
+        args.port = 8766 if args.demo else 8765
+    previous_signal = None
+    if threading.current_thread() is threading.main_thread():
+        def terminate(*_):
+            raise KeyboardInterrupt
+        previous_signal = signal.signal(signal.SIGTERM, terminate)
     try:
-        data_lock = DataLock(path.parent)
+        if args.demo:
+            with DemoWorkspace() as directory:
+                run_server(directory / 'colegio.sqlite3', args, demo=True)
+            print('Sesión de prueba cerrada. Sus datos temporales fueron eliminados.', flush=True)
+        else:
+            run_server(Path(args.data_dir or ROOT / 'data').resolve() / 'colegio.sqlite3', args)
     except RuntimeError as error:
         raise SystemExit(str(error))
-    if not path.exists() and any((path.parent / 'backups').glob('*.sqlite3')):
-        data_lock.close()
-        raise SystemExit('No se encuentra la base de datos, pero hay respaldos anteriores. '
-                         'Ejecuta Restaurar-respaldo.bat para recuperar tus datos antes de abrir Aula. '
-                         'No se ha creado una base vacía.')
-    if path.exists():
-        with closing(connect(path)) as existing:
-            needs_upgrade = existing.execute('PRAGMA user_version').fetchone()[0] < SCHEMA_VERSION
-        if needs_upgrade:
-            consistent_backup(path, path.parent / 'backups' / f'antes-actualizacion-{datetime.now():%Y%m%d-%H%M%S}.sqlite3')
-    initialize(path)
-    with closing(connect(path)) as db, db:
-        synchronize_monthly_charges(db)
-    daily_backup(path)
-    automatic_backup(path)
-    try:
-        server = SchoolServer(('127.0.0.1', args.port), str(path))
-    except OSError as error:
-        raise SystemExit(f'No se pudo iniciar: {error}. Verifica si el sistema ya está abierto o usa otro puerto.')
-    print(f'Colegio abierto en http://127.0.0.1:{args.port} · datos: {path}')
-    print('Mantén esta ventana abierta. Ctrl+C para cerrar de forma segura.')
-    if args.open_browser:
-        webbrowser.open(f'http://127.0.0.1:{args.port}')
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
     finally:
-        server.server_close()
-        data_lock.close()
+        if previous_signal is not None:
+            signal.signal(signal.SIGTERM, previous_signal)
 
 
 if __name__ == '__main__':
