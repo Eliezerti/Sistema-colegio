@@ -7,20 +7,25 @@ import secrets
 import sqlite3
 import tempfile
 import time
+import threading
 import traceback
 import webbrowser
 from contextlib import closing
 from datetime import date, datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from decimal import Decimal
 from urllib.parse import parse_qs, urlsplit
 
-from .db import (ValidationError, audit, charges, check_password, connect, convert_received,
+from .db import (ValidationError, RateConfirmationRequired, audit, charges, check_password, connect, convert_received,
                  generate_month, hash_password, initialize, integer, money, record_payment,
                  required, valid_date, valid_rate, local_today, synchronize_monthly_charges)
-from .storage import DataLock, consistent_backup, daily_backup
+from .storage import DataLock, consistent_backup, daily_backup, automatic_backup, backup_status
+from .administration import (import_roster, import_template, cash_summary, close_cash, reopen_cash,
+    ensure_open_day, guardian_account, issue_guardian_document, load_administrative_document)
 from .documents import enrollment, payroll, load_document, render_pdf
 from .branding import SCHEMA_VERSION, LOGO_FILE
+from .lifecycle import roster_for_year, transition_year, create_plan, cancel_plan, plan_status
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -78,6 +83,12 @@ def snapshot(db, user):
             'enrollments': rows(db, 'SELECT id,student_id,created_at FROM enrollment_documents ORDER BY id DESC'),
             'payroll_plans': [dict(json.loads(r['snapshot_json']), id=r['id']) for r in db.execute('SELECT * FROM payroll_plans ORDER BY id DESC LIMIT 30')],
             'charges': charge_list, 'payments': payments, 'expenses': expenses,
+            'cash_closures': rows(db,'SELECT id,closed_on,created_at,reopened_at,reopen_reason FROM cash_closures ORDER BY id DESC LIMIT 100'),
+            'payment_plans': [plan_status(db,r) for r in db.execute('SELECT * FROM payment_plans ORDER BY id DESC LIMIT 100')],
+            'year_transitions': [dict(id=r['id'],source_year=(d:=json.loads(r['snapshot_json']))['source_year'],target_year=d['target_year'],issued_on=d['issued_on']) for r in db.execute('SELECT * FROM year_transitions ORDER BY id DESC LIMIT 30')],
+            'guardian_documents': [dict(id=r['id'],kind=(d:=json.loads(r['snapshot_json']))['kind'],
+                guardian_id=d['guardian']['id'],guardian_name=d['guardian']['name'],issued_on=d['issued_on'])
+                for r in db.execute('SELECT id,snapshot_json FROM guardian_documents ORDER BY id DESC LIMIT 100')],
             'rates': rows(db, 'SELECT * FROM exchange_rates ORDER BY rate_date DESC'),
             'collections': rows(db, '''SELECT c.*,u.name AS operator FROM collection_notes c
                  JOIN users u ON u.id=c.created_by ORDER BY c.id DESC'''),
@@ -104,13 +115,30 @@ def save_record(db, table, fields, data):
     return result.lastrowid
 
 
-def mutate(db, endpoint, data, user):
+def mutate(db, endpoint, data, user, *, synchronize=True):
     uid = user['id']
-    admin_paths = {'settings','grades','guardians','students','employees','users','password','void-payment','void-expense','cancel-charge','positions','payroll-plans'}
+    admin_paths = {'settings','grades','guardians','students','employees','users','password','void-payment','void-expense','cancel-charge','positions','payroll-plans','import-roster','reopen-cash','transition-year','cancel-plan'}
     if user['role'] == 'reader' or (endpoint in admin_paths and user['role'] != 'admin'):
         raise PermissionError('Tu perfil no permite esta operación.')
     # Calculate outstanding months before editing tariffs, dates or student status.
-    synchronize_monthly_charges(db)
+    if synchronize: synchronize_monthly_charges(db)
+    batch_record=lambda db,endpoint,data,user: mutate(db,endpoint,data,user,synchronize=False)
+    if endpoint=='import-roster': return import_roster(db,data,user,batch_record)
+    if endpoint=='close-cash': return close_cash(db,data,user)
+    if endpoint=='reopen-cash': return reopen_cash(db,data,user)
+    if endpoint=='guardian-documents': return issue_guardian_document(db,data,user)
+    if endpoint=='transition-year': return transition_year(db,data,user,batch_record)
+    if endpoint=='payment-plans': return create_plan(db,data,user)
+    if endpoint=='cancel-plan': return cancel_plan(db,data,user)
+    if endpoint in ('payments','expenses'):
+        column='paid_on' if endpoint=='payments' else 'spent_on'
+        # A retry of an already committed payment still succeeds after closing the day.
+        duplicate=endpoint=='payments' and db.execute('SELECT 1 FROM payments WHERE request_key=?',(str(data.get('request_key','')),)).fetchone()
+        if not duplicate: ensure_open_day(db,valid_date(data.get(column)))
+    if endpoint in ('void-payment','void-expense'):
+        table,column=('payments','paid_on') if endpoint=='void-payment' else ('expenses','spent_on')
+        prior=db.execute(f'SELECT {column} FROM {table} WHERE id=?',(data.get('id'),)).fetchone()
+        if prior: ensure_open_day(db,prior[0])
     if endpoint == 'payroll-plans':
         return payroll(db, data, uid)
     if endpoint == 'generate':
@@ -128,9 +156,12 @@ def mutate(db, endpoint, data, user):
     if endpoint == 'rates':
         on = valid_date(data.get('rate_date'))
         rate = valid_rate(data.get('rate'))
+        prior=db.execute('SELECT rate FROM exchange_rates WHERE rate_date<=? ORDER BY rate_date DESC LIMIT 1',(on,)).fetchone()
+        if prior and abs(Decimal(rate)-Decimal(prior['rate']))>Decimal(prior['rate'])*Decimal('0.10') and data.get('rate_change_confirmed') is not True:
+            raise RateConfirmationRequired(prior['rate'],rate)
         db.execute('INSERT INTO exchange_rates(rate_date,rate,source) VALUES(?,?,?) ON CONFLICT(rate_date) DO UPDATE SET rate=excluded.rate,source=excluded.source',
                    (on, rate, 'BCV · registro manual'))
-        audit(db, uid, 'rate', {'date': on, 'rate': rate})
+        audit(db, uid, 'rate', {'date': on, 'rate': rate,'previous_rate':prior['rate'] if prior else None,'confirmed_large_change':data.get('rate_change_confirmed') is True})
         return {'rate_date': on}
     if endpoint == 'settings':
         fields = {'school_name': required(data, 'school_name'), 'currency': 'USD',
@@ -142,6 +173,14 @@ def mutate(db, endpoint, data, user):
                            ('website',200), ('legal_name',200), ('fiscal_address',500)):
             if key in data:
                 fields[key] = str(data[key]).strip()[:limit]
+        if 'backup_directory' in data:
+            directory=str(data['backup_directory']).strip()
+            if directory:
+                path=Path(directory)
+                live=Path(db.execute('PRAGMA database_list').fetchone()[2]).resolve().parent
+                if len(directory)>500 or not path.is_absolute() or path.resolve()==live or live in path.resolve().parents:
+                    raise ValidationError('El segundo respaldo debe usar una ruta absoluta fuera de la carpeta de datos de Aula.')
+            fields['backup_directory']=directory
         db.executemany('UPDATE settings SET value=? WHERE key=?', [(v, k) for k, v in fields.items()])
         audit(db, uid, 'settings', fields)
         return {'saved': True}
@@ -247,6 +286,9 @@ def mutate(db, endpoint, data, user):
             charge = next((c for c in charges(db) if c['id'] == target), None)
             if not charge:
                 raise ValidationError('Cargo inexistente o ya anulado.')
+            for plan in db.execute('SELECT * FROM payment_plans WHERE cancelled=0'):
+                if any(c['id']==target for c in json.loads(plan['snapshot_json'])['charges']):
+                    raise ValidationError('Este cargo pertenece a un convenio. Cancela primero el convenio con motivo.')
             if charge['paid']:
                 raise ValidationError('Anula primero los pagos asociados al cargo.')
             db.execute('UPDATE charges SET cancelled=1 WHERE id=?', (target,))
@@ -266,6 +308,10 @@ def mutate(db, endpoint, data, user):
                   'spent_on': on, 'reference': str(data.get('reference', ''))[:200],
                   'employee_id': integer(data['employee_id'], 1, 2147483647) if data.get('employee_id') else None,
                   'created_by': uid, 'currency': currency, 'received_amount': received, 'exchange_rate': rate}
+        method=data.get('method','No especificado')
+        if method not in ('Efectivo','Transferencia','Tarjeta','Otro','No especificado'):
+            raise ValidationError('Método de pago inválido.')
+        fields['method']=method
         if data.get('id'):
             raise ValidationError('Los egresos se corrigen anulándolos y creando uno nuevo.')
     else:
@@ -274,7 +320,7 @@ def mutate(db, endpoint, data, user):
     audit(db, uid, endpoint, {'id': record_id, 'operation': 'update' if data.get('id') else 'create'})
     result = {'id': record_id}
     if endpoint == 'students':
-        synchronize_monthly_charges(db)
+        if synchronize: synchronize_monthly_charges(db)
         result['document_id'] = enrollment(db, record_id, uid)
         result['student_code'] = db.execute('SELECT student_code FROM students WHERE id=?', (record_id,)).fetchone()[0]
     return result
@@ -287,6 +333,24 @@ class SchoolServer(ThreadingHTTPServer):
         super().__init__(address, Handler)
         self.db_path = db_path
         self.login_attempts = {}
+        self.backup_lock=threading.Lock()
+        self.backup_stop=threading.Event()
+        self.backup_thread=threading.Thread(target=self.backup_loop,daemon=True)
+        self.backup_thread.start()
+
+    def make_backup(self):
+        with self.backup_lock:
+            try: return automatic_backup(self.db_path)
+            except Exception:
+                return {'local_error':'No se pudo completar el respaldo. Revisa el espacio y los permisos de la carpeta de datos.'}
+
+    def backup_loop(self):
+        while not self.backup_stop.wait(300): self.make_backup()
+
+    def server_close(self):
+        self.backup_stop.set()
+        self.backup_thread.join(timeout=5)
+        super().server_close()
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -356,7 +420,8 @@ class Handler(BaseHTTPRequestHandler):
                 if self.headers.get('Origin') not in (None, f'http://{host}'):
                     raise PermissionError('Origen no permitido.')
                 length = int(self.headers.get('Content-Length', '0'))
-                if not 0 < length <= 65536 or 'application/json' not in self.headers.get('Content-Type', ''):
+                maximum=3_000_000 if endpoint in ('import-roster','transition-year') else 65536
+                if not 0 < length <= maximum or 'application/json' not in self.headers.get('Content-Type', ''):
                     raise ValidationError('Envía un objeto JSON válido (máximo 64 KB).')
                 data = json.loads(self.rfile.read(length))
                 if not isinstance(data, dict):
@@ -418,7 +483,7 @@ class Handler(BaseHTTPRequestHandler):
                         if not db.execute('SELECT 1 FROM exchange_rates WHERE rate_date=?', (on,)).fetchone():
                             raise ValidationError('Administración o caja debe registrar la tasa de hoy primero.')
                     else:
-                        mutate(db, 'rates', {'rate_date': on, 'rate': data.get('rate')}, user)
+                        mutate(db, 'rates', {'rate_date': on, 'rate': data.get('rate'),'rate_change_confirmed':data.get('rate_change_confirmed')}, user)
                     db.execute('UPDATE sessions SET rate_confirmed_on=? WHERE token=?', (on, user['token']))
                     audit(db, user['id'], 'confirm_rate', {'date': on})
                     result = {'ok': True}
@@ -426,13 +491,53 @@ class Handler(BaseHTTPRequestHandler):
                     db.execute('DELETE FROM sessions WHERE token=?', (user['token'],))
                     result = {'ok': True}
                 else:
+                    if endpoint in ('import-roster','transition-year') and data.get('preview') is not True and user['role']=='admin':
+                        status=self.server.make_backup()
+                        if status.get('local_error'): raise ValidationError('No se puede importar sin completar primero un respaldo local.')
                     result = mutate(db, endpoint, data, user)
                 db.commit()
+                if endpoint in ('payments','expenses','void-payment','void-expense','close-cash','reopen-cash','settings','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
+                    status=self.server.make_backup()
+                    if status.get('local_error') or status.get('secondary_error'):
+                        result['backup_warning']=status.get('local_error') or status.get('secondary_error')
                 self.respond(200, result)
                 return
             public_user = {k:v for k,v in user.items() if k not in ('token', 'csrf')}
             if endpoint == 'state':
-                self.respond(200, snapshot(db, public_user))
+                result=snapshot(db, public_user)
+                result['backup']=backup_status(self.server.db_path)
+                self.respond(200, result)
+            elif endpoint=='import-template':
+                if user['role']!='admin': raise PermissionError('Solo administración puede importar alumnos.')
+                xlsx=parse_qs(url.query).get('format',['csv'])[0]=='xlsx'
+                self.respond(200,import_template(xlsx),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' if xlsx else 'text/csv; charset=utf-8',
+                    {'Content-Disposition':f'attachment; filename="plantilla-alumnos.{"xlsx" if xlsx else "csv"}"'})
+            elif endpoint=='cash-preview':
+                self.respond(200,cash_summary(db,parse_qs(url.query).get('date',[local_today().isoformat()])[0]))
+            elif endpoint=='backup-status':
+                self.respond(200,backup_status(self.server.db_path))
+            elif endpoint=='year-roster':
+                if user['role']!='admin': raise PermissionError('Solo administración puede realizar el pase de año.')
+                self.respond(200,roster_for_year(db,parse_qs(url.query).get('year',[''])[0]))
+            elif endpoint.startswith(('payment-plan/','year-transition/')):
+                kind,raw=endpoint.split('/');target=integer(raw.removesuffix('.pdf'),1,2147483647)
+                table='payment_plans' if kind=='payment-plan' else 'year_transitions'
+                r=db.execute(f'SELECT * FROM {table} WHERE id=?',(target,)).fetchone()
+                if not r: raise ValidationError('Documento inexistente.')
+                document=dict(json.loads(r['snapshot_json']),id=target)
+                if kind=='payment-plan':document.update(cancelled=r['cancelled'],cancel_reason=r['cancel_reason'])
+                if raw.endswith('.pdf'):
+                    self.respond(200,render_pdf(kind,document),'application/pdf',{'Content-Disposition':f'attachment; filename="{kind}-{target:06d}.pdf"'})
+                else:self.respond(200,document)
+            elif endpoint.startswith('guardian-account/'):
+                self.respond(200,guardian_account(db,endpoint.split('/')[-1]))
+            elif endpoint.startswith(('guardian-document/','cash-close/')):
+                kind,raw=endpoint.split('/'); target=integer(raw.removesuffix('.pdf'),1,2147483647)
+                document=load_administrative_document(db,kind,target)
+                if raw.endswith('.pdf'):
+                    self.respond(200,render_pdf(kind,document),'application/pdf',
+                        {'Content-Disposition':f'attachment; filename="{kind}-{target:06d}.pdf"'})
+                else: self.respond(200,document)
             elif endpoint.startswith(('enrollment/', 'payroll-plan/')):
                 kind, raw = endpoint.split('/')
                 pdf = raw.endswith('.pdf')
@@ -458,6 +563,15 @@ class Handler(BaseHTTPRequestHandler):
                 payment.pop('request_key', None)
                 payment.update(frozen['person'])
                 payment['operator'] = frozen['operator']
+                # Legacy receipts can use the last issued enrollment at payment creation.
+                # Never substitute today's grade for an unknown historical grade.
+                if not payment.get('grade_name'):
+                    prior = db.execute('''SELECT snapshot_json FROM enrollment_documents
+                        WHERE student_id=? AND created_at<=? ORDER BY created_at DESC,id DESC LIMIT 1''',
+                        (payment['student_id'],payment['created_at'])).fetchone()
+                    student = json.loads(prior[0])['student'] if prior else {}
+                    payment['grade_name'] = student.get('grade_name','')
+                    payment['student_school_year'] = student.get('school_year')
                 document = {'payment': payment, 'settings': frozen['school'],
                   'allocations': rows(db, '''SELECT a.amount,c.concept,c.period FROM allocations a JOIN charges c
                       ON c.id=a.charge_id WHERE a.payment_id=?''', (target,))}
@@ -514,6 +628,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(404, {'error': 'Operación inexistente.'})
         except PermissionError as error:
             self.respond(403, {'error': str(error)})
+        except RateConfirmationRequired as error:
+            self.respond(409,{'error':str(error),'requires_rate_confirmation':True,'old_rate':error.old,'new_rate':error.new})
         except (ValidationError, json.JSONDecodeError, ValueError, TypeError, KeyError) as error:
             self.respond(400, {'error': str(error) if isinstance(error, ValidationError) else 'Datos inválidos.'})
         except sqlite3.IntegrityError:
@@ -551,6 +667,7 @@ def main():
     with closing(connect(path)) as db, db:
         synchronize_monthly_charges(db)
     daily_backup(path)
+    automatic_backup(path)
     try:
         server = SchoolServer(('127.0.0.1', args.port), str(path))
     except OSError as error:

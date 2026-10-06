@@ -12,7 +12,7 @@ def main():
     args = parser.parse_args()
     output = Path(args.output).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    files = [root / name for name in ('README.md','Iniciar-Aula.bat','Restaurar-respaldo.bat','Abrir-carpeta-de-datos.bat')]
+    files = [root / name for name in ('README.md','Iniciar-Aula.bat','Restaurar-respaldo.bat','Abrir-carpeta-de-datos.bat','Recuperar-clave-admin.bat')]
     for directory in ('colegio','static','tests'):
         files.extend(p for p in (root / directory).rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix in ('.py','.js','.cjs','.css','.html','.svg','.png','.ttf','.json','.txt'))
     with zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_DEFLATED) as archive:

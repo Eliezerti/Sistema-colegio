@@ -1,5 +1,10 @@
 import http.client
 import json
+import base64
+import csv
+import io
+import subprocess
+import sys
 import sqlite3
 import tempfile
 import threading
@@ -8,7 +13,8 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from pathlib import Path
 
-from colegio.db import initialize, money, valid_rate, ValidationError, local_today
+from colegio.db import initialize, money, valid_rate, ValidationError, local_today, connect
+from colegio.administration import COLUMNS, parse_import
 from colegio.server import SchoolServer
 from colegio.storage import DataLock, daily_backup
 from colegio.restore import restore
@@ -80,7 +86,7 @@ class SystemTests(unittest.TestCase):
 
     def payment(self,amount='22.50',currency='USD',key='one',**overrides):
         data={'student_id':self.student,'amount':amount,'currency':currency,'paid_on':f'{self.year+1}-02-10',
-              'method':'Transferencia','reference':'ref','request_key':key}
+              'method':'Transferencia','reference':'ref-'+key,'request_key':key}
         data.update(overrides)
         return data
 
@@ -98,7 +104,7 @@ class SystemTests(unittest.TestCase):
         state=self.request('state')
         self.assertEqual(state['students'][0]['balance'],51750)
         self.assertEqual(state['charges'][0]['paid'],2250)
-        self.request('rates',{'rate_date':on,'rate':'200'})
+        self.request('rates',{'rate_date':on,'rate':'200','rate_change_confirmed':True})
         self.request('students',self.student_data(id=self.student,name='Nombre actualizado'))
         receipt=self.request('receipt/'+str(result['id']))
         self.assertEqual(receipt['payment']['exchange_rate'],'100.125')
@@ -153,6 +159,8 @@ class SystemTests(unittest.TestCase):
         self.request('state',status=428)
         self.request('confirm-rate',{'rate_date':local_today().isoformat()})
         self.request('rates',{'rate_date':'2020-01-01','rate':'1'},status=403)
+        for endpoint in ('import-roster','close-cash','reopen-cash','guardian-documents'):
+            self.request(endpoint,{},status=403)
         self.request('backup',status=403)
         self.assertEqual(self.request('state')['users'],[])
         self.assertEqual(self.request('state')['audit'],[])
@@ -193,9 +201,9 @@ class SystemTests(unittest.TestCase):
         self.request('grades', {'name':'Blocked','capacity':20}, status=428)
         self.assertEqual(self.request('rate-gate')['today'],local_today().isoformat())
         self.request('backup')  # Backup remains accessible at the checkpoint.
-        self.request('confirm-rate', {'rate_date':'2000-01-01','rate':'123'},status=400)
-        self.request('confirm-rate', {'rate_date':local_today().isoformat(),'rate':'123'},csrf=False,status=403)
-        self.request('confirm-rate', {'rate_date':local_today().isoformat(),'rate':'123'})
+        self.request('confirm-rate', {'rate_date':'2000-01-01','rate':'123','rate_change_confirmed':True},status=400)
+        self.request('confirm-rate', {'rate_date':local_today().isoformat(),'rate':'123','rate_change_confirmed':True},csrf=False,status=403)
+        self.request('confirm-rate', {'rate_date':local_today().isoformat(),'rate':'123','rate_change_confirmed':True})
         self.assertTrue(self.request('state')['students'])
         with sqlite3.connect(self.path) as db:
             db.execute("UPDATE sessions SET rate_confirmed_on='2000-01-01'")
@@ -223,7 +231,7 @@ class SystemTests(unittest.TestCase):
         self.assertEqual(frozen['lines'][0]['bank_account'],'01020000000012345678')
         self.assertEqual(len(self.request('state')['expenses']),0)
         self.assertEqual(self.request('state')['employees'][0]['salary'],12000)
-        self.request('rates', {'rate_date':on,'rate':'200'})
+        self.request('rates', {'rate_date':on,'rate':'200','rate_change_confirmed':True})
         self.request('positions',{'id':position,'name':'Profesor'})
         self.assertTrue(all(e['position']=='Profesor' for e in self.request('state')['employees']))
         self.assertEqual(self.request('payroll-plan/'+str(plan))['rate'],'100.125')
@@ -258,7 +266,7 @@ class SystemTests(unittest.TestCase):
             self.assertEqual(db.execute('SELECT COUNT(*),SUM(amount) FROM payments').fetchone(),before)
             self.assertEqual(db.execute('SELECT student_code FROM students').fetchone()[0],'AL-000001')
             self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],4)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],SCHEMA_VERSION)
             employee=db.execute('SELECT position,position_id,salary,bank_account FROM employees').fetchone()
             self.assertEqual(employee[0],'Secretaría')
             self.assertIsNotNone(employee[1])
@@ -398,6 +406,293 @@ class SystemTests(unittest.TestCase):
         daily_backup(restored)
         daily_backup(restored)
         self.assertEqual(len(list((other/'backups').glob('colegio-*.sqlite3'))),1)
+
+
+    def test_receipt_grade_is_frozen_and_legacy_grade_uses_historical_enrollment(self):
+        first=self.request('payments',self.payment())['id']
+        self.assertEqual(self.request(f'receipt/{first}')['payment']['grade_name'],'Primaria A')
+        second_grade=self.request('grades',{'name':'Segundo B','capacity':30})['id']
+        self.request('students',self.student_data(id=self.student,grade_id=second_grade))
+        self.assertEqual(self.request(f'receipt/{first}')['payment']['grade_name'],'Primaria A')
+        for paper in ('a4','half-letter'):
+            self.assertIn(b'Primaria A',self.request(f'receipt/{first}.pdf?paper={paper}'))
+        with sqlite3.connect(self.path) as db:
+            frozen=json.loads(db.execute('SELECT receipt_snapshot FROM payments WHERE id=?',(first,)).fetchone()[0])
+            frozen['person'].pop('grade_name');frozen['person'].pop('student_school_year')
+            old=json.dumps(frozen)
+            db.execute('UPDATE payments SET receipt_snapshot=? WHERE id=?',(old,first))
+        self.assertEqual(self.request(f'receipt/{first}')['payment']['grade_name'],'Primaria A')
+        with sqlite3.connect(self.path) as db:
+            self.assertEqual(db.execute('SELECT receipt_snapshot FROM payments WHERE id=?',(first,)).fetchone()[0],old)
+            db.execute('DELETE FROM enrollment_documents WHERE student_id=?',(self.student,))
+        self.assertEqual(self.request(f'receipt/{first}')['payment']['grade_name'],'')
+        self.assertIn(b'Grado no registrado',self.request(f'receipt/{first}.pdf'))
+
+    def roster_file(self,records):
+        defaults=dict(zip(COLUMNS,['Representante Nuevo','V-444','04120000001','','',
+            'Alumno Importado','','2016-01-01','Primaria A',str(self.year),'50','10',
+            f'{self.year}-09-01',f'{self.year+1}-08-31','activo','']))
+        out=io.StringIO();writer=csv.DictWriter(out,fieldnames=COLUMNS,delimiter=';');writer.writeheader()
+        for record in records: writer.writerow(dict(defaults,**record))
+        return {'filename':'alumnos.csv','content':base64.b64encode(out.getvalue().encode('utf-8-sig')).decode()}
+
+    def test_import_preview_atomic_commit_duplicates_capacity_and_historical_debt(self):
+        data=self.roster_file([{}]);before=self.request('state')
+        preview=self.request('import-roster',dict(data,preview=True))
+        self.assertEqual(preview['errors'],[]);self.assertEqual(preview['students'],1)
+        self.assertEqual(preview['new_balance'],54000)
+        after=self.request('state');self.assertEqual(after['students'],before['students'])
+        self.assertEqual(after['guardians'],before['guardians'])
+        self.request('import-roster',data,status=400)
+        saved=self.request('import-roster',dict(data,confirmed_hash=preview['hash']))
+        self.assertEqual(saved['students'],1)
+        self.assertEqual(len(self.request('state')['students']),2)
+        again=self.request('import-roster',dict(data,preview=True))
+        self.assertTrue(again['errors']);self.request('import-roster',dict(data,confirmed_hash=preview['hash']),status=400)
+        # One valid row followed by an invalid row never partially imports.
+        self.request('grades',{'id':self.grade,'name':'Primaria A','capacity':10})
+        bad=self.roster_file([{'alumno_nombre':'Otro alumno','representante_cedula':'V-555'},
+            {'alumno_nombre':'Alumno errado','representante_cedula':'V-666','grado':'No existe'}])
+        count=len(self.request('state')['students']);p=self.request('import-roster',dict(bad,preview=True))
+        self.assertEqual(p['students'],1);self.assertEqual(p['errors'][0]['row'],3)
+        self.request('import-roster',dict(bad,confirmed_hash=p['hash']),status=400)
+        self.assertEqual(len(self.request('state')['students']),count)
+        capacity=self.roster_file([{'alumno_nombre':'Uno nuevo'},{'alumno_nombre':'Dos nuevos'}])
+        self.request('grades',{'id':self.grade,'name':'Primaria A','capacity':3})
+        p=self.request('import-roster',dict(capacity,preview=True));self.assertEqual(len(p['errors']),1)
+
+    def test_excel_template_numeric_dates_shared_siblings_and_formula_rejection(self):
+        import zipfile
+        raw=self.request('import-template?format=xlsx')
+        with zipfile.ZipFile(io.BytesIO(raw)) as z: files={name:z.read(name) for name in z.namelist()}
+        vals=['Representante Nuevo','V-444','04120000001','','','Alumno Importado','','42370',
+            'Primaria A',str(self.year),'50.00','10',f'{self.year}-09-01',f'{self.year+1}-08-31','activo','']
+        cells=''.join(f'<c r="{chr(65+i)}2" t="inlineStr"><is><t>{value}</t></is></c>' if i!=7 else f'<c r="H2"><v>{value}</v></c>' for i,value in enumerate(vals))
+        files['xl/worksheets/sheet1.xml']=files['xl/worksheets/sheet1.xml'].replace(b'</sheetData>',('<row r="2">'+cells+'</row></sheetData>').encode())
+        def excel():
+            buffer=io.BytesIO()
+            with zipfile.ZipFile(buffer,'w',zipfile.ZIP_DEFLATED) as z:
+                for name,payload in files.items(): z.writestr(name,payload)
+            return {'filename':'alumnos.xlsx','content':base64.b64encode(buffer.getvalue()).decode()}
+        p=self.request('import-roster',dict(excel(),preview=True));self.assertEqual(p['errors'],[])
+        records,_=parse_import(excel());self.assertEqual(records[0]['nacimiento'],'2016-01-01')
+        files['xl/worksheets/sheet1.xml']=files['xl/worksheets/sheet1.xml'].replace(b'<v>42370</v>',b'<f>1+1</f><v>42370</v>')
+        self.request('import-roster',dict(excel(),preview=True),status=400)
+        self.request('grades',{'id':self.grade,'name':'Primaria A','capacity':5})
+        data=self.roster_file([{}, {'alumno_nombre':'Hermano Importado','nacimiento':'2018-01-01'}])
+        p=self.request('import-roster',dict(data,preview=True));self.assertEqual(p['guardians'],1)
+        self.request('import-roster',dict(data,confirmed_hash=p['hash']))
+        siblings=self.request('state')['students']
+        self.assertEqual(len({s['student_code'] for s in siblings}),3)
+        self.assertEqual(len(self.request('state')['guardians']),2)
+
+    def cash_data(self,on,**extra):
+        return dict(closed_on=on,preview_hash=self.request('cash-preview?date='+on)['preview_hash'],
+            opening_USD='0',opening_VES='0',counted_USD='0',counted_VES='0',**extra)
+
+    def test_cash_close_native_currency_counting_freeze_blocking_reopening_and_stale_preview(self):
+        on=local_today().isoformat()
+        first=self.request('payments',self.payment(amount='10',paid_on=on,method='Efectivo'))['id']
+        self.request('payments',self.payment(amount='1000',currency='VES',key='bs',paid_on=on))
+        self.request('expenses',{'concept':'Gasto','category':'Operación','spent_on':on,'amount':'3','currency':'USD','method':'Efectivo'})
+        data=self.cash_data(on);data['counted_USD']='7'
+        closed=self.request('close-cash',data)['id'];doc=self.request(f'cash-close/{closed}')
+        self.assertEqual(doc['income_usd'],2000);self.assertEqual(doc['expense_usd'],300)
+        self.assertEqual(doc['counts'][0]['expected'],700);self.assertEqual(doc['counts'][0]['difference'],0)
+        self.assertEqual(next(r for r in doc['lines'] if r['currency']=='VES')['income'],100000)
+        self.assertIn(b'/FontFile2',self.request(f'cash-close/{closed}.pdf'))
+        self.request('payments',self.payment(amount='1',key='new',paid_on=on),status=400)
+        self.request('void-payment',{'id':first,'reason':'Corrección'},status=400)
+        self.request('expenses',{'concept':'Gasto','category':'Operación','spent_on':on,'amount':'1','currency':'USD'},status=400)
+        self.assertTrue(self.request('payments',self.payment(amount='10',paid_on=on,method='Efectivo'))['duplicate'])
+        self.request('close-cash',data,status=400)
+        self.request('reopen-cash',{'id':closed,'reason':'Corregir referencia'})
+        self.request('void-payment',{'id':first,'reason':'Corrección'})
+        historical=self.request(f'cash-close/{closed}')
+        self.assertEqual(historical['lines'],doc['lines']);self.assertTrue(historical['reopened_at'])
+        # Changed movements must be reviewed again before signing a close.
+        stale=self.cash_data(on)
+        self.request('payments',self.payment(amount='1',key='after',paid_on=on))
+        self.request('close-cash',stale,status=400)
+        fresh=self.cash_data(on);self.request('close-cash',fresh,status=400) # Negative cash: supply the opening fund.
+        fresh.update(opening_USD='3',counted_USD='0');self.request('close-cash',fresh)
+
+    def test_guardian_account_all_children_solvency_and_immutable_documents(self):
+        other=self.request('students',self.student_data(name='Hermano Dos',document='A-002'))['id']
+        account=self.request('guardian-account/'+str(self.guardian))
+        self.assertEqual(len(account['students']),2);self.assertEqual(account['balance'],108000)
+        docid=self.request('guardian-documents',{'guardian_id':self.guardian,'kind':'account'})['id']
+        frozen=self.request(f'guardian-document/{docid}')
+        self.request('guardian-documents',{'guardian_id':self.guardian,'kind':'solvency'},status=400)
+        self.request('payments',self.payment(amount='540'))
+        self.request('payments',dict(self.payment(amount='540',key='brother'),student_id=other))
+        self.assertEqual(self.request('guardian-account/'+str(self.guardian))['balance'],0)
+        certificate=self.request('guardian-documents',{'guardian_id':self.guardian,'kind':'solvency'})['id']
+        self.assertEqual(self.request(f'guardian-document/{certificate}')['balance'],0)
+        self.assertEqual(self.request(f'guardian-document/{docid}'),frozen)
+        for target in (docid,certificate): self.assertIn(b'/FontFile2',self.request(f'guardian-document/{target}.pdf'))
+        self.request('charges',{'student_id':other,'period':'Extra','concept':'Inscripción','amount':'1','due_date':local_today().isoformat()})
+        self.request('guardian-documents',{'guardian_id':self.guardian,'kind':'solvency'},status=400)
+        self.assertEqual(self.request(f'guardian-document/{certificate}')['balance'],0)
+
+    def test_financial_backups_secondary_destination_failure_and_durability_pragmas(self):
+        with connect(self.path) as db:
+            self.assertEqual(db.execute('PRAGMA journal_mode').fetchone()[0],'wal')
+            self.assertEqual(db.execute('PRAGMA synchronous').fetchone()[0],2)
+        secondary=tempfile.TemporaryDirectory();self.addCleanup(secondary.cleanup)
+        second=Path(secondary.name)/'second-folder'
+        self.request('settings',{'school_name':'Colegio Prueba','school_year':self.year,'due_day':10,'backup_directory':str(second)})
+        self.request('payments',self.payment())
+        status=self.request('backup-status');self.assertTrue(status['secondary_at'])
+        with sqlite3.connect(status['local_path']) as db:
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM payments').fetchone()[0],1)
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM sessions').fetchone()[0],0)
+            self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
+        self.assertTrue((second/Path(status['local_path']).name).exists())
+        # A second destination failure cannot roll back a successfully committed payment.
+        for p in second.iterdir():p.unlink()
+        second.rmdir();second.write_text('Not a folder')
+        result=self.request('payments',self.payment(key='second'))
+        self.assertTrue(result['backup_warning']);self.assertEqual(len(self.request('state')['payments']),2)
+        self.assertTrue(self.request('backup-status')['secondary_error'])
+        bad={'school_name':'Colegio Prueba','school_year':self.year,'due_day':10,'backup_directory':str(self.path.parent/'backups')}
+        self.request('settings',bad,status=400)
+
+    def test_process_killed_during_and_after_payment_preserves_atomicity(self):
+        script=r"""
+import json,sqlite3,sys
+from colegio.db import record_payment
+phase=sys.argv[2]
+class Connection(sqlite3.Connection):
+    def execute(self,sql,*args):
+        result=super().execute(sql,*args)
+        if phase=='during' and sql.startswith('INSERT INTO allocations'):
+            print('checkpoint',flush=True);input()
+        return result
+with sqlite3.connect(sys.argv[1],factory=Connection) as db:
+    db.row_factory=sqlite3.Row
+    db.execute('PRAGMA foreign_keys=ON');db.execute('PRAGMA synchronous=FULL');db.execute('BEGIN IMMEDIATE')
+    record_payment(db,json.loads(sys.argv[3]),1)
+    db.commit();print('checkpoint',flush=True);input()
+"""
+        for phase in ('during','after'):
+            process=subprocess.Popen([sys.executable,'-u','-c',script,str(self.path),phase,json.dumps(self.payment(amount='70'))],
+                stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+            try:
+                self.assertEqual(process.stdout.readline().strip(),'checkpoint')
+                process.kill();process.wait(timeout=10)
+            finally:
+                if process.poll() is None:process.kill();process.wait(timeout=10)
+                process.stdin.close();process.stdout.close();process.stderr.close()
+            with connect(self.path) as db:
+                self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
+                self.assertEqual(db.execute('SELECT COUNT(*) FROM payments').fetchone()[0],0 if phase=='during' else 1)
+                self.assertEqual(db.execute('SELECT COALESCE(SUM(amount),0) FROM allocations').fetchone()[0],0 if phase=='during' else 7000)
+
+
+    def test_rate_large_change_requires_explicit_confirmation_and_no_writes(self):
+        on=local_today().isoformat()
+        result=self.request('rates',{'rate_date':on,'rate':'1000'},status=409)
+        self.assertTrue(result['requires_rate_confirmation'])
+        self.assertEqual(self.request('rate-gate')['rate'],'100')
+        self.request('rates',{'rate_date':on,'rate':'110'}) # Exactly 10% is permitted.
+        self.request('rates',{'rate_date':on,'rate':'90'},status=409)
+        self.request('rates',{'rate_date':on,'rate':'90','rate_change_confirmed':True})
+        self.assertEqual(self.request('rate-gate')['rate'],'90')
+
+    def test_duplicate_reference_warning_requires_reason_and_retries_remain_idempotent(self):
+        first=self.request('payments',self.payment(reference='000ABC'))['id']
+        repeated=self.payment(key='other',reference=' 000abc ')
+        self.request('payments',repeated,status=400)
+        self.request('payments',dict(repeated,duplicate_reference_confirmed=True),status=400)
+        allowed=dict(repeated,duplicate_reference_confirmed=True,duplicate_reason='Dos pagos del mismo comprobante, verificados')
+        second=self.request('payments',allowed)['id'];self.assertNotEqual(first,second)
+        self.assertTrue(self.request('payments',allowed)['duplicate'])
+        self.assertEqual(len(self.request('state')['payments']),2)
+        self.assertTrue(any(a['action']=='duplicate-reference-confirmed' for a in self.request('state')['audit']))
+
+    def test_bulk_year_promotions_repeaters_withdrawals_preserve_finances_and_archive(self):
+        self.request('grades',{'id':self.grade,'name':'Primaria A','capacity':5})
+        repeat=self.request('students',self.student_data(name='Repitente',document='A-002'))['id']
+        withdraw=self.request('students',self.student_data(name='Retirado',document='A-003'))['id']
+        next_grade=self.request('grades',{'name':'Segundo B','capacity':10})['id']
+        receipt=self.request('payments',self.payment())['id'];before=self.request('state')
+        roster=self.request('year-roster?year='+str(self.year))
+        data={'source_year':self.year,'target_year':self.year+1,'roster_hash':roster['preview_hash'],
+            'closed_on':f'{self.year+1}-08-31','enrollment_start':f'{self.year+1}-09-01','enrollment_end':f'{self.year+2}-08-31',
+            'lines':[{'student_id':self.student,'action':'promote','grade_id':next_grade,'monthly_fee':'60'},
+                {'student_id':repeat,'action':'repeat','grade_id':next_grade,'monthly_fee':'50'},
+                {'student_id':withdraw,'action':'withdraw','grade_id':next_grade,'monthly_fee':'50'}]}
+        preview=self.request('transition-year',dict(data,preview=True));self.assertEqual(preview['errors'],[])
+        self.assertEqual(self.request('state')['students'],before['students'])
+        self.request('transition-year',data,status=400)
+        result=self.request('transition-year',dict(data,confirmed_hash=preview['hash']))
+        state=self.request('state');by_id={s['id']:s for s in state['students']}
+        self.assertEqual(by_id[self.student]['grade_id'],next_grade)
+        self.assertEqual(by_id[repeat]['grade_id'],self.grade);self.assertEqual(by_id[repeat]['school_year'],self.year+1)
+        self.assertEqual(by_id[withdraw]['school_year'],self.year);self.assertEqual(by_id[withdraw]['status'],'inactive')
+        self.assertEqual(state['payments'],before['payments'])
+        with sqlite3.connect(self.path) as db:
+            for charge in before['charges']:
+                row=db.execute('SELECT amount,period FROM charges WHERE id=?',(charge['id'],)).fetchone()
+                self.assertEqual(row,(charge['amount'],charge['period']))
+        self.assertEqual(self.request(f'receipt/{receipt}')['payment']['grade_name'],'Primaria A')
+        doc=self.request(f"year-transition/{result['id']}")
+        self.assertEqual(doc['lines'][0]['source']['school_year'],self.year)
+        self.assertTrue(self.request(f"year-transition/{result['id']}.pdf").startswith(b'%PDF'))
+        self.request('transition-year',dict(data,confirmed_hash=preview['hash']),status=400)
+
+    def test_bulk_year_capacity_and_stale_preview_abort_without_partial_changes(self):
+        target=self.request('grades',{'name':'Segundo B','capacity':1})['id']
+        other=self.request('students',self.student_data(name='Otro',document='A-002'))['id']
+        roster=self.request('year-roster?year='+str(self.year))
+        data={'source_year':self.year,'target_year':self.year+1,'roster_hash':roster['preview_hash'],
+            'closed_on':f'{self.year+1}-08-31','enrollment_start':f'{self.year+1}-09-01','enrollment_end':f'{self.year+2}-08-31',
+            'lines':[{'student_id':sid,'action':'promote','grade_id':target,'monthly_fee':'50'} for sid in (self.student,other)]}
+        preview=self.request('transition-year',dict(data,preview=True));self.assertTrue(preview['errors'])
+        self.request('transition-year',dict(data,confirmed_hash=preview['hash']),status=400)
+        self.assertTrue(all(s['school_year']==self.year for s in self.request('state')['students']))
+        self.request('grades',{'id':target,'name':'Segundo B','capacity':3})
+        preview=self.request('transition-year',dict(data,preview=True))
+        self.request('students',self.student_data(id=self.student,notes='Cambió la matrícula'))
+        self.request('transition-year',dict(data,confirmed_hash=preview['hash']),status=400)
+
+    def test_payment_plan_existing_debt_installments_and_void_recalculate_compliance(self):
+        before=self.request('state');debt=before['students'][0]['overdue'];on=local_today().isoformat()
+        data={'student_id':self.student,'expected_total':debt,'installments':[{'due_date':on,'amount':'270'},{'due_date':on,'amount':'270'}]}
+        self.request('payment-plans',dict(data,installments=[{'due_date':on,'amount':'1'}]),status=400)
+        target=self.request('payment-plans',data)['id']
+        state=self.request('state');self.assertEqual(state['charges'],before['charges']);self.assertEqual(state['students'][0]['balance'],54000)
+        self.request('payment-plans',data,status=400)
+        payment=self.request('payments',self.payment(amount='300'))['id']
+        plan=self.request('state')['payment_plans'][0]
+        self.assertEqual([r['paid'] for r in plan['installments']],[27000,3000]);self.assertEqual(plan['balance'],24000)
+        self.request('void-payment',{'id':payment,'reason':'Corregir transferencia'})
+        plan=self.request('state')['payment_plans'][0];self.assertEqual(plan['paid'],0);self.assertEqual(plan['balance'],54000)
+        self.assertTrue(self.request(f'payment-plan/{target}.pdf').startswith(b'%PDF'))
+        self.request('cancel-plan',{'id':target,'reason':'Rehacer fechas'})
+        self.assertTrue(self.request('state')['payment_plans'][0]['cancelled'])
+        self.assertEqual(self.request('state')['students'][0]['balance'],54000)
+
+    def test_thermal_ticket_physical_sizes_and_same_saved_receipt(self):
+        payment=self.request('payments',self.payment())['id'];before=self.request(f'receipt/{payment}')
+        for paper,width in (('ticket-58','164.409'),('ticket-80','226.772')):
+            pdf=self.request(f'receipt/{payment}.pdf?paper={paper}')
+            self.assertIn(('/MediaBox [0 0 '+width+' ').encode(),pdf)
+            self.assertIn(b'Primaria A',pdf);self.assertIn(b'/FontFile2',pdf)
+        self.assertEqual(self.request(f'receipt/{payment}'),before)
+
+    def test_local_password_reset_requires_closed_application_and_preserves_data(self):
+        from colegio.reset_password import reset_password
+        from colegio.db import check_password
+        with DataLock(self.path.parent):
+            with self.assertRaises(RuntimeError):reset_password(self.path.parent,'admin','Nueva-clave-segura')
+        reset_password(self.path.parent,'admin','Nueva-clave-segura')
+        with sqlite3.connect(self.path) as db:
+            self.assertTrue(check_password('Nueva-clave-segura',db.execute("SELECT password FROM users WHERE username='admin'").fetchone()[0]))
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM sessions').fetchone()[0],0)
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM students').fetchone()[0],1)
+        self.assertTrue(list((self.path.parent/'backups').glob('recuperacion-clave-*.sqlite3')))
 
 
 if __name__=='__main__':

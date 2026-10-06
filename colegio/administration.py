@@ -1,0 +1,265 @@
+"""Validated roster imports, immutable daily closes and family documents."""
+import base64
+import csv
+import hashlib
+import io
+import json
+import re
+import sqlite3
+import unicodedata
+import zipfile
+from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal, InvalidOperation
+from pathlib import PurePosixPath
+from xml.etree import ElementTree as ET
+
+from .db import ValidationError, audit, charges, integer, local_today, money, required, valid_date, synchronize_monthly_charges
+from .documents import store
+
+COLUMNS = ('representante_nombre','representante_cedula','representante_telefono',
+    'representante_email','representante_direccion','alumno_nombre','alumno_cedula',
+    'nacimiento','grado','ano_escolar','mensualidad_usd','descuento_pct',
+    'inicio_matricula','fin_matricula','estado','observaciones')
+NS = {'s': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+
+
+def normalized(value):
+    return ''.join(c for c in unicodedata.normalize('NFD',str(value)).upper() if c.isalnum())
+
+
+def import_template(xlsx=False):
+    if not xlsx:
+        out = io.StringIO(); csv.writer(out, delimiter=';').writerow(COLUMNS)
+        return out.getvalue().encode('utf-8-sig')
+    out = io.BytesIO()
+    with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED) as z:
+        z.writestr('[Content_Types].xml','<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>')
+        z.writestr('_rels/.rels','<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>')
+        z.writestr('xl/workbook.xml','<workbook xmlns="'+NS['s']+'" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Alumnos" sheetId="1" r:id="rId1"/></sheets></workbook>')
+        z.writestr('xl/_rels/workbook.xml.rels','<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>')
+        cells = ''.join(f'<c r="{chr(65+i)}1" t="inlineStr"><is><t>{c}</t></is></c>' for i,c in enumerate(COLUMNS))
+        z.writestr('xl/worksheets/sheet1.xml','<worksheet xmlns="'+NS['s']+'"><sheetData><row r="1">'+cells+'</row></sheetData></worksheet>')
+    return out.getvalue()
+
+
+def parse_import(data):
+    try:
+        raw = base64.b64decode(data.get('content',''),validate=True)
+    except (ValueError, TypeError):
+        raise ValidationError('Archivo inválido.')
+    if not raw or len(raw)>2_000_000:
+        raise ValidationError('Selecciona un archivo de hasta 2 MB.')
+    name = str(data.get('filename','')).lower()
+    if name.endswith('.csv'):
+        try: text = raw.decode('utf-8-sig')
+        except UnicodeDecodeError: text = raw.decode('cp1252')
+        try:
+            dialect = csv.Sniffer().sniff(text[:8000],delimiters=';,\t')
+            matrix = list(csv.reader(io.StringIO(text),dialect))
+        except csv.Error:
+            raise ValidationError('CSV inválido. Usa la plantilla con separador punto y coma.')
+    elif name.endswith('.xlsx'):
+        try:
+            with zipfile.ZipFile(io.BytesIO(raw)) as z:
+                if len(z.infolist())>200 or sum(i.file_size for i in z.infolist())>12_000_000:
+                    raise ValidationError('El Excel expandido es demasiado grande.')
+                def xml(path):
+                    source = z.read(path)
+                    if b'<!DOCTYPE' in source.upper() or b'<!ENTITY' in source.upper():
+                        raise ValidationError('El Excel contiene XML no permitido.')
+                    return ET.fromstring(source)
+                workbook = xml('xl/workbook.xml')
+                properties=workbook.find('s:workbookPr',NS)
+                epoch=date(1904,1,1) if properties is not None and properties.get('date1904') in ('1','true') else date(1899,12,30)
+                sheet = workbook.find('s:sheets/s:sheet',NS)
+                rid = sheet.get('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id')
+                rel = next(r for r in xml('xl/_rels/workbook.xml.rels') if r.get('Id')==rid)
+                target = rel.get('Target','')
+                path = target.lstrip('/') if target.startswith('/') else 'xl/'+target
+                if rel.get('TargetMode')=='External' or '..' in PurePosixPath(path).parts:
+                    raise ValidationError('Hoja de Excel no permitida.')
+                strings = []
+                if 'xl/sharedStrings.xml' in z.namelist():
+                    strings = [''.join(e.itertext()) for e in xml('xl/sharedStrings.xml').findall('s:si',NS)]
+                matrix = []
+                for row in xml(path).findall('s:sheetData/s:row',NS):
+                    values = ['']*len(COLUMNS)
+                    for cell in row.findall('s:c',NS):
+                        if cell.find('s:f',NS) is not None:
+                            raise ValidationError('No se importan fórmulas. En Excel pega los datos como valores.')
+                        ref = re.fullmatch(r'([A-Z]+)[0-9]+',cell.get('r',''))
+                        if not ref: raise ValidationError('Celda de Excel inválida.')
+                        col = 0
+                        for c in ref[1]: col=col*26+ord(c)-64
+                        val = cell.findtext('s:v','',NS)
+                        kind = cell.get('t','')
+                        if kind=='s': val=strings[int(val)]
+                        if kind=='inlineStr': val=''.join(cell.find('s:is',NS).itertext())
+                        if col>len(COLUMNS):
+                            if val: raise ValidationError('El Excel contiene columnas adicionales; usa la plantilla.')
+                            continue
+                        if matrix and kind not in ('s','inlineStr','str','d') and val:
+                            if COLUMNS[col-1] in ('nacimiento','inicio_matricula','fin_matricula'):
+                                val = (epoch+timedelta(days=int(Decimal(val)))).isoformat()
+                            else: val = format(Decimal(val),'f').rstrip('0').rstrip('.') if '.' in val else val
+                        values[col-1]=val
+                    matrix.append(values)
+        except (zipfile.BadZipFile, KeyError, ET.ParseError, ValueError, IndexError, AttributeError, StopIteration, InvalidOperation, OverflowError):
+            raise ValidationError('Excel inválido. Usa la primera hoja de la plantilla .xlsx, sin contraseña ni macros.')
+    else:
+        raise ValidationError('Selecciona un archivo .csv o .xlsx (no .xls).')
+    if not matrix or tuple(str(c).strip().lower() for c in matrix[0]) != COLUMNS:
+        raise ValidationError('Las columnas deben coincidir con la plantilla y conservar su orden.')
+    matrix = [r for r in matrix[1:] if any(str(v).strip() for v in r)]
+    if not 1<=len(matrix)<=1000:
+        raise ValidationError('El archivo debe contener entre 1 y 1000 filas de alumnos.')
+    records = []
+    for row in matrix:
+        if len(row)!=len(COLUMNS) or any(len(str(v))>2000 for v in row):
+            raise ValidationError('Fila con columnas incorrectas o un campo demasiado largo.')
+        records.append(dict(zip(COLUMNS,(str(v).strip() for v in row))))
+    return records, hashlib.sha256(raw).hexdigest()
+
+
+def import_roster(db,data,user,save_record):
+    records,digest = parse_import(data)
+    preview = data.get('preview') is True
+    if not preview and data.get('confirmed_hash')!=digest:
+        raise ValidationError('Revisa la vista previa antes de confirmar este archivo.')
+    errors, imported = [], []
+    before_guardians = db.execute('SELECT COUNT(*) FROM guardians').fetchone()[0]
+    before_balance = sum(c['balance'] for c in charges(db))
+    db.execute('SAVEPOINT roster_batch')
+    for index,r in enumerate(records,2):
+        db.execute('SAVEPOINT roster_row')
+        try:
+            doc = required(r,'representante_cedula')
+            matches = [g for g in db.execute('SELECT * FROM guardians') if normalized(g['document'])==normalized(doc)]
+            if len(matches)>1: raise ValidationError('Hay más de un representante con esa cédula; revisa el directorio.')
+            fields = {'name':required(r,'representante_nombre'),'document':doc,
+                'phone':r['representante_telefono'],'email':r['representante_email'],'address':r['representante_direccion']}
+            if matches:
+                g = matches[0]
+                for key in ('name','phone','email','address'):
+                    if fields[key] and normalized(fields[key])!=normalized(g[key]):
+                        raise ValidationError('La cédula del representante existe con datos distintos. Corrige el archivo o el directorio.')
+                guardian_id=g['id']
+            else: guardian_id=save_record(db,'guardians',fields,user)['id']
+            grade = db.execute('SELECT id FROM grades WHERE name=? COLLATE NOCASE',(required(r,'grado'),)).fetchone()
+            if not grade: raise ValidationError('Grado / sección inexistente. Créalo antes de importar y copia su nombre exacto.')
+            name,birth = required(r,'alumno_nombre'),valid_date(r['nacimiento'])
+            if db.execute('SELECT 1 FROM students WHERE guardian_id=? AND name=? COLLATE NOCASE AND birth_date=?',(guardian_id,name,birth)).fetchone():
+                raise ValidationError('Alumno repetido: mismo nombre, nacimiento y representante.')
+            student = save_record(db,'students',{'name':name,'document':r['alumno_cedula'],
+                'birth_date':birth,'guardian_id':guardian_id,'grade_id':grade['id'],
+                'school_year':r['ano_escolar'],'monthly_fee':r['mensualidad_usd'],
+                'discount':r['descuento_pct'] or '0','enrollment_start':r['inicio_matricula'],
+                'enrollment_end':r['fin_matricula'],'status':{'activo':'active','inactivo':'inactive'}.get(r['estado'].lower(),r['estado'].lower() or 'active'),
+                'notes':r['observaciones']},user)
+            imported.append({'row':index,'student_name':name,'guardian_name':fields['name'],
+                'grade_name':r['grado'],'student_code':student['student_code']})
+            db.execute('RELEASE roster_row')
+        except (ValidationError,sqlite3.IntegrityError) as error:
+            db.execute('ROLLBACK TO roster_row'); db.execute('RELEASE roster_row')
+            errors.append({'row':index,'message':str(error) if isinstance(error,ValidationError) else 'Documento repetido o estado inválido.'})
+    synchronize_monthly_charges(db)
+    result = {'hash':digest,'rows':len(records),'students':len(imported),
+        'guardians':db.execute('SELECT COUNT(*) FROM guardians').fetchone()[0]-before_guardians,
+        'new_balance':sum(c['balance'] for c in charges(db))-before_balance,
+        'errors':errors,'lines':imported[:100],'preview':preview}
+    if preview or errors: db.execute('ROLLBACK TO roster_batch')
+    db.execute('RELEASE roster_batch')
+    if not preview and errors:
+        raise ValidationError(f"No se importó ninguna fila. Fila {errors[0]['row']}: {errors[0]['message']}")
+    if not preview: audit(db,user['id'],'roster-import',{'students':len(imported),'guardians':result['guardians'],'file_hash':digest})
+    return result
+
+
+def ensure_open_day(db,on):
+    if db.execute('SELECT 1 FROM cash_closures WHERE closed_on=? AND reopened_at IS NULL',(on,)).fetchone():
+        raise ValidationError('La caja de esa fecha está cerrada. Administración debe reabrirla con un motivo antes de modificar movimientos.')
+
+
+def cash_summary(db,on):
+    on=valid_date(on)
+    if on>local_today().isoformat(): raise ValidationError('No se puede cerrar una fecha futura.')
+    lines = {}; movements=[]
+    for table,column,direction in (('payments','paid_on','income'),('expenses','spent_on','expense')):
+        for r in db.execute(f'SELECT * FROM {table} WHERE {column}=? ORDER BY id',(on,)):
+            movement={'type':direction,'id':r['id'],'currency':r['currency'],'received_amount':r['received_amount'],
+                'amount':r['amount'],'method':r['method'],'reference':r['reference'],'voided':r['voided'],'exchange_rate':r['exchange_rate']}
+            movements.append(movement)
+            if r['voided']: continue
+            key=(r['method'],r['currency'])
+            entry=lines.setdefault(key,{'method':key[0],'currency':key[1],'income':0,'expense':0,'net':0,'income_usd':0,'expense_usd':0})
+            entry[direction]+=r['received_amount']; entry[direction+'_usd']+=r['amount']
+            entry['net']=entry['income']-entry['expense']
+    return {'closed_on':on,'lines':[lines[k] for k in sorted(lines)],'movements':movements,
+        'preview_hash':hashlib.sha256(json.dumps(movements,sort_keys=True).encode()).hexdigest(),
+        'income_usd':sum(v['income_usd'] for v in lines.values()),'expense_usd':sum(v['expense_usd'] for v in lines.values()),
+        'active_id':(dict(r)['id'] if (r:=db.execute('SELECT id FROM cash_closures WHERE closed_on=? AND reopened_at IS NULL',(on,)).fetchone()) else None)}
+
+
+def close_cash(db,data,user):
+    summary = cash_summary(db,data.get('closed_on')); ensure_open_day(db,summary['closed_on'])
+    if data.get('preview_hash')!=summary['preview_hash']:
+        raise ValidationError('Los movimientos cambiaron desde la vista previa. Abre de nuevo el cierre y revisa los importes.')
+    counts = []
+    for currency in ('USD','VES'):
+        opening=money(data.get('opening_'+currency,'0')); counted=money(data.get('counted_'+currency))
+        expected=opening+sum(r['net'] for r in summary['lines'] if r['currency']==currency and r['method']=='Efectivo')
+        if expected<0: raise ValidationError('El efectivo esperado es negativo. Revisa el fondo inicial y los egresos.')
+        counts.append({'currency':currency,'opening':opening,'expected':expected,'counted':counted,'difference':counted-expected})
+    notes=str(data.get('notes','')).strip()[:2000]
+    if any(c['difference'] for c in counts) and not notes:
+        raise ValidationError('Explica las diferencias del arqueo en observaciones.')
+    summary.update(counts=counts,notes=notes,school=dict(db.execute('SELECT key,value FROM settings')),
+        operator=user['name'],issued_on=local_today().isoformat(),created_at=datetime.now(timezone.utc).isoformat())
+    result=db.execute('INSERT INTO cash_closures(closed_on,snapshot_json,created_at,created_by) VALUES(?,?,?,?)',
+        (summary['closed_on'],json.dumps(summary,ensure_ascii=False),summary['created_at'],user['id']))
+    audit(db,user['id'],'cash-close',{'id':result.lastrowid,'closed_on':summary['closed_on']})
+    return {'id':result.lastrowid}
+
+
+def reopen_cash(db,data,user):
+    target=integer(data.get('id'),1,2147483647); reason=required(data,'reason',500)
+    result=db.execute('UPDATE cash_closures SET reopened_at=?,reopen_reason=? WHERE id=? AND reopened_at IS NULL',
+        (datetime.now(timezone.utc).isoformat(),reason,target))
+    if not result.rowcount: raise ValidationError('Cierre inexistente o ya reabierto.')
+    audit(db,user['id'],'cash-reopen',{'id':target,'reason':reason})
+    return {'saved':True}
+
+
+def guardian_account(db,guardian_id):
+    guardian_id=integer(guardian_id,1,2147483647)
+    g=db.execute('SELECT * FROM guardians WHERE id=?',(guardian_id,)).fetchone()
+    if not g: raise ValidationError('Representante inexistente.')
+    students=[dict(s) for s in db.execute('SELECT s.*,gr.name AS grade_name FROM students s JOIN grades gr ON gr.id=s.grade_id WHERE guardian_id=? ORDER BY s.name',(guardian_id,))]
+    if not students: raise ValidationError('Este representante no tiene alumnos vinculados.')
+    smap={s['id']:s for s in students}; entries=[]
+    for c in charges(db):
+        if c['student_id'] not in smap: continue
+        entries.append(dict(c,student_name=smap[c['student_id']]['name'],grade_name=smap[c['student_id']]['grade_name']))
+    payments=[dict(p) for p in db.execute('SELECT p.id,p.student_id,p.paid_on,p.amount,p.received_amount,p.currency,p.exchange_rate,p.method,p.reference,p.voided,s.name AS student_name FROM payments p JOIN students s ON s.id=p.student_id WHERE s.guardian_id=? ORDER BY p.paid_on,p.id',(guardian_id,))]
+    return {'guardian':dict(g),'students':students,'charges':entries,'payments':payments,
+        'balance':sum(c['balance'] for c in entries),'overdue':sum(c['balance'] for c in entries if c['overdue']),
+        'issued_on':local_today().isoformat()}
+
+
+def issue_guardian_document(db,data,user):
+    kind=data.get('kind')
+    if kind not in ('account','solvency'): raise ValidationError('Documento de representante inválido.')
+    doc=guardian_account(db,data.get('guardian_id'))
+    if kind=='solvency' and doc['balance']:
+        raise ValidationError('No se puede emitir solvencia: hay saldo pendiente en uno o más alumnos vinculados.')
+    doc.update(kind=kind,school=dict(db.execute('SELECT key,value FROM settings')))
+    return {'id':store(db,'guardian_documents',doc,user['id'])}
+
+
+def load_administrative_document(db,kind,target):
+    table={'guardian-document':'guardian_documents','cash-close':'cash_closures'}[kind]
+    r=db.execute(f'SELECT * FROM {table} WHERE id=?',(target,)).fetchone()
+    if not r: raise ValidationError('Documento inexistente.')
+    result=dict(json.loads(r['snapshot_json']),id=target)
+    if kind=='cash-close': result.update(reopened_at=r['reopened_at'],reopen_reason=r['reopen_reason'])
+    return result

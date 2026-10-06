@@ -232,6 +232,17 @@ def period_label(value):
     return str(value)
 
 
+def receipt_student_details(payment):
+    name = payment['student_name']
+    code = 'Código: '+payment.get('student_code',payment['student_document'])
+    grade = payment.get('grade_name')
+    if grade:
+        name += ' · '+grade
+    else:
+        code += ' | Grado no registrado'
+    return name,code
+
+
 class ReceiptPDF(PDF):
     """Portrait payment stationery with quiet rules and a prominent received amount."""
     ink = '0.14 0.20 0.29'
@@ -317,8 +328,9 @@ class ReceiptPDF(PDF):
 
     def parties(self):
         p = self.payment
+        name, code = receipt_student_details(p)
         columns = [('Representante legal',p['guardian_name'],'Cédula: '+p['guardian_document'],p.get('guardian_phone','')),
-                   ('Alumno',p['student_name'],'Código: '+p.get('student_code',p['student_document']),'')]
+                   ('Alumno / grado',name,code,'')]
         sizes = []
         for _, name, document, phone in columns:
             sizes.append(21+len(self.wrap(name,238,11))*15+len(self.wrap(document,238,9))*13+
@@ -475,9 +487,10 @@ class HalfLetterReceiptPDF(ReceiptPDF):
 
     def parties(self):
         p = self.payment
+        name, code = receipt_student_details(p)
         contact = ' | Teléfono: '+p['guardian_phone'] if p.get('guardian_phone') else ''
         columns = [('Representante legal',p['guardian_name'],'Cédula: '+p['guardian_document']+contact,''),
-                   ('Alumno',p['student_name'],'Código: '+p.get('student_code',p['student_document']),'')]
+                   ('Alumno / grado',name,code,'')]
         heights = [14+len(self.wrap(name,264,10))*14+len(self.wrap(document,264,8))*12+
                    (len(self.wrap(phone,264,8))*12 if phone else 0) for _,name,document,phone in columns]
         self.ensure(max(heights)+6)
@@ -567,7 +580,159 @@ class HalfLetterReceiptPDF(ReceiptPDF):
         return self.output()
 
 
+class TicketReceiptPDF(ReceiptPDF):
+    def __init__(self,data,width):
+        self.payment=data['payment'];self.school=data['settings'];self.w=width
+        self.logo=pdf_logo(self.school.get('logo',''));self.pages=[]
+        self.h=1100
+        self.measured=False
+        self.new_page()
+
+    def new_page(self):
+        self.commands=[];self.pages.append(self.commands);self.y=12
+        if self.logo:
+            w,h,_=self.logo;self.commands.append(f'q {34*w/h:.3f} 0 0 34 {(self.w-34*w/h)/2:.3f} {self.h-46} cm /Logo Do Q');self.y=59
+        for value,size,bold in ((self.school.get('legal_name') or self.school.get('school_name','Colegio'),9,True),
+            ('RIF: '+self.school.get('rif',''),7.5,False),(self.school.get('fiscal_address') or self.school.get('address',''),7,False),
+            (f"COMPROBANTE R-{self.payment['id']:06d}",9,True),(datetime.fromisoformat(self.payment['paid_on']).strftime('%d/%m/%Y'),8,False)):
+            for line in self.wrap(value,self.w-18,size):
+                self.text(9,self.y,line,size,bold);self.y+=size+3
+        if self.payment['voided']:
+            self.text(9,self.y,'COMPROBANTE ANULADO',8,True);self.y+=14
+        self.rule(9,self.y,self.w-18);self.y+=15
+
+    def ticket_line(self,value,bold=False,size=8):
+        for line in self.wrap(value,self.w-18,size):
+            if self.y+size+4>self.h-34:self.new_page()
+            self.text(9,self.y,line,size,bold);self.y+=size+4
+
+    def render(self,data):
+        p=self.payment
+        self.ticket_line('REPRESENTANTE',True);self.ticket_line(p['guardian_name'])
+        self.ticket_line('Cédula: '+p['guardian_document'])
+        self.ticket_line('ALUMNO / GRADO',True)
+        name,code=receipt_student_details(p);self.ticket_line(name);self.ticket_line(code)
+        if p.get('guardian_address'):self.ticket_line('Dirección: '+p['guardian_address'],size=7.5)
+        self.y+=6;self.ticket_line('CONCEPTOS ABONADOS',True)
+        for row in data['allocations']:
+            self.ticket_line(row['concept']+' · '+period_label(row['period']))
+            self.ticket_line('Aplicado: '+amount(row['amount']),True)
+        self.y+=6;self.ticket_line('Método: '+p['method'])
+        if p['reference']:self.ticket_line('Referencia: '+p['reference'])
+        self.ticket_line('RECIBIDO: '+amount(p['received_amount'],'Bs' if p['currency']=='VES' else 'USD'),True,9)
+        self.ticket_line('Total aplicado: '+amount(p['amount']),True)
+        if p['currency']=='VES':self.ticket_line('BCV: Bs '+p['exchange_rate']+' por USD',size=7.5)
+        if p['notes']:self.ticket_line('Observaciones: '+p['notes'],size=7.5)
+        if p['voided']:self.ticket_line('Motivo de anulación: '+p['void_reason'],size=7.5)
+        self.y+=12;self.ticket_line('Firma de administración:');self.y+=12;self.ticket_line('Firma del representante:')
+        self.ticket_line('Registrado por: '+p['operator'],size=7)
+        self.ticket_line('Comprobante administrativo. No sustituye una factura fiscal.',size=7)
+        if len(self.pages)==1 and not self.measured:
+            self.h=max(220,self.y+40)
+            self.measured=True;self.pages=[];self.new_page()
+            return self.render(data)
+        return self.output()
+
+
+class AdministrativePDF(PDF):
+    embedded_fonts = True
+    wrap = staticmethod(ReceiptPDF.wrap)
+
+    def new_page(self):
+        self.commands=[]; self.pages.append(self.commands)
+        x=42
+        if self.logo:
+            w,h,_=self.logo
+            self.commands.append(f'q {60*w/h:.3f} 0 0 60 42 {self.h-96} cm /Logo Do Q')
+            x=115
+        y=48
+        for line in self.wrap(self.school.get('legal_name') or self.school.get('school_name','Colegio'),self.w-x-42,12):
+            self.text(x,y,line,12,True); y+=17
+        for value in ('RIF: '+self.school.get('rif',''),self.school.get('fiscal_address') or self.school.get('address','')):
+            for line in self.wrap(value,self.w-x-42,8):
+                self.text(x,y,line,8); y+=12
+        self.y=max(115,y+20)
+        for line in self.wrap(self.title,self.w-84,12):
+            self.text(42,self.y,line,12,True); self.y+=18
+        self.y+=12
+        self.text(self.w-100,self.h-35,f'Página {len(self.pages)}',8)
+
+
+def administrative_pdf(kind,data):
+    is_cash=kind=='cash-close'
+    title='CIERRE DE CAJA' if is_cash else ('CONSTANCIA DE SOLVENCIA' if data['kind']=='solvency' else 'ESTADO DE CUENTA POR REPRESENTANTE')
+    pdf=AdministrativePDF(f"{title} · {'C' if is_cash else 'D'}-{data['id']:06d}",data['school'])
+    pdf.line('Fecha de emisión: '+data['issued_on'])
+    if is_cash:
+        pdf.line('Fecha cerrada: '+data['closed_on'],True)
+        if data.get('reopened_at'): pdf.line('CIERRE REABIERTO: '+data['reopen_reason'],True)
+        pdf.table(['Método / moneda','Ingresos recibidos','Egresos pagados','Neto'],
+            [[f"{r['method']} / {r['currency']}",amount(r['income'],r['currency']),amount(r['expense'],r['currency']),signed_amount(r['net'],r['currency'])] for r in data['lines']],
+            [150,123,123,123])
+        pdf.line('Los importes anteriores son montos reales por moneda; no se suman dólares y bolívares.')
+        pdf.table(['Efectivo','Fondo inicial','Esperado','Contado','Diferencia'],
+            [[r['currency'],amount(r['opening'],r['currency']),amount(r['expected'],r['currency']),amount(r['counted'],r['currency']),signed_amount(r['difference'],r['currency'])] for r in data['counts']],
+            [75,111,111,111,111])
+        pdf.total(f"Equivalente USD: ingresos {amount(data['income_usd'])} | egresos {amount(data['expense_usd'])}")
+        pdf.line('Arqueo: fondo inicial + ingresos en efectivo - egresos en efectivo. Transferencias, tarjetas y egresos sin método no forman parte del efectivo.')
+        pdf.line('Observaciones: '+(data['notes'] or 'Sin observaciones.'))
+        pdf.table(['Movimiento / referencia','Método','Moneda / recibido','Estado'],
+            [[f"{'R' if r['type']=='income' else 'E'}-{r['id']:06d}\n{r['reference']}",r['method'],amount(r['received_amount'],r['currency']),'Anulado' if r['voided'] else 'Válido'] for r in data['movements']],
+            [190,119,130,80])
+    else:
+        g=data['guardian']
+        pdf.line(f"Representante: {g['name']} | Cédula: {g['document']}",True)
+        if g['phone']: pdf.line('Contacto: '+g['phone'])
+        pdf.table(['Alumno / código','Grado / sección','Año escolar'],
+            [[f"{s['name']}\n{s['student_code']}",s['grade_name'],f"{s['school_year']}–{s['school_year']+1}"] for s in data['students']],
+            [220,200,99])
+        if data['kind']=='solvency':
+            pdf.line('Se hace constar que los alumnos vinculados a este representante no presentan saldo pendiente en los cargos registrados al emitir este documento.',True)
+            pdf.line('El corte incluye las mensualidades calculadas hasta el mes de emisión y cualquier cargo futuro ya registrado. No acredita períodos futuros que aún no estén cargados ni pagos externos sin registrar.')
+            pdf.total('SALDO PENDIENTE: USD 0,00')
+        else:
+            pdf.total(f"Saldo pendiente: {amount(data['balance'])} | Vencido: {amount(data['overdue'])}")
+            pdf.table(['Alumno / grado','Concepto / período / vence','Cargo USD','Abono USD','Saldo USD'],
+                [[f"{c['student_name']}\n{c['grade_name']}",f"{c['concept']}\n{c['period']} / {c['due_date']}",amount(c['amount']),amount(c['paid']),amount(c['balance'])] for c in data['charges']],
+                [150,140,76,76,77])
+            pdf.line('Incluye cargos activos, pendientes y pagados, incluso períodos futuros ya preparados. La deuda vencida se calcula al emitir el documento.')
+            pdf.table(['Recibo / alumno','Fecha / método','Recibido','Aplicado USD / estado'],
+                [[f"R-{p['id']:06d}\n{p['student_name']}",f"{p['paid_on']}\n{p['method']}",amount(p['received_amount'],p['currency']),f"{amount(p['amount'])}\n{'Anulado' if p['voided'] else 'Válido'}"] for p in data['payments']],
+                [169,120,110,120])
+    pdf.line('Documento administrativo. Conserva los datos y el corte de su fecha de emisión.')
+    pdf.signature('Firma de administración','Revisado por' if is_cash else 'Sello del colegio',data['operator'])
+    return pdf.output()
+
+
+def signed_amount(cents,currency):
+    return ('- ' if cents<0 else '')+amount(abs(cents),currency)
+
+
 def render_pdf(kind, data, paper='a4'):
+    if kind in ('year-transition','payment-plan'):
+        title='ACTA DE PASE DE AÑO' if kind=='year-transition' else 'CONVENIO DE PAGO'
+        pdf=AdministrativePDF(f"{title} · {data['id']:06d}",data['school'])
+        pdf.line('Fecha de emisión: '+data['issued_on'])
+        if kind=='year-transition':
+            pdf.line(f"Año {data['source_year']}–{data['source_year']+1} al {data['target_year']}–{data['target_year']+1}",True)
+            pdf.line(f"Cierre del curso: {data['closed_on']} | Matrícula nueva: {data['enrollment_start']} al {data['enrollment_end']}")
+            labels={'promote':'Avanza','repeat':'Repite','withdraw':'Retirado','skip':'Sin cambios'}
+            pdf.table(['Alumno / código','Decisión','Grado anterior','Nuevo grado'],
+                [[r['student_name']+'\n'+r['source']['student_code'],labels[r['action']],r['source_grade'],r['target_grade'] if r['action'] in ('promote','repeat') else '—'] for r in data['lines']],
+                [175,85,125,134])
+            pdf.line('Se conservan la matrícula anterior en esta acta, las constancias emitidas, los cargos, pagos, abonos y recibos. Los retirados quedan inactivos en el año anterior.')
+        else:
+            if data.get('cancelled'):pdf.line('CONVENIO CANCELADO: '+data['cancel_reason'],True)
+            s=data['student'];pdf.line(s['name']+' | '+s['grade_name'],True)
+            pdf.line('Representante: '+s['guardian_name']+' | '+s['guardian_document'])
+            pdf.total('Deuda original convenida: '+amount(data['total']))
+            pdf.table(['Cuota','Vencimiento','Importe USD'],[[r['number'],r['due_date'],amount(r['amount'])] for r in data['installments']],[85,220,214])
+            pdf.line('Condiciones: '+data['notes'])
+            pdf.line('El convenio organiza deuda existente; no crea cargos nuevos ni acredita pagos. Conserva sus condiciones originales. La mora se mantiene según los cargos hasta saldarlos.')
+        pdf.signature('Firma de administración','Dirección' if kind=='year-transition' else 'Representante legal',data['operator'])
+        return pdf.output()
+    if kind in ('cash-close','guardian-document'):
+        return administrative_pdf(kind,data)
     if kind == 'enrollment':
         s = data['student']; pdf = PDF(f"CONSTANCIA DE MATRÍCULA · M-{data['id']:06d}", data['school'])
         pdf.line('Fecha de emisión: '+data.get('issued_on', data['created_at'][:10]))
@@ -592,10 +757,12 @@ def render_pdf(kind, data, paper='a4'):
             [210,200,160,86,110])
         pdf.total(f"TOTAL PROPUESTO: {amount(data['total_usd'])} | {amount(data['total_ves'],'Bs')}")
     else:
-        if paper not in ('a4','half-letter'):
+        if paper not in ('a4','half-letter','ticket-58','ticket-80'):
             raise ValidationError('Formato de recibo inválido. Selecciona media carta o A4.')
         if paper=='half-letter':
             return HalfLetterReceiptPDF(data).render(data)
+        if paper.startswith('ticket-'):
+            return TicketReceiptPDF(data,round(int(paper.split('-')[1])*72/25.4,3)).render(data)
         return ReceiptPDF(data).render(data)
     pdf.signature('Preparado por administración' if kind=='payroll-plan' else 'Firma de administración',
                   'Aprobado por' if kind=='payroll-plan' else 'Firma del representante legal',

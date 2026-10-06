@@ -43,9 +43,11 @@ Los documentos guardados conservan la razón social, el RIF, el domicilio y la v
 
 ### Diseño del recibo de pago
 
-El recibo presenta el membrete sin bordes exteriores, datos del representante y del alumno en columnas, conceptos con importes alineados y un bloque destacado para el **importe recibido**. El total aplicado en USD y la tasa BCV se muestran juntos. Las referencias, direcciones y observaciones aparecen cuando tienen contenido. El diseño sirve tanto para pagos completos como para abonos; indica lo aplicado en esta operación.
+El recibo presenta el membrete sin bordes exteriores, datos del representante y del alumno en columnas, con el grado / sección junto al nombre del alumno, conceptos con importes alineados y un bloque destacado para el **importe recibido**. El total aplicado en USD y la tasa BCV se muestran juntos. El grado de los pagos nuevos queda guardado con el recibo. Para recibos antiguos se consulta la última constancia de matrícula emitida antes del pago; si no existe esa información se muestra «Grado no registrado», sin sustituirlo por el grado actual. Las referencias, direcciones y observaciones aparecen cuando tienen contenido. El diseño sirve tanto para pagos completos como para abonos; indica lo aplicado en esta operación.
 
 En el recibo, **Tamaño del recibo** permite elegir **Media carta horizontal (21,59 × 13,97 cm)** o **A4 vertical**. Se abre inicialmente en media carta; puedes cambiar el formato antes de **Descargar PDF** o **Imprimir**, sin alterar el pago. Media carta se recomienda para los cobros habituales y A4 para recibos con muchos conceptos, direcciones u observaciones extensas.
+
+También puedes seleccionar **Ticket térmico de 58 mm o 80 mm**. El PDF tiene el ancho real del rollo y ajusta la longitud al contenido, con continuación si hay muchos conceptos. Instala el controlador de la impresora en Windows y selecciona escala 100 %; el sistema usa el diálogo de impresión de Windows, sin controlar directamente el corte del rollo.
 
 El PDF usa el tamaño físico seleccionado e incorpora sus fuentes para conservar la tipografía en otras computadoras. Al imprimirlo en una hoja carta, selecciona **Tamaño real / escala 100 %**; evita **Ajustar a página**, que puede ampliar el recibo hasta ocupar toda la hoja. Revisa el tamaño de papel y la vista previa de tu impresora. El botón Imprimir del programa también prepara la página en el formato elegido.
 
@@ -54,6 +56,8 @@ Si hay muchos conceptos u observaciones, el PDF continúa en otras páginas del 
 [Ver una muestra del recibo con datos ficticios](https://github.com/Eliezerti/Sistema-colegio/blob/main/docs/recibo-ejemplo.png).
 
 [Ver la muestra en media carta](https://github.com/Eliezerti/Sistema-colegio/blob/main/docs/recibo-media-carta.png).
+
+[Ver el ticket de 58 mm](https://github.com/Eliezerti/Sistema-colegio/blob/main/docs/recibo-ticket-58.png) · [Ver la revisión de un pase de año](https://github.com/Eliezerti/Sistema-colegio/blob/main/docs/pase-de-ano.png).
 
 ## Flujo diario
 
@@ -115,7 +119,7 @@ Las contraseñas se almacenan con PBKDF2-SHA256 y sal aleatoria. Las sesiones ve
 ### Descargar y restaurar
 
 - En **Tasas y respaldo** al entrar o en **Configuración → Respaldo**, descarga una copia consistente de toda la base, incluso con el sistema abierto. Guarda copias periódicas en otro dispositivo.
-- Al iniciar se guarda una copia automática por día en la subcarpeta `backups`; se conservan las últimas 30 copias diarias. Son copias del estado **al abrir el sistema**, no de cada operación. Para respaldar los cobros del día, descarga una copia al finalizar la jornada.
+- Al iniciar se guarda una copia automática por día en la subcarpeta `backups`; se conservan las últimas 30 copias diarias. Además, se crean respaldos después de operaciones financieras y cada cinco minutos mientras Aula permanece abierto. Configura un segundo destino para protegerte ante una falla del disco; también puedes descargar una copia manual.
 - Para restaurar, cierra Aula y ejecuta **Restaurar-respaldo.bat**. Selecciona el archivo `.sqlite3` y escribe `RESTAURAR`. La herramienta comprueba la integridad y compatibilidad del respaldo, prepara la recuperación antes de reemplazar los datos y bloquea la restauración mientras Aula utiliza esa carpeta. Si la base actual está sana, conserva un respaldo previo; si está dañada, conserva los archivos originales en una carpeta `backups/danado-antes-restauracion-*` y permite recuperar el respaldo válido. Esa carpeta conserva evidencia para una revisión técnica, no es un respaldo utilizable.
 - Los respaldos no conservan sesiones autenticadas. Tras restaurar, inicia sesión con las cuentas que contiene el respaldo. El respaldo conserva sus contraseñas, por lo que debe almacenarse de forma segura.
 
@@ -132,9 +136,9 @@ Si necesitas recuperar la base:
 
 Si desapareció el archivo principal pero siguen existiendo respaldos locales, Aula avisa y no crea silenciosamente una base vacía. Usa la herramienta de restauración para recuperarla.
 
-**Límite de recuperación:** restaurar devuelve todos los datos al momento de la copia y no combina registros. Los movimientos posteriores al respaldo no reaparecen automáticamente. Las copias automáticas se crean al abrir, una por fecha; no se crean después de cada pago ni periódicamente si el programa permanece abierto varios días.
+**Límite de recuperación:** restaurar devuelve todos los datos al momento de la copia y no combina registros. Los movimientos posteriores al respaldo no reaparecen automáticamente. Se crea una copia diaria al abrir (últimas 30), una copia después de cobros, egresos, anulaciones, cierres y operaciones masivas, y una copia cada cinco minutos mientras el servidor está abierto (últimas 90). Los respaldos se verifican y se publican de forma atómica: una copia interrumpida no reemplaza una válida. SQLite usa WAL y `synchronous=FULL` en cada conexión de la aplicación. Las pruebas incluyen matar un proceso a mitad de un cobro y después de confirmarlo; no reemplazan una prueba de corte eléctrico con datos ficticios en la PC del colegio ni un UPS.
 
-**Falla del disco o pérdida de la computadora:** los respaldos locales pueden perderse junto con la base. Descarga copias durante la jornada de cobros y al finalizarla, y conserva una copia reciente en otro dispositivo o almacenamiento privado externo. Guarda los archivos de respaldo descargados; no sincronices la base SQLite activa mediante Drive o Dropbox. Esta versión todavía no realiza copias externas automáticas.
+**Falla del disco o pérdida de la computadora:** los respaldos locales pueden perderse junto con la base. Configura un segundo destino en otro dispositivo o almacenamiento privado externo y comprueba las copias; también puedes descargar un respaldo manual. Guarda los archivos de respaldo descargados; no sincronices la base SQLite activa mediante Drive o Dropbox. En **Configuración → Segunda carpeta de respaldos**, introduce una ruta absoluta fuera de la carpeta activa de Aula, por ejemplo `E:\RespaldosAula` o una carpeta local del cliente de Drive. El sistema copia el respaldo verificado, nunca la base activa ni su WAL, y conserva las últimas 90 copias propias en ese destino. El USB debe estar conectado; la subida desde una carpeta de Drive depende de su cliente y de internet. Si falla el segundo destino, el cobro permanece registrado y se muestra una advertencia. El segundo destino no está activado hasta configurar su ruta. La barra superior muestra la antigüedad del último respaldo local, en rojo si supera un día o falla. La ruta completa de la base y los errores del segundo destino se muestran en Configuración.
 
 También puedes restaurar desde la terminal:
 
@@ -144,9 +148,63 @@ py -3 -m colegio.restore --data-dir "%LOCALAPPDATA%\AulaColegio" --backup "D:\Re
 
 ## Alcance de esta versión
 
-Incluye administración de alumnos y representantes, matrícula actual, grados y capacidad, tarifas y becas, mensualidades, otros cargos, cobranza, morosidad, recibos, tasas, personal, pagos de nómina, egresos, reportes, usuarios y respaldos.
+Incluye administración de alumnos y representantes, importación Excel/CSV, matrícula actual e historial de pases masivos, grados y capacidad, tarifas y becas individuales, mensualidades, otros cargos, cobranza, morosidad, convenios, recibos A4/media carta/térmicos, documentos familiares, tasas con confirmación, personal, nómina, egresos, cierres con arqueo, reportes, usuarios, recuperación local de contraseña y respaldos frecuentes con segundo destino configurable.
 
-Los recibos son **comprobantes administrativos**: no implementan facturación fiscal SENIAT. El módulo de nómina registra desembolsos y salarios de referencia; no calcula prestaciones, vacaciones, retenciones ni obligaciones laborales. Tampoco incluye contabilidad de partida doble, inventario, evaluación académica, conciliación bancaria automática ni integración con WhatsApp. Estos módulos necesitan reglas adicionales del colegio para una ampliación posterior.
+Los recibos son **comprobantes administrativos**: no implementan facturación fiscal SENIAT. El módulo de nómina registra desembolsos y salarios de referencia; no calcula prestaciones, vacaciones, retenciones ni obligaciones laborales. Tampoco incluye contabilidad de partida doble, inventario, evaluación académica, conciliación bancaria automática ni envío automático por WhatsApp. Los avisos se abren manualmente mediante enlaces prellenados. Estos módulos necesitan reglas adicionales del colegio para una ampliación posterior.
+
+
+### Importación inicial de Excel / CSV
+
+En **Alumnos y matrículas → Importar Excel / CSV**, descarga la plantilla `.xlsx` o `.csv`, conserva los encabezados y completa una fila por alumno. Se usa la primera hoja del Excel; `.xls`, macros, archivos protegidos y fórmulas no se admiten. En Excel pega los datos como valores, y usa formato texto para cédulas y teléfonos. Fechas ISO `AAAA-MM-DD` o fechas numéricas de Excel; importes en USD con punto decimal, sin símbolos. Crea los grados y sus cupos antes de importar; usa su nombre exacto.
+
+Los hermanos repiten los datos del representante. La cédula identifica al representante existente; datos distintos para la misma cédula producen un error, nunca una actualización silenciosa. Se revisan documentos repetidos, nombre/nacimiento/representante, fechas, cupos y tarifas. La vista previa no guarda filas y muestra los cargos que se generarían. Si hay errores, ninguna fila se importa. Corrige el archivo y vuelve a revisarlo; solo confirma después de comprobar fechas, tarifas y deudas. Límite: 2 MB y 1000 alumnos por archivo. Se crea un respaldo local antes de confirmar. Esta importación no importa pagos históricos.
+
+### Cierre diario y arqueo
+
+En **Cierre de caja** (también destacado en Reportes), selecciona una fecha y pulsa **Revisar / cerrar caja**. El corte separa ingresos y egresos por **método y moneda**, usando importes realmente recibidos/pagados. Los equivalentes USD se muestran aparte; no se suman USD y Bs. Los anulados se excluyen de los totales y se mantienen en el detalle.
+
+Indica el fondo inicial y cuenta el efectivo físico en cada moneda. **Esperado = fondo inicial + cobros en efectivo − egresos en efectivo**. La pantalla y el PDF muestran la diferencia; si la hay, exige una explicación. Los egresos anteriores a esta versión figuran como «No especificado» y no descuentan efectivo. Los egresos nuevos permiten seleccionar método. No se trasladan automáticamente fondos iniciales de otro cierre: registra el efectivo que quedó físicamente en caja.
+
+El cierre guarda su corte, operador, arqueo y membrete; puedes descargar PDF o imprimirlo. Se bloquean cobros, egresos y anulaciones de esa fecha. Solo administración puede **Reabrir** con motivo, para corregir movimientos y generar otro cierre. El documento anterior conserva su corte y se identifica como reabierto. Si hay movimientos nuevos desde la vista previa, hay que revisarla otra vez antes de cerrar.
+
+### Estado de cuenta familiar y solvencia
+
+En **Representantes → Cuenta familiar** ves los cargos y pagos de todos sus alumnos, incluidos los inactivos. Administración y caja pueden emitir **Estado de cuenta PDF** y **Constancia de solvencia**. La solvencia exige saldo cero en todos los cargos registrados de la familia, incluidos períodos futuros que ya se hayan preparado. No acredita períodos futuros sin cargar ni cobros externos sin registrar. Cada documento conserva su fecha de corte y se puede reabrir desde los documentos emitidos de esa cuenta.
+
+### Pase masivo de año / grados
+
+1. Haz el cierre al concluir realmente el curso y comprueba mensualidades y pagos del año que cierras. Crea los grados / secciones de destino y su capacidad.
+2. En **Alumnos y matrículas → Pase de año / grados**, escribe el año de inicio del curso de origen (por ejemplo `2026` para 2026–2027) y pulsa **Cargar alumnos del año**. El destino es el siguiente año.
+3. Indica la **fecha real de cierre** del curso, y las fechas de matrícula del nuevo año. La fecha de cierre no puede ser futura. Si el colegio termina clases antes del fin configurado del año escolar, revisa y selecciona la fecha real. Los meses del año anterior ya cargados se conservan; al avanzar/repetir dejan de generarse meses posteriores del año anterior.
+4. Define el destino de cada grado y, si corresponde, cambia el destino individual. Selecciona **Avanza**, **Repite**, **Retirado** o **Sin cambios** por alumno. Quien **repite** se matricula en el nuevo año en el mismo grado. Quien se **retira** permanece en el año anterior, inactivo, con sus deudas y pagos. **Sin cambios** conserva íntegra su matrícula anterior y su estado. Los alumnos ya inactivos no se reactivan masivamente: revísalos individualmente.
+5. Revisa las mensualidades base nuevas; los descuentos individuales se conservan. Pulsa **Revisar pase de año**, verifica destinos, fechas, repitentes, retirados y cupos, y marca la confirmación.
+6. **Aplicar pase de año** actualiza el grupo en una transacción y genera un **acta PDF** con la matrícula anterior y las decisiones. Si hay un error o la matrícula cambió desde la revisión, no se aplica parcialmente. Hay un respaldo previo y otro posterior.
+
+Los códigos únicos no cambian. Se conservan todos los cargos, abonos, pagos, recibos y constancias anteriores. Las constancias nuevas usan el nuevo grado; un recibo anterior sigue mostrando el grado que tenía cuando se emitió. El acta se abre desde **Pases guardados**. Si el año configurado del colegio era el de origen, se actualiza al de destino; en los demás casos se conserva.
+
+### Controles en caja y convenios
+
+Una referencia que ya figure en un pago válido produce una alerta con sus recibos. Se compara sin espacios y sin distinguir mayúsculas; conserva ceros iniciales. Para registrarla otra vez se requiere confirmación y un motivo auditado. Reintentar la misma solicitud no crea un pago nuevo. La referencia por sí sola no prueba que sean la misma transferencia: compara banco, fecha y monto.
+
+La tasa BCV pide confirmación adicional si cambia más del **10 %** respecto a la tasa existente de esa fecha, o la anterior registrada si todavía no existe. Un cambio igual al 10 % no exige confirmación. Revisa siempre la publicación oficial; la confirmación no certifica la tasa.
+
+En **Morosidad → Convenio** o en la cuenta del alumno puedes distribuir su deuda vencida en hasta 60 cuotas, con fechas e importes. Deben sumar exactamente la deuda. El convenio **no crea deuda adicional, no cobra intereses y no borra la mora**: organiza los cargos existentes. Los cobros habituales se aplican primero al cargo más antiguo y actualizan el cumplimiento; anularlos vuelve a dejar pendientes las cuotas. Solo puede haber un convenio pendiente por alumno. Administración puede cancelarlo con motivo; se conserva el documento y la deuda. Los cargos de un convenio deben liberarse cancelando el convenio antes de poder anularlos.
+
+El PDF conserva las condiciones iniciales; el cumplimiento actual se consulta en pantalla. El panel de inicio destaca cobros de hoy, vencimientos en los próximos siete días y alumnos cuya primera deuda actualmente vencida aparece en los últimos siete días. Estas cifras se calculan con los datos registrados, no con cobros externos.
+
+Los avisos de cobranza incluyen **Abrir WhatsApp con el aviso** para teléfonos venezolanos válidos. Puedes editar el texto antes de abrirlo; el enlace `wa.me` no envía automáticamente el mensaje.
+
+### Recuperar la contraseña del administrador
+
+Cierra Aula y ejecuta **Recuperar-clave-admin.bat**, indica el usuario administrador y escribe una contraseña nueva dos veces (no se muestra al escribir). Se guarda un respaldo previo, se invalidan sus sesiones y se registra la recuperación en bitácora. No cambia otros datos ni crea una cuenta nueva. Requiere acceso local al equipo y a la carpeta de datos; no hay restablecimiento por correo. Si usas una ruta de datos personalizada, ejecuta `py -3 -m colegio.reset_password --data-dir "RUTA"`.
+
+### Instalación y protección del equipo
+
+Esta distribución todavía usa Python instalado en Windows y la carpeta `%LOCALAPPDATA%\AulaColegio` del usuario que lo abrió. Configuración muestra la ruta exacta. No se ha cambiado automáticamente a `C:\ProgramData`: primero hay que migrar y verificar la base existente y asignar permisos de los usuarios de Windows. Cambiar únicamente el lanzador puede abrir una base diferente y aparentar pérdida de datos.
+
+Un instalador con Python embebido o PyInstaller, acceso directo y arranque sin consola es una mejora pendiente que debe construirse y probarse en Windows. El ZIP actual no incluye un ejecutable Windows validado. Usa un **UPS** para la PC y el router. Activa **BitLocker** en Windows, si la edición y el equipo lo permiten, y conserva la clave de recuperación fuera de esa PC. Protege también el USB y las copias externas: cifrar la PC no cifra automáticamente esos respaldos.
+
+Para soporte remoto puedes instalar Chrome Remote Desktop o AnyDesk en esa PC y conceder acceso cuando lo necesites. Este repositorio no instala ni configura esas herramientas, y el asistente no obtiene acceso remoto por instalar esta actualización. Aula sigue escuchando solo en `127.0.0.1`. Los respaldos de Drive sirven para recuperación/traslado; no sincronizan dos bases activas ni habilitan una segunda computadora trabajando a la vez.
 
 ## Desarrollo y validación
 
@@ -163,7 +221,7 @@ En Linux puede ser necesario usar `python3`; en Windows, `py -3`. La ejecución 
 python -m colegio.server --data-dir /ruta/a/datos --port 8765
 ```
 
-Las pruebas integradas usan bases temporales y verifican conversiones, abonos, distribución entre cargos, reintentos, anulaciones, tasas y recibos históricos, descuentos, códigos únicos para hermanos, constancias PDF, tasa obligatoria, nómina de 15 empleados con cuentas bancarias y redondeos, migración de registros anteriores, mensualidades automáticas, cambios de mes, becas completas, años escolares, capacidad, permisos, CSRF, exportación, restauración de una base dañada, conservación de archivos originales y recuperación tras borrado del archivo principal. No escriben en la base real.
+Las pruebas integradas usan bases temporales y verifican importación Excel/CSV con vista previa y rollback, promoción masiva con repitentes y retirados, cupos del grupo, cierres y arqueos, documentos familiares y solvencia, convenios sin deuda duplicada, referencias repetidas, confirmación de tasas, tickets de 58/80 mm, respaldo después de cobros y segundo destino fallido, reinicio local de clave y procesos matados durante/después del cobro, además de conversiones, abonos, distribución entre cargos, reintentos, anulaciones, tasas y recibos históricos, descuentos, códigos únicos para hermanos, constancias PDF, tasa obligatoria, nómina de 15 empleados con cuentas bancarias y redondeos, migración de registros anteriores, mensualidades automáticas, cambios de mes, becas completas, años escolares, capacidad, permisos, CSRF, exportación, restauración de una base dañada, conservación de archivos originales y recuperación tras borrado del archivo principal. No escriben en la base real.
 
 Validación opcional de interfaz, con Node, Playwright y Chromium disponibles:
 

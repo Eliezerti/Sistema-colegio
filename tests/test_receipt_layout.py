@@ -8,7 +8,7 @@ def document(currency='VES', rows=1, voided=False, notes=''):
     return {'settings':dict(SCHOOL_PROFILE,school_name='Colegio'), 'payment':{
         'id':31,'paid_on':'2026-10-06','guardian_name':'Ana Pérez','guardian_document':'V-12345678',
         'guardian_phone':'04121234567','guardian_address':'','student_name':'Sofía Pérez',
-        'student_code':'AL-000001','student_document':'AL-000001','currency':currency,
+        'student_code':'AL-000001','student_document':'AL-000001','grade_name':'Primero / A','currency':currency,
         'received_amount':rows*100000 if currency=='VES' else rows*1000,'amount':rows*1000,
         'exchange_rate':'100','method':'Transferencia','reference':'TR-001','operator':'Administración',
         'voided':voided,'void_reason':'Corrección del pago' if voided else '', 'notes':notes},

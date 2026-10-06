@@ -14,6 +14,12 @@ class ValidationError(ValueError):
     pass
 
 
+class RateConfirmationRequired(ValidationError):
+    def __init__(self,old,new):
+        self.old,self.new=old,new
+        super().__init__(f'La tasa cambia más del 10 %: de Bs {old} a Bs {new} por USD. Revisa el valor antes de confirmarlo.')
+
+
 def local_today():
     return datetime.now(timezone(timedelta(hours=-4))).date()
 
@@ -100,6 +106,7 @@ def connect(path):
     db = sqlite3.connect(path, timeout=30)
     db.row_factory = sqlite3.Row
     db.execute('PRAGMA foreign_keys=ON')
+    db.execute('PRAGMA synchronous=FULL')
     db.execute('PRAGMA busy_timeout=30000')
     return db
 
@@ -109,6 +116,12 @@ def initialize(path):
     with closing(connect(path)) as db, db:
         db.execute('PRAGMA journal_mode=WAL')
         db.executescript('''
+            CREATE TABLE IF NOT EXISTS year_transitions(id INTEGER PRIMARY KEY,
+                snapshot_json TEXT NOT NULL,created_at TEXT NOT NULL,created_by INTEGER NOT NULL REFERENCES users(id));
+            CREATE TABLE IF NOT EXISTS payment_plans(id INTEGER PRIMARY KEY,
+                student_id INTEGER NOT NULL REFERENCES students(id),snapshot_json TEXT NOT NULL,
+                created_at TEXT NOT NULL,created_by INTEGER NOT NULL REFERENCES users(id),
+                cancelled INTEGER NOT NULL DEFAULT 0,cancel_reason TEXT NOT NULL DEFAULT '');
         CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY, value TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, username TEXT UNIQUE NOT NULL,
           name TEXT NOT NULL, password TEXT NOT NULL, role TEXT NOT NULL CHECK(role IN ('admin','cashier','reader')));
@@ -187,7 +200,21 @@ def initialize(path):
                 amount INTEGER NOT NULL CHECK(amount>=0),charge_id INTEGER REFERENCES charges(id),
                 assessed_at TEXT NOT NULL,PRIMARY KEY(student_id,period));
         """)
-        if db.execute('PRAGMA user_version').fetchone()[0] < SCHEMA_VERSION:
+        db.executescript('''
+            CREATE TABLE IF NOT EXISTS guardian_documents(id INTEGER PRIMARY KEY,
+                snapshot_json TEXT NOT NULL,created_at TEXT NOT NULL,
+                created_by INTEGER NOT NULL REFERENCES users(id));
+            CREATE TABLE IF NOT EXISTS cash_closures(id INTEGER PRIMARY KEY,
+                closed_on TEXT NOT NULL,snapshot_json TEXT NOT NULL,created_at TEXT NOT NULL,
+                created_by INTEGER NOT NULL REFERENCES users(id),reopened_at TEXT,
+                reopen_reason TEXT NOT NULL DEFAULT '');
+            CREATE UNIQUE INDEX IF NOT EXISTS one_active_cash_close
+                ON cash_closures(closed_on) WHERE reopened_at IS NULL;
+        ''')
+        if 'method' not in {r['name'] for r in db.execute('PRAGMA table_info(expenses)')}:
+            db.execute("ALTER TABLE expenses ADD COLUMN method TEXT NOT NULL DEFAULT 'No especificado'")
+        db.execute("INSERT OR IGNORE INTO settings VALUES('backup_directory','')")
+        if db.execute('PRAGMA user_version').fetchone()[0] < 4:
             # Apply the owner's fiscal identity once, without altering issued snapshots
             # or operational settings. Later manual edits survive every restart.
             db.executemany('UPDATE settings SET value=? WHERE key=?', [(v,k) for k,v in SCHOOL_PROFILE.items()])
@@ -306,13 +333,23 @@ def record_payment(db, data, user_id):
         if (existing['student_id'], existing['received_amount'], existing['currency'], existing['paid_on'], existing['method'], existing['reference'], existing['notes']) != (student_id, money(data.get('amount')), data.get('currency', 'USD'), paid_on, method, reference, notes):
             raise ValidationError('La clave de pago ya se usó con otros datos.')
         return {'id': existing['id'], 'duplicate': True}
+    reference_key=''.join(reference.upper().split())
+    repeated=[r['id'] for r in db.execute("SELECT id,reference FROM payments WHERE voided=0 AND reference<>''")
+        if reference_key and ''.join(r['reference'].upper().split())==reference_key]
+    if repeated:
+        if data.get('duplicate_reference_confirmed') not in (True,'on'):
+            raise ValidationError('La referencia ya aparece en otro pago válido. Revisa los recibos y confirma con un motivo si corresponde registrarla otra vez.')
+        duplicate_reason=required(data,'duplicate_reason',500)
     amount, currency, received, rate = convert_received(db, data, paid_on)
     pending = [c for c in charges(db, student_id) if c['balance'] > 0]
     total = sum(c['balance'] for c in pending)
     if amount > total:
         raise ValidationError('El pago supera la deuda. Crea primero el cargo correspondiente al anticipo.')
-    person = db.execute('''SELECT s.name AS student_name,s.document AS student_document,s.student_code,g.name AS guardian_name,
-       g.document AS guardian_document,g.address AS guardian_address,g.phone AS guardian_phone FROM students s JOIN guardians g ON g.id=s.guardian_id WHERE s.id=?''', (student_id,)).fetchone()
+    person = db.execute('''SELECT s.name AS student_name,s.document AS student_document,s.student_code,
+       gr.name AS grade_name,s.school_year AS student_school_year,g.name AS guardian_name,
+       g.document AS guardian_document,g.address AS guardian_address,g.phone AS guardian_phone
+       FROM students s JOIN guardians g ON g.id=s.guardian_id JOIN grades gr ON gr.id=s.grade_id
+       WHERE s.id=?''', (student_id,)).fetchone()
     receipt_snapshot = json.dumps({'person': dict(person), 'school': dict(db.execute('SELECT key,value FROM settings')),
                                   'operator': db.execute('SELECT name FROM users WHERE id=?', (user_id,)).fetchone()[0]}, ensure_ascii=False)
     result = db.execute('''INSERT INTO payments(student_id,amount,paid_on,method,reference,notes,created_by,created_at,request_key,currency,received_amount,exchange_rate,receipt_snapshot)
@@ -326,4 +363,5 @@ def record_payment(db, data, user_id):
         if remaining == 0:
             break
     audit(db, user_id, 'payment', {'id': result.lastrowid, 'amount': amount, 'student_id': student_id})
+    if repeated: audit(db,user_id,'duplicate-reference-confirmed',{'payment_id':result.lastrowid,'prior_ids':repeated,'reason':duplicate_reason})
     return {'id': result.lastrowid, 'duplicate': False}
