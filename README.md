@@ -34,7 +34,7 @@ Si usabas otro directorio de datos con un comando personalizado, conserva ese `-
 1. Al abrir o iniciar sesión, revisa y confirma la **tasa BCV del día** en **Tasas y respaldo**. La pantalla permite descargar un respaldo si eres administrador. Las operaciones quedan bloqueadas hasta confirmar la tasa; al cambiar el día hay que confirmarla nuevamente. Consulta puede confirmar una tasa ya registrada, pero administración o caja debe cargarla si falta. Crea los **grados / secciones** y su capacidad.
 2. Registra los **representantes**, con cédula, teléfono y correo. Un representante puede estar asociado con varios alumnos.
 3. **Matricula a los alumnos**: busca al representante por nombre o cédula y selecciónalo; completa nacimiento, grado, año escolar, fechas, mensualidad en USD y descuento. El importe final se calcula inmediatamente: **100 USD con 10 % de descuento → 90 USD**. El código único **AL-000001** se asigna automáticamente al guardar; la cédula propia del alumno es opcional. No uses la cédula del representante: dos hermanos comparten representante y tienen códigos distintos. Al guardar se abre una **constancia de matrícula** con botones **Descargar PDF** e **Imprimir**. Puedes volver a abrir la última constancia desde **Alumnos → Constancia**; para alumnos anteriores a esta actualización, guarda su matrícula para generar la primera.
-4. En **Mensualidades y cargos**, genera el período mensual. La generación respeta las fechas de matrícula, el estado del alumno y el descuento; repetirla no duplica cargos. Los cargos adicionales permiten registrar inscripción, transporte, actividades y otros conceptos.
+4. Las **mensualidades se calculan automáticamente** al abrir Aula, consultar los módulos y guardar una matrícula: se incluyen los meses desde su inicio hasta el mes actual, dentro de su año escolar. Los saldos aparecen directamente en **Resumen**, **Alumnos**, **Mensualidades y cargos** y **Morosidad**, sin pulsar un botón. **Preparar otro período** es opcional para cobrar meses futuros por adelantado. Los cargos adicionales permiten registrar inscripción, transporte, actividades y otros conceptos.
 5. Registra la **tasa BCV** de la fecha del cobro: bolívares por un dólar. Consulta la publicación oficial en [bcv.org.ve](https://www.bcv.org.ve/). Fines de semana y feriados: registra para la fecha del pago la tasa oficial vigente que corresponda. El sistema no la descarga ni certifica automáticamente.
 6. En **Caja y cobros**, selecciona alumno, fecha, moneda, importe, método y referencia. El sistema admite abonos parciales y aplica primero los cargos pendientes más antiguos. El comprobante incluye encabezado del colegio, representante, alumno, conceptos abonados, método, referencia, importes, tasa y espacios para firmas. Usa **Descargar PDF** para obtener el archivo directamente o **Imprimir** para imprimirlo desde Windows. El diseño también se aplica a los abonos parciales.
 7. En **Morosidad**, filtra por alumno, representante o grado; consulta deuda vencida y días de atraso. Prepara avisos de cobranza para copiar y compartir por tus propios medios. **Seguimiento** registra contactos, acuerdos y fecha prometida de pago; los avisos no se envían automáticamente.
@@ -49,6 +49,16 @@ En **Personal → Preparar nómina**, elige descripción y fecha, y ajusta manua
 
 La conversión USD → Bs se redondea por empleado al centavo, con mitad hacia arriba; el total Bs suma esos importes. La relación conserva los datos, montos y tasa usados al generarla. **Preparar o descargar una nómina no registra egresos ni marca empleados como pagados**: registra los pagos realizados con **Pagar nómina** y su referencia bancaria.
 
+### Mensualidades y morosidad automáticas
+
+Ejemplo: un alumno matriculado desde septiembre con mensualidad de **100 USD** tendrá cargos de septiembre y octubre al abrir Aula en octubre. Si septiembre no se ha pagado y pasó su vencimiento, figurará en **Morosidad**. Octubre aparece como pendiente y pasa a morosidad al día siguiente del vencimiento, si sigue sin pagarse. No se cargan noviembre ni otros meses futuros automáticamente.
+
+Se completan los meses faltantes de cada matrícula activa, aunque su año escolar sea anterior al configurado actualmente. Se respetan las fechas de inicio y fin, los descuentos y el límite del año escolar. Volver a abrir o consultar no duplica mensualidades. Los cargos anteriores, pagos, abonos, recibos y anulaciones se conservan. Una mensualidad anulada no se vuelve a generar. Las becas del 100 % quedan calculadas con importe cero y no se convierten luego en deuda por un cambio de tarifa.
+
+Al cambiar tarifa, beca o estado de un alumno, primero se calculan los meses pendientes con sus condiciones anteriores. Las condiciones nuevas se aplican a meses aún no calculados. Si registras una matrícula con inicio anterior a hoy, se incluyen esos meses con la tarifa y beca que indiques.
+
+**Pagos anteriores al uso de Aula:** si un alumno ya pagó esos meses por fuera del sistema, registra los pagos históricos con sus fechas e importes para que el saldo represente su deuda real. El programa no puede conocer cobros que no se han registrado.
+
 ### Año escolar y matrícula
 
 El año escolar usa su **año de inicio**: `2026` significa `2026–2027`. Por defecto empieza en septiembre y termina en agosto del año siguiente; se puede configurar otro mes de inicio. Las fechas de matrícula deben estar dentro de ese año escolar. Un alumno matriculado durante un mes recibe el cargo completo de ese mes; **no se calcula prorrateo automático**. Usa un cargo manual si necesitas un importe especial.
@@ -62,9 +72,9 @@ Al pasar un alumno a otro año escolar, actualiza su matrícula y fechas. Sus ca
 - Cada pago en Bs conserva el importe recibido, moneda, tasa aplicada y equivalente USD. Cambiar la tasa de esa fecha no modifica operaciones anteriores. Los recibos y las constancias también conservan los datos del colegio, alumno y representante que tenían al emitirse.
 - El saldo se mantiene en USD. El equivalente en Bs mostrado en morosidad es una referencia con la tasa registrada de hoy; al pagar se utiliza la tasa de la fecha elegida.
 - Un pago no puede superar el saldo. Para anticipos, crea primero el cargo correspondiente al período futuro. No se lleva una billetera de créditos sin asignar.
-- La generación de cargos y el registro de pagos son transaccionales. Una misma solicitud de pago reintentada conserva un solo recibo. Dos pagos distintos ingresados manualmente se consideran operaciones distintas: revisa referencias bancarias antes de cobrarlas otra vez.
+- El cálculo automático de mensualidades y el registro de pagos son transaccionales. Una misma solicitud de pago reintentada conserva un solo recibo. Dos pagos distintos ingresados manualmente se consideran operaciones distintas: revisa referencias bancarias antes de cobrarlas otra vez.
 - No se eliminan pagos ni egresos: el administrador puede **anularlos con motivo** y registrar la corrección. Anular un pago restaura la deuda que había abonado. Un cargo con pagos válidos no se puede anular hasta anular esos pagos.
-- Cambiar tarifa, beca o día de vencimiento afecta cargos nuevos. No recalcula cargos ya emitidos. Los recargos y convenios especiales se registran como cargos explícitos; no hay intereses automáticos.
+- Cambiar tarifa, beca o día de vencimiento afecta meses aún no calculados. No recalcula cargos ya emitidos. Los recargos y convenios especiales se registran como cargos explícitos; no hay intereses automáticos.
 
 ## Usuarios y respaldo
 
@@ -110,7 +120,7 @@ En Linux puede ser necesario usar `python3`; en Windows, `py -3`. La ejecución 
 python -m colegio.server --data-dir /ruta/a/datos --port 8765
 ```
 
-Las pruebas integradas usan bases temporales y verifican conversiones, abonos, distribución entre cargos, reintentos, anulaciones, tasas y recibos históricos, descuentos, códigos únicos para hermanos, constancias PDF, tasa obligatoria, nómina de 15 empleados con cuentas bancarias y redondeos, migración de registros anteriores, años escolares, capacidad, permisos, CSRF, exportación y restauración. No escriben en la base real.
+Las pruebas integradas usan bases temporales y verifican conversiones, abonos, distribución entre cargos, reintentos, anulaciones, tasas y recibos históricos, descuentos, códigos únicos para hermanos, constancias PDF, tasa obligatoria, nómina de 15 empleados con cuentas bancarias y redondeos, migración de registros anteriores, mensualidades automáticas, cambios de mes, becas completas, años escolares, capacidad, permisos, CSRF, exportación y restauración. No escriben en la base real.
 
 Validación opcional de interfaz, con Node, Playwright y Chromium disponibles:
 

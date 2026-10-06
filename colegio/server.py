@@ -17,7 +17,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from .db import (ValidationError, audit, charges, check_password, connect, convert_received,
                  generate_month, hash_password, initialize, integer, money, record_payment,
-                 required, valid_date, valid_rate, local_today)
+                 required, valid_date, valid_rate, local_today, synchronize_monthly_charges)
 from .storage import DataLock, consistent_backup, daily_backup
 from .documents import enrollment, payroll, load_document, render_pdf
 
@@ -29,6 +29,12 @@ def rows(db, sql, params=()):
 
 
 def snapshot(db, user):
+    owns_transaction = not db.in_transaction
+    if owns_transaction:
+        db.execute('BEGIN IMMEDIATE')
+    synchronize_monthly_charges(db)
+    if owns_transaction:
+        db.commit()
     settings = dict(db.execute('SELECT key,value FROM settings'))
     students = rows(db, '''SELECT s.*,g.name AS guardian_name,g.phone AS guardian_phone,g.email AS guardian_email,
       gr.name AS grade_name FROM students s JOIN guardians g ON g.id=s.guardian_id
@@ -102,6 +108,8 @@ def mutate(db, endpoint, data, user):
     admin_paths = {'settings','grades','guardians','students','employees','users','password','void-payment','void-expense','cancel-charge','positions','payroll-plans'}
     if user['role'] == 'reader' or (endpoint in admin_paths and user['role'] != 'admin'):
         raise PermissionError('Tu perfil no permite esta operación.')
+    # Calculate outstanding months before editing tariffs, dates or student status.
+    synchronize_monthly_charges(db)
     if endpoint == 'payroll-plans':
         return payroll(db, data, uid)
     if endpoint == 'generate':
@@ -262,6 +270,7 @@ def mutate(db, endpoint, data, user):
     audit(db, uid, endpoint, {'id': record_id, 'operation': 'update' if data.get('id') else 'create'})
     result = {'id': record_id}
     if endpoint == 'students':
+        synchronize_monthly_charges(db)
         result['document_id'] = enrollment(db, record_id, uid)
         result['student_code'] = db.execute('SELECT student_code FROM students WHERE id=?', (record_id,)).fetchone()[0]
     return result
@@ -521,10 +530,12 @@ def main():
         raise SystemExit(str(error))
     if path.exists():
         with closing(connect(path)) as existing:
-            needs_upgrade = existing.execute('PRAGMA user_version').fetchone()[0] < 2
+            needs_upgrade = existing.execute('PRAGMA user_version').fetchone()[0] < 3
         if needs_upgrade:
             consistent_backup(path, path.parent / 'backups' / f'antes-actualizacion-{datetime.now():%Y%m%d-%H%M%S}.sqlite3')
     initialize(path)
+    with closing(connect(path)) as db, db:
+        synchronize_monthly_charges(db)
     daily_backup(path)
     try:
         server = SchoolServer(('127.0.0.1', args.port), str(path))

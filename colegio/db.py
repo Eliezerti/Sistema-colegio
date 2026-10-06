@@ -180,8 +180,12 @@ def initialize(path):
                 created_at TEXT NOT NULL,created_by INTEGER NOT NULL REFERENCES users(id));
             CREATE TABLE IF NOT EXISTS payroll_plans(id INTEGER PRIMARY KEY,snapshot_json TEXT NOT NULL,
                 created_at TEXT NOT NULL,created_by INTEGER NOT NULL REFERENCES users(id));
+            CREATE TABLE IF NOT EXISTS monthly_assessments(
+                student_id INTEGER NOT NULL REFERENCES students(id),period TEXT NOT NULL,
+                amount INTEGER NOT NULL CHECK(amount>=0),charge_id INTEGER REFERENCES charges(id),
+                assessed_at TEXT NOT NULL,PRIMARY KEY(student_id,period));
         """)
-        db.execute('PRAGMA user_version=2')
+        db.execute('PRAGMA user_version=3')
 
 
 
@@ -208,6 +212,53 @@ def charges(db, student_id=None):
     return rows
 
 
+def assess_month(db, student, first, due_day):
+    """Assess once, including full scholarships and previously cancelled charges."""
+    period = first.strftime('%Y-%m')
+    if db.execute('SELECT 1 FROM monthly_assessments WHERE student_id=? AND period=?',
+                  (student['id'], period)).fetchone():
+        return 0, 0
+    existing = db.execute("SELECT id,amount FROM charges WHERE student_id=? AND period=? AND concept='Mensualidad'",
+                          (student['id'], period)).fetchone()
+    created = 0
+    amount = (student['monthly_fee'] * (100 - student['discount']) + 50) // 100
+    charge_id = None
+    if existing:
+        charge_id, amount = existing['id'], existing['amount']
+    elif amount:
+        day = min(due_day, calendar.monthrange(first.year, first.month)[1])
+        result = db.execute('''INSERT INTO charges(student_id,period,concept,amount,due_date)
+            VALUES(?,?,?,?,?)''', (student['id'], period, 'Mensualidad', amount, first.replace(day=day).isoformat()))
+        charge_id, created = result.lastrowid, 1
+    db.execute('INSERT INTO monthly_assessments VALUES(?,?,?,?,?)',
+               (student['id'], period, amount, charge_id, datetime.now(timezone.utc).isoformat()))
+    return created, 1
+
+
+def synchronize_monthly_charges(db, today=None):
+    """Bring active enrollments through this month; caller owns the transaction."""
+    today = today or local_today()
+    settings = dict(db.execute('SELECT key,value FROM settings'))
+    start_month, due_day = int(settings['start_month']), int(settings['due_day'])
+    created = assessed = 0
+    for student in db.execute("SELECT * FROM students WHERE status='active'").fetchall():
+        start = max(date.fromisoformat(student['enrollment_start']), date(student['school_year'], start_month, 1))
+        academic_end = date(student['school_year'] + 1, start_month, 1) - timedelta(days=1)
+        end = min(date.fromisoformat(student['enrollment_end']), academic_end, today)
+        if start > end:
+            continue
+        first = start.replace(day=1)
+        while first <= end:
+            new_charges, new_assessments = assess_month(db, student, first, due_day)
+            created += new_charges
+            assessed += new_assessments
+            first = date(first.year + (first.month == 12), first.month % 12 + 1, 1)
+    if assessed:
+        audit(db, None, 'automatic_monthly_charges', {'through': today.strftime('%Y-%m'),
+              'created': created, 'assessed': assessed})
+    return {'created': created, 'assessed': assessed}
+
+
 def generate_month(db, data, user_id):
     period = required(data, 'period', 7)
     try:
@@ -221,18 +272,13 @@ def generate_month(db, data, user_id):
     end = date(school_year + 1, start_month, 1)
     if not start <= first < end:
         raise ValidationError('El período no corresponde al año escolar seleccionado.')
-    due_day = min(int(settings['due_day']), calendar.monthrange(first.year, first.month)[1])
+    due_day = int(settings['due_day'])
     created = 0
     month_end = first.replace(day=calendar.monthrange(first.year, first.month)[1]).isoformat()
     for student in db.execute("""SELECT * FROM students WHERE status='active' AND school_year=?
       AND enrollment_start<=? AND enrollment_end>=?""", (school_year, month_end, first.isoformat())).fetchall():
-        # Half-up rounding in integer cents, including odd-cent discounts.
-        amount = (student['monthly_fee'] * (100 - student['discount']) + 50) // 100
-        if not amount:
-            continue
-        result = db.execute('''INSERT OR IGNORE INTO charges(student_id,period,concept,amount,due_date)
-          VALUES(?,?,?,?,?)''', (student['id'], period, 'Mensualidad', amount, first.replace(day=due_day).isoformat()))
-        created += result.rowcount
+        new_charges, _ = assess_month(db, student, first, due_day)
+        created += new_charges
     audit(db, user_id, 'generate_month', {'period': period, 'created': created})
     return {'created': created}
 

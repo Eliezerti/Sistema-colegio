@@ -35,7 +35,7 @@ class SystemTests(unittest.TestCase):
         self.thread = threading.Thread(target=self.server.serve_forever,daemon=True)
         self.thread.start()
         self.cookie = self.csrf = ''
-        self.year = date.today().year - 1
+        self.year = local_today().year - 2
         self.request('setup', {'name':'Directora','username':'admin','password':'Una-clave-segura'})
         self.csrf = self.request('session')['user']['csrf']
         self.request('confirm-rate', {'rate_date':local_today().isoformat(),'rate':'100'})
@@ -84,9 +84,9 @@ class SystemTests(unittest.TestCase):
         return data
 
     def test_multicurrency_partial_allocations_idempotency_void_and_frozen_receipt(self):
-        self.assertEqual(self.generate()['created'],1)
         self.assertEqual(self.generate()['created'],0)
-        self.assertEqual(self.generate('02')['created'],1)
+        self.assertEqual(self.generate()['created'],0)
+        self.assertEqual(self.generate('02')['created'],0)
         on=f'{self.year+1}-02-10'
         self.request('rates',{'rate_date':on,'rate':'100.125'})
         data=self.payment(amount='2252.81',currency='VES')
@@ -95,7 +95,7 @@ class SystemTests(unittest.TestCase):
         self.assertEqual(self.request('payments',data)['id'],result['id'])
         self.request('payments',dict(data,amount='1'),status=400)
         state=self.request('state')
-        self.assertEqual(state['students'][0]['balance'],6750)
+        self.assertEqual(state['students'][0]['balance'],51750)
         self.assertEqual(state['charges'][0]['paid'],2250)
         self.request('rates',{'rate_date':on,'rate':'200'})
         self.request('students',self.student_data(id=self.student,name='Nombre actualizado'))
@@ -105,33 +105,33 @@ class SystemTests(unittest.TestCase):
         self.assertEqual(self.request('payments',data)['id'],result['id'])
         second=self.request('payments',self.payment(amount='40',key='two'))['id']
         state=self.request('state')
-        self.assertEqual([c['paid'] for c in state['charges']],[4500,1750])
-        self.assertEqual(state['students'][0]['balance'],2750)
+        self.assertEqual([c['paid'] for c in state['charges']],[4500,1750]+[0]*10)
+        self.assertEqual(state['students'][0]['balance'],47750)
         self.request('void-payment',{'id':second,'reason':'Corrección del cobro'})
-        self.assertEqual(self.request('state')['students'][0]['balance'],6750)
+        self.assertEqual(self.request('state')['students'][0]['balance'],51750)
         self.request('cancel-charge',{'id':state['charges'][0]['id'],'reason':'No procede'},status=400)
-        self.request('payments',self.payment(amount='67.50',key='three'))
+        self.request('payments',self.payment(amount='517.50',key='three'))
         self.assertEqual(self.request('state')['students'][0]['balance'],0)
         self.assertEqual(self.request('state')['summary']['overdue'],0)
 
     def test_failed_payment_rolls_back_missing_rate_overpay_and_future(self):
         self.generate()
         self.request('payments',self.payment(currency='VES'),status=400)
-        self.request('payments',self.payment(amount='46'),status=400)
+        self.request('payments',self.payment(amount='541'),status=400)
         self.request('payments',self.payment(paid_on='2099-01-01'),status=400)
         state=self.request('state')
         self.assertEqual(len(state['payments']),0)
-        self.assertEqual(state['students'][0]['balance'],4500)
+        self.assertEqual(state['students'][0]['balance'],54000)
         self.request('rates',{'rate_date':f'{self.year+1}-02-10','rate':'100'})
         self.request('payments',self.payment(amount='0.01',currency='VES'),status=400)
-        self.assertEqual(self.request('state')['students'][0]['balance'],4500)
+        self.assertEqual(self.request('state')['students'][0]['balance'],54000)
 
     def test_academic_year_enrollment_discount_and_capacity(self):
         self.generate('01')
         self.request('generate',{'period':f'{self.year}-01','school_year':self.year},status=400)
         second=self.request('students',self.student_data(name='Alumno Dos',document='A-002',enrollment_start=f'{self.year+1}-03-01',discount=100))['id']
-        self.assertEqual(self.generate('02')['created'],1)
-        self.assertEqual(self.generate('03')['created'],1)
+        self.assertEqual(self.generate('02')['created'],0)
+        self.assertEqual(self.generate('03')['created'],0)
         self.request('students',self.student_data(document='A-003'),status=400)
         state=self.request('state')
         self.assertEqual(next(s for s in state['students'] if s['id']==second)['balance'],0)
@@ -158,7 +158,7 @@ class SystemTests(unittest.TestCase):
 
     def test_concurrent_payment_retries_create_one_receipt(self):
         self.generate()
-        payment = self.payment(amount='45',key='concurrent-request')
+        payment = self.payment(amount='540',key='concurrent-request')
         with ThreadPoolExecutor(max_workers=2) as pool:
             results = list(pool.map(lambda _: self.request('payments',payment), range(2)))
         self.assertEqual(results[0]['id'],results[1]['id'])
@@ -243,6 +243,7 @@ class SystemTests(unittest.TestCase):
             before=db.execute('SELECT COUNT(*),SUM(amount) FROM payments').fetchone()
             db.execute('DROP TABLE enrollment_documents')
             db.execute('DROP TABLE payroll_plans')
+            db.execute('DROP TABLE monthly_assessments')
             db.execute('DROP INDEX students_code')
             db.execute('ALTER TABLE students DROP COLUMN student_code')
             db.execute('ALTER TABLE sessions DROP COLUMN rate_confirmed_on')
@@ -256,7 +257,7 @@ class SystemTests(unittest.TestCase):
             self.assertEqual(db.execute('SELECT COUNT(*),SUM(amount) FROM payments').fetchone(),before)
             self.assertEqual(db.execute('SELECT student_code FROM students').fetchone()[0],'AL-000001')
             self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],2)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],3)
             employee=db.execute('SELECT position,position_id,salary,bank_account FROM employees').fetchone()
             self.assertEqual(employee[0],'Secretaría')
             self.assertIsNotNone(employee[1])
@@ -264,8 +265,41 @@ class SystemTests(unittest.TestCase):
             self.assertEqual(employee[3],'')
         self.request('state',status=428)
         self.request('confirm-rate', {'rate_date':local_today().isoformat(),'rate':'100'})
-        self.assertEqual(self.request('state')['students'][0]['balance'],2250)
+        self.assertEqual(self.request('state')['students'][0]['balance'],51750)
         self.assertEqual(self.request(f'receipt/{receipt}')['payment']['amount'],2250)
+
+    def test_automatic_debts_from_enrollment_and_missing_month_on_reopen(self):
+        # No explicit generation: a previous enrollment already has all 12 months.
+        state=self.request('state')
+        self.assertEqual(len(state['charges']),12)
+        self.assertEqual(state['students'][0]['balance'],54000)
+        self.assertEqual(state['students'][0]['overdue'],54000)
+        receipt=self.request('payments',self.payment())['id']
+        with sqlite3.connect(self.path) as db:
+            db.execute('DELETE FROM monthly_assessments')
+            db.execute('DELETE FROM charges WHERE period=?',(f'{self.year+1}-01',))
+            db.execute('UPDATE charges SET amount=4000 WHERE period=?',(f'{self.year}-12',))
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            states=list(pool.map(lambda _:self.request('state'),range(2)))
+        for state in states:
+            self.assertEqual(len(state['charges']),12)
+            self.assertEqual(state['students'][0]['balance'],51250)
+            self.assertEqual(state['payments'][0]['id'],receipt)
+            self.assertEqual(state['payments'][0]['amount'],2250)
+        csv=self.request('export?type=arrears').decode('utf-8-sig')
+        self.assertIn(f'{self.year+1}-01',csv)
+        self.assertEqual(self.request('receipt/'+str(receipt))['payment']['student_name'],'Alumno Uno')
+
+    def test_missing_past_month_uses_old_tariff_before_student_edit(self):
+        on=f'{self.year+1}-06'
+        with sqlite3.connect(self.path) as db:
+            db.execute('DELETE FROM monthly_assessments WHERE period=?',(on,))
+            db.execute('DELETE FROM charges WHERE period=?',(on,))
+        self.request('students',self.student_data(id=self.student,monthly_fee='100',discount=0,status='inactive'))
+        state=self.request('state')
+        self.assertEqual(next(c['amount'] for c in state['charges'] if c['period']==on),4500)
+        self.assertEqual(state['students'][0]['balance'],54000)
+        self.assertEqual(state['students'][0]['status'],'inactive')
 
     def test_expenses_csv_backup_and_restore(self):
         on=f'{self.year+1}-02-10'
