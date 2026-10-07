@@ -108,6 +108,7 @@ class PDF:
             self.box(58, 44, 12, 22)
         x = 126 if self.logo else 90
         width = self.w-x-45
+        if self.school.get('institution_type'):self.text(x,33,self.school['institution_type'],8,True)
         name_lines = self.wrap(self.school.get('legal_name') or self.school.get('school_name','Colegio'), width, 14)
         for i, line in enumerate(name_lines):
             self.text(x, 49+i*18, line, 14, True)
@@ -302,6 +303,7 @@ class ReceiptPDF(PDF):
             x = 120
         else:
             x = left
+        if self.school.get('institution_type'):self.text(x,35,self.school['institution_type'],8,True,self.muted)
         y = self.paragraph(self.school.get('legal_name') or self.school.get('school_name','Colegio'),
                            x, 53, self.w-x-42, 12, True, self.blue)
         if self.school.get('rif'):
@@ -450,6 +452,7 @@ class HalfLetterReceiptPDF(ReceiptPDF):
             w,h,_ = self.logo
             self.commands.append(f'q {42*w/h:.3f} 0 0 42 26 {self.h-62} cm /Logo Do Q')
             x = 78
+        if self.school.get('institution_type'):self.text(x,17,self.school['institution_type'],7,True,self.muted)
         y = self.paragraph(self.school.get('legal_name') or self.school.get('school_name','Colegio'),x,28,350,11,True,self.blue)
         if self.school.get('rif'):
             self.text(x,y,'RIF: '+self.school['rif'],8,True,self.muted)
@@ -592,9 +595,10 @@ class TicketReceiptPDF(ReceiptPDF):
         self.commands=[];self.pages.append(self.commands);self.y=12
         if self.logo:
             w,h,_=self.logo;self.commands.append(f'q {34*w/h:.3f} 0 0 34 {(self.w-34*w/h)/2:.3f} {self.h-46} cm /Logo Do Q');self.y=59
-        for value,size,bold in ((self.school.get('legal_name') or self.school.get('school_name','Colegio'),9,True),
+        for value,size,bold in ((self.school.get('institution_type',''),7,True),(self.school.get('legal_name') or self.school.get('school_name','Colegio'),9,True),
             ('RIF: '+self.school.get('rif',''),7.5,False),(self.school.get('fiscal_address') or self.school.get('address',''),7,False),
             (f"COMPROBANTE R-{self.payment['id']:06d}",9,True),(datetime.fromisoformat(self.payment['paid_on']).strftime('%d/%m/%Y'),8,False)):
+            if not value:continue
             for line in self.wrap(value,self.w-18,size):
                 self.text(9,self.y,line,size,bold);self.y+=size+3
         if self.payment['voided']:
@@ -646,6 +650,7 @@ class AdministrativePDF(PDF):
             self.commands.append(f'q {60*w/h:.3f} 0 0 60 42 {self.h-96} cm /Logo Do Q')
             x=115
         y=48
+        if self.school.get('institution_type'):self.text(x,32,self.school['institution_type'],8,True)
         for line in self.wrap(self.school.get('legal_name') or self.school.get('school_name','Colegio'),self.w-x-42,12):
             self.text(x,y,line,12,True); y+=17
         for value in ('RIF: '+self.school.get('rif',''),self.school.get('fiscal_address') or self.school.get('address','')):

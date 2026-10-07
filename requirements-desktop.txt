@@ -1,0 +1,7 @@
+# Only needed to build/run the Windows desktop distribution.
+pywebview==5.4
+pystray==0.19.5
+Pillow==11.1.0
+pythonnet==3.0.5; sys_platform == 'win32'
+pyinstaller==6.12.0
+pyinstaller-hooks-contrib==2025.1

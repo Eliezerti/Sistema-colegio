@@ -11,7 +11,7 @@ import time
 import threading
 import traceback
 import webbrowser
-from contextlib import closing
+from contextlib import closing, contextmanager
 from datetime import date, datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -181,7 +181,7 @@ def mutate(db, endpoint, data, user, *, synchronize=True):
                   'due_day': str(integer(data.get('due_day'), 1, 31))}
         # An omitted optional field must not erase the configured fiscal identity.
         for key, limit in (('address',500), ('phone',100), ('rif',100), ('email',200),
-                           ('website',200), ('legal_name',200), ('fiscal_address',500)):
+                           ('website',200), ('legal_name',200), ('fiscal_address',500), ('institution_type',100)):
             if key in data:
                 fields[key] = str(data[key]).strip()[:limit]
         if 'backup_directory' in data:
@@ -442,7 +442,7 @@ class SchoolServer(ThreadingHTTPServer):
             self.demo_thread.join(timeout=5)
         self.backup_stop.set()
         if self.backup_thread:
-            self.backup_thread.join(timeout=5)
+            self.backup_thread.join()
         super().server_close()
 
 
@@ -778,7 +778,10 @@ class Handler(BaseHTTPRequestHandler):
                 db.close()  # Rolls back uncommitted writes on errors.
 
 
-def run_server(path, args, demo=False):
+@contextmanager
+def open_school(path, port, demo=False, remote_origin=''):
+    """Own the data lock and resources for both CLI and desktop lifetimes."""
+    path=Path(path)
     with DataLock(path.parent):
         if not path.exists() and any((path.parent / 'backups').glob('*.sqlite3')):
             raise SystemExit('No se encuentra la base de datos, pero hay respaldos anteriores. '
@@ -792,7 +795,7 @@ def run_server(path, args, demo=False):
         initialize(path)
         with closing(connect(path)) as db, db:
             synchronize_monthly_charges(db)
-            if args.remote_origin and not db.execute("SELECT 1 FROM users WHERE role='admin' LIMIT 1").fetchone():
+            if remote_origin and not db.execute("SELECT 1 FROM users WHERE role='admin' LIMIT 1").fetchone():
                 raise SystemExit('Crea primero tu administrador en esta PC con Iniciar-Aula.bat y luego abre Iniciar-Red.bat. No se ha habilitado el acceso remoto.')
             if demo:
                 demo_admin = db.execute('INSERT INTO users(username,name,password,role) VALUES(?,?,?,?)',
@@ -801,11 +804,19 @@ def run_server(path, args, demo=False):
             daily_backup(path)
             automatic_backup(path)
         try:
-            server = SchoolServer(('127.0.0.1', args.port), str(path), demo=demo,remote_origin=args.remote_origin or '')
+            server = SchoolServer(('127.0.0.1', port), str(path), demo=demo,remote_origin=remote_origin)
         except OSError as error:
             raise SystemExit(f'No se pudo iniciar: {error}. Verifica si el sistema ya está abierto o usa otro puerto.')
         if demo:
             server.demo_admin_id = demo_admin
+        try:
+            yield server
+        finally:
+            server.server_close()
+
+
+def run_server(path, args, demo=False):
+    with open_school(path,args.port,demo,args.remote_origin or '') as server:
         print(f'{"MODO PRUEBA" if demo else "Colegio"} abierto en http://127.0.0.1:{server.server_port} · datos: {path}', flush=True)
         print('Mantén esta ventana abierta. Ctrl+C para cerrar de forma segura.', flush=True)
         if args.remote_origin:
@@ -816,8 +827,6 @@ def run_server(path, args, demo=False):
             server.serve_forever()
         except KeyboardInterrupt:
             pass
-        finally:
-            server.server_close()
 
 
 def main():

@@ -7,7 +7,7 @@ from contextlib import closing
 from datetime import date, datetime, timezone, timedelta
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
-from .branding import SCHEMA_VERSION, SCHOOL_PROFILE
+from .branding import SCHEMA_VERSION, SCHOOL_PROFILE, INSTITUTION_TYPE, SCHOOL_NAME
 
 
 class ValidationError(ValueError):
@@ -175,9 +175,9 @@ def initialize(path):
         CREATE INDEX IF NOT EXISTS payments_student ON payments(student_id);
         CREATE INDEX IF NOT EXISTS allocations_charge ON allocations(charge_id);
         ''')
-        defaults = {'school_name': 'U.E.C. Alejandro Von Humboldt', 'currency': 'USD', 'due_day': '10', 'start_month': '9',
+        defaults = {'school_name': SCHOOL_NAME, 'currency': 'USD', 'due_day': '10', 'start_month': '9',
                     'school_year': str(local_today().year if local_today().month >= 9 else local_today().year - 1), 'address': '', 'phone': '', 'rif': '', 'email': '', 'website': ''}
-        defaults.update(legal_name='', fiscal_address='', logo='')
+        defaults.update(legal_name='', fiscal_address='', logo='',institution_type=INSTITUTION_TYPE)
         db.executemany('INSERT OR IGNORE INTO settings VALUES(?,?)', defaults.items())
         # Additive upgrades preserve IDs, balances and historical receipts.
         additions = {
@@ -231,6 +231,10 @@ def initialize(path):
             db.executemany('UPDATE settings SET value=? WHERE key=?', [(v,k) for k,v in SCHOOL_PROFILE.items()])
             db.execute("UPDATE settings SET value='U.E.C. Alejandro Von Humboldt' WHERE key='school_name' AND value='Mi colegio'")
             audit(db, None, 'school-profile', SCHOOL_PROFILE)
+        if db.execute('PRAGMA user_version').fetchone()[0] < 7:
+            db.execute("UPDATE settings SET value=? WHERE key='school_name' AND value IN (?,?,?,?)",
+                       (SCHOOL_NAME,'U.E.C. Alejandro Von Humboldt','Alejandro Von Humboldt','ALEJANDRO VON HUMBOLDT','Mi colegio'))
+            audit(db,None,'institution-identity',{'institution_type':INSTITUTION_TYPE})
         db.execute(f'PRAGMA user_version={SCHEMA_VERSION}')
 
 

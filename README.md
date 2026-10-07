@@ -4,11 +4,30 @@ Sistema administrativo para colegios de Venezuela, con una **base central en una
 
 ## Descargar el sistema
 
+El **instalador de escritorio para Windows 10/11 de 64 bits** se publica en [Versiones e instaladores](https://github.com/Eliezerti/Sistema-colegio/releases). Descarga el archivo **Aula-Colegio-Instalador-…exe**, no el ZIP de código fuente. Incluye Python y la aplicación; no necesitas instalar Python por separado. La compilación Windows y la prueba de la ventana deben terminar correctamente para que aparezca el instalador.
+
+### Instalar la aplicación de escritorio
+
+1. Cierra la versión anterior de Aula. Si todavía usas un .bat, ciérralo con **Ctrl+C**. Conserva un respaldo y utiliza **la misma cuenta de Windows** que usabas para mantener la ruta de datos existente.
+2. Ejecuta el instalador .exe y sigue **Siguiente → Instalar**. Deja marcada la creación de accesos directos. Puedes elegir **Abrir Aula al iniciar sesión en Windows** para la PC principal. El instalador comprueba WebView2, un componente de Microsoft para mostrar la ventana; si falta, su instalación inicial necesita internet. Después el uso local funciona sin conexión.
+3. Abre **Colegio Alejandro Von Humboldt** desde el escritorio. La primera apertura pregunta cómo usar esta computadora:
+   - **PC principal:** guarda los datos. Deja el enlace vacío durante la primera configuración local. Crea tu administrador si la base está vacía; si ya existía una base en `%LOCALAPPDATA%\AulaColegio`, entra con tu usuario habitual.
+   - **Conectarme al colegio:** para tu casa y las otras laptops. Pega el enlace HTTPS privado de la PC principal y conecta Tailscale. Esta opción no crea una segunda base SQLite.
+4. Para cambiar la conexión, cierra Aula completamente y abre **Configurar Aula** desde **Inicio → Colegio Alejandro Von Humboldt**. La configuración del equipo no cambia los alumnos, cobros o contraseñas.
+
+La interfaz se abre en una **ventana propia**, sin consola ni navegador externo para usar el sistema. En la PC principal, pulsar **X** oculta la ventana y deja el servicio activo junto al reloj de Windows. Abre el icono junto al reloj o vuelve a hacer doble clic en el acceso directo para mostrarla. Para detener el sistema, utiliza **Colegio → Salir y cerrar Aula** o esa opción en el icono del reloj. Si el acceso compartido está activo, pide confirmación porque las otras computadoras se desconectarán. Las operaciones en curso terminan antes de liberar la base. En una laptop conectada al colegio, cerrar su ventana cierra únicamente esa aplicación; no apaga la PC principal.
+
+El instalador incluye **Aula - Pruebas**, **Restaurar respaldo**, **Recuperar clave del administrador**, **Configurar Aula** y **Abrir carpeta de datos** en el menú Inicio. Las herramientas de recuperación usan ventanas y requieren cerrar el sistema de la PC principal. El acceso **Aula - Pruebas** abre el administrador temporal y mantiene el aislamiento descrito abajo; se elimina al cerrar su ventana. No deja el servicio de pruebas en el reloj.
+
+Actualizar o desinstalar la aplicación no elimina `%LOCALAPPDATA%\AulaColegio`, los usuarios ni los respaldos. El programa se instala por usuario de Windows en `%LOCALAPPDATA%\Programs\AulaColegio`, separado de esa base. El instalador no mueve automáticamente datos de otra cuenta o computadora.
+
+### Distribución de código fuente · alternativa con Python
+
 Abre [Aula-Windows.zip](https://github.com/Eliezerti/Sistema-colegio/blob/main/descargas/Aula-Windows.zip) y pulsa **Download raw file** (icono de descarga) en GitHub. Si el repositorio es privado, inicia sesión con una cuenta que tenga acceso. El archivo [Aula-Windows.sha256](descargas/Aula-Windows.sha256) permite verificar la integridad del paquete.
 
 El ZIP incluye los archivos del programa y los lanzadores para Windows; no incluye Python ni datos de alumnos. Descomprímelo con **Extraer todo** y sigue estos pasos.
 
-## Instalar y abrir en Windows
+## Instalar y abrir desde el ZIP en Windows
 
 1. Instala **Python 3.10 o posterior**, de 64 bits, desde [python.org](https://www.python.org/downloads/windows/). En el instalador activa **Add python.exe to PATH**. No se necesitan paquetes adicionales.
 2. Descomprime la carpeta del sistema en una ubicación permanente, por ejemplo `C:\Aula`.
@@ -37,18 +56,18 @@ Todos consultan y modifican **la misma base**, guardada en la PC principal del c
 
    Si instalaste Tailscale en otra ubicación, usa la ruta de su `tailscale.exe`. Sigue el enlace de autorización que muestre el comando si solicita habilitar HTTPS. Copia el enlace privado que te indique, con formato `https://nombre-equipo.nombre-red.ts.net`. Usa **Tailscale Serve**, que comparte el acceso dentro de tu red privada. No actives **Funnel** ni abras el puerto 8765 en el router. [Documentación de Tailscale Serve](https://tailscale.com/kb/1242/tailscale-serve).
 
-5. Haz doble clic en **Configurar-Red.bat** y pega ese enlace HTTPS. Se guarda en `%LOCALAPPDATA%\AulaColegio\red.json`; no cambia los usuarios ni la base existente.
-6. Abre **Iniciar-Red.bat**. En adelante usa este lanzador en la PC principal para permitir el acceso compartido. Mantén Aula y Tailscale activos. **Configuración → Acceso compartido del colegio** muestra el enlace para las otras laptops. No abras a la vez Iniciar-Aula.bat e Iniciar-Red.bat: ambos usan la misma base y el mismo puerto.
+5. Con el instalador de escritorio, abre **Configurar Aula**, selecciona **PC principal** y pega ese enlace HTTPS. Si usas el ZIP de código fuente, ejecuta **Configurar-Red.bat**. El enlace se guarda en `%LOCALAPPDATA%\AulaColegio\red.json`; no cambia los usuarios ni la base existente.
+6. Con el instalador, abre el icono **Colegio Alejandro Von Humboldt**; el modo compartido se activa automáticamente con la configuración guardada. Si usas el ZIP, abre **Iniciar-Red.bat**. Mantén Aula y Tailscale activos. **Configuración → Acceso compartido del colegio** muestra el enlace. No abras otra copia del servidor con un .bat mientras la aplicación de escritorio esté activa.
 
 ### Entrar desde las laptops y desde casa
 
-Conecta Tailscale y abre en Edge o Chrome el **mismo enlace HTTPS privado**. Entra con tu usuario de Aula. No instales una segunda base ni Python en esas laptops. Un cobro registrado por un empleado queda en la base central y tú puedes consultarlo desde casa al cargar o actualizar la pantalla.
+Conecta Tailscale. Puedes instalar el mismo .exe, elegir **Conectarme al colegio** y pegar el **mismo enlace HTTPS privado**: abrirás una ventana propia sin base SQLite local. También puedes abrir ese enlace en Edge o Chrome si prefieres no instalar la aplicación. Entra con tu usuario de Aula. No instales una segunda base ni Python en esas laptops. Un cobro registrado por un empleado queda en la base central y tú puedes consultarlo desde casa al cargar o actualizar la pantalla.
 
 La PC principal y el router deben estar encendidos, con internet y sin suspensión mientras se necesite acceso desde casa. Un UPS ayuda a mantenerlos disponibles durante los cortes. Si se apaga la PC principal, el sistema compartido deja de estar disponible; los datos permanecen en esa PC y sus respaldos. El modo local sigue disponible con **Iniciar-Aula.bat** cuando no hay conexión.
 
 Los respaldos, la restauración y la recuperación local de contraseñas se administran en la PC principal. Una carpeta de Drive o un USB sirve para copiar **respaldos**, nunca para compartir la base activa. Si cambias la PC principal o su nombre en Tailscale, vuelve a ejecutar Configurar-Red.bat con el nuevo enlace y comunica ese enlace a los usuarios. El archivo red.json es configuración del equipo, y no forma parte del respaldo SQLite.
 
-El **modo de prueba es local y separado**: usa Iniciar-Pruebas.bat en la computadora donde quieras experimentar. No se comparte mediante Iniciar-Red.bat ni abre la base real del colegio.
+El **modo de prueba es local y separado**: usa el acceso **Aula - Pruebas**, o Iniciar-Pruebas.bat si usas el ZIP, en la computadora donde quieras experimentar. No comparte ni abre la base real del colegio.
 
 Esta versión valida el acceso a través de un intermediario HTTPS privado, permisos y cobros simultáneos. La instalación de Tailscale, sus permisos, los certificados HTTPS y la conexión real entre tus computadoras deben configurarse y comprobarse en esos equipos antes de trabajar con los datos del colegio.
 
@@ -83,9 +102,13 @@ Si usabas otro directorio de datos con un comando personalizado, conserva ese `-
 
 ### Identidad del colegio y membrete fiscal
 
+La actualización incorpora el tipo «Unidad Educativa Colegio» en los membretes nuevos y amplía el nombre institucional abreviado del colegio. Conserva la razón social fiscal del RIF y los documentos ya emitidos. El tipo de institución también se puede editar en Configuración.
+
 El logo PNG está incluido en el programa y aparece al entrar, en el menú y en los membretes de los documentos nuevos. No necesita internet. En **Configuración → Datos del colegio** puedes descargar el PNG y editar los datos fiscales:
 
-- **Razón social:** ALEJANDRO VON HUMBOLDT, C.A.
+- **Nombre institucional:** Unidad Educativa Colegio Alejandro Von Humboldt.
+- **Tipo de institución en el membrete:** Unidad Educativa Colegio.
+- **Razón social fiscal:** ALEJANDRO VON HUMBOLDT, C.A.
 - **RIF:** J-50835934-8.
 - **Domicilio fiscal:** Calle 48 entre carreras 16 y 17, local Nro. 16-46, sector Centro, Barquisimeto, Lara. Zona postal 3001.
 
@@ -266,9 +289,9 @@ Cierra Aula y ejecuta **Recuperar-clave-admin.bat**, indica el usuario administr
 
 ### Instalación y protección del equipo
 
-Esta distribución todavía usa Python instalado en Windows y la carpeta `%LOCALAPPDATA%\AulaColegio` del usuario que lo abrió. Configuración muestra la ruta exacta. No se ha cambiado automáticamente a `C:\ProgramData`: primero hay que migrar y verificar la base existente y asignar permisos de los usuarios de Windows. Cambiar únicamente el lanzador puede abrir una base diferente y aparentar pérdida de datos.
+La distribución de escritorio incluye Python. La alternativa ZIP necesita Python instalado en Windows. Ambas utilizan la carpeta `%LOCALAPPDATA%\AulaColegio` del usuario que lo abrió. Configuración muestra la ruta exacta. No se ha cambiado automáticamente a `C:\ProgramData`: primero hay que migrar y verificar la base existente y asignar permisos de los usuarios de Windows. Cambiar únicamente el lanzador puede abrir una base diferente y aparentar pérdida de datos.
 
-Un instalador con Python embebido o PyInstaller, acceso directo y arranque sin consola es una mejora pendiente que debe construirse y probarse en Windows. El ZIP actual no incluye un ejecutable Windows validado. Usa un **UPS** para la PC y el router. Activa **BitLocker** en Windows, si la edición y el equipo lo permiten, y conserva la clave de recuperación fuera de esa PC. Protege también el USB y las copias externas: cifrar la PC no cifra automáticamente esos respaldos.
+El instalador .exe se construye con PyInstaller e Inno Setup en GitHub Actions sobre Windows. Se publica únicamente después de superar las pruebas integradas y cargar la ventana propia con su logo y JavaScript. El ZIP de código fuente sigue disponible como alternativa; no contiene el ejecutable. Usa un **UPS** para la PC y el router. Activa **BitLocker** en Windows, si la edición y el equipo lo permiten, y conserva la clave de recuperación fuera de esa PC. Protege también el USB y las copias externas: cifrar la PC no cifra automáticamente esos respaldos.
 
 Para soporte remoto puedes instalar Chrome Remote Desktop o AnyDesk en esa PC y conceder acceso cuando lo necesites. Este repositorio no instala ni configura esas herramientas, y el asistente no obtiene acceso remoto por instalar esta actualización. Para trabajar desde varias laptops utiliza el modo de acceso privado descrito arriba: Aula sigue escuchando solo en `127.0.0.1` y Tailscale Serve proporciona el enlace HTTPS privado. Los respaldos de Drive sirven para recuperación/traslado; no sincronizan dos bases activas.
 
@@ -301,3 +324,14 @@ python tests/run_browser.py --demo
 Estos comandos crean datos ficticios en carpetas temporales e inician sus propios servidores. El primero valida matrícula, mensualidades, cobro en Bs, recibos de alumnos y empleados, morosidad, egresos, reportes, diseño adaptable, permisos y vaciado protegido. El segundo comprueba el administrador de prueba, PDF identificado como prueba, recarga y varias pestañas, cierre de la última pestaña y eliminación física de los datos temporales. Las pruebas integradas también comprueban reinicio tras proceso matado, rechazo de un directorio real en modo prueba, respaldo antes de vaciar, fallo del segundo destino y conservación de numeraciones. Para usar otro Chromium, define `CHROMIUM_PATH`. Las pruebas opcionales no son una dependencia del programa.
 
 El funcionamiento del servidor y la interfaz se verifica en Linux durante el desarrollo. Los lanzadores y la ruta de bloqueo de archivos para Windows requieren una prueba final en una computadora Windows antes de utilizar datos reales.
+
+### Construir el instalador de escritorio
+
+La compilación requiere Windows 10/11 de 64 bits, Python 3.12 e Inno Setup 6. El flujo `.github/workflows/windows-desktop.yml` instala las dependencias fijadas de `requirements-desktop.txt`, ejecuta las pruebas, incluye recursos y Python con PyInstaller, verifica la firma de Microsoft del instalador WebView2 y construye el instalador con `packaging/Aula.iss`. Ejecuta el propio Aula.exe con `--self-test` sobre una base temporal y un WebView2 real antes de publicar una versión descargable. Nunca incluye la base de desarrollo.
+
+```powershell
+./packaging/build_windows.ps1 -Version "1.0.0"
+./dist/Aula/Aula.exe --self-test
+```
+
+Para probar el escritorio desde código en Windows: `py -3 -m pip install -r requirements-desktop.txt` y `py -3 -m colegio.desktop`. El servidor de desarrollo y sus pruebas en Linux siguen usando únicamente la biblioteca estándar; las dependencias de escritorio no son necesarias para ese flujo.

@@ -155,3 +155,5 @@ body>#app>.demo-banner{margin:15px 24px 0}.demo-banner+.rate-screen{min-height:c
 .dashboard-upcoming th:last-child,.dashboard-upcoming td:last-child{width:105px;padding-left:10px;padding-right:20px;text-align:right}
 .dashboard-upcoming .btn{white-space:normal;text-align:left}
 @media(max-width:700px){.dashboard-upcoming th:nth-child(2),.dashboard-upcoming td:nth-child(2){width:85px}.dashboard-upcoming th:last-child,.dashboard-upcoming td:last-child{width:95px;padding-right:14px}}
+
+.school-info .institution-type{font-size:9px;font-weight:600;letter-spacing:.05em;margin:0 0 4px;color:#476174}

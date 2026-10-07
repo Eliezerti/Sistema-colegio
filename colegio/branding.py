@@ -4,7 +4,9 @@ import zlib
 from functools import lru_cache
 from pathlib import Path
 
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
+INSTITUTION_TYPE = 'Unidad Educativa Colegio'
+SCHOOL_NAME = 'Unidad Educativa Colegio Alejandro Von Humboldt'
 LOGO_FILE = 'logo-colegio-v1.png'
 SCHOOL_PROFILE = {
     'legal_name': 'ALEJANDRO VON HUMBOLDT, C.A.',

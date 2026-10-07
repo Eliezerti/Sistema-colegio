@@ -1,0 +1,71 @@
+name: Aplicación Windows
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/windows-desktop.yml'
+      - 'colegio/**'
+      - 'static/**'
+      - 'tests/**'
+      - 'packaging/**'
+      - 'desktop_entry.py'
+      - 'requirements-desktop.txt'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-desktop
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-desktop.txt
+      - name: Compilar y validar el sistema
+        shell: pwsh
+        run: ./packaging/build_windows.ps1 -Version "1.0.${{ github.run_number }}"
+      - name: Comprobar la ventana propia y los recursos del ejecutable
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $Runtime = Start-Process -FilePath build/MicrosoftEdgeWebview2Setup.exe -ArgumentList '/silent','/install' -PassThru -Wait
+          if ($Runtime.ExitCode -ne 0) { throw "No se pudo preparar WebView2: $($Runtime.ExitCode)" }
+          $Process = Start-Process -FilePath dist/Aula/Aula.exe -ArgumentList '--self-test' -PassThru
+          if (-not $Process.WaitForExit(120000)) { $Process.Kill(); throw 'La ventana de prueba no cerró.' }
+          if ($Process.ExitCode -ne 0) { throw 'Falló la prueba nativa del ejecutable.' }
+      - name: Guardar diagnóstico de la ventana si falla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Diagnostico-Windows
+          path: C:/Users/runneradmin/AppData/Local/Temp/AulaColegio-Compilacion/logs/*.log
+          if-no-files-found: ignore
+      - name: Guardar instalador
+        uses: actions/upload-artifact@v4
+        with:
+          name: Aula-Windows-Instalador
+          path: |
+            dist/Aula-Colegio-Instalador-*.exe
+            dist/Aula-Colegio-Instalador-*.sha256
+          if-no-files-found: error
+      - name: Publicar instalador descargable
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $Version = "1.0.${{ github.run_number }}"
+          $Body = @'
+          Aplicación Windows de 64 bits con Python incluido, ventana propia y accesos directos. Instala el archivo .exe con la misma cuenta de Windows que usabas para conservar los datos. Las laptops de consulta pueden conectarse a la PC principal mediante Tailscale. El componente WebView2 de Microsoft puede necesitar internet durante la primera instalación. Cerrar la ventana principal minimiza Aula junto al reloj; usa «Salir y cerrar Aula» para detener el sistema compartido. Incluye un acceso separado para pruebas y herramientas de recuperación. La compilación supera las pruebas de datos y una comprobación de la ventana nativa antes de publicarse.
+          '@
+          [System.IO.File]::WriteAllText('dist/notas-version.txt', $Body, [System.Text.UTF8Encoding]::new($false))
+          gh release create "desktop-$Version" "dist/Aula-Colegio-Instalador-$Version.exe" "dist/Aula-Colegio-Instalador-$Version.exe.sha256" --target $env:GITHUB_SHA --title "Colegio - Instalador Windows $Version" --notes-file dist/notas-version.txt --latest
+          if ($LASTEXITCODE -ne 0) { throw 'No se pudo publicar el instalador.' }
