@@ -31,6 +31,7 @@ from .lifecycle import roster_for_year, transition_year, create_plan, cancel_pla
 from .demo import DemoWorkspace
 from .salary import details as salary_details, issue_salary_receipt, load_salary_receipt
 from .reset_records import reset_preview, reset_records
+from .network import PrivateAccess, load_config
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -345,7 +346,12 @@ def mutate(db, endpoint, data, user, *, synchronize=True):
 class SchoolServer(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, address, db_path, demo=False):
+    def __init__(self, address, db_path, demo=False, remote_origin=''):
+        if address[0]!='127.0.0.1':
+            raise ValueError('Aula escucha solo en 127.0.0.1. Usa Tailscale Serve para compartir el acceso privado.')
+        if demo and remote_origin:
+            raise ValueError('El modo de prueba no admite acceso remoto a la base del colegio.')
+        self.access=PrivateAccess(remote_origin)
         self.demo = demo
         self.daemon_threads = not demo
         self.demo_stop = threading.Event()
@@ -484,9 +490,8 @@ class Handler(BaseHTTPRequestHandler):
         db = None
         try:
             host = self.headers.get('Host', '')
-            allowed_hosts = {f'127.0.0.1:{self.server.server_port}', f'localhost:{self.server.server_port}'}
-            if host not in allowed_hosts:
-                self.respond(403, {'error': 'El sistema solo acepta acceso local.'})
+            if not self.server.access.allowed_host(host,self.server.server_port):
+                self.respond(403, {'error': 'Dirección de acceso no permitida. Usa la dirección local o el enlace privado configurado.'})
                 return
             url = urlsplit(self.path)
             endpoint = url.path.removeprefix('/api/')
@@ -504,7 +509,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
             db = connect(self.server.db_path)
             if post:
-                if self.headers.get('Origin') not in (None, f'http://{host}'):
+                if not self.server.access.allowed_origin(host,self.headers.get('Origin'),self.server.server_port):
                     raise PermissionError('Origen no permitido.')
                 length = int(self.headers.get('Content-Length', '0'))
                 maximum=3_000_000 if endpoint in ('import-roster','transition-year') else 65536
@@ -560,7 +565,8 @@ class Handler(BaseHTTPRequestHandler):
                 db.execute('DELETE FROM sessions WHERE expires<=?', (int(time.time()),))
                 db.execute('INSERT INTO sessions(token,user_id,csrf,expires) VALUES(?,?,?,?)', (token, user_id, csrf, int(time.time()) + 12*3600))
                 db.commit()
-                self.respond(200, {'ok': True}, extra={'Set-Cookie': f'{self.server.cookie_name}={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200'})
+                secure='; Secure' if self.server.access.secure_cookie(host,self.headers.get('Origin'),self.headers.get('X-Forwarded-Proto')) else ''
+                self.respond(200, {'ok': True}, extra={'Set-Cookie': f'{self.server.cookie_name}={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200{secure}'})
                 return
             if not user:
                 self.respond(401, {'error': 'Inicia sesión para continuar.'})
@@ -625,6 +631,7 @@ class Handler(BaseHTTPRequestHandler):
                 result=snapshot(db, public_user)
                 result['backup']=self.server.backup_status()
                 result['demo']=self.server.demo
+                result['access']=self.server.access.snapshot()
                 self.respond(200, result)
             elif endpoint == 'reset-preview':
                 if self.server.demo or user['role'] != 'admin':
@@ -785,6 +792,8 @@ def run_server(path, args, demo=False):
         initialize(path)
         with closing(connect(path)) as db, db:
             synchronize_monthly_charges(db)
+            if args.remote_origin and not db.execute("SELECT 1 FROM users WHERE role='admin' LIMIT 1").fetchone():
+                raise SystemExit('Crea primero tu administrador en esta PC con Iniciar-Aula.bat y luego abre Iniciar-Red.bat. No se ha habilitado el acceso remoto.')
             if demo:
                 demo_admin = db.execute('INSERT INTO users(username,name,password,role) VALUES(?,?,?,?)',
                     ('__prueba__', 'Administrador de prueba', hash_password(secrets.token_urlsafe(32)), 'admin')).lastrowid
@@ -792,13 +801,15 @@ def run_server(path, args, demo=False):
             daily_backup(path)
             automatic_backup(path)
         try:
-            server = SchoolServer(('127.0.0.1', args.port), str(path), demo=demo)
+            server = SchoolServer(('127.0.0.1', args.port), str(path), demo=demo,remote_origin=args.remote_origin or '')
         except OSError as error:
             raise SystemExit(f'No se pudo iniciar: {error}. Verifica si el sistema ya está abierto o usa otro puerto.')
         if demo:
             server.demo_admin_id = demo_admin
         print(f'{"MODO PRUEBA" if demo else "Colegio"} abierto en http://127.0.0.1:{server.server_port} · datos: {path}', flush=True)
         print('Mantén esta ventana abierta. Ctrl+C para cerrar de forma segura.', flush=True)
+        if args.remote_origin:
+            print(f'Acceso privado del colegio y casa: {server.access.origin} (requiere Tailscale Serve activo).',flush=True)
         try:
             if args.open_browser:
                 webbrowser.open(f'http://127.0.0.1:{server.server_port}')
@@ -810,14 +821,23 @@ def run_server(path, args, demo=False):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Administración escolar para una computadora Windows.')
+    parser = argparse.ArgumentParser(description='Administración escolar local o con acceso privado a una PC central Windows.')
     parser.add_argument('--port', type=int)
     parser.add_argument('--data-dir')
     parser.add_argument('--open-browser', action='store_true')
     parser.add_argument('--demo', action='store_true', help='Administrador de prueba con datos temporales y aislados.')
+    access=parser.add_mutually_exclusive_group()
+    access.add_argument('--remote-origin',help='Enlace HTTPS privado de Tailscale Serve.')
+    access.add_argument('--network-config',help='Archivo red.json creado por Configurar-Red.bat.')
     args = parser.parse_args()
     if args.demo and args.data_dir is not None:
         parser.error('--demo no admite --data-dir: nunca se abre una base existente en modo prueba.')
+    if args.demo and (args.remote_origin is not None or args.network_config is not None):
+        parser.error('El modo de prueba es local y no admite configuración de red.')
+    try:
+        args.remote_origin=load_config(args.network_config) if args.network_config else PrivateAccess(args.remote_origin or '').origin
+    except ValueError as error:
+        parser.error(str(error))
     if args.port is None:
         args.port = 8766 if args.demo else 8765
     previous_signal = None

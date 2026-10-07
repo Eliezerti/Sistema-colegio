@@ -1,6 +1,6 @@
 # Aula · Administración de colegios
 
-Sistema administrativo local para **una computadora Windows**, preparado para colegios de Venezuela. Las mensualidades y la deuda se expresan en **USD**; los cobros y egresos pueden registrarse en **USD o bolívares (VES)** con la tasa BCV correspondiente a la fecha de la operación.
+Sistema administrativo para colegios de Venezuela, con una **base central en una computadora Windows**. Puede usarse en esa PC o compartirse con las laptops del colegio y de casa mediante acceso privado. Las mensualidades y la deuda se expresan en **USD**; los cobros y egresos pueden registrarse en **USD o bolívares (VES)** con la tasa BCV correspondiente a la fecha de la operación.
 
 ## Descargar el sistema
 
@@ -18,7 +18,39 @@ El ZIP incluye los archivos del programa y los lanzadores para Windows; no inclu
 
 Los datos de Windows quedan en `%LOCALAPPDATA%\AulaColegio\colegio.sqlite3`, separados del código. **Abrir-carpeta-de-datos.bat** abre esa carpeta. Actualizar o mover los archivos del programa no borra los datos. Usa la misma cuenta de Windows para abrir el sistema: cada cuenta tiene su propia carpeta local.
 
-La interfaz utiliza el navegador de Windows; el servidor y la base de datos funcionan en la misma computadora. El servidor escucha exclusivamente en `127.0.0.1` y no está preparado para acceso desde otras computadoras. Los registros y consultas funcionan sin internet. La tasa BCV requiere consultarla y registrarla manualmente.
+La interfaz utiliza el navegador; el servidor y la base de datos funcionan en la PC principal. El servidor escucha exclusivamente en `127.0.0.1`. El uso directo en esa PC funciona sin internet; para compartirlo sigue la configuración privada de la siguiente sección. La tasa BCV requiere consultarla y registrarla manualmente.
+
+## Trabajar en el colegio y desde casa
+
+Todos consultan y modifican **la misma base**, guardada en la PC principal del colegio. En las otras laptops solo se necesitan un navegador y **Tailscale**. Cada persona inicia sesión con su propio usuario de Aula; no lleva una copia de los alumnos o de los cobros en su laptop.
+
+### Preparar la PC principal del colegio
+
+1. Elige la computadora que guardará los datos y usa siempre la misma cuenta de Windows. Instala Aula con los pasos anteriores. Si los registros ya están en otra PC, descarga allí un respaldo y restáuralo en la PC principal con **Restaurar-respaldo.bat** antes de comenzar a trabajar. Desde ese momento, registra los movimientos únicamente en esta base central.
+2. Abre **Iniciar-Aula.bat**. Crea el primer administrador localmente si aún no existe y, en **Configuración → Usuarios y permisos**, crea un usuario por empleado. Usa **Caja** para registrar cobros y **Consulta** para ver información; reserva **Administrador** para quien corresponda. Cierra Aula con **Ctrl+C** al terminar la configuración.
+3. Instala [Tailscale para Windows](https://tailscale.com/download) e inicia sesión en tu red privada. Desde la administración de Tailscale autoriza las cuentas y los equipos que tendrán acceso. Instálalo también en tu laptop de casa y en las laptops de los empleados, conectándolos a la misma red privada autorizada.
+4. En **PowerShell de la PC principal**, ejecuta:
+
+   ```powershell
+   & "$env:ProgramFiles\Tailscale\tailscale.exe" serve --bg http://127.0.0.1:8765
+   ```
+
+   Si instalaste Tailscale en otra ubicación, usa la ruta de su `tailscale.exe`. Sigue el enlace de autorización que muestre el comando si solicita habilitar HTTPS. Copia el enlace privado que te indique, con formato `https://nombre-equipo.nombre-red.ts.net`. Usa **Tailscale Serve**, que comparte el acceso dentro de tu red privada. No actives **Funnel** ni abras el puerto 8765 en el router. [Documentación de Tailscale Serve](https://tailscale.com/kb/1242/tailscale-serve).
+
+5. Haz doble clic en **Configurar-Red.bat** y pega ese enlace HTTPS. Se guarda en `%LOCALAPPDATA%\AulaColegio\red.json`; no cambia los usuarios ni la base existente.
+6. Abre **Iniciar-Red.bat**. En adelante usa este lanzador en la PC principal para permitir el acceso compartido. Mantén Aula y Tailscale activos. **Configuración → Acceso compartido del colegio** muestra el enlace para las otras laptops. No abras a la vez Iniciar-Aula.bat e Iniciar-Red.bat: ambos usan la misma base y el mismo puerto.
+
+### Entrar desde las laptops y desde casa
+
+Conecta Tailscale y abre en Edge o Chrome el **mismo enlace HTTPS privado**. Entra con tu usuario de Aula. No instales una segunda base ni Python en esas laptops. Un cobro registrado por un empleado queda en la base central y tú puedes consultarlo desde casa al cargar o actualizar la pantalla.
+
+La PC principal y el router deben estar encendidos, con internet y sin suspensión mientras se necesite acceso desde casa. Un UPS ayuda a mantenerlos disponibles durante los cortes. Si se apaga la PC principal, el sistema compartido deja de estar disponible; los datos permanecen en esa PC y sus respaldos. El modo local sigue disponible con **Iniciar-Aula.bat** cuando no hay conexión.
+
+Los respaldos, la restauración y la recuperación local de contraseñas se administran en la PC principal. Una carpeta de Drive o un USB sirve para copiar **respaldos**, nunca para compartir la base activa. Si cambias la PC principal o su nombre en Tailscale, vuelve a ejecutar Configurar-Red.bat con el nuevo enlace y comunica ese enlace a los usuarios. El archivo red.json es configuración del equipo, y no forma parte del respaldo SQLite.
+
+El **modo de prueba es local y separado**: usa Iniciar-Pruebas.bat en la computadora donde quieras experimentar. No se comparte mediante Iniciar-Red.bat ni abre la base real del colegio.
+
+Esta versión valida el acceso a través de un intermediario HTTPS privado, permisos y cobros simultáneos. La instalación de Tailscale, sus permisos, los certificados HTTPS y la conexión real entre tus computadoras deben configurarse y comprobarse en esos equipos antes de trabajar con los datos del colegio.
 
 ## Probar sin mezclar datos del colegio
 
@@ -144,7 +176,7 @@ Al pasar un alumno a otro año escolar, actualiza su matrícula y fechas. Sus ca
 
 **Consulta:** lectura de los módulos y reportes, sin operaciones de escritura. Los usuarios de consulta tienen acceso a expedientes y salarios; asigna este perfil solo a personas autorizadas para ver esa información.
 
-Las contraseñas se almacenan con PBKDF2-SHA256 y sal aleatoria. Las sesiones vencen a las doce horas y se invalidan al cambiar la contraseña. La bitácora conserva las operaciones registradas; la interfaz muestra las últimas 300. La base no está cifrada: protege la cuenta de Windows y los archivos de respaldo. El sistema es para usuarios de confianza en una computadora local.
+Las contraseñas se almacenan con PBKDF2-SHA256 y sal aleatoria. Las sesiones vencen a las doce horas y se invalidan al cambiar la contraseña. La bitácora conserva las operaciones registradas; la interfaz muestra las últimas 300. La base no está cifrada: protege la cuenta de Windows y los archivos de respaldo. En modo compartido, autoriza solo los equipos y las personas del colegio en Tailscale y asigna a cada usuario los permisos necesarios en Aula. El servidor admite únicamente la dirección local y el enlace HTTPS configurado; conserva la protección CSRF y usa cookies Secure en las sesiones HTTPS.
 
 ### Descargar y restaurar
 
@@ -238,11 +270,11 @@ Esta distribución todavía usa Python instalado en Windows y la carpeta `%LOCAL
 
 Un instalador con Python embebido o PyInstaller, acceso directo y arranque sin consola es una mejora pendiente que debe construirse y probarse en Windows. El ZIP actual no incluye un ejecutable Windows validado. Usa un **UPS** para la PC y el router. Activa **BitLocker** en Windows, si la edición y el equipo lo permiten, y conserva la clave de recuperación fuera de esa PC. Protege también el USB y las copias externas: cifrar la PC no cifra automáticamente esos respaldos.
 
-Para soporte remoto puedes instalar Chrome Remote Desktop o AnyDesk en esa PC y conceder acceso cuando lo necesites. Este repositorio no instala ni configura esas herramientas, y el asistente no obtiene acceso remoto por instalar esta actualización. Aula sigue escuchando solo en `127.0.0.1`. Los respaldos de Drive sirven para recuperación/traslado; no sincronizan dos bases activas ni habilitan una segunda computadora trabajando a la vez.
+Para soporte remoto puedes instalar Chrome Remote Desktop o AnyDesk en esa PC y conceder acceso cuando lo necesites. Este repositorio no instala ni configura esas herramientas, y el asistente no obtiene acceso remoto por instalar esta actualización. Para trabajar desde varias laptops utiliza el modo de acceso privado descrito arriba: Aula sigue escuchando solo en `127.0.0.1` y Tailscale Serve proporciona el enlace HTTPS privado. Los respaldos de Drive sirven para recuperación/traslado; no sincronizan dos bases activas.
 
 ## Desarrollo y validación
 
-Python 3.10+ y un navegador moderno (Edge, Chrome o Firefox). El programa no tiene dependencias externas, servicios remotos, credenciales de terceros ni pasos de compilación. Las fuentes Liberation Sans de los PDF se distribuyen sin modificaciones bajo SIL Open Font License 1.1; su licencia está incluida en `colegio/fonts/LICENSE.txt`.
+Python 3.10+ y un navegador moderno (Edge, Chrome o Firefox). El programa no necesita paquetes Python adicionales ni pasos de compilación. El uso local no necesita servicios remotos; el acceso compartido requiere instalar y configurar Tailscale en los equipos reales. Las fuentes Liberation Sans de los PDF se distribuyen sin modificaciones bajo SIL Open Font License 1.1; su licencia está incluida en `colegio/fonts/LICENSE.txt`.
 
 ```bash
 python -m colegio.server
@@ -256,6 +288,8 @@ python -m colegio.server --data-dir /ruta/a/datos --port 8765
 ```
 
 Las pruebas integradas usan bases temporales y verifican importación Excel/CSV con vista previa y rollback, promoción masiva con repitentes y retirados, cupos del grupo, cierres y arqueos, documentos familiares y solvencia, convenios sin deuda duplicada, referencias repetidas, confirmación de tasas, tickets de 58/80 mm, respaldo después de cobros y segundo destino fallido, reinicio local de clave y procesos matados durante/después del cobro, además de conversiones, abonos, distribución entre cargos, reintentos, anulaciones, tasas y recibos históricos, descuentos, códigos únicos para hermanos, constancias PDF, tasa obligatoria, nómina de 15 empleados con cuentas bancarias y redondeos, migración de registros anteriores, mensualidades automáticas, cambios de mes, becas completas, años escolares, capacidad, permisos, CSRF, exportación, restauración de una base dañada, conservación de archivos originales y recuperación tras borrado del archivo principal. No escriben en la base real.
+
+Las pruebas de acceso compartido verifican configuración sin modificar la base, rechazo de direcciones y orígenes ajenos, sesiones HTTPS con cookie Secure, permisos de consulta, creación inicial del administrador solo en modo local y dos cajeros cobrando simultáneamente sobre la misma base, con reintentos y respaldo consistente. Simulan los encabezados del intermediario privado; no sustituyen la prueba de Tailscale entre las PC reales.
 
 Validación opcional de interfaz, con Node, Playwright y Chromium disponibles:
 
