@@ -211,12 +211,12 @@ def launch_window(url,*,host=None,demo=False,storage=None,smoke=False):
             try:
                 # Exercise the real Windows renderer, bundled JS and image.
                 for _ in range(100):
-                    ready=window.evaluate_js("Boolean((document.querySelector('form') || document.querySelector('[data-action=demo-login]')) && document.images.length && document.images[0].naturalWidth>0 && typeof api==='function')")
+                    ready=window.evaluate_js("Boolean(document.querySelector('form') && document.images.length && document.images[0].naturalWidth>0 && typeof api==='function')")
                     if ready:break
                     time.sleep(.1)
                 if not ready:raise RuntimeError('La interfaz de escritorio no cargó el formulario, logo y JavaScript.')
                 if demo:
-                    window.evaluate_js("document.querySelector('[data-action=demo-login]').click()")
+                    window.evaluate_js("document.querySelector('form[data-endpoint=demo-login] button[type=submit]').click()")
                     for _ in range(100):
                         gate=window.evaluate_js("Boolean(document.querySelector('form[data-endpoint=confirm-rate]'))")
                         if gate:break
