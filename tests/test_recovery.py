@@ -22,7 +22,7 @@ from colegio.storage import consistent_backup, automatic_backup
 class RecoveryTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory()
-        self.root=Path(self.temp.name)
+        self.root=Path(self.temp.name).resolve()
         source=self.root/'original.sqlite3'
         initialize(source)
         with closing(connect(source)) as db, db:

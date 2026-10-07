@@ -5,6 +5,7 @@ import sqlite3
 import tempfile
 from datetime import datetime
 from pathlib import Path
+from contextlib import closing
 
 from .server import ROOT
 from .storage import DataLock, consistent_backup
@@ -16,7 +17,7 @@ def restore(backup, directory):
     target = directory / 'colegio.sqlite3'
     if not backup.is_file() or backup == target:
         raise ValueError('Selecciona un archivo de respaldo distinto de la base activa.')
-    with sqlite3.connect(backup.as_uri() + '?mode=ro', uri=True) as db:
+    with closing(sqlite3.connect(backup.as_uri() + '?mode=ro', uri=True)) as db:
         if db.execute('PRAGMA integrity_check').fetchone()[0] != 'ok':
             raise ValueError('El respaldo tiene errores de integridad.')
         tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}

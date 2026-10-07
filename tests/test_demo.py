@@ -31,7 +31,7 @@ class DemoWorkspaceTests(unittest.TestCase):
 
 class DemoProcessTests(unittest.TestCase):
     def setUp(self):
-        self.temp=tempfile.TemporaryDirectory();self.root=Path(self.temp.name)
+        self.temp=tempfile.TemporaryDirectory();self.root=Path(self.temp.name).resolve()
         self.temporary=self.root/'temporal';self.temporary.mkdir()
         self.real=self.root/'colegio-real';self.real.mkdir()
         self.real_data=self.real/'colegio.sqlite3';self.real_data.write_bytes(b'DATOS REALES: NO MODIFICAR')

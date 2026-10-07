@@ -8,9 +8,12 @@ $TestOutput = @(python -m unittest discover -s tests -v 2>&1)
 $TestExitCode = $LASTEXITCODE
 $TestOutput | ForEach-Object { Write-Host $_ }
 if ($TestExitCode -ne 0) {
-    $Details = ($TestOutput | Where-Object { "$_" -match 'ERROR:|FAIL:|Error:|FAILED|Traceback|File "' } | Select-Object -First 70) -join "`n"
-    $Details = $Details.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
-    Write-Host "::error title=Pruebas de Windows::$Details"
+    $Text = ($TestOutput | ForEach-Object { "$_" }) -join "`n"
+    foreach ($Match in [regex]::Matches($Text, '(?ms)^(ERROR|FAIL): .*?(?=^={20,}|^-{20,}\r?\nRan|\z)')) {
+        $Details = $Match.Value.Substring(0, [Math]::Min(3600, $Match.Value.Length))
+        $Details = $Details.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+        Write-Host "::error title=Pruebas de Windows::$Details"
+    }
     throw "Fallaron las pruebas; no se generará el instalador."
 }
 python -m PyInstaller --noconfirm --clean --onedir --windowed --name Aula --icon packaging/aula.ico --add-data "static;static" --add-data "colegio/fonts;colegio/fonts" --collect-all webview --hidden-import pystray._win32 desktop_entry.py

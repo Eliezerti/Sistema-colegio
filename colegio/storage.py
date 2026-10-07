@@ -14,12 +14,13 @@ class DataLock:
         directory = Path(directory)
         directory.mkdir(parents=True, exist_ok=True)
         self.file = (directory / '.aula.lock').open('a+b')
-        self.file.seek(0)
-        if not self.file.read(1):
-            self.file.write(b'0')
-            self.file.flush()
-        self.file.seek(0)
         try:
+            # Reading byte 0 of an already locked Windows file raises before
+            # msvcrt.locking. Use its size instead, and always close on failure.
+            if not os.fstat(self.file.fileno()).st_size:
+                self.file.write(b'0')
+                self.file.flush()
+            self.file.seek(0)
             if os.name == 'nt':
                 import msvcrt
                 msvcrt.locking(self.file.fileno(), msvcrt.LK_NBLCK, 1)
