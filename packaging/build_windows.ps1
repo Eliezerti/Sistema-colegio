@@ -4,8 +4,15 @@ Set-Location (Split-Path $PSScriptRoot -Parent)
 if ($env:OS -ne "Windows_NT") { throw "El ejecutable debe construirse en Windows." }
 python -m pip install -r requirements-desktop.txt
 if ($LASTEXITCODE -ne 0) { throw "No se pudieron instalar las dependencias." }
-python -m unittest discover -s tests -v
-if ($LASTEXITCODE -ne 0) { throw "Fallaron las pruebas; no se generará el instalador." }
+$TestOutput = @(python -m unittest discover -s tests -v 2>&1)
+$TestExitCode = $LASTEXITCODE
+$TestOutput | ForEach-Object { Write-Host $_ }
+if ($TestExitCode -ne 0) {
+    $Details = ($TestOutput | Where-Object { "$_" -match 'ERROR:|FAIL:|Error:|FAILED|Traceback|File "' } | Select-Object -First 70) -join "`n"
+    $Details = $Details.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+    Write-Host "::error title=Pruebas de Windows::$Details"
+    throw "Fallaron las pruebas; no se generará el instalador."
+}
 python -m PyInstaller --noconfirm --clean --onedir --windowed --name Aula --icon packaging/aula.ico --add-data "static;static" --add-data "colegio/fonts;colegio/fonts" --collect-all webview --hidden-import pystray._win32 desktop_entry.py
 if ($LASTEXITCODE -ne 0) { throw "No se pudo construir Aula.exe." }
 $Bootstrap = Join-Path $PWD "build\MicrosoftEdgeWebview2Setup.exe"

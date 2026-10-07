@@ -32,7 +32,15 @@ jobs:
           cache-dependency-path: requirements-desktop.txt
       - name: Compilar y validar el sistema
         shell: pwsh
-        run: ./packaging/build_windows.ps1 -Version "1.0.${{ github.run_number }}"
+        run: |
+          try {
+            ./packaging/build_windows.ps1 -Version "1.0.${{ github.run_number }}" *>&1 | Tee-Object -FilePath desktop-build.log
+          } catch {
+            $Details = ((Get-Content desktop-build.log | Select-Object -Last 45) -join "`n")
+            $Details = $Details.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Host "::error title=Compilación Windows::$Details"
+            throw
+          }
       - name: Comprobar la ventana propia y los recursos del ejecutable
         shell: pwsh
         run: |
@@ -41,7 +49,12 @@ jobs:
           if ($Runtime.ExitCode -ne 0) { throw "No se pudo preparar WebView2: $($Runtime.ExitCode)" }
           $Process = Start-Process -FilePath dist/Aula/Aula.exe -ArgumentList '--self-test' -PassThru
           if (-not $Process.WaitForExit(120000)) { $Process.Kill(); throw 'La ventana de prueba no cerró.' }
-          if ($Process.ExitCode -ne 0) { throw 'Falló la prueba nativa del ejecutable.' }
+          if ($Process.ExitCode -ne 0) {
+            $Details = (Get-Content "$env:TEMP/AulaColegio-Compilacion/logs/*.log" -ErrorAction SilentlyContinue) -join "`n"
+            $Details = $Details.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Host "::error title=Ventana Windows::$Details"
+            throw 'Falló la prueba nativa del ejecutable.'
+          }
       - name: Guardar diagnóstico de la ventana si falla
         if: failure()
         uses: actions/upload-artifact@v4
