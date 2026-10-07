@@ -327,7 +327,7 @@ El funcionamiento del servidor y la interfaz se verifica en Linux durante el des
 
 ### Construir el instalador de escritorio
 
-La compilación requiere Windows 10/11 de 64 bits, Python 3.12 e Inno Setup 6. El flujo `.github/workflows/windows-desktop.yml` instala las dependencias fijadas de `requirements-desktop.txt`, ejecuta las pruebas, incluye recursos y Python con PyInstaller, verifica la firma de Microsoft del instalador WebView2 y construye el instalador con `packaging/Aula.iss`. Ejecuta el propio Aula.exe con `--self-test` sobre una base temporal y un WebView2 real antes de publicar una versión descargable. Nunca incluye la base de desarrollo.
+La compilación requiere Windows 10/11 de 64 bits, Python 3.12 e Inno Setup 6. El flujo `.github/workflows/windows-desktop.yml` instala las dependencias fijadas de `requirements-desktop.txt`, ejecuta las pruebas, incluye recursos y Python con PyInstaller, verifica la firma de Microsoft del instalador WebView2 y construye el instalador con `packaging/Aula.iss`. `packaging/test_installer.ps1` comprueba la instalación, los accesos directos, la ventana real y la bandeja, el administrador de prueba y su eliminación, y la actualización/desinstalación conservando una base y respaldo de prueba. Ejecuta el Aula.exe instalado con `--self-test` y `--self-test-demo` sobre datos temporales y WebView2 real antes de publicar una versión descargable. Nunca incluye la base de desarrollo.
 
 ```powershell
 ./packaging/build_windows.ps1 -Version "1.0.0"

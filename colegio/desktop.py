@@ -120,13 +120,14 @@ def configure(directory):
 
 class DesktopHost:
     """No request threads or data locks survive a normal desktop shutdown."""
-    def __init__(self,directory,*,demo=False,port=None):
+    def __init__(self,directory,*,demo=False,port=None,demo_root=None):
         self.directory=Path(directory);self.demo=demo;self.port=port if port is not None else (8766 if demo else 8765)
         self.stack=ExitStack();self.server=None;self.thread=None;self.close_lock=threading.Lock()
+        self.demo_root=demo_root
 
     def __enter__(self):
         try:
-            directory=Path(self.stack.enter_context(DemoWorkspace())) if self.demo else self.directory
+            directory=Path(self.stack.enter_context(DemoWorkspace(self.demo_root))) if self.demo else self.directory
             origin=load_config(directory/'red.json') if not self.demo and (directory/'red.json').exists() else ''
             self.server=self.stack.enter_context(open_school(directory/'colegio.sqlite3',self.port,self.demo,origin))
             self.server.daemon_threads=False
@@ -210,10 +211,17 @@ def launch_window(url,*,host=None,demo=False,storage=None,smoke=False):
             try:
                 # Exercise the real Windows renderer, bundled JS and image.
                 for _ in range(100):
-                    ready=window.evaluate_js("Boolean(document.querySelector('form') && document.images.length && document.images[0].naturalWidth>0 && typeof api==='function')")
+                    ready=window.evaluate_js("Boolean((document.querySelector('form') || document.querySelector('[data-action=demo-login]')) && document.images.length && document.images[0].naturalWidth>0 && typeof api==='function')")
                     if ready:break
                     time.sleep(.1)
                 if not ready:raise RuntimeError('La interfaz de escritorio no cargó el formulario, logo y JavaScript.')
+                if demo:
+                    window.evaluate_js("document.querySelector('[data-action=demo-login]').click()")
+                    for _ in range(100):
+                        gate=window.evaluate_js("Boolean(document.querySelector('form[data-endpoint=confirm-rate]'))")
+                        if gate:break
+                        time.sleep(.1)
+                    if not gate:raise RuntimeError('No se pudo entrar como administrador de prueba en la ventana.')
                 if tray:
                     if closing() is not False:raise RuntimeError('El cierre de la ventana no conserva el servidor.')
                     window.show();window.restore()
@@ -244,7 +252,7 @@ def setup_logging(directory):
     return path
 
 
-def self_test():
+def self_test(demo=False):
     # A temporary base only; never inspect or initialize the owner's real data.
     from .branding import LOGO_FILE,pdf_logo
     from .pdf_fonts import font_data
@@ -252,19 +260,21 @@ def self_test():
     with tempfile.TemporaryDirectory(prefix='aula-windows-smoke-') as temp:
         assert pdf_logo(LOGO_FILE)
         assert font_data('LiberationSans-Regular.ttf') and font_data('LiberationSans-Bold.ttf')
-        with DesktopHost(temp,port=0) as host:
-            launch_window(host.url,host=host,storage=Path(temp)/'webview',smoke=True)
+        with DesktopHost(temp,port=0,demo=demo,demo_root=Path(temp)/'pruebas') as host:
+            disposable=host.directory
+            launch_window(host.url,host=host,demo=demo,storage=host.directory/'webview',smoke=True)
+        if demo and disposable.exists():raise RuntimeError('No se eliminaron los datos de prueba al cerrar la ventana.')
 
 
 def main():
     parser=argparse.ArgumentParser(description='Aplicación de escritorio del colegio.')
     actions=parser.add_mutually_exclusive_group()
-    for name in ('demo','configure','restore','reset-password','data-folder','self-test'):
+    for name in ('demo','configure','restore','reset-password','data-folder','self-test','self-test-demo'):
         actions.add_argument('--'+name,action='store_true')
     args=parser.parse_args()
     directory=None
     try:
-        if args.self_test:self_test();return
+        if args.self_test or args.self_test_demo:self_test(demo=args.self_test_demo);return
         directory=data_directory();setup_logging(directory)
         if args.data_folder:directory.mkdir(parents=True,exist_ok=True);os.startfile(directory);return
         if args.restore or args.reset_password:
@@ -284,7 +294,7 @@ def main():
                 launch_window(host.url,host=host,demo=args.demo,storage=host.directory/'webview')
     except (Exception,SystemExit) as error:
         logging.exception('No se pudo iniciar o completar la operación de escritorio')
-        if args.self_test:raise
+        if args.self_test or args.self_test_demo:raise
         import tkinter as tk
         from tkinter import messagebox
         root=tk.Tk();root.withdraw()
