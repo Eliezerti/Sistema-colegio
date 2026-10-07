@@ -1,3 +1,4 @@
+from contextlib import closing
 import sqlite3
 import tempfile
 import unittest
@@ -35,7 +36,7 @@ class AdministrativeSafetyTests(unittest.TestCase):
         self.assertEqual(doc['expense']['received_amount'],1200000)
         self.assertEqual((doc['entry_time'],doc['exit_time']),('07:00','13:00'))
         self.assertEqual((doc['period_start'],doc['period_end']),(data['period_start'],data['period_end']))
-        with connect(self.path) as db:
+        with closing(connect(self.path)) as db, db:
             db.execute("UPDATE employees SET name='Nuevo nombre',bank='Otro banco',salary=20000 WHERE id=?",(data['employee_id'],))
             db.execute("UPDATE settings SET value='Nuevo nombre fiscal' WHERE key='legal_name'")
         self.assertEqual(self.request('salary-receipt/'+str(result['salary_receipt_id'])),doc)
@@ -59,7 +60,7 @@ class AdministrativeSafetyTests(unittest.TestCase):
     def test_old_salary_expense_can_get_one_receipt_without_paying_twice(self):
         data = self.salary_data()
         expense = self.request('expenses',{**data,'category':'Operación'})['id']
-        with connect(self.path) as db:
+        with closing(connect(self.path)) as db, db:
             db.execute("UPDATE expenses SET category='Nómina' WHERE id=?",(expense,))
         receipt = self.request('salary-receipts',{**data,'expense_id':expense})['id']
         repeated = self.request('salary-receipts',{**data,'expense_id':expense,'entry_time':'08:00'})['id']
@@ -76,10 +77,10 @@ class AdministrativeSafetyTests(unittest.TestCase):
         self.request('reset-records',{**data,'confirmation':'VACIAR'},status=400)
         self.request('guardians',{'name':'Otro representante','document':'V-456'})
         self.request('reset-records',data,status=400)
-        with connect(self.path) as db:db.execute("UPDATE users SET role='cashier' WHERE username='admin'")
+        with closing(connect(self.path)) as db, db:db.execute("UPDATE users SET role='cashier' WHERE username='admin'")
         self.request('reset-preview',status=403)
         self.request('reset-records',data,status=403)
-        with connect(self.path) as db:self.assertEqual(db.execute('SELECT COUNT(*) FROM students').fetchone()[0],1)
+        with closing(connect(self.path)) as db, db:self.assertEqual(db.execute('SELECT COUNT(*) FROM students').fetchone()[0],1)
         self.assertFalse(list((self.path.parent/'backups').glob('antes-vaciar-*')))
 
     def test_reset_preserves_verified_backup_users_identity_and_receipt_numbers(self):
@@ -87,7 +88,7 @@ class AdministrativeSafetyTests(unittest.TestCase):
         expense = self.request('expenses',{'concept':'Prueba','category':'Operación','spent_on':local_today().isoformat(),'amount':'1','currency':'USD'})['id']
         prior = self.request('state'); result = self.request('reset-records',self.reset_data())
         backup = Path(result['backup_path']);self.assertTrue(backup.is_file())
-        with sqlite3.connect(backup) as db:
+        with closing(sqlite3.connect(backup)) as db, db:
             self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
             self.assertEqual(db.execute('SELECT COUNT(*) FROM payments').fetchone()[0],1)
             self.assertEqual(db.execute('SELECT COUNT(*) FROM students').fetchone()[0],1)
@@ -132,7 +133,7 @@ class AdministrativeSafetyTests(unittest.TestCase):
             self.request('reset-records',self.reset_data(),status=400)
         self.assertEqual(len(self.request('state')['students']),1)
         backup=next((self.path.parent/'backups').glob('antes-vaciar-*'))
-        with sqlite3.connect(backup) as db:self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
+        with closing(sqlite3.connect(backup)) as db, db:self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
 
     def test_demo_endpoints_cannot_enter_or_erase_production(self):
         self.request('demo-login',{},status=403)

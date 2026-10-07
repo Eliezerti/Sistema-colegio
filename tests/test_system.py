@@ -1,3 +1,4 @@
+from contextlib import closing
 import http.client
 import json
 import base64
@@ -205,7 +206,7 @@ class SystemTests(unittest.TestCase):
         self.request('confirm-rate', {'rate_date':local_today().isoformat(),'rate':'123','rate_change_confirmed':True},csrf=False,status=403)
         self.request('confirm-rate', {'rate_date':local_today().isoformat(),'rate':'123','rate_change_confirmed':True})
         self.assertTrue(self.request('state')['students'])
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             db.execute("UPDATE sessions SET rate_confirmed_on='2000-01-01'")
         self.request('state',status=428)
         self.request('expenses', {'concept':'Bloqueado'},status=428)
@@ -248,7 +249,7 @@ class SystemTests(unittest.TestCase):
         self.request('employees',{'name':'Empleado anterior','document':'V-ant','position':'Secretaría','salary':'155.50'})
         self.generate()
         receipt=self.request('payments',self.payment())['id']
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             before=db.execute('SELECT COUNT(*),SUM(amount) FROM payments').fetchone()
             db.execute('DROP TABLE enrollment_documents')
             db.execute('DROP TABLE payroll_plans')
@@ -262,7 +263,7 @@ class SystemTests(unittest.TestCase):
             db.execute('PRAGMA user_version=0')
         initialize(self.path)
         initialize(self.path)
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             self.assertEqual(db.execute('SELECT COUNT(*),SUM(amount) FROM payments').fetchone(),before)
             self.assertEqual(db.execute('SELECT student_code FROM students').fetchone()[0],'AL-000001')
             self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
@@ -284,7 +285,7 @@ class SystemTests(unittest.TestCase):
         self.assertEqual(state['students'][0]['balance'],54000)
         self.assertEqual(state['students'][0]['overdue'],54000)
         receipt=self.request('payments',self.payment())['id']
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             db.execute('DELETE FROM monthly_assessments')
             db.execute('DELETE FROM charges WHERE period=?',(f'{self.year+1}-01',))
             db.execute('UPDATE charges SET amount=4000 WHERE period=?',(f'{self.year}-12',))
@@ -321,7 +322,7 @@ class SystemTests(unittest.TestCase):
 
     def test_v3_branding_upgrade_preserves_finances_and_issued_receipts(self):
         receipt = self.request('payments', self.payment())['id']
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             historical = json.loads(db.execute('SELECT receipt_snapshot FROM payments WHERE id=?',(receipt,)).fetchone()[0])
             historical['school'] = {'school_name':'Colegio antes de actualizar','rif':'RIF anterior','address':'Dirección anterior'}
             frozen = json.dumps(historical,ensure_ascii=False)
@@ -333,7 +334,7 @@ class SystemTests(unittest.TestCase):
             before = {t:db.execute(f'SELECT * FROM {t}').fetchall() for t in tables}
         initialize(self.path)
         initialize(self.path)
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             after = {t:db.execute(f'SELECT * FROM {t}').fetchall() for t in tables}
             self.assertEqual(after, before)
             settings = dict(db.execute('SELECT key,value FROM settings'))
@@ -372,7 +373,7 @@ class SystemTests(unittest.TestCase):
 
     def test_missing_past_month_uses_old_tariff_before_student_edit(self):
         on=f'{self.year+1}-06'
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             db.execute('DELETE FROM monthly_assessments WHERE period=?',(on,))
             db.execute('DELETE FROM charges WHERE period=?',(on,))
         self.request('students',self.student_data(id=self.student,monthly_fee='100',discount=0,status='inactive'))
@@ -392,12 +393,12 @@ class SystemTests(unittest.TestCase):
         self.request('void-expense',{'id':expense,'reason':'Error de registro'})
         backup=Path(self.temp.name)/'descargado.sqlite3'
         backup.write_bytes(self.request('backup'))
-        with sqlite3.connect(backup) as db:
+        with closing(sqlite3.connect(backup)) as db, db:
             self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
             self.assertEqual(db.execute('SELECT COUNT(*) FROM sessions').fetchone()[0],0)
         other=Path(self.temp.name)/'restauracion'
         restored=restore(backup,other)
-        with sqlite3.connect(restored) as db:
+        with closing(sqlite3.connect(restored)) as db, db:
             self.assertEqual(db.execute('SELECT name FROM students').fetchone()[0],'Alumno Uno')
         restore(backup,other)
         self.assertTrue(list((other/'backups').glob('antes-restauracion-*.sqlite3')))
@@ -416,13 +417,13 @@ class SystemTests(unittest.TestCase):
         self.assertEqual(self.request(f'receipt/{first}')['payment']['grade_name'],'Primaria A')
         for paper in ('a4','half-letter'):
             self.assertIn(b'Primaria A',self.request(f'receipt/{first}.pdf?paper={paper}'))
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             frozen=json.loads(db.execute('SELECT receipt_snapshot FROM payments WHERE id=?',(first,)).fetchone()[0])
             frozen['person'].pop('grade_name');frozen['person'].pop('student_school_year')
             old=json.dumps(frozen)
             db.execute('UPDATE payments SET receipt_snapshot=? WHERE id=?',(old,first))
         self.assertEqual(self.request(f'receipt/{first}')['payment']['grade_name'],'Primaria A')
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             self.assertEqual(db.execute('SELECT receipt_snapshot FROM payments WHERE id=?',(first,)).fetchone()[0],old)
             db.execute('DELETE FROM enrollment_documents WHERE student_id=?',(self.student,))
         self.assertEqual(self.request(f'receipt/{first}')['payment']['grade_name'],'')
@@ -536,7 +537,7 @@ class SystemTests(unittest.TestCase):
         self.assertEqual(self.request(f'guardian-document/{certificate}')['balance'],0)
 
     def test_financial_backups_secondary_destination_failure_and_durability_pragmas(self):
-        with connect(self.path) as db:
+        with closing(connect(self.path)) as db, db:
             self.assertEqual(db.execute('PRAGMA journal_mode').fetchone()[0],'wal')
             self.assertEqual(db.execute('PRAGMA synchronous').fetchone()[0],2)
         secondary=tempfile.TemporaryDirectory();self.addCleanup(secondary.cleanup)
@@ -544,7 +545,7 @@ class SystemTests(unittest.TestCase):
         self.request('settings',{'school_name':'Colegio Prueba','school_year':self.year,'due_day':10,'backup_directory':str(second)})
         self.request('payments',self.payment())
         status=self.request('backup-status');self.assertTrue(status['secondary_at'])
-        with sqlite3.connect(status['local_path']) as db:
+        with closing(sqlite3.connect(status['local_path'])) as db, db:
             self.assertEqual(db.execute('SELECT COUNT(*) FROM payments').fetchone()[0],1)
             self.assertEqual(db.execute('SELECT COUNT(*) FROM sessions').fetchone()[0],0)
             self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
@@ -584,7 +585,7 @@ with sqlite3.connect(sys.argv[1],factory=Connection) as db:
             finally:
                 if process.poll() is None:process.kill();process.wait(timeout=10)
                 process.stdin.close();process.stdout.close();process.stderr.close()
-            with connect(self.path) as db:
+            with closing(connect(self.path)) as db, db:
                 self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
                 self.assertEqual(db.execute('SELECT COUNT(*) FROM payments').fetchone()[0],0 if phase=='during' else 1)
                 self.assertEqual(db.execute('SELECT COALESCE(SUM(amount),0) FROM allocations').fetchone()[0],0 if phase=='during' else 7000)
@@ -632,7 +633,7 @@ with sqlite3.connect(sys.argv[1],factory=Connection) as db:
         self.assertEqual(by_id[repeat]['grade_id'],self.grade);self.assertEqual(by_id[repeat]['school_year'],self.year+1)
         self.assertEqual(by_id[withdraw]['school_year'],self.year);self.assertEqual(by_id[withdraw]['status'],'inactive')
         self.assertEqual(state['payments'],before['payments'])
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             for charge in before['charges']:
                 row=db.execute('SELECT amount,period FROM charges WHERE id=?',(charge['id'],)).fetchone()
                 self.assertEqual(row,(charge['amount'],charge['period']))
@@ -688,7 +689,7 @@ with sqlite3.connect(sys.argv[1],factory=Connection) as db:
         with DataLock(self.path.parent):
             with self.assertRaises(RuntimeError):reset_password(self.path.parent,'admin','Nueva-clave-segura')
         reset_password(self.path.parent,'admin','Nueva-clave-segura')
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db, db:
             self.assertTrue(check_password('Nueva-clave-segura',db.execute("SELECT password FROM users WHERE username='admin'").fetchone()[0]))
             self.assertEqual(db.execute('SELECT COUNT(*) FROM sessions').fetchone()[0],0)
             self.assertEqual(db.execute('SELECT COUNT(*) FROM students').fetchone()[0],1)
