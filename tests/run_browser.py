@@ -12,7 +12,9 @@ from pathlib import Path
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--demo',action='store_true')
+    mode=parser.add_mutually_exclusive_group()
+    mode.add_argument('--demo',action='store_true')
+    mode.add_argument('--mobile',action='store_true')
     args=parser.parse_args()
     root = Path(__file__).resolve().parent.parent
     with tempfile.TemporaryDirectory(prefix='aula-e2e-') as temp:
@@ -40,7 +42,8 @@ def main():
                 if not ready:
                     raise RuntimeError('El servidor no inició dentro del tiempo esperado.')
                 runtime_env['AULA_TEST_URL'] = f'http://127.0.0.1:{port}'
-                result = subprocess.run(['node', 'tests/demo_browser.cjs' if args.demo else 'tests/browser.cjs'], cwd=root, env=runtime_env)
+                script = 'tests/demo_browser.cjs' if args.demo else 'tests/mobile_browser.cjs' if args.mobile else 'tests/browser.cjs'
+                result = subprocess.run(['node', script], cwd=root, env=runtime_env)
                 if result.returncode:
                     print((Path(temp) / 'server.log').read_text(), file=sys.stderr)
                 elif args.demo:

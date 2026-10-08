@@ -497,12 +497,17 @@ class Handler(BaseHTTPRequestHandler):
             endpoint = url.path.removeprefix('/api/')
             if not post and not url.path.startswith('/api/'):
                 assets = {'/': 'index.html', '/app.js': 'app.js', '/style.css': 'style.css', '/favicon.svg': 'favicon.svg',
-                          '/'+LOGO_FILE: LOGO_FILE}
+                          '/'+LOGO_FILE: LOGO_FILE, '/mobile.js': 'mobile.js',
+                          '/manifest.webmanifest': 'manifest.webmanifest', '/service-worker.js': 'service-worker.js',
+                          '/offline.html': 'offline.html', '/icon-mobile-192.png': 'icon-mobile-192.png',
+                          '/icon-mobile-512.png': 'icon-mobile-512.png'}
                 if url.path not in assets:
                     self.respond(404, {'error': 'Página inexistente.'})
                     return
                 file = ROOT / 'static' / assets[url.path]
                 content_type = mimetypes.guess_type(file.name)[0] or 'application/octet-stream'
+                if file.suffix == '.webmanifest':
+                    content_type = 'application/manifest+json'
                 if content_type.startswith('text/') or content_type in ('application/javascript','image/svg+xml'):
                     content_type += '; charset=utf-8'
                 self.respond(200, file.read_bytes(), content_type)

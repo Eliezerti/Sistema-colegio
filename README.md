@@ -6,6 +6,12 @@ Sistema administrativo para colegios de Venezuela, con una **base central en una
 
 El **instalador de escritorio para Windows 10/11 de 64 bits** se publica en [Versiones e instaladores](https://github.com/Eliezerti/Sistema-colegio/releases). Descarga el archivo **Aula-Colegio-Instalador-…exe**, no el ZIP de código fuente. Incluye Python y la aplicación; no necesitas instalar Python por separado. La compilación Windows y la prueba de la ventana deben terminar correctamente para que aparezca el instalador.
 
+### Teléfono Android / iPhone
+
+Aula también incluye una **app web instalable** con el logo del colegio y pantallas adaptadas al teléfono. Abre el enlace privado HTTPS en Chrome (Android) → **Instalar aplicación**, o Safari (iPhone) → **Compartir → Añadir a pantalla de inicio**. Antes debes conectar el teléfono a la red privada del colegio. Usa el mismo usuario de Aula; los datos permanecen en la PC principal y esa PC debe estar encendida. El acceso móvil necesita conexión para consultar o guardar operaciones.
+
+[Guía de instalación móvil y conexión](docs/telefono.md) · [Descargar HTML/CSS/JavaScript editable](descargas/Aula-Movil-Web.zip). El ZIP contiene la interfaz; requiere el servidor de Aula y no funciona por sí solo abriendo un archivo HTML.
+
 ### Instalar la aplicación de escritorio
 
 1. Cierra la versión anterior de Aula. Si todavía usas un .bat, ciérralo con **Ctrl+C**. Conserva un respaldo y utiliza **la misma cuenta de Windows** que usabas para mantener la ruta de datos existente.
@@ -319,6 +325,7 @@ Validación opcional de interfaz, con Node, Playwright y Chromium disponibles:
 ```bash
 python tests/run_browser.py
 python tests/run_browser.py --demo
+python tests/run_browser.py --mobile
 ```
 
 Estos comandos crean datos ficticios en carpetas temporales e inician sus propios servidores. El primero valida matrícula, mensualidades, cobro en Bs, recibos de alumnos y empleados, morosidad, egresos, reportes, diseño adaptable, permisos y vaciado protegido. El segundo comprueba el administrador de prueba, PDF identificado como prueba, recarga y varias pestañas, cierre de la última pestaña y eliminación física de los datos temporales. Las pruebas integradas también comprueban reinicio tras proceso matado, rechazo de un directorio real en modo prueba, respaldo antes de vaciar, fallo del segundo destino y conservación de numeraciones. Para usar otro Chromium, define `CHROMIUM_PATH`. Las pruebas opcionales no son una dependencia del programa.

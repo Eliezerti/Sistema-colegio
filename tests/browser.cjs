@@ -13,7 +13,7 @@ const fs = require('node:fs');
   const click=async action=>page.locator(`[data-action="${action}"]`).first().click();
   const fill=async (name,value)=>page.locator(`dialog[open] [name="${name}"]`).fill(value);
   const submit=async()=>{await page.locator('dialog[open] button[type="submit"]').click();await page.waitForFunction(()=>!document.querySelector('dialog').open);};
-  const nav=async id=>{await page.locator(`.nav-button[data-id="${id}"]`).click();};
+  const nav=async id=>{if(await page.locator('.sidebar').evaluate(el=>el.inert))await click('mobile-menu');await page.locator(`.nav-button[data-id="${id}"]`).click();};
   try {
     await page.goto(process.env.AULA_TEST_URL||'http://127.0.0.1:8765');
     await page.waitForFunction(()=>{const img=document.querySelector('.brand img');return img?.complete&&img.naturalWidth>0;});
