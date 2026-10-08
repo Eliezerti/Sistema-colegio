@@ -4,6 +4,8 @@ Sistema administrativo para colegios de Venezuela, con una **base central en una
 
 ## Descargar el sistema
 
+**Descarga del instalador en revisión:** Microsoft Defender reportó `Trojan:Win32/Bearfoos.B!ml` en el instalador 1.0.8. Esa versión fue retirada de la descarga pública y los nuevos instaladores quedan como borradores. No añadas exclusiones ni permitas la detección para instalarla. Las pruebas funcionales anteriores no incluían un análisis antivirus y no demuestran ausencia de malware. Conserva los datos y respaldos del colegio; no borres `%LOCALAPPDATA%\AulaColegio` por esta alerta. [Seguimiento de la revisión](docs/revision-defender.md).
+
 El **instalador de escritorio para Windows 10/11 de 64 bits** se publica en [Versiones e instaladores](https://github.com/Eliezerti/Sistema-colegio/releases). Descarga el archivo **Aula-Colegio-Instalador-…exe**, no el ZIP de código fuente. Incluye Python y la aplicación; no necesitas instalar Python por separado. La compilación Windows y la prueba de la ventana deben terminar correctamente para que aparezca el instalador.
 
 ### Teléfono Android / iPhone

@@ -41,6 +41,9 @@ jobs:
             Write-Host "::error title=Compilación Windows::$Details"
             throw
           }
+      - name: Analizar con Defender antes de ejecutar el instalador
+        shell: pwsh
+        run: ./packaging/scan_windows.ps1 -Path dist
       - name: Validar instalación, ventanas, pruebas y conservación de datos
         shell: pwsh
         run: |
@@ -82,5 +85,6 @@ jobs:
           Para probar desde el teléfono sin configurar Tailscale, conecta PC y teléfono al mismo Wi-Fi y abre «Aula - Probar en teléfono». La PC muestra la dirección y un código de seis dígitos. Esta opción permite usar todos los módulos sobre una base temporal separada; cerrar la ventana de la PC termina la prueba y borra sus datos. No proporciona acceso remoto a la base real.
           '@
           [System.IO.File]::WriteAllText('dist/notas-version.txt', $Body, [System.Text.UTF8Encoding]::new($false))
-          gh release create "desktop-$Version" "dist/Aula-Colegio-Instalador-$Version.exe" "dist/Aula-Colegio-Instalador-$Version.exe.sha256" "descargas/Aula-Movil-Web.zip" "descargas/Aula-Movil-Web.sha256" --target $env:GITHUB_SHA --title "Colegio - Instalador Windows $Version" --notes-file dist/notas-version.txt --latest
+          # Public downloads are paused while the 1.0.8 Defender report is investigated.
+          gh release create "desktop-$Version" "dist/Aula-Colegio-Instalador-$Version.exe" "dist/Aula-Colegio-Instalador-$Version.exe.sha256" "descargas/Aula-Movil-Web.zip" "descargas/Aula-Movil-Web.sha256" --target $env:GITHUB_SHA --title "Colegio - Instalador Windows $Version - revisión" --notes-file dist/notas-version.txt --draft
           if ($LASTEXITCODE -ne 0) { throw 'No se pudo publicar el instalador.' }

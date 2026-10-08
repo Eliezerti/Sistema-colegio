@@ -14,6 +14,7 @@ def main():
     output.parent.mkdir(parents=True, exist_ok=True)
     files = [root / name for name in ('README.md','desktop_entry.py','requirements-desktop.txt','Iniciar-Aula.bat','Iniciar-Pruebas.bat','Probar-en-telefono.bat','Configurar-Red.bat','Iniciar-Red.bat','Restaurar-respaldo.bat','Abrir-carpeta-de-datos.bat','Recuperar-clave-admin.bat')]
     files.append(root / 'docs' / 'telefono.md')
+    files.append(root / 'docs' / 'revision-defender.md')
     for directory in ('colegio','static','tests','packaging'):
         files.extend(p for p in (root / directory).rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix in ('.py','.js','.cjs','.css','.html','.svg','.png','.ttf','.json','.webmanifest','.txt','.ico','.iss','.ps1'))
     with zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_DEFLATED) as archive:

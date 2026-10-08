@@ -1,0 +1,41 @@
+name: Revisar instalador con Microsoft Defender
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  audit:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Aula-Windows-Instalador
+          run-id: 37727443621
+          github-token: ${{ github.token }}
+          path: audit/incoming
+      - name: Comprobar identidad del archivo reportado
+        shell: pwsh
+        run: |
+          $Expected = '7852d8436ae2678ad33a1e1b55022e93949754d795f00f5ec517408fe8e5d8ad'
+          $Actual = (Get-FileHash audit/incoming/Aula-Colegio-Instalador-1.0.8.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($Actual -ne $Expected) { throw 'El archivo no coincide con el instalador reportado. No se continuará.' }
+      - name: Analizar sin ejecutar ni instalar el archivo
+        shell: pwsh
+        run: |
+          try {
+            ./packaging/scan_windows.ps1 -Path audit/incoming
+          } catch {
+            $Details = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Host "::error title=Análisis antivirus::$Details"
+            throw
+          }
+      - name: Conservar el informe de análisis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Informe-Defender-1.0.8
+          path: ${{ runner.temp }}/Aula-Antivirus/*
+          if-no-files-found: warn
