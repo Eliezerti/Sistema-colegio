@@ -66,7 +66,9 @@ def snapshot(db, user):
         charge['guardian_phone'] = student['guardian_phone']
         charge['grade_name'] = student['grade_name']
         charge['days_overdue'] = max(0, (local_today() - date.fromisoformat(charge['due_date'])).days) if charge['balance'] else 0
-    payments = rows(db, '''SELECT p.*,s.name AS student_name,u.name AS operator FROM payments p
+    payments = rows(db, '''SELECT p.id,p.student_id,p.amount,p.paid_on,p.method,p.reference,p.notes,
+       p.created_by,p.created_at,p.voided,p.void_reason,p.currency,p.received_amount,p.exchange_rate,
+       s.name AS student_name,u.name AS operator FROM payments p
        JOIN students s ON s.id=p.student_id JOIN users u ON u.id=p.created_by ORDER BY p.id DESC''')
     for payment in payments:
         payment.pop('receipt_snapshot', None)
