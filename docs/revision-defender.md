@@ -25,3 +25,12 @@ La [compilación de revisión 1.0.10](https://github.com/Eliezerti/Sistema-coleg
 En el equipo afectado: sigue las acciones de Defender en **Historial de protección**, mantén la cuarentena, reinicia si se solicita y ejecuta **Examen completo**. No desactives la protección ni añadas exclusiones. No elimines la carpeta de datos del colegio. La revisión del archivo no sustituye el análisis del equipo donde se abrió.
 
 La evaluación de un posible falso positivo puede solicitarse en el [portal oficial de Microsoft para envío de archivos](https://www.microsoft.com/en-us/wdsi/filesubmission). Este repositorio no ha presentado una solicitud ni recibido un dictamen de Microsoft.
+
+
+## Versión local 1.0.13
+
+La [compilación 1.0.13](https://github.com/Eliezerti/Sistema-colegio/actions/runs/37830250554) terminó correctamente: pruebas automatizadas, compilación, análisis de Defender, instalación y ventana nativa normal/de prueba, reinstalación y desinstalación conservando datos, y un segundo análisis de Defender después de esas pruebas. Los dos análisis de la carpeta dist (instalador y aplicación empaquetada) finalizaron con salida 0 y `found no threats`.
+
+Archivo: `Aula-Colegio-Instalador-1.0.13.exe`, 20.421.705 bytes. SHA256: `9714be7b6edaa03eab71a247c51219de6c425b5cd72d3b7fb7f1fbe23ab08d3c`. Motor: `1.1.26080.3`. Firmas: `1.459.601.0`, actualizadas el `2026-10-07T08:47:31+00:00`. Las anotaciones de la ejecución muestran el motor, firmas, resultado y hash de ambos análisis. Los informes completos se conservan como artefacto Defender-Windows de esa ejecución. La descarga recuperada del borrador se comparó con ese hash antes de publicar.
+
+Se ofrece esta nueva versión para la solicitud explícita de mejoras e instalador local. No se rehabilita 1.0.8, no se ha recibido un dictamen de Microsoft y no se ha revisado el equipo del usuario. Un resultado limpio con esas firmas no asegura que otra configuración no detecte el archivo. No desactives Defender ni añadas exclusiones si bloquea la nueva descarga. El ejecutable no cuenta con un certificado comercial de firma de código.
