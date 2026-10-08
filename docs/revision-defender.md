@@ -16,7 +16,11 @@ La coincidencia prueba que se conserva el archivo construido, **no que sea segur
 
 Las compilaciones siguientes deben superar el análisis antes de ejecutar el instalador para las pruebas funcionales. Las publicaciones siguen siendo borradores mientras se investiga el reporte; un análisis sin detecciones con otras firmas no invalida lo observado en el equipo del usuario.
 
-El [primer análisis independiente en Windows](https://github.com/Eliezerti/Sistema-colegio/actions/runs/37728590559) terminó con éxito y sin detecciones para el archivo oficial conservado. Se solicitó otra ejecución que hace visibles en las anotaciones el motor, las firmas y el resultado exacto. Esta diferencia respecto al equipo del usuario no confirma un falso positivo ni autoriza a permitir la detección.
+El [primer análisis independiente en Windows](https://github.com/Eliezerti/Sistema-colegio/actions/runs/37728590559) y el [análisis con informe visible](https://github.com/Eliezerti/Sistema-colegio/actions/runs/37729148630) terminaron con `Scan finished` y `found no threats` para el SHA256 indicado. Ambos usaron producto `4.18.26080.4`, motor `1.1.26080.3` y firmas `1.459.601.0`. Un intento intermedio no pudo actualizar las firmas y **no realizó un análisis válido**; no se cuenta como resultado limpio. El actualizador ahora intenta el canal oficial MMPC si falla Windows Update.
+
+Son análisis estáticos en un equipo desechable. No reprodujeron la apertura en el equipo del usuario ni compararon su archivo o configuración de Defender. La diferencia observada **no confirma un falso positivo ni autoriza a permitir la detección**. Hace falta revisar la entrada del equipo afectado en Historial de protección, incluidos los elementos afectados y la acción aplicada.
+
+La [compilación de revisión 1.0.10](https://github.com/Eliezerti/Sistema-colegio/actions/runs/37729115399) superó el nuevo análisis de `dist`, las pruebas funcionales y la validación de instalación en Windows. Su lanzamiento permanece como **borrador**, igual que el instalador 1.0.8 retirado. No se ofrece como reemplazo aprobado para ignorar la alerta del equipo del usuario.
 
 En el equipo afectado: sigue las acciones de Defender en **Historial de protección**, mantén la cuarentena, reinicia si se solicita y ejecuta **Examen completo**. No desactives la protección ni añadas exclusiones. No elimines la carpeta de datos del colegio. La revisión del archivo no sustituye el análisis del equipo donde se abrió.
 
