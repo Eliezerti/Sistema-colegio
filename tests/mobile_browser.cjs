@@ -20,6 +20,7 @@ const fs = require('node:fs');
       await page.getByRole('button',{name:'Entrar a la prueba',exact:true}).click();
       await page.getByRole('button',{name:/Entrar como administrador de prueba/}).click();
     } else {
+    await page.getByLabel('Nombre del colegio',{exact:true}).fill('Colegio móvil de prueba');
     await page.getByLabel('Nombre del administrador').fill('Administradora móvil');
     await fit('Mobile first setup fits');
     await page.getByLabel('Usuario',{exact:true}).fill('admin');

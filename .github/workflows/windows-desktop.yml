@@ -56,6 +56,9 @@ jobs:
             Write-Host "::error title=Ventana Windows::$Details"
             throw
           }
+      - name: Repetir análisis de Defender tras pruebas de ejecución
+        shell: pwsh
+        run: ./packaging/scan_windows.ps1 -Path dist -ReportDir "$env:RUNNER_TEMP/defender-after-runtime"
       - name: Guardar diagnóstico de la ventana si falla
         if: failure()
         uses: actions/upload-artifact@v4
@@ -78,15 +81,17 @@ jobs:
         run: |
           $Version = "1.0.${{ github.run_number }}"
           $Body = @'
-          Aplicación Windows de 64 bits con Python incluido, ventana propia y accesos directos. Instala el archivo .exe con la misma cuenta de Windows que usabas para conservar los datos. Las laptops de consulta pueden conectarse a la PC principal mediante Tailscale. El componente WebView2 de Microsoft puede necesitar internet durante la primera instalación. Cerrar la ventana principal minimiza Aula junto al reloj; usa «Salir y cerrar Aula» para detener el sistema compartido. Incluye un acceso separado para pruebas y herramientas de recuperación. La compilación supera las pruebas de datos y una comprobación de la ventana nativa antes de publicarse.
+          Aplicación local para una PC Windows 10/11 de 64 bits. Incluye Python, ventana propia, acceso directo y perfil de pruebas independiente. Una nueva instalación solicita el nombre del colegio y crea una base vacía; las actualizaciones conservan los datos e identidad del colegio existente. Instala con la misma cuenta de Windows y crea un respaldo externo antes de actualizar.
 
-          Incluye la interfaz móvil instalable para Android/iPhone: abre el enlace privado HTTPS en Chrome → Instalar aplicación, o Safari → Compartir → Añadir a pantalla de inicio. El teléfono debe estar autorizado y conectado a la red privada. La PC principal sigue guardando todos los datos y debe permanecer encendida. Aula-Movil-Web.zip contiene el HTML/CSS/JavaScript editable, requiere el servidor de Aula y no es un APK ni un sistema independiente.
+          Novedades: recibos administrativos con abono/pago completo, deuda anterior y saldo congelado al cobrar; logo propio PNG/JPG incluido en la base y sus respaldos; configuración y mantenimiento simplificados; verificación de integridad y aplicaciones de cobros; respaldo manual; recuperación local con nombres de administradores; plantilla Excel con instrucciones, ejemplos y grados separados, errores por fila y guía completa. El menú Inicio incluye guías de importación y mantenimiento.
 
-          Para probar desde el teléfono sin configurar Tailscale, conecta PC y teléfono al mismo Wi-Fi y abre «Aula - Probar en teléfono». La PC muestra la dirección y un código de seis dígitos. Esta opción permite usar todos los módulos sobre una base temporal separada; cerrar la ventana de la PC termina la prueba y borra sus datos. No proporciona acceso remoto a la base real.
+          Emite comprobantes administrativos, no facturas fiscales. Esta versión no certifica cumplimiento de todos los requisitos de SENIAT o Zona Educativa. La tasa BCV se registra manualmente. Cerrar X oculta la aplicación junto al reloj; usa Salir y cerrar Aula para detenerla. WebView2 de Microsoft puede requerir conexión en la primera instalación.
+
+          La compilación ejecuta pruebas financieras y de recuperación, análisis de Microsoft Defender antes y después de las pruebas de instalación, ventana nativa y conservación de datos. Un resultado de análisis sin detecciones solo corresponde a ese archivo y esas firmas; no garantiza ausencia universal de amenazas ni explica por sí solo la detección anterior de 1.0.8. No desactives Defender ni añadas exclusiones para instalar un archivo bloqueado.
           '@
           [System.IO.File]::WriteAllText('dist/notas-version.txt', $Body, [System.Text.UTF8Encoding]::new($false))
-          # Public downloads are paused while the 1.0.8 Defender report is investigated.
-          $ReleaseOutput = @(gh release create "desktop-$Version" "dist/Aula-Colegio-Instalador-$Version.exe" "dist/Aula-Colegio-Instalador-$Version.exe.sha256" "descargas/Aula-Movil-Web.zip" "descargas/Aula-Movil-Web.sha256" --target $env:GITHUB_SHA --title "Colegio - Instalador Windows $Version - revisión" --notes-file dist/notas-version.txt --draft 2>&1)
+          # Keep the artifact as a draft until checks and its release notes have been reviewed.
+          $ReleaseOutput = @(gh release create "desktop-$Version" "dist/Aula-Colegio-Instalador-$Version.exe" "dist/Aula-Colegio-Instalador-$Version.exe.sha256" "descargas/Aula-Windows.zip" "descargas/Aula-Windows.sha256" --target $env:GITHUB_SHA --title "Colegio - Instalador Windows $Version - revisión" --notes-file dist/notas-version.txt --draft 2>&1)
           $ReleaseExit = $LASTEXITCODE
           $ReleaseOutput | ForEach-Object { Write-Host $_ }
           if ($ReleaseExit -ne 0) {

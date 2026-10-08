@@ -27,18 +27,68 @@ def normalized(value):
     return ''.join(c for c in unicodedata.normalize('NFD',str(value)).upper() if c.isalnum())
 
 
-def import_template(xlsx=False):
+def import_date(value, column):
+    """Accept unambiguous Venezuelan day/month/year as well as ISO dates."""
+    value = str(value).strip()
+    match = re.fullmatch(r'(\d{1,2})/(\d{1,2})/(\d{4})', value)
+    try:
+        if match:
+            return date(int(match[3]),int(match[2]),int(match[1])).isoformat()
+        return valid_date(value)
+    except (ValueError,ValidationError):
+        raise ValidationError(f'{column}: fecha inválida «{value}». Usa AAAA-MM-DD, por ejemplo 2016-04-23, o una fecha de Excel.')
+
+
+def import_amount(value):
+    value = str(value).strip()
+    if re.fullmatch(r'\d+,\d{1,2}', value): value=value.replace(',','.')
+    try: return str(Decimal(money(value))/100)
+    except ValidationError:
+        raise ValidationError('mensualidad_usd: usa dólares sin símbolos ni miles, con hasta dos decimales; ejemplo 100.00. No escribas el precio ya descontado.')
+
+
+def import_integer(value,column,minimum,maximum):
+    try: return integer(value,minimum,maximum)
+    except ValidationError:
+        raise ValidationError(f'{column}: escribe un entero entre {minimum} y {maximum}, sin símbolos. El año escolar lleva solo el año de inicio y el descuento no lleva %.')
+
+
+def import_template(xlsx=False, grades=(), settings=None):
+    from xml.sax.saxutils import escape
+    from .import_guide import FIELDS, STEPS
     if not xlsx:
         out = io.StringIO(); csv.writer(out, delimiter=';').writerow(COLUMNS)
         return out.getvalue().encode('utf-8-sig')
+    settings = settings or {}
+    year = int(settings.get('school_year',local_today().year))
+    month = int(settings.get('start_month',9))
+    start = date(year,month,1).isoformat()
+    end = (date(year+1,month,1)-timedelta(days=1)).isoformat()
+    example = [f[3] for f in FIELDS]
+    example[8:10] = [grades[0] if grades else 'CREA UN GRADO Y COPIA SU NOMBRE',str(year)]
+    example[12:14] = [start,end]
+    sheets = [
+        ('Alumnos',[COLUMNS],True),
+        ('Instrucciones',[['PASO','INSTRUCCIÓN']]+[[str(i),t] for i,t in enumerate(STEPS,1)]+[['','','','']]+[['COLUMNA','OBLIGATORIA','QUÉ ESCRIBIR','EJEMPLO']]+FIELDS,False),
+        ('Ejemplos',[COLUMNS,example,example[:5]+['Luis Pérez','', '2018-08-10']+example[8:]],True),
+        ('Grados',[['NOMBRE EXACTO DEL GRADO / SECCIÓN']]+[[g] for g in grades],False),
+    ]
     out = io.BytesIO()
     with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED) as z:
-        z.writestr('[Content_Types].xml','<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>')
+        overrides = ''.join(f'<Override PartName="/xl/worksheets/sheet{i}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' for i in range(1,5))
+        z.writestr('[Content_Types].xml','<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+overrides+'</Types>')
         z.writestr('_rels/.rels','<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>')
-        z.writestr('xl/workbook.xml','<workbook xmlns="'+NS['s']+'" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Alumnos" sheetId="1" r:id="rId1"/></sheets></workbook>')
-        z.writestr('xl/_rels/workbook.xml.rels','<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>')
-        cells = ''.join(f'<c r="{chr(65+i)}1" t="inlineStr"><is><t>{c}</t></is></c>' for i,c in enumerate(COLUMNS))
-        z.writestr('xl/worksheets/sheet1.xml','<worksheet xmlns="'+NS['s']+'"><sheetData><row r="1">'+cells+'</row></sheetData></worksheet>')
+        z.writestr('xl/workbook.xml','<workbook xmlns="'+NS['s']+'" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+''.join(f'<sheet name="{name}" sheetId="{i}" r:id="rId{i}"/>' for i,(name,_,_) in enumerate(sheets,1))+'</sheets></workbook>')
+        z.writestr('xl/_rels/workbook.xml.rels','<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+''.join(f'<Relationship Id="rId{i}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet{i}.xml"/>' for i in range(1,5))+'<Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>')
+        z.writestr('xl/styles.xml','<styleSheet xmlns="'+NS['s']+'"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF245D50"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"><alignment vertical="top" wrapText="1"/></xf><xf numFmtId="49" fontId="1" fillId="2" borderId="0" xfId="0"><alignment wrapText="1"/></xf><xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0"><alignment vertical="top" wrapText="1"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>')
+        for i,(name,records,roster) in enumerate(sheets,1):
+            widths = [24]*16 if roster else ([12,110,55,28] if name=='Instrucciones' else [65])
+            cols=''.join(f'<col min="{n}" max="{n}" width="{w}" customWidth="1" style="2"/>' for n,w in enumerate(widths,1))
+            rows=[]
+            for n,record in enumerate(records,1):
+                cells=''.join(f'<c r="{chr(65+j)}{n}" t="inlineStr" s="{1 if n==1 else 2}"><is><t xml:space="preserve">{escape(str(v))}</t></is></c>' for j,v in enumerate(record))
+                rows.append(f'<row r="{n}" ht="{36 if roster else 50}" customHeight="1">{cells}</row>')
+            z.writestr(f'xl/worksheets/sheet{i}.xml','<worksheet xmlns="'+NS['s']+'"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>'+cols+'</cols><sheetData>'+''.join(rows)+'</sheetData></worksheet>')
     return out.getvalue()
 
 
@@ -50,6 +100,7 @@ def parse_import(data):
     if not raw or len(raw)>2_000_000:
         raise ValidationError('Selecciona un archivo de hasta 2 MB.')
     name = str(data.get('filename','')).lower()
+    physical_rows = None
     if name.endswith('.csv'):
         try: text = raw.decode('utf-8-sig')
         except UnicodeDecodeError: text = raw.decode('cp1252')
@@ -81,7 +132,7 @@ def parse_import(data):
                 strings = []
                 if 'xl/sharedStrings.xml' in z.namelist():
                     strings = [''.join(e.itertext()) for e in xml('xl/sharedStrings.xml').findall('s:si',NS)]
-                matrix = []
+                matrix, physical_rows = [], []
                 for row in xml(path).findall('s:sheetData/s:row',NS):
                     values = ['']*len(COLUMNS)
                     for cell in row.findall('s:c',NS):
@@ -104,20 +155,25 @@ def parse_import(data):
                             else: val = format(Decimal(val),'f').rstrip('0').rstrip('.') if '.' in val else val
                         values[col-1]=val
                     matrix.append(values)
+                    physical_rows.append(int(row.get('r',len(matrix))))
         except (zipfile.BadZipFile, KeyError, ET.ParseError, ValueError, IndexError, AttributeError, StopIteration, InvalidOperation, OverflowError):
             raise ValidationError('Excel inválido. Usa la primera hoja de la plantilla .xlsx, sin contraseña ni macros.')
     else:
         raise ValidationError('Selecciona un archivo .csv o .xlsx (no .xls).')
-    if not matrix or tuple(str(c).strip().lower() for c in matrix[0]) != COLUMNS:
-        raise ValidationError('Las columnas deben coincidir con la plantilla y conservar su orden.')
-    matrix = [r for r in matrix[1:] if any(str(v).strip() for v in r)]
+    headers = tuple(str(c).strip().lower() for c in matrix[0]) if matrix else ()
+    if headers != COLUMNS:
+        missing = [c for c in COLUMNS if c not in headers]
+        raise ValidationError('Encabezados incorrectos. Completa la primera hoja Alumnos, conserva las 16 columnas y su orden.' + (' Faltan: '+', '.join(missing) if missing else ' Descarga una plantilla nueva.'))
+    # Preserve physical Excel/CSV row numbers even when users leave blank rows.
+    numbered = [((physical_rows[i-1] if physical_rows else i),r) for i,r in enumerate(matrix[1:],2) if any(str(v).strip() for v in r)]
+    matrix = [r for _,r in numbered]
     if not 1<=len(matrix)<=1000:
         raise ValidationError('El archivo debe contener entre 1 y 1000 filas de alumnos.')
     records = []
-    for row in matrix:
+    for index,row in numbered:
         if len(row)!=len(COLUMNS) or any(len(str(v))>2000 for v in row):
             raise ValidationError('Fila con columnas incorrectas o un campo demasiado largo.')
-        records.append(dict(zip(COLUMNS,(str(v).strip() for v in row))))
+        records.append(dict(zip(COLUMNS,(str(v).strip() for v in row)), _row=index))
     return records, hashlib.sha256(raw).hexdigest()
 
 
@@ -130,7 +186,8 @@ def import_roster(db,data,user,save_record):
     before_guardians = db.execute('SELECT COUNT(*) FROM guardians').fetchone()[0]
     before_balance = sum(c['balance'] for c in charges(db))
     db.execute('SAVEPOINT roster_batch')
-    for index,r in enumerate(records,2):
+    for r in records:
+        index=r['_row']
         db.execute('SAVEPOINT roster_row')
         try:
             doc = required(r,'representante_cedula')
@@ -147,14 +204,16 @@ def import_roster(db,data,user,save_record):
             else: guardian_id=save_record(db,'guardians',fields,user)['id']
             grade = db.execute('SELECT id FROM grades WHERE name=? COLLATE NOCASE',(required(r,'grado'),)).fetchone()
             if not grade: raise ValidationError('Grado / sección inexistente. Créalo antes de importar y copia su nombre exacto.')
-            name,birth = required(r,'alumno_nombre'),valid_date(r['nacimiento'])
+            name,birth = required(r,'alumno_nombre'),import_date(r['nacimiento'],'nacimiento')
+            if r['estado'].lower() not in ('','activo','inactivo','active','inactive'):
+                raise ValidationError('estado: escribe activo o inactivo; vacío significa activo.')
             if db.execute('SELECT 1 FROM students WHERE guardian_id=? AND name=? COLLATE NOCASE AND birth_date=?',(guardian_id,name,birth)).fetchone():
                 raise ValidationError('Alumno repetido: mismo nombre, nacimiento y representante.')
             student = save_record(db,'students',{'name':name,'document':r['alumno_cedula'],
                 'birth_date':birth,'guardian_id':guardian_id,'grade_id':grade['id'],
-                'school_year':r['ano_escolar'],'monthly_fee':r['mensualidad_usd'],
-                'discount':r['descuento_pct'] or '0','enrollment_start':r['inicio_matricula'],
-                'enrollment_end':r['fin_matricula'],'status':{'activo':'active','inactivo':'inactive'}.get(r['estado'].lower(),r['estado'].lower() or 'active'),
+                'school_year':import_integer(r['ano_escolar'],'ano_escolar',2000,2100),'monthly_fee':import_amount(r['mensualidad_usd']),
+                'discount':import_integer(r['descuento_pct'] or '0','descuento_pct',0,100),'enrollment_start':import_date(r['inicio_matricula'],'inicio_matricula'),
+                'enrollment_end':import_date(r['fin_matricula'],'fin_matricula'),'status':{'activo':'active','inactivo':'inactive'}.get(r['estado'].lower(),r['estado'].lower() or 'active'),
                 'notes':r['observaciones']},user)
             imported.append({'row':index,'student_name':name,'guardian_name':fields['name'],
                 'grade_name':r['grado'],'student_code':student['student_code']})

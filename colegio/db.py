@@ -123,6 +123,7 @@ def initialize(path):
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     with closing(connect(path)) as db, db:
         db.execute('PRAGMA journal_mode=WAL')
+        existing_school = bool(db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='settings'").fetchone())
         db.executescript('''
             CREATE TABLE IF NOT EXISTS salary_receipts(id INTEGER PRIMARY KEY,
                 expense_id INTEGER UNIQUE NOT NULL REFERENCES expenses(id),snapshot_json TEXT NOT NULL,
@@ -175,7 +176,7 @@ def initialize(path):
         CREATE INDEX IF NOT EXISTS payments_student ON payments(student_id);
         CREATE INDEX IF NOT EXISTS allocations_charge ON allocations(charge_id);
         ''')
-        defaults = {'school_name': SCHOOL_NAME, 'currency': 'USD', 'due_day': '10', 'start_month': '9',
+        defaults = {'school_name': 'Mi colegio', 'currency': 'USD', 'due_day': '10', 'start_month': '9',
                     'school_year': str(local_today().year if local_today().month >= 9 else local_today().year - 1), 'address': '', 'phone': '', 'rif': '', 'email': '', 'website': ''}
         defaults.update(legal_name='', fiscal_address='', logo='',institution_type=INSTITUTION_TYPE)
         db.executemany('INSERT OR IGNORE INTO settings VALUES(?,?)', defaults.items())
@@ -225,13 +226,13 @@ def initialize(path):
         if 'method' not in {r['name'] for r in db.execute('PRAGMA table_info(expenses)')}:
             db.execute("ALTER TABLE expenses ADD COLUMN method TEXT NOT NULL DEFAULT 'No especificado'")
         db.execute("INSERT OR IGNORE INTO settings VALUES('backup_directory','')")
-        if db.execute('PRAGMA user_version').fetchone()[0] < 4:
+        if existing_school and db.execute('PRAGMA user_version').fetchone()[0] < 4:
             # Apply the owner's fiscal identity once, without altering issued snapshots
             # or operational settings. Later manual edits survive every restart.
             db.executemany('UPDATE settings SET value=? WHERE key=?', [(v,k) for k,v in SCHOOL_PROFILE.items()])
             db.execute("UPDATE settings SET value='U.E.C. Alejandro Von Humboldt' WHERE key='school_name' AND value='Mi colegio'")
             audit(db, None, 'school-profile', SCHOOL_PROFILE)
-        if db.execute('PRAGMA user_version').fetchone()[0] < 7:
+        if existing_school and db.execute('PRAGMA user_version').fetchone()[0] < 7:
             db.execute("UPDATE settings SET value=? WHERE key='school_name' AND value IN (?,?,?,?)",
                        (SCHOOL_NAME,'U.E.C. Alejandro Von Humboldt','Alejandro Von Humboldt','ALEJANDRO VON HUMBOLDT','Mi colegio'))
             audit(db,None,'institution-identity',{'institution_type':INSTITUTION_TYPE})
@@ -365,7 +366,21 @@ def record_payment(db, data, user_id):
        g.document AS guardian_document,g.address AS guardian_address,g.phone AS guardian_phone
        FROM students s JOIN guardians g ON g.id=s.guardian_id JOIN grades gr ON gr.id=s.grade_id
        WHERE s.id=?''', (student_id,)).fetchone()
+    if not person:
+        raise ValidationError('Selecciona un alumno existente.')
+    detail, remaining = [], amount
+    for charge in pending:
+        applied = min(remaining, charge['balance'])
+        detail.append({'charge_id': charge['id'], 'concept': charge['concept'],
+                       'period': charge['period'], 'amount': applied,
+                       'balance_before': charge['balance'], 'balance_after': charge['balance']-applied})
+        remaining -= applied
+        if not remaining:
+            break
     receipt_snapshot = json.dumps({'person': dict(person), 'school': dict(db.execute('SELECT key,value FROM settings')),
+                                  'balance_before': total, 'balance_after': total-amount,
+                                  'payment_status': 'partial' if amount < total else 'complete',
+                                  'allocations': detail,
                                   'operator': db.execute('SELECT name FROM users WHERE id=?', (user_id,)).fetchone()[0]}, ensure_ascii=False)
     result = db.execute('''INSERT INTO payments(id,student_id,amount,paid_on,method,reference,notes,created_by,created_at,request_key,currency,received_amount,exchange_rate,receipt_snapshot)
       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (next_record_id(db,'payments'), student_id, amount, paid_on, method, reference,

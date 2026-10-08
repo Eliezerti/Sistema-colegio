@@ -47,7 +47,7 @@ class SystemTests(unittest.TestCase):
         self.request('setup', {'name':'Directora','username':'admin','password':'Una-clave-segura'})
         self.csrf = self.request('session')['user']['csrf']
         self.request('confirm-rate', {'rate_date':local_today().isoformat(),'rate':'100'})
-        self.request('settings', {'school_name':'Colegio Prueba','school_year':self.year,'due_day':10,'start_month':9})
+        self.request('settings', dict(SCHOOL_PROFILE,school_name='Colegio Prueba',school_year=self.year,due_day=10,start_month=9))
         self.grade = self.request('grades', {'name':'Primaria A','capacity':2})['id']
         self.guardian = self.request('guardians', {'name':'Representante Uno','document':'V-123','phone':'04120000000'})['id']
         self.student = self.request('students', self.student_data())['id']

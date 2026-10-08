@@ -29,14 +29,12 @@ try {
     if (-not (Test-Path $Executable)) { throw 'No se instaló Aula.exe.' }
     $Desktop = [Environment]::GetFolderPath('Desktop')
     $Shell = New-Object -ComObject WScript.Shell
-    $ShortcutPath = Join-Path $Desktop 'Colegio Alejandro Von Humboldt.lnk'
+    $ShortcutPath = Join-Path $Desktop 'Aula - Administración escolar.lnk'
     if (-not (Test-Path $ShortcutPath)) { throw 'No se creó el acceso directo del escritorio.' }
     $Shortcut = $Shell.CreateShortcut($ShortcutPath)
     if ($Shortcut.TargetPath -ne $Executable) { throw 'El acceso directo no abre el ejecutable instalado.' }
     $Trial = $Shell.CreateShortcut((Join-Path $Desktop 'Aula - Pruebas.lnk'))
     if ($Trial.Arguments -ne '--demo') { throw 'El acceso de pruebas no abre el modo aislado.' }
-    $Phone = $Shell.CreateShortcut((Join-Path $Desktop 'Aula - Probar en teléfono.lnk'))
-    if ($Phone.Arguments -ne '--demo-phone' -or $Phone.TargetPath -ne $Executable) { throw 'El acceso de teléfono no abre la prueba aislada instalada.' }
     Execute-Checked $Executable @('--self-test')
     Execute-Checked $Executable @('--self-test-demo')
     Execute-Checked $Executable @('--self-test-phone')

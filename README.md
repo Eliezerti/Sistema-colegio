@@ -1,6 +1,6 @@
 # Aula · Administración de colegios
 
-Sistema administrativo para colegios de Venezuela, con una **base central en una computadora Windows**. Puede usarse en esa PC o compartirse con las laptops del colegio y de casa mediante acceso privado. Las mensualidades y la deuda se expresan en **USD**; los cobros y egresos pueden registrarse en **USD o bolívares (VES)** con la tasa BCV correspondiente a la fecha de la operación.
+Sistema administrativo para colegios de Venezuela, con una **base central en una computadora Windows**. La distribución actual inicia en modo local para una sola PC. La expansión a otras computadoras queda para una etapa posterior. Las mensualidades y la deuda se expresan en **USD**; los cobros y egresos pueden registrarse en **USD o bolívares (VES)** con la tasa BCV correspondiente a la fecha de la operación.
 
 ## Descargar el sistema
 
@@ -8,28 +8,23 @@ Sistema administrativo para colegios de Venezuela, con una **base central en una
 
 El **instalador de escritorio para Windows 10/11 de 64 bits** se publica en [Versiones e instaladores](https://github.com/Eliezerti/Sistema-colegio/releases). Descarga el archivo **Aula-Colegio-Instalador-…exe**, no el ZIP de código fuente. Incluye Python y la aplicación; no necesitas instalar Python por separado. La compilación Windows y la prueba de la ventana deben terminar correctamente para que aparezca el instalador.
 
-### Teléfono Android / iPhone
+## Instalar, actualizar y recuperar
 
-**Para probarla sin configurar Tailscale:** conecta PC y teléfono al mismo Wi-Fi, abre **Aula - Probar en teléfono** en la PC y escribe en el navegador del teléfono la dirección y el código que muestra Aula. Usa **Entrar como administrador de prueba**. Los datos son temporales y están separados de la base real. Mantén abierta la ventana de la PC; al cerrarla termina la prueba y se eliminan esos datos.
+Abre **Aula - Administración escolar** desde el acceso del escritorio. La primera instalación local no requiere configurar redes. Crea el administrador y escribe el nombre de tu colegio, confirma la tasa BCV y completa sus datos en Configuración. Una base nueva empieza sin RIF ni logo de otra institución; una actualización conserva la identidad y los datos existentes.
 
-Aula también incluye una **app web instalable** con el logo del colegio y pantallas adaptadas al teléfono. Abre el enlace privado HTTPS en Chrome (Android) → **Instalar aplicación**, o Safari (iPhone) → **Compartir → Añadir a pantalla de inicio**. Antes debes conectar el teléfono a la red privada del colegio. Usa el mismo usuario de Aula; los datos permanecen en la PC principal y esa PC debe estar encendida. El acceso móvil necesita conexión para consultar o guardar operaciones.
+La ventana funciona sin consola. **X** oculta la aplicación junto al reloj; para detenerla utiliza **Colegio → Salir y cerrar Aula**. **Aula - Pruebas** abre una base temporal independiente y la elimina al cerrar su ventana.
 
-[Guía de instalación móvil y conexión](docs/telefono.md) · [Descargar HTML/CSS/JavaScript editable](descargas/Aula-Movil-Web.zip). El ZIP contiene la interfaz; requiere el servidor de Aula y no funciona por sí solo abriendo un archivo HTML.
+Antes de actualizar, crea y descarga un respaldo desde Configuración. Cierra Aula completamente y ejecuta el instalador nuevo con la misma cuenta de Windows. Los datos continúan en `%LOCALAPPDATA%\AulaColegio`; el instalador no los elimina ni los cambia de cuenta. No uses Vaciar registros para actualizar.
 
-### Instalar la aplicación de escritorio
+El menú Inicio incluye **Recuperar clave del administrador**, **Restaurar respaldo**, **Abrir carpeta de datos**, **Guía para importar alumnos** y **Manual de mantenimiento**. La recuperación local muestra los nombres de usuario de administradores y permite cambiar su contraseña con respaldo previo; requiere cerrar Aula.
 
-1. Cierra la versión anterior de Aula. Si todavía usas un .bat, ciérralo con **Ctrl+C**. Conserva un respaldo y utiliza **la misma cuenta de Windows** que usabas para mantener la ruta de datos existente.
-2. Ejecuta el instalador .exe y sigue **Siguiente → Instalar**. Deja marcada la creación de accesos directos. Puedes elegir **Abrir Aula al iniciar sesión en Windows** para la PC principal. El instalador comprueba WebView2, un componente de Microsoft para mostrar la ventana; si falta, su instalación inicial necesita internet. Después el uso local funciona sin conexión.
-3. Abre **Colegio Alejandro Von Humboldt** desde el escritorio. La primera apertura pregunta cómo usar esta computadora:
-   - **PC principal:** guarda los datos. Deja el enlace vacío durante la primera configuración local. Crea tu administrador si la base está vacía; si ya existía una base en `%LOCALAPPDATA%\AulaColegio`, entra con tu usuario habitual.
-   - **Conectarme al colegio:** para tu casa y las otras laptops. Pega el enlace HTTPS privado de la PC principal y conecta Tailscale. Esta opción no crea una segunda base SQLite.
-4. Para cambiar la conexión, cierra Aula completamente y abre **Configurar Aula** desde **Inicio → Colegio Alejandro Von Humboldt**. La configuración del equipo no cambia los alumnos, cobros o contraseñas.
+- [Guía completa de Excel, columna por columna](docs/guia-importacion.md).
+- [Instalación, mantenimiento, respaldos y recuperación](docs/mantenimiento.md).
+- [Alcance administrativo y revisión legal pendiente](docs/alcance-legal.md).
 
-La interfaz se abre en una **ventana propia**, sin consola ni navegador externo para usar el sistema. En la PC principal, pulsar **X** oculta la ventana y deja el servicio activo junto al reloj de Windows. Abre el icono junto al reloj o vuelve a hacer doble clic en el acceso directo para mostrarla. Para detener el sistema, utiliza **Colegio → Salir y cerrar Aula** o esa opción en el icono del reloj. Si el acceso compartido está activo, pide confirmación porque las otras computadoras se desconectarán. Las operaciones en curso terminan antes de liberar la base. En una laptop conectada al colegio, cerrar su ventana cierra únicamente esa aplicación; no apaga la PC principal.
+Los recibos nuevos muestran **abono o pago completo**, deuda anterior y saldo pendiente del alumno al registrar el cobro. La pantalla también distingue el pendiente de cada concepto. El recibo conserva ese saldo aunque después se registren otros cobros. Los recibos antiguos sin saldo congelado no inventan uno histórico. Se emiten comprobantes administrativos, no facturas fiscales.
 
-El instalador incluye **Aula - Pruebas**, **Restaurar respaldo**, **Recuperar clave del administrador**, **Configurar Aula** y **Abrir carpeta de datos** en el menú Inicio. Las herramientas de recuperación usan ventanas y requieren cerrar el sistema de la PC principal. El acceso **Aula - Pruebas** abre el administrador temporal y mantiene el aislamiento descrito abajo; se elimina al cerrar su ventana. No deja el servicio de pruebas en el reloj.
-
-Actualizar o desinstalar la aplicación no elimina `%LOCALAPPDATA%\AulaColegio`, los usuarios ni los respaldos. El programa se instala por usuario de Windows en `%LOCALAPPDATA%\Programs\AulaColegio`, separado de esa base. El instalador no mueve automáticamente datos de otra cuenta o computadora.
+Configuración permite cargar un logo PNG/JPG, crear un respaldo manual verificado y revisar integridad y aplicaciones de cobros sin cambiar registros. La plantilla Excel incluye hojas separadas de instrucciones, ejemplos y grados; solo se importa Alumnos. Consulta las guías para evitar confundir mensualidad base con tarifa descontada o saldo histórico.
 
 ### Distribución de código fuente · alternativa con Python
 
@@ -43,7 +38,7 @@ El ZIP incluye los archivos del programa y los lanzadores para Windows; no inclu
 2. Descomprime la carpeta del sistema en una ubicación permanente, por ejemplo `C:\Aula`.
 3. Haz doble clic en **Iniciar-Aula.bat**. Se abrirá la interfaz en tu navegador. Mantén abierta la ventana de comandos durante el uso; ciérrala con **Ctrl+C** cuando termines.
 4. En la primera apertura crea tu usuario administrador con una contraseña de al menos diez caracteres. No existe una contraseña predeterminada.
-5. Confirma la **tasa BCV de hoy** en la pantalla **Tasas y respaldo**. Después revisa **Configuración**: el logo, la razón social, el RIF y el domicilio fiscal del colegio ya están incorporados. Completa teléfono, correo, dirección de contacto, año escolar, mes de inicio y día de vencimiento. Estos datos aparecen en los documentos nuevos.
+5. Confirma la **tasa BCV de hoy** en la pantalla **Tasas y respaldo**. Después revisa **Configuración**: carga el logo y completa la razón social, el RIF y el domicilio fiscal de tu colegio. Completa teléfono, correo, dirección de contacto, año escolar, mes de inicio y día de vencimiento. Estos datos aparecen en los documentos nuevos.
 
 Los datos de Windows quedan en `%LOCALAPPDATA%\AulaColegio\colegio.sqlite3`, separados del código. **Abrir-carpeta-de-datos.bat** abre esa carpeta. Actualizar o mover los archivos del programa no borra los datos. Usa la misma cuenta de Windows para abrir el sistema: cada cuenta tiene su propia carpeta local.
 

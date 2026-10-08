@@ -179,6 +179,20 @@ def mutate(db, endpoint, data, user, *, synchronize=True):
                   'school_year': str(integer(data.get('school_year'), 2000, 2100)),
                   'start_month': str(integer(data.get('start_month', 9), 1, 12)),
                   'due_day': str(integer(data.get('due_day'), 1, 31))}
+        old_start = db.execute("SELECT value FROM settings WHERE key='start_month'").fetchone()[0]
+        if fields['start_month'] != old_start and db.execute('SELECT 1 FROM students LIMIT 1').fetchone():
+            raise ValidationError('El mes de inicio no puede cambiar con matrículas registradas: alteraría el calendario de las mensualidades. Conserva el mes actual.')
+        if 'logo' in data:
+            import struct, zlib
+            from .branding import pdf_logo
+            logo = data['logo']
+            if not isinstance(logo,str) or len(logo)>700000:
+                raise ValidationError('El logo es demasiado grande. Selecciona otra imagen.')
+            try:
+                if logo and not pdf_logo(logo): raise ValueError('Formato no permitido.')
+            except (ValueError, OSError, struct.error, zlib.error):
+                raise ValidationError('Logo inválido. Carga una imagen PNG o JPG desde Configuración.')
+            fields['logo'] = logo
         # An omitted optional field must not erase the configured fiscal identity.
         for key, limit in (('address',500), ('phone',100), ('rif',100), ('email',200),
                            ('website',200), ('legal_name',200), ('fiscal_address',500), ('institution_type',100)):
@@ -193,7 +207,7 @@ def mutate(db, endpoint, data, user, *, synchronize=True):
                     raise ValidationError('El segundo respaldo debe usar una ruta absoluta fuera de la carpeta de datos de Aula.')
             fields['backup_directory']=directory
         db.executemany('UPDATE settings SET value=? WHERE key=?', [(v, k) for k, v in fields.items()])
-        audit(db, uid, 'settings', fields)
+        audit(db, uid, 'settings', {k:(bool(v) if k=='logo' else v) for k,v in fields.items()})
         return {'saved': True}
     if endpoint == 'positions':
         fields = {'name': required(data, 'name')}
@@ -517,7 +531,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not self.server.access.allowed_origin(host,self.headers.get('Origin'),self.server.server_port):
                     raise PermissionError('Origen no permitido.')
                 length = int(self.headers.get('Content-Length', '0'))
-                maximum=3_000_000 if endpoint in ('import-roster','transition-year') else 65536
+                maximum=3_000_000 if endpoint in ('import-roster','transition-year','settings') else 65536
                 if not 0 < length <= maximum or 'application/json' not in self.headers.get('Content-Type', ''):
                     raise ValidationError('Envía un objeto JSON válido (máximo 64 KB).')
                 data = json.loads(self.rfile.read(length))
@@ -537,6 +551,7 @@ class Handler(BaseHTTPRequestHandler):
             needs_setup = not db.execute('SELECT 1 FROM users LIMIT 1').fetchone()
             if not post and endpoint == 'session':
                 self.respond(200, {'needs_setup': needs_setup, 'user': {k:v for k,v in user.items() if k != 'token'} if user else None,
+                                   'school': {k:v for k,v in db.execute('SELECT key,value FROM settings') if k in ('school_name','institution_type','logo')},
                                    'demo': self.server.demo, 'demo_token': self.server.demo_token})
                 return
             if post and endpoint in ('setup', 'login', 'demo-login'):
@@ -550,6 +565,8 @@ class Handler(BaseHTTPRequestHandler):
                     result = db.execute('INSERT INTO users(username,name,password,role) VALUES(?,?,?,?)',
                                         (required(data, 'username', 80).lower(), required(data, 'name'), hash_password(data.get('password')), 'admin'))
                     user_id = result.lastrowid
+                    if 'school_name' in data:
+                        db.execute("UPDATE settings SET value=? WHERE key='school_name'",(required(data,'school_name'),))
                     audit(db, user_id, 'setup', {'user_id': user_id})
                 else:
                     now = time.time()
@@ -579,7 +596,8 @@ class Handler(BaseHTTPRequestHandler):
             if not post and endpoint == 'rate-gate':
                 on = local_today().isoformat()
                 rate = db.execute('SELECT rate FROM exchange_rates WHERE rate_date=?', (on,)).fetchone()
-                self.respond(200, {'today': on, 'rate': rate['rate'] if rate else '', 'role': user['role']})
+                self.respond(200, {'today': on, 'rate': rate['rate'] if rate else '', 'role': user['role'],
+                                   'school': {k:v for k,v in db.execute('SELECT key,value FROM settings') if k in ('school_name','institution_type','logo')}})
                 return
             if endpoint not in ('confirm-rate','rate-gate','logout','backup','health','demo-exit') and user['rate_confirmed_on'] != local_today().isoformat():
                 self.respond(428, {'error': 'Confirma la tasa BCV de hoy antes de continuar.'})
@@ -596,6 +614,13 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 if self.server.demo and endpoint == 'settings' and data.get('backup_directory'):
                     raise ValidationError('Las pruebas no se copian a USB ni a la nube. Deja vacía la segunda carpeta de respaldos.')
+                if endpoint == 'backup-now':
+                    if user['role']!='admin' or self.server.demo:
+                        raise PermissionError('Solo administración puede respaldar los datos reales.')
+                    db.commit()
+                    status = self.server.make_backup()
+                    self.respond(200,status)
+                    return
                 if endpoint == 'reset-records':
                     if self.server.demo:
                         raise ValidationError('Cierra el modo prueba para borrar sus datos. No se vacía la base real desde aquí.')
@@ -645,8 +670,12 @@ class Handler(BaseHTTPRequestHandler):
             elif endpoint=='import-template':
                 if user['role']!='admin': raise PermissionError('Solo administración puede importar alumnos.')
                 xlsx=parse_qs(url.query).get('format',['csv'])[0]=='xlsx'
-                self.respond(200,import_template(xlsx),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' if xlsx else 'text/csv; charset=utf-8',
+                self.respond(200,import_template(xlsx,[r[0] for r in db.execute('SELECT name FROM grades ORDER BY name')],dict(db.execute('SELECT key,value FROM settings'))),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' if xlsx else 'text/csv; charset=utf-8',
                     {'Content-Disposition':f'attachment; filename="plantilla-alumnos.{"xlsx" if xlsx else "csv"}"'})
+            elif endpoint=='import-guide':
+                if user['role']!='admin': raise PermissionError('Solo administración puede importar alumnos.')
+                from .import_guide import FIELDS, STEPS
+                self.respond(200,{'fields':FIELDS,'steps':STEPS})
             elif endpoint=='cash-preview':
                 self.respond(200,cash_summary(db,parse_qs(url.query).get('date',[local_today().isoformat()])[0]))
             elif endpoint=='backup-status':
@@ -701,6 +730,8 @@ class Handler(BaseHTTPRequestHandler):
                 payment.pop('request_key', None)
                 payment.update(frozen['person'])
                 payment['operator'] = frozen['operator']
+                for key in ('balance_before','balance_after','payment_status'):
+                    payment[key] = frozen.get(key)
                 # Legacy receipts can use the last issued enrollment at payment creation.
                 # Never substitute today's grade for an unknown historical grade.
                 if not payment.get('grade_name'):
@@ -711,7 +742,7 @@ class Handler(BaseHTTPRequestHandler):
                     payment['grade_name'] = student.get('grade_name','')
                     payment['student_school_year'] = student.get('school_year')
                 document = {'payment': payment, 'settings': frozen['school'],
-                  'allocations': rows(db, '''SELECT a.amount,c.concept,c.period FROM allocations a JOIN charges c
+                  'allocations': frozen.get('allocations') or rows(db, '''SELECT a.amount,c.concept,c.period FROM allocations a JOIN charges c
                       ON c.id=a.charge_id WHERE a.payment_id=?''', (target,))}
                 self.server.mark_document(document)
                 if pdf:
@@ -765,6 +796,10 @@ class Handler(BaseHTTPRequestHandler):
                              {'Content-Disposition': f'attachment; filename="colegio-{local_today()}.sqlite3"'})
             elif endpoint == 'health':
                 self.respond(200, {'ok': db.execute('PRAGMA quick_check').fetchone()[0] == 'ok'})
+            elif endpoint == 'maintenance-review':
+                if user['role']!='admin': raise PermissionError('Solo administración puede revisar la base.')
+                from .maintenance import review_database
+                self.respond(200,review_database(db))
             else:
                 self.respond(404, {'error': 'Operación inexistente.'})
         except PermissionError as error:

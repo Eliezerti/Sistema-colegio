@@ -411,6 +411,16 @@ class ReceiptPDF(PDF):
             self.text(x+17,top+111,f"Tasa BCV aplicada: Bs {p['exchange_rate']} por USD",8,color=self.muted)
         self.y += height+27
 
+    def account_summary(self):
+        p = self.payment
+        if p.get('balance_after') is None:
+            return
+        status = 'ABONO' if p['balance_after'] else 'PAGO COMPLETO'
+        self.flow(f"{status} | Deuda anterior: {amount(p['balance_before'])} | Aplicado: {amount(p['amount'])}",8,self.blue,True)
+        self.flow('Saldo pendiente del alumno: '+amount(p['balance_after']),8,self.blue,True)
+        self.flow('Saldo de cargos registrados al cobrar; puede incluir otros meses. No es una constancia de solvencia.',6.5,self.muted)
+        self.y += 4
+
     def render(self, data):
         p = self.payment
         if p['voided']:
@@ -420,6 +430,7 @@ class ReceiptPDF(PDF):
         self.parties()
         self.allocations(data['allocations'])
         self.payment_summary()
+        self.account_summary()
         if p['notes']:
             self.ensure(35)
             self.label('Observaciones',42,self.y)
@@ -560,6 +571,12 @@ class HalfLetterReceiptPDF(ReceiptPDF):
             self.text(335,top+74,f"Tasa BCV aplicada: Bs {p['exchange_rate']} por USD",7.5,color=self.muted)
         self.y += height+8
 
+    def account_summary(self):
+        p = self.payment
+        if p.get('balance_after') is None: return
+        status = 'ABONO' if p['balance_after'] else 'PAGO COMPLETO'
+        self.flow(f"{status} | Deuda al cobrar: {amount(p['balance_before'])} | Aplicado: {amount(p['amount'])} | Pendiente del alumno: {amount(p['balance_after'])}",7,self.blue,True)
+
     def render(self,data):
         p = self.payment
         if p['voided']:
@@ -568,17 +585,18 @@ class HalfLetterReceiptPDF(ReceiptPDF):
         self.parties()
         self.allocations(data['allocations'])
         self.payment_summary()
+        self.account_summary()
         if p['notes']:
             self.ensure(25)
             self.label('Observaciones',26,self.y)
             self.y += 13
             self.flow(p['notes'],8,self.muted)
-        self.ensure(61)
-        self.y += 23
+        self.ensure(49)
+        self.y += 19
         for x,label in ((26,'Firma de administración'),(322,'Firma del representante')):
             self.rule(x,self.y,264)
             self.text(x,self.y+11,label,8,color=self.muted)
-        self.y += 27
+        self.y += 24
         self.flow('Registrado por: '+p['operator'],7.5,self.muted)
         return self.output()
 
@@ -625,6 +643,13 @@ class TicketReceiptPDF(ReceiptPDF):
         if p['reference']:self.ticket_line('Referencia: '+p['reference'])
         self.ticket_line('RECIBIDO: '+amount(p['received_amount'],'Bs' if p['currency']=='VES' else 'USD'),True,9)
         self.ticket_line('Total aplicado: '+amount(p['amount']),True)
+        if p.get('balance_after') is not None:
+            self.ticket_line('ABONO' if p['balance_after'] else 'PAGO COMPLETO',True)
+            self.ticket_line('Deuda anterior: '+amount(p['balance_before']))
+            self.ticket_line('Saldo pendiente: '+amount(p['balance_after']),True)
+            self.ticket_line('Saldo del alumno al cobrar, sobre cargos registrados. No acredita solvencia.',size=7)
+        else:
+            self.ticket_line('Saldo histórico no registrado.',size=7)
         if p['currency']=='VES':self.ticket_line('BCV: Bs '+p['exchange_rate']+' por USD',size=7.5)
         if p['notes']:self.ticket_line('Observaciones: '+p['notes'],size=7.5)
         if p['voided']:self.ticket_line('Motivo de anulación: '+p['void_reason'],size=7.5)

@@ -4,11 +4,11 @@
 
 [Setup]
 AppId={{55F5F949-F16B-47B4-964A-D75AF4DF8DE2}
-AppName=Unidad Educativa Colegio Alejandro Von Humboldt
+AppName=Aula - Administración escolar
 AppVersion={#AppVersion}
-AppPublisher=ALEJANDRO VON HUMBOLDT, C.A.
+AppPublisher=Aula
 DefaultDirName={localappdata}\Programs\AulaColegio
-DefaultGroupName=Colegio Alejandro Von Humboldt
+DefaultGroupName=Aula Colegio
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -38,18 +38,21 @@ Source: "..\dist\Aula\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs 
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\MicrosoftEdgeWebview2Setup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 
+Source: "..\docs\*.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+
 [Icons]
-Name: "{group}\Colegio Alejandro Von Humboldt"; Filename: "{app}\Aula.exe"
+Name: "{group}\Aula - Administración escolar"; Filename: "{app}\Aula.exe"
 Name: "{group}\Aula - Pruebas"; Filename: "{app}\Aula.exe"; Parameters: "--demo"
-Name: "{group}\Aula - Probar en teléfono"; Filename: "{app}\Aula.exe"; Parameters: "--demo-phone"
 Name: "{group}\Configurar Aula"; Filename: "{app}\Aula.exe"; Parameters: "--configure"
 Name: "{group}\Restaurar respaldo"; Filename: "{app}\Aula.exe"; Parameters: "--restore"
 Name: "{group}\Recuperar clave del administrador"; Filename: "{app}\Aula.exe"; Parameters: "--reset-password"
 Name: "{group}\Abrir carpeta de datos"; Filename: "{app}\Aula.exe"; Parameters: "--data-folder"
-Name: "{userdesktop}\Colegio Alejandro Von Humboldt"; Filename: "{app}\Aula.exe"; Tasks: desktopicon
+Name: "{userdesktop}\Aula - Administración escolar"; Filename: "{app}\Aula.exe"; Tasks: desktopicon
 Name: "{userdesktop}\Aula - Pruebas"; Filename: "{app}\Aula.exe"; Parameters: "--demo"; Tasks: desktopicon
-Name: "{userdesktop}\Aula - Probar en teléfono"; Filename: "{app}\Aula.exe"; Parameters: "--demo-phone"; Tasks: desktopicon
-Name: "{userstartup}\Colegio Alejandro Von Humboldt"; Filename: "{app}\Aula.exe"; Tasks: startup
+Name: "{userstartup}\Aula - Administración escolar"; Filename: "{app}\Aula.exe"; Tasks: startup
+
+Name: "{group}\Guía para importar alumnos"; Filename: "{app}\docs\guia-importacion.html"
+Name: "{group}\Manual de mantenimiento"; Filename: "{app}\docs\mantenimiento.html"
 
 [Run]
 Filename: "{tmp}\MicrosoftEdgeWebview2Setup.exe"; Parameters: "/silent /install"; StatusMsg: "Preparando el componente de ventanas de Microsoft..."; Flags: waituntilterminated; Check: NeedsWebView2

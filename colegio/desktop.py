@@ -17,7 +17,7 @@ from .server import ROOT, open_school
 from .storage import DataLock
 from .branding import SCHOOL_NAME
 
-TITLE=SCHOOL_NAME
+TITLE='Aula · Administración escolar'
 
 
 def data_directory():
@@ -154,7 +154,7 @@ def recovery(directory,action):
     import tkinter as tk
     from tkinter import filedialog, simpledialog, messagebox
     from .restore import restore
-    from .reset_password import reset_password
+    from .reset_password import reset_password, list_administrators
     root=tk.Tk();root.withdraw()
     try:
         if action=='restore':
@@ -165,7 +165,10 @@ def recovery(directory,action):
             restore(file,directory)
             messagebox.showinfo('Restauración completa','Puedes abrir Aula. Se han restaurado los datos y los usuarios del respaldo.',parent=root)
         else:
-            name=simpledialog.askstring('Recuperar administrador','Cierra Aula. Usuario del administrador:',parent=root)
+            users=list_administrators(directory)
+            if not users: raise ValueError('No hay administradores registrados en esta base.')
+            names='\n'.join(f"{u['username']} · {u['name']}" for u in users)
+            name=simpledialog.askstring('Recuperar administrador','Administradores de esta PC:\n'+names+'\n\nEscribe el usuario que deseas recuperar:',initialvalue=users[0]['username'] if len(users)==1 else '',parent=root)
             if not name:return
             password=simpledialog.askstring('Nueva contraseña','Contraseña nueva · mínimo 10 caracteres:',show='*',parent=root)
             if password is None:return
@@ -181,7 +184,7 @@ def tray_icon(window,quit_app):
     import pystray
     from PIL import Image
     def show(*_):window.show();window.restore()
-    icon=pystray.Icon('AulaColegio',Image.open(ROOT/'static'/'logo-colegio-v1.png'),
+    icon=pystray.Icon('AulaColegio',Image.open(ROOT/'static'/'aula-app.png'),
                       'Colegio · aplicación activa',pystray.Menu(
                       pystray.MenuItem('Abrir Aula',show,default=True),
                       pystray.MenuItem('Salir y cerrar Aula',lambda *_:quit_app())))
@@ -211,7 +214,7 @@ def launch_window(url,*,host=None,demo=False,storage=None,smoke=False,smoke_phon
             try:
                 # Exercise the real Windows renderer, bundled JS and image.
                 for _ in range(100):
-                    ready=window.evaluate_js("Boolean(document.querySelector('form') && document.images.length && document.images[0].naturalWidth>0 && typeof api==='function')")
+                    ready=window.evaluate_js("Boolean(document.querySelector('form') && document.querySelector('.brand img,.brand .school-placeholder') && typeof api==='function')")
                     if ready:break
                     time.sleep(.1)
                 if not ready:raise RuntimeError('La interfaz de escritorio no cargó el formulario, logo y JavaScript.')
@@ -316,8 +319,8 @@ def main():
             if not first:return
             config={'mode':'primary'} if demo else read_desktop_config(directory)
             if not config:
-                config=configure(directory)
-                if not config:return
+                # A fresh desktop install works on this PC without a network wizard.
+                config=write_desktop_config(directory,'primary')
             if config['mode']=='client':
                 launch_window(config['remote_url'],storage=directory/'webview-cliente');return
             address=choose_phone_address() if args.demo_phone else None

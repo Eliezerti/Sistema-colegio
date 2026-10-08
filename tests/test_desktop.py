@@ -95,9 +95,10 @@ class DesktopTests(unittest.TestCase):
             path=Path(temp)/'colegio.sqlite3';initialize(path)
             with closing(connect(path)) as db,db:
                 settings=dict(db.execute('SELECT key,value FROM settings'))
-                self.assertEqual(settings['school_name'],SCHOOL_NAME)
+                self.assertEqual(settings['school_name'],'Mi colegio')
                 self.assertEqual(settings['institution_type'],INSTITUTION_TYPE)
-                self.assertEqual(settings['legal_name'],SCHOOL_PROFILE['legal_name'])
+                self.assertEqual(settings['legal_name'],'')
+                db.executemany('UPDATE settings SET value=? WHERE key=?',[(v,k) for k,v in SCHOOL_PROFILE.items()])
                 db.execute("UPDATE settings SET value='ALEJANDRO VON HUMBOLDT' WHERE key='school_name'")
                 db.execute("DELETE FROM settings WHERE key='institution_type'")
                 db.execute('PRAGMA user_version=6')
