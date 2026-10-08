@@ -27,6 +27,10 @@ jobs:
         run: |
           try {
             ./packaging/scan_windows.ps1 -Path audit/incoming
+            $Report = Join-Path $env:RUNNER_TEMP 'Aula-Antivirus'
+            $Details = (Get-Content "$Report/motor.json" -Raw) + "`n" + (Get-Content "$Report/resultado.txt" -Raw) + "`n" + (Get-Content "$Report/archivos.json" -Raw)
+            $Details = $Details.Substring(0,[Math]::Min(3500,$Details.Length)).Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Host "::notice title=Defender - resultado del archivo oficial::$Details"
           } catch {
             $Details = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
             Write-Host "::error title=Análisis antivirus::$Details"
