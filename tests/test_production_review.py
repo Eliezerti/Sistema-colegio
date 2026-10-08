@@ -108,6 +108,17 @@ class ProductionReviewTests(unittest.TestCase):
         with self.assertRaises(ValidationError),self.db:
             mutate(self.db,'settings',{'school_name':'Colegio','school_year':2020,'start_month':9,'due_day':10,'logo':'https://other/logo.png'},self.user)
 
+    def test_upgrade_of_another_legacy_school_never_assigns_humboldt_identity(self):
+        with self.db:
+            self.db.execute("UPDATE settings SET value='Otro colegio' WHERE key='school_name'")
+            self.db.execute("UPDATE settings SET value='J-12345678-9' WHERE key='rif'")
+            self.db.execute('PRAGMA user_version=3')
+        initialize(self.path)
+        profile=dict(self.db.execute('SELECT key,value FROM settings'))
+        self.assertEqual(profile['school_name'],'Otro colegio')
+        self.assertEqual(profile['rif'],'J-12345678-9')
+        self.assertEqual(profile['logo'],'');self.assertEqual(profile['legal_name'],'')
+
     def test_template_has_empty_import_sheet_and_separate_instructions_examples_grades(self):
         raw=import_template(True,['Primaria A'],{'school_year':'2026','start_month':'9'})
         with zipfile.ZipFile(io.BytesIO(raw)) as z:

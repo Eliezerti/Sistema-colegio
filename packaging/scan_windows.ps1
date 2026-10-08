@@ -1,8 +1,8 @@
-param([Parameter(Mandatory=$true)][string]$Path)
+param([Parameter(Mandatory=$true)][string]$Path,[string]$ReportDir = '')
 $ErrorActionPreference = 'Stop'
 $Target = (Resolve-Path $Path).Path
 $ReportRoot = if ($env:RUNNER_TEMP) { $env:RUNNER_TEMP } else { [System.IO.Path]::GetTempPath() }
-$ReportDir = Join-Path $ReportRoot 'Aula-Antivirus'
+if (-not $ReportDir) { $ReportDir = Join-Path $ReportRoot 'Aula-Antivirus' }
 New-Item -ItemType Directory -Force -Path $ReportDir | Out-Null
 
 # Scan only with the Microsoft-signed engine; never execute the target file.
@@ -48,3 +48,10 @@ if ($ScanExit -ne 0) {
     throw "Defender devolvió el código $ScanExit. No se ejecutará ni publicará el archivo."
 }
 Write-Host 'El análisis terminó sin detecciones con el motor y las firmas registrados. No sustituye una revisión de Microsoft ni garantiza ausencia de malware.'
+$Evidence = "Motor $($Status.AMEngineVersion); firmas $($Status.AntivirusSignatureVersion); actualización $($Status.AntivirusSignatureLastUpdated.ToString('o')); salida $ScanExit. " + (($Output | ForEach-Object { "$_" }) -join ' ')
+$Evidence = $Evidence.Substring(0,[Math]::Min(2500,$Evidence.Length)).Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+Write-Host "::notice title=Resultado Defender::$Evidence"
+Get-ChildItem $Target -File -Filter 'Aula-Colegio-Instalador-*.exe' | ForEach-Object {
+    $Digest = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+    Write-Host "::notice title=Archivo analizado::$($_.Name) SHA256 $Digest"
+}

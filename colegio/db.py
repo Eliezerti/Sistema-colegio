@@ -226,13 +226,16 @@ def initialize(path):
         if 'method' not in {r['name'] for r in db.execute('PRAGMA table_info(expenses)')}:
             db.execute("ALTER TABLE expenses ADD COLUMN method TEXT NOT NULL DEFAULT 'No especificado'")
         db.execute("INSERT OR IGNORE INTO settings VALUES('backup_directory','')")
-        if existing_school and db.execute('PRAGMA user_version').fetchone()[0] < 4:
+        profile = dict(db.execute('SELECT key,value FROM settings'))
+        legacy_owner = (profile.get('rif') == SCHOOL_PROFILE['rif'] or profile.get('logo') == SCHOOL_PROFILE['logo']
+            or profile.get('school_name') in (SCHOOL_NAME,'U.E.C. Alejandro Von Humboldt','Alejandro Von Humboldt','ALEJANDRO VON HUMBOLDT'))
+        if existing_school and legacy_owner and db.execute('PRAGMA user_version').fetchone()[0] < 4:
             # Apply the owner's fiscal identity once, without altering issued snapshots
             # or operational settings. Later manual edits survive every restart.
-            db.executemany('UPDATE settings SET value=? WHERE key=?', [(v,k) for k,v in SCHOOL_PROFILE.items()])
+            db.executemany("UPDATE settings SET value=? WHERE key=? AND value=''", [(v,k) for k,v in SCHOOL_PROFILE.items()])
             db.execute("UPDATE settings SET value='U.E.C. Alejandro Von Humboldt' WHERE key='school_name' AND value='Mi colegio'")
             audit(db, None, 'school-profile', SCHOOL_PROFILE)
-        if existing_school and db.execute('PRAGMA user_version').fetchone()[0] < 7:
+        if existing_school and legacy_owner and db.execute('PRAGMA user_version').fetchone()[0] < 7:
             db.execute("UPDATE settings SET value=? WHERE key='school_name' AND value IN (?,?,?,?)",
                        (SCHOOL_NAME,'U.E.C. Alejandro Von Humboldt','Alejandro Von Humboldt','ALEJANDRO VON HUMBOLDT','Mi colegio'))
             audit(db,None,'institution-identity',{'institution_type':INSTITUTION_TYPE})

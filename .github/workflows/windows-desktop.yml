@@ -74,6 +74,15 @@ jobs:
             dist/Aula-Colegio-Instalador-*.exe
             dist/Aula-Colegio-Instalador-*.sha256
           if-no-files-found: error
+      - name: Conservar resultados de Defender
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Defender-Windows
+          path: |
+            ${{ runner.temp }}/Aula-Antivirus/
+            ${{ runner.temp }}/defender-after-runtime/
+          if-no-files-found: ignore
       - name: Publicar instalador descargable
         shell: pwsh
         env:
