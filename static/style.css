@@ -195,3 +195,52 @@ body{font-size:14px}.main{max-width:1800px}.card{box-shadow:var(--shadow);border
 @media print{.receipt-balance{break-inside:avoid;background:#f6f9fb!important}.receipt-balance-note{break-inside:avoid}.school-placeholder{background:transparent}}
 .payment-receipt .receipt-charges th:nth-child(1){width:40%}.payment-receipt .receipt-charges th:nth-child(2){width:24%}.payment-receipt .receipt-charges th:nth-child(3),.payment-receipt .receipt-charges th:nth-child(4){width:18%;text-align:right}.payment-receipt .receipt-charges td:nth-child(3),.payment-receipt .receipt-charges td:nth-child(4){text-align:right;white-space:nowrap}.receipt-ticket .receipt-charges th:nth-child(1){width:32%}.receipt-ticket .receipt-charges th:nth-child(2){width:24%}.receipt-ticket .receipt-charges th:nth-child(3),.receipt-ticket .receipt-charges th:nth-child(4){width:22%}.receipt-ticket .receipt-charges th{letter-spacing:0;font-size:7px}
 .logo-editor{flex-direction:row}.logo-editor label{min-width:0}.logo-editor input[type=file]{width:100%}
+
+/* Aula Colegio / ELIEZER PEREZ — supplied product identity, separate from fiscal letterheads. */
+@font-face{font-family:Lato;src:url('/brand/Lato-Regular.ttf') format('truetype');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:Lato;src:url('/brand/Lato-Bold.ttf') format('truetype');font-weight:600 900;font-style:normal;font-display:swap}
+:root{--ink:#1F2937;--muted:#64748B;--green:#2563EB;--line:#E2E8F0;--bg:#F8FAFC;--lime:#DBEAFE;--shadow:0 8px 28px #0F172A08;--accent:#10B981;--deep:#1E3A8A}
+body{font-family:Lato,'Segoe UI',system-ui,sans-serif}
+.sidebar{background:linear-gradient(165deg,#132247,#0F172A 55%);color:#E2E8F0}
+.product-brand{margin-bottom:22px;line-height:0}
+.product-brand img{width:100%;height:auto;object-fit:contain;object-position:left;background:transparent;border-radius:0;max-width:360px}
+.sidebar .product-brand{margin:0 -6px 20px}
+.sidebar .school-context{padding:13px 10px;border:1px solid #FFFFFF14;border-radius:10px;background:#FFFFFF06;margin-bottom:6px}
+.school-context{display:flex;align-items:center;gap:10px;margin-bottom:22px;min-width:0}
+.school-context img,.school-context .school-placeholder{width:34px;height:34px;object-fit:contain;border-radius:6px;flex-shrink:0}
+.school-context img{background:#fff;padding:2px}
+.school-context>div{min-width:0}.school-context small{display:block;font-size:10px;line-height:1.6;color:#64748B}
+.school-context b{display:block;font-size:12px;line-height:1.5;overflow-wrap:anywhere;font-weight:600}
+.sidebar .school-context small{color:#94A3B8}.sidebar .school-context b{color:#E2E8F0}
+.nav-label{color:#94A3B8}.nav-button{color:#CBD5E1}.nav-button.active{background:#2563EB;color:#fff;box-shadow:0 4px 12px #0002}
+.nav-button.active .count{background:#FFFFFF26}.nav-button:hover:not(.active){background:#FFFFFF0D}
+.local-pill,.profile-text small,.logout{color:#94A3B8}.dot{background:#10B981}.avatar{background:#1E3A8A;color:#DBEAFE}
+.btn:hover{background:#F1F5F9}.btn.primary:hover{background:#1E40AF;box-shadow:0 4px 12px #2563EB20}
+input,select,textarea,.field input,.field select,.field textarea{border-color:#CBD5E1}
+input:focus,select:focus,textarea:focus,.field input:focus,.field select:focus,.field textarea:focus{border-color:#2563EB;outline:3px solid #2563EB18}
+.page-heading p,.dashboard-unit,.dashboard-received,.dashboard-context dt,.dashboard-alert small{color:#64748B}
+.stat-icon{background:#EFF6FF}.stat.featured{background:#EFF6FF;border-color:#BFDBFE}
+.badge{background:#ECFDF5;color:#047857}.badge.neutral{background:#F1F5F9;color:#64748B}.text-green{color:#047857}
+.school-placeholder{background:#EFF6FF;color:#2563EB}
+.notice:not(.warning),.conversion{background:#EFF6FF;border-color:#DBEAFE}.step{border-color:#BFDBFE}
+.balance-hero,.mini-summary>div{background:#EFF6FF}.collection-note{border-color:#10B981}
+.bar-track{background:#F1F5F9}.bar{background:#3B82F6}
+.tab.active{background:#EFF6FF;border-color:#BFDBFE}.empty .icon{color:#94A3B8}
+.settings-intro{background:linear-gradient(115deg,#EFF6FF,#F8FAFC)}
+.settings-disclosure summary,.logo-editor,thead th{background:#F8FAFC;color:#64748B}
+.settings-disclosure summary{color:#1F2937}.settings-disclosure summary:focus-visible{outline-color:#2563EB80}
+.verification-result.ok{background:#ECFDF5;color:#047857}
+tbody tr:hover{background:#F8FAFC}td{border-bottom-color:#F1F5F9}
+#toast{background:#1E3A8A}#toast.failure{background:#9e4437}
+dialog::backdrop{background:#0F172A66}
+.auth-story{background:linear-gradient(150deg,#0F172A,#1E3A8A);padding:7vw 6vw}
+.auth-story .product-brand{margin-bottom:58px;max-width:400px}
+.auth-story .product-brand img{width:100%;height:auto;max-width:400px}
+.auth-story .school-context{margin-top:-28px;margin-bottom:38px;color:#E2E8F0}.auth-story .school-context small{color:#CBD5E1}
+.auth-story h1 em{color:#6EE7B7}.auth-story p{color:#CBD5E1}
+.auth-story:after{border-color:#3B82F630;box-shadow:0 0 0 45px #3B82F612,0 0 0 90px #3B82F608}
+.rate-screen{background:var(--bg)}.gate-card .product-brand{max-width:300px;margin-bottom:20px}
+.dashboard-overview{border-color:#E2E8F0}.dashboard-collected{background:linear-gradient(115deg,#EFF6FF,#F8FAFC);border-color:#DBEAFE}
+.dashboard-collected .dashboard-amount{color:#1E3A8A}.dashboard-today-tag{background:#DBEAFE;color:#1E40AF}
+.dashboard-received b{color:#1E3A8A}.dashboard-alert:hover{background:#EFF6FF}.dashboard-clear>.icon{background:#ECFDF5;color:#047857}
+@media(max-width:700px){.sidebar .product-brand{max-width:230px}.auth-story .product-brand{margin-bottom:26px;max-width:310px}.auth-story{padding:32px 28px}.auth-story .school-context{margin-top:0;margin-bottom:20px}}

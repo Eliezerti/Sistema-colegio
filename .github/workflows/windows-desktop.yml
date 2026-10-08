@@ -92,7 +92,7 @@ jobs:
           $Body = @'
           Aplicación local para una PC Windows 10/11 de 64 bits. Incluye Python, ventana propia, acceso directo y perfil de pruebas independiente. Una nueva instalación solicita el nombre del colegio y crea una base vacía; las actualizaciones conservan los datos e identidad del colegio existente. Instala con la misma cuenta de Windows y crea un respaldo externo antes de actualizar.
 
-          Novedades: recibos administrativos con abono/pago completo, deuda anterior y saldo congelado al cobrar; logo propio PNG/JPG incluido en la base y sus respaldos; configuración y mantenimiento simplificados; verificación de integridad y aplicaciones de cobros; respaldo manual; recuperación local con nombres de administradores; plantilla Excel con instrucciones, ejemplos y grados separados, errores por fila y guía completa. El menú Inicio incluye guías de importación y mantenimiento.
+          Novedades: nueva identidad de Aula Colegio · ELIEZER PEREZ. Logos oficiales, paleta azul y verde, tipografía Lato incluida para uso sin internet, iconos de Windows y accesos directos actualizados. La marca del producto se distingue de la identidad fiscal de cada colegio: conserva escudo, RIF, configuración, datos y documentos históricos. Incluye el mismo motor de cobros, respaldo y mantenimiento de la versión anterior.
 
           Emite comprobantes administrativos, no facturas fiscales. Esta versión no certifica cumplimiento de todos los requisitos de SENIAT o Zona Educativa. La tasa BCV se registra manualmente. Cerrar X oculta la aplicación junto al reloj; usa Salir y cerrar Aula para detenerla. WebView2 de Microsoft puede requerir conexión en la primera instalación.
 
@@ -100,7 +100,7 @@ jobs:
           '@
           [System.IO.File]::WriteAllText('dist/notas-version.txt', $Body, [System.Text.UTF8Encoding]::new($false))
           # Keep the artifact as a draft until checks and its release notes have been reviewed.
-          $ReleaseOutput = @(gh release create "desktop-$Version" "dist/Aula-Colegio-Instalador-$Version.exe" "dist/Aula-Colegio-Instalador-$Version.exe.sha256" "descargas/Aula-Windows.zip" "descargas/Aula-Windows.sha256" --target $env:GITHUB_SHA --title "Colegio - Instalador Windows $Version - revisión" --notes-file dist/notas-version.txt --draft 2>&1)
+          $ReleaseOutput = @(gh release create "desktop-$Version" "dist/Aula-Colegio-Instalador-$Version.exe" "dist/Aula-Colegio-Instalador-$Version.exe.sha256" "descargas/Aula-Windows.zip" "descargas/Aula-Windows.sha256" --target $env:GITHUB_SHA --title "Aula Colegio - Windows $Version - revisión" --notes-file dist/notas-version.txt --draft 2>&1)
           $ReleaseExit = $LASTEXITCODE
           $ReleaseOutput | ForEach-Object { Write-Host $_ }
           if ($ReleaseExit -ne 0) {

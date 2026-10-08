@@ -517,6 +517,10 @@ class Handler(BaseHTTPRequestHandler):
                           '/manifest.webmanifest': 'manifest.webmanifest', '/service-worker.js': 'service-worker.js',
                           '/offline.html': 'offline.html', '/icon-mobile-192.png': 'icon-mobile-192.png',
                           '/icon-mobile-512.png': 'icon-mobile-512.png'}
+                # Serve only the bundled product assets; school logos remain in the school profile.
+                for name in ('logo-light.png', 'logo-dark.png', 'logo-compact.png', 'icon.png',
+                             'Lato-Regular.ttf', 'Lato-Bold.ttf'):
+                    assets['/brand/' + name] = 'brand/' + name
                 if url.path not in assets:
                     self.respond(404, {'error': 'Página inexistente.'})
                     return
