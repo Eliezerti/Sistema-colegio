@@ -10,6 +10,20 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Recuperar el informe del primer análisis
+        uses: actions/download-artifact@v4
+        with:
+          name: Informe-Defender-1.0.8
+          run-id: 37728590559
+          github-token: ${{ github.token }}
+          path: audit/first-report
+      - name: Mostrar motor, firmas y resultado del primer análisis
+        shell: pwsh
+        run: |
+          $Report = 'audit/first-report'
+          $Details = (Get-Content "$Report/motor.json" -Raw) + "`n" + (Get-Content "$Report/resultado.txt" -Raw) + "`n" + (Get-Content "$Report/archivos.json" -Raw)
+          $Details = $Details.Substring(0,[Math]::Min(3500,$Details.Length)).Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+          Write-Host "::notice title=Primer informe Defender - archivo oficial::$Details"
       - uses: actions/download-artifact@v4
         with:
           name: Aula-Windows-Instalador

@@ -15,7 +15,13 @@ $Status = Get-MpComputerStatus
 if (-not $Status.AMServiceEnabled -or -not $Status.AntivirusEnabled) {
     throw 'Microsoft Defender no está activo. No se ha verificado el archivo y no se publicará.'
 }
-Update-MpSignature -ErrorAction Stop
+try {
+    Update-MpSignature -ErrorAction Stop
+} catch {
+    # Use the supported Microsoft update source when Windows Update fails.
+    Write-Host 'Windows Update no actualizó las firmas; se intenta el canal oficial MMPC.'
+    Update-MpSignature -UpdateSource MMPC -ErrorAction Stop
+}
 $Status = Get-MpComputerStatus
 $Status | Select-Object AMProductVersion,AMEngineVersion,AntivirusSignatureVersion,AntivirusSignatureLastUpdated |
     ConvertTo-Json | Set-Content (Join-Path $ReportDir 'motor.json') -Encoding utf8

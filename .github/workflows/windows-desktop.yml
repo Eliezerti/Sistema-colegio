@@ -86,5 +86,12 @@ jobs:
           '@
           [System.IO.File]::WriteAllText('dist/notas-version.txt', $Body, [System.Text.UTF8Encoding]::new($false))
           # Public downloads are paused while the 1.0.8 Defender report is investigated.
-          gh release create "desktop-$Version" "dist/Aula-Colegio-Instalador-$Version.exe" "dist/Aula-Colegio-Instalador-$Version.exe.sha256" "descargas/Aula-Movil-Web.zip" "descargas/Aula-Movil-Web.sha256" --target $env:GITHUB_SHA --title "Colegio - Instalador Windows $Version - revisión" --notes-file dist/notas-version.txt --draft
-          if ($LASTEXITCODE -ne 0) { throw 'No se pudo publicar el instalador.' }
+          $ReleaseOutput = @(gh release create "desktop-$Version" "dist/Aula-Colegio-Instalador-$Version.exe" "dist/Aula-Colegio-Instalador-$Version.exe.sha256" "descargas/Aula-Movil-Web.zip" "descargas/Aula-Movil-Web.sha256" --target $env:GITHUB_SHA --title "Colegio - Instalador Windows $Version - revisión" --notes-file dist/notas-version.txt --draft 2>&1)
+          $ReleaseExit = $LASTEXITCODE
+          $ReleaseOutput | ForEach-Object { Write-Host $_ }
+          if ($ReleaseExit -ne 0) {
+            $Details = ($ReleaseOutput | ForEach-Object { "$_" }) -join "`n"
+            $Details = $Details.Substring(0,[Math]::Min(3500,$Details.Length)).Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Host "::error title=Guardar borrador del instalador::$Details"
+            throw 'No se pudo guardar el borrador del instalador; no se ha publicado una descarga pública.'
+          }
