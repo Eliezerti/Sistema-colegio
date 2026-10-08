@@ -41,12 +41,14 @@ Source: "..\build\MicrosoftEdgeWebview2Setup.exe"; DestDir: "{tmp}"; Flags: dele
 [Icons]
 Name: "{group}\Colegio Alejandro Von Humboldt"; Filename: "{app}\Aula.exe"
 Name: "{group}\Aula - Pruebas"; Filename: "{app}\Aula.exe"; Parameters: "--demo"
+Name: "{group}\Aula - Probar en teléfono"; Filename: "{app}\Aula.exe"; Parameters: "--demo-phone"
 Name: "{group}\Configurar Aula"; Filename: "{app}\Aula.exe"; Parameters: "--configure"
 Name: "{group}\Restaurar respaldo"; Filename: "{app}\Aula.exe"; Parameters: "--restore"
 Name: "{group}\Recuperar clave del administrador"; Filename: "{app}\Aula.exe"; Parameters: "--reset-password"
 Name: "{group}\Abrir carpeta de datos"; Filename: "{app}\Aula.exe"; Parameters: "--data-folder"
 Name: "{userdesktop}\Colegio Alejandro Von Humboldt"; Filename: "{app}\Aula.exe"; Tasks: desktopicon
 Name: "{userdesktop}\Aula - Pruebas"; Filename: "{app}\Aula.exe"; Parameters: "--demo"; Tasks: desktopicon
+Name: "{userdesktop}\Aula - Probar en teléfono"; Filename: "{app}\Aula.exe"; Parameters: "--demo-phone"; Tasks: desktopicon
 Name: "{userstartup}\Colegio Alejandro Von Humboldt"; Filename: "{app}\Aula.exe"; Tasks: startup
 
 [Run]

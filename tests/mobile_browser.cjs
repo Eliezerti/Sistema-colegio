@@ -3,7 +3,7 @@ const {chromium} = require('playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 (async () => {
-  const browser = await chromium.launch({executablePath:process.env.CHROMIUM_PATH || (fs.existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined),headless:true,args:['--no-sandbox']});
+  const browser = await chromium.launch({executablePath:process.env.CHROMIUM_PATH || (fs.existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined),headless:true,args:['--no-sandbox', ...(process.env.AULA_TEST_PIN ? ['--no-proxy-server'] : [])]});
   const context = await browser.newContext({viewport:{width:375,height:812},isMobile:true,hasTouch:true});
   const page = await context.newPage(), errors = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -14,11 +14,18 @@ const fs = require('node:fs');
   const save = async () => { await page.locator('dialog[open] button[type="submit"]').click(); await page.waitForFunction(() => !document.querySelector('dialog').open); };
   try {
     await page.goto(process.env.AULA_TEST_URL);
+    if (process.env.AULA_TEST_PIN) {
+      assert.match(await page.locator('body').innerText(),/Prueba Aula en tu teléfono/);
+      await page.getByLabel('Código de 6 dígitos').fill(process.env.AULA_TEST_PIN);
+      await page.getByRole('button',{name:'Entrar a la prueba',exact:true}).click();
+      await page.getByRole('button',{name:/Entrar como administrador de prueba/}).click();
+    } else {
     await page.getByLabel('Nombre del administrador').fill('Administradora móvil');
     await fit('Mobile first setup fits');
     await page.getByLabel('Usuario',{exact:true}).fill('admin');
     await page.getByLabel(/^Contraseña/).fill('Pruebas-movil-2026');
     await page.getByRole('button',{name:'Crear mi cuenta'}).click();
+    }
     await page.locator('form[data-endpoint="confirm-rate"] [name="rate"]').fill('100');
     await fit('Mobile rate gate fits');
     await page.getByRole('button',{name:'Confirmar tasa y entrar'}).click();
@@ -63,6 +70,12 @@ const fs = require('node:fs');
       const dimensions = await page.evaluate(src => new Promise(resolve => { const img = new Image(); img.onload = () => resolve([img.naturalWidth,img.naturalHeight]); img.src = src; }), `/icon-mobile-${size}.png`);
       assert.deepEqual(dimensions,[size,size]);
     }
+    if (process.env.AULA_TEST_PIN) {
+      assert.equal(await page.evaluate(() => isSecureContext),false,'Actual LAN HTTP context exercises crypto UUID fallback');
+      assert.match(await page.evaluate(() => requestKey()),/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/);
+      assert.equal(await page.locator('#phone-install').isVisible(),false,'Wi-Fi trial is browser access');
+      assert.match(await page.locator('.demo-banner').innerText(),/Modo prueba/);
+    } else {
     // Loopback is a browser-trusted context: register explicitly for this test.
     // Production registration is restricted to the private HTTPS origin.
     await page.evaluate(async () => { await navigator.serviceWorker.register('/service-worker.js'); await navigator.serviceWorker.ready; });
@@ -76,8 +89,13 @@ const fs = require('node:fs');
     assert.equal(await page.locator('.layout').count(),0);
     await context.setOffline(false); await page.getByRole('link',{name:'Volver a intentar'}).click();
     await page.getByRole('button',{name:'Confirmar tasa y entrar'}).click(); await page.locator('.layout').waitFor();
-    await click('mobile-menu'); await click('logout'); await page.getByRole('button',{name:'Iniciar sesión'}).waitFor();
+    }
+    await click('mobile-menu'); await click('logout');
+    await page.getByRole('button',{name:process.env.AULA_TEST_PIN ? /Entrar como administrador de prueba/ : 'Iniciar sesión'}).waitFor();
+    if(process.env.AULA_TEST_PIN)await click('demo-exit');
     assert.deepEqual(errors,[]);
-    console.log('Móvil verificado: matrícula, cobro, PDF, 12 secciones, menú y cierre de sesión, teléfono/tablet, manifiesto, pérdida de conexión y caché sin datos financieros.');
+    console.log(process.env.AULA_TEST_PIN
+      ? 'Wi-Fi verificado: código de acceso, administrador de prueba, matrícula, cobro, PDF, 12 secciones, teléfono/tablet, UUID en HTTP, cierre y eliminación de datos temporales.'
+      : 'Móvil verificado: matrícula, cobro, PDF, 12 secciones, menú y cierre de sesión, teléfono/tablet, manifiesto, pérdida de conexión y caché sin datos financieros.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -8,6 +8,8 @@ El **instalador de escritorio para Windows 10/11 de 64 bits** se publica en [Ver
 
 ### Teléfono Android / iPhone
 
+**Para probarla sin configurar Tailscale:** conecta PC y teléfono al mismo Wi-Fi, abre **Aula - Probar en teléfono** en la PC y escribe en el navegador del teléfono la dirección y el código que muestra Aula. Usa **Entrar como administrador de prueba**. Los datos son temporales y están separados de la base real. Mantén abierta la ventana de la PC; al cerrarla termina la prueba y se eliminan esos datos.
+
 Aula también incluye una **app web instalable** con el logo del colegio y pantallas adaptadas al teléfono. Abre el enlace privado HTTPS en Chrome (Android) → **Instalar aplicación**, o Safari (iPhone) → **Compartir → Añadir a pantalla de inicio**. Antes debes conectar el teléfono a la red privada del colegio. Usa el mismo usuario de Aula; los datos permanecen en la PC principal y esa PC debe estar encendida. El acceso móvil necesita conexión para consultar o guardar operaciones.
 
 [Guía de instalación móvil y conexión](docs/telefono.md) · [Descargar HTML/CSS/JavaScript editable](descargas/Aula-Movil-Web.zip). El ZIP contiene la interfaz; requiere el servidor de Aula y no funciona por sí solo abriendo un archivo HTML.
@@ -326,6 +328,7 @@ Validación opcional de interfaz, con Node, Playwright y Chromium disponibles:
 python tests/run_browser.py
 python tests/run_browser.py --demo
 python tests/run_browser.py --mobile
+python tests/run_browser.py --phone
 ```
 
 Estos comandos crean datos ficticios en carpetas temporales e inician sus propios servidores. El primero valida matrícula, mensualidades, cobro en Bs, recibos de alumnos y empleados, morosidad, egresos, reportes, diseño adaptable, permisos y vaciado protegido. El segundo comprueba el administrador de prueba, PDF identificado como prueba, recarga y varias pestañas, cierre de la última pestaña y eliminación física de los datos temporales. Las pruebas integradas también comprueban reinicio tras proceso matado, rechazo de un directorio real en modo prueba, respaldo antes de vaciar, fallo del segundo destino y conservación de numeraciones. Para usar otro Chromium, define `CHROMIUM_PATH`. Las pruebas opcionales no son una dependencia del programa.

@@ -186,3 +186,4 @@ body>#app>.demo-banner{margin:15px 24px 0}.demo-banner+.rate-screen{min-height:c
 }
 @media(prefers-reduced-motion:reduce){.sidebar{transition:none}}
 @media print{.mobile-header,.menu-backdrop,#phone-install,#connection-status{display:none!important}}
+.phone-demo-info{background:#edf5e8;color:#285741;border-color:#d2e5cb}.phone-demo-info .data-path{display:block;font-size:20px;margin:12px 0;user-select:all}.phone-demo-code{font-size:25px;letter-spacing:5px;user-select:all}.phone-demo-info small{color:#426c55}

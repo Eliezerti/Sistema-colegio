@@ -4,7 +4,14 @@ const app = $('#app'), modal = $('#modal');
 let state, session, page = 'dashboard', filters = {}, reportFrom = '', reportTo = '';
 let receiptPaper = 'half-letter';
 let demoMode = false, demoToken = '', demoTimer;
-const demoClient = crypto.randomUUID();
+function requestKey() {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 15) | 64; bytes[8] = (bytes[8] & 63) | 128;
+  const hex = [...bytes].map(b => b.toString(16).padStart(2,'0')).join('');
+  return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+}
+const demoClient = requestKey();
 let yearCohort, yearPreview, yearRequest;
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const number = n => new Intl.NumberFormat('es-VE', {minimumFractionDigits:2, maximumFractionDigits:2}).format(n);
@@ -214,7 +221,7 @@ function updatePayroll() {
 function openPayment(id) {
   const candidates=state.students.filter(s=>s.balance>0);
   if(!candidates.length) { showModal('Sin saldos pendientes','Las mensualidades hasta el mes actual ya están calculadas.',`<p>No hay deuda por cobrar en las matrículas registradas. Para un anticipo puedes preparar el mes futuro que corresponda, o crear un cargo de inscripción u otro concepto.</p><div class="form-actions">${btn('Crear cargo','charge','primary')}${btn('Preparar otro período','generate')}</div>`);return; }
-  showModal('Registrar pago','El abono se aplica a los cargos pendientes más antiguos.',`<form data-endpoint="payments"><input type="hidden" name="request_key" value="${crypto.randomUUID()}"><div class="form-grid">${select('Alumno','student_id',candidates.map(s=>[s.id,`${s.name} · ${usd(s.balance)}`]),id||candidates[0].id,'required')}${field('Fecha del pago','paid_on',state.today,'date',`required max="${state.today}"`)}${select('Moneda recibida','currency',[['USD','Dólares · USD'],['VES','Bolívares · Bs']],'USD')}${field('Importe recibido','amount','','number','required min="0.01" step="0.01" max="999999999"')}${select('Método de pago','method',['Efectivo','Transferencia','Tarjeta','Otro'].map(m=>[m,m]),'Transferencia')}${field('Referencia bancaria / comprobante','reference','','text','maxlength="200"')}<div class="conversion" id="conversion"></div><div class="full" id="duplicate-reference"></div>${textarea('Observaciones','notes')}</div><div class="actions" style="margin-top:15px">${btn('Completar saldo','full-payment','small')}${btn('Registrar tasa BCV','rate-inline','small')}</div>${formFoot('Registrar y emitir recibo')}</form>`);
+  showModal('Registrar pago','El abono se aplica a los cargos pendientes más antiguos.',`<form data-endpoint="payments"><input type="hidden" name="request_key" value="${requestKey()}"><div class="form-grid">${select('Alumno','student_id',candidates.map(s=>[s.id,`${s.name} · ${usd(s.balance)}`]),id||candidates[0].id,'required')}${field('Fecha del pago','paid_on',state.today,'date',`required max="${state.today}"`)}${select('Moneda recibida','currency',[['USD','Dólares · USD'],['VES','Bolívares · Bs']],'USD')}${field('Importe recibido','amount','','number','required min="0.01" step="0.01" max="999999999"')}${select('Método de pago','method',['Efectivo','Transferencia','Tarjeta','Otro'].map(m=>[m,m]),'Transferencia')}${field('Referencia bancaria / comprobante','reference','','text','maxlength="200"')}<div class="conversion" id="conversion"></div><div class="full" id="duplicate-reference"></div>${textarea('Observaciones','notes')}</div><div class="actions" style="margin-top:15px">${btn('Completar saldo','full-payment','small')}${btn('Registrar tasa BCV','rate-inline','small')}</div>${formFoot('Registrar y emitir recibo')}</form>`);
   updateConversion();
 }
 function updateConversion() {
@@ -611,7 +618,10 @@ function whatsappLink(phone,text){
 }
 
 function demoBanner(){
-  return demoMode?`<aside class="demo-banner" aria-label="Modo prueba"><div><b>Modo prueba · Datos temporales</b><p>Todo lo que registres aquí se elimina al cerrar. Los datos reales del colegio están separados.</p></div>${btn('Cerrar y borrar pruebas','demo-exit','small')}</aside>`:'';
+  if(!demoMode)return '';
+  const params=new URLSearchParams(location.search),address=params.get('phone_url'),code=params.get('phone_code');
+  const phone=address&&/^\d{6}$/.test(code||'')?`<aside class="demo-banner phone-demo-info"><div><b>Abre Aula en tu teléfono</b><p>Conecta ambos equipos al mismo Wi-Fi. En el navegador del teléfono escribe:</p><strong class="data-path">${esc(address)}</strong><p>Código de acceso: <strong class="phone-demo-code">${esc(code)}</strong></p><small>Mantén esta ventana abierta mientras pruebas en el teléfono. Al cerrar la ventana de la PC, la prueba termina y se borran sus datos.</small></div></aside>`:'';
+  return phone+`<aside class="demo-banner" aria-label="Modo prueba"><div><b>Modo prueba · Datos temporales</b><p>Todo lo que registres aquí se elimina al cerrar. Los datos reales del colegio están separados.</p></div>${btn('Cerrar y borrar pruebas','demo-exit','small')}</aside>`;
 }
 function demoAuth(){
   state=undefined;modal.close();$('#print-area').replaceChildren();document.title='Modo prueba · Aula';

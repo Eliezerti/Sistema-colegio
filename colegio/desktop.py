@@ -188,7 +188,7 @@ def tray_icon(window,quit_app):
     return icon
 
 
-def launch_window(url,*,host=None,demo=False,storage=None,smoke=False):
+def launch_window(url,*,host=None,demo=False,storage=None,smoke=False,smoke_phone=False):
     import webview
     from webview.menu import Menu,MenuAction
     webview.settings['ALLOW_DOWNLOADS']=True
@@ -222,6 +222,8 @@ def launch_window(url,*,host=None,demo=False,storage=None,smoke=False):
                         if gate:break
                         time.sleep(.1)
                     if not gate:raise RuntimeError('No se pudo entrar como administrador de prueba en la ventana.')
+                if smoke_phone and not window.evaluate_js("Boolean(document.querySelector('.phone-demo-info .phone-demo-code'))"):
+                    raise RuntimeError('No se mostró la dirección y el código para la prueba en teléfono.')
                 if tray:
                     if closing() is not False:raise RuntimeError('El cierre de la ventana no conserva el servidor.')
                     window.show();window.restore()
@@ -252,29 +254,56 @@ def setup_logging(directory):
     return path
 
 
-def self_test(demo=False):
+def self_test(demo=False,phone=False):
     # A temporary base only; never inspect or initialize the owner's real data.
     from .branding import LOGO_FILE,pdf_logo
     from .pdf_fonts import font_data
     setup_logging(Path(tempfile.gettempdir())/'AulaColegio-Compilacion')
+    demo=demo or phone
     with tempfile.TemporaryDirectory(prefix='aula-windows-smoke-') as temp:
         assert pdf_logo(LOGO_FILE)
         assert font_data('LiberationSans-Regular.ttf') and font_data('LiberationSans-Bold.ttf')
         with DesktopHost(temp,port=0,demo=demo,demo_root=Path(temp)/'pruebas') as host:
             disposable=host.directory
-            launch_window(host.url,host=host,demo=demo,storage=host.directory/'webview',smoke=True)
+            if phone:
+                from .phone_demo import PhoneDemo
+                with PhoneDemo(host.server,'127.0.0.1',0) as gateway:
+                    launch_window(gateway.desktop_url,host=host,demo=True,storage=host.directory/'webview',smoke=True,smoke_phone=True)
+            else:launch_window(host.url,host=host,demo=demo,storage=host.directory/'webview',smoke=True)
         if demo and disposable.exists():raise RuntimeError('No se eliminaron los datos de prueba al cerrar la ventana.')
+
+
+def choose_phone_address():
+    import tkinter as tk
+    from tkinter import ttk
+    from .phone_demo import local_addresses
+    addresses=local_addresses()
+    if not addresses:raise ValueError('Conecta esta PC al Wi-Fi y vuelve a abrir «Probar en teléfono».')
+    root=tk.Tk();root.title('Probar en teléfono');root.resizable(False,False)
+    body=ttk.Frame(root,padding=24);body.pack(fill='both',expand=True)
+    ttk.Label(body,text='Prueba Aula desde tu teléfono',font=('Segoe UI',16,'bold')).pack(anchor='w')
+    ttk.Label(body,text='Conecta la PC y el teléfono al mismo Wi-Fi.\nEsta prueba usa datos temporales y no modifica la base real.\nAl abrir, Aula mostrará la dirección y el código para el teléfono.',wraplength=470).pack(anchor='w',pady=15)
+    ttk.Label(body,text='Dirección de la conexión Wi-Fi de esta PC').pack(anchor='w')
+    address=tk.StringVar(value=addresses[0])
+    ttk.Combobox(body,textvariable=address,values=addresses,state='readonly',width=32).pack(anchor='w',pady=8)
+    ttk.Label(body,text='Si hay varias conexiones, elige la del Wi-Fi, no la de una VPN.\nSi Windows pregunta, permite el acceso a redes privadas.',wraplength=470).pack(anchor='w',pady=10)
+    result=[]
+    def start():result.append(address.get());root.destroy()
+    ttk.Button(body,text='Crear prueba por Wi-Fi',command=start).pack(anchor='e',pady=10)
+    root.mainloop()
+    return result[0] if result else None
 
 
 def main():
     parser=argparse.ArgumentParser(description='Aplicación de escritorio del colegio.')
     actions=parser.add_mutually_exclusive_group()
-    for name in ('demo','configure','restore','reset-password','data-folder','self-test','self-test-demo'):
+    for name in ('demo','demo-phone','configure','restore','reset-password','data-folder','self-test','self-test-demo','self-test-phone'):
         actions.add_argument('--'+name,action='store_true')
     args=parser.parse_args()
     directory=None
     try:
-        if args.self_test or args.self_test_demo:self_test(demo=args.self_test_demo);return
+        if args.self_test or args.self_test_demo or args.self_test_phone:
+            self_test(demo=args.self_test_demo,phone=args.self_test_phone);return
         directory=data_directory();setup_logging(directory)
         if args.data_folder:directory.mkdir(parents=True,exist_ok=True);os.startfile(directory);return
         if args.restore or args.reset_password:
@@ -282,19 +311,26 @@ def main():
             if current and current['mode']=='client':raise ValueError('Esta computadora se conecta al colegio. La recuperación se hace en la PC principal.')
             recovery(directory,'restore' if args.restore else 'password');return
         if args.configure:configure(directory);return
-        with WindowsInstance(args.demo) as first:
+        demo=args.demo or args.demo_phone
+        with WindowsInstance(demo) as first:
             if not first:return
-            config={'mode':'primary'} if args.demo else read_desktop_config(directory)
+            config={'mode':'primary'} if demo else read_desktop_config(directory)
             if not config:
                 config=configure(directory)
                 if not config:return
             if config['mode']=='client':
                 launch_window(config['remote_url'],storage=directory/'webview-cliente');return
-            with DesktopHost(directory,demo=args.demo) as host:
-                launch_window(host.url,host=host,demo=args.demo,storage=host.directory/'webview')
+            address=choose_phone_address() if args.demo_phone else None
+            if args.demo_phone and not address:return
+            with DesktopHost(directory,demo=demo) as host:
+                if args.demo_phone:
+                    from .phone_demo import PhoneDemo
+                    with PhoneDemo(host.server,address) as phone:
+                        launch_window(phone.desktop_url,host=host,demo=True,storage=host.directory/'webview')
+                else:launch_window(host.url,host=host,demo=demo,storage=host.directory/'webview')
     except (Exception,SystemExit) as error:
         logging.exception('No se pudo iniciar o completar la operación de escritorio')
-        if args.self_test or args.self_test_demo:raise
+        if args.self_test or args.self_test_demo or args.self_test_phone:raise
         import tkinter as tk
         from tkinter import messagebox
         root=tk.Tk();root.withdraw()
