@@ -8,9 +8,20 @@ jobs:
   audit:
     runs-on: windows-2022
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - version: '1.0.8'
+            run_id: '37727443621'
+            sha256: '7852d8436ae2678ad33a1e1b55022e93949754d795f00f5ec517408fe8e5d8ad'
+          - version: '1.0.14'
+            run_id: '37836753883'
+            sha256: 'ed475caff54c5df4be1f7aff5f17d89181fcddf4524dd5cd46ac1e7f3cc91352'
     steps:
       - uses: actions/checkout@v4
       - name: Recuperar el informe del primer análisis
+        if: matrix.version == '1.0.8'
         uses: actions/download-artifact@v4
         with:
           name: Informe-Defender-1.0.8
@@ -18,6 +29,7 @@ jobs:
           github-token: ${{ github.token }}
           path: audit/first-report
       - name: Mostrar motor, firmas y resultado del primer análisis
+        if: matrix.version == '1.0.8'
         shell: pwsh
         run: |
           $Report = 'audit/first-report'
@@ -27,15 +39,24 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: Aula-Windows-Instalador
-          run-id: 37727443621
+          run-id: ${{ matrix.run_id }}
           github-token: ${{ github.token }}
           path: audit/incoming
       - name: Comprobar identidad del archivo reportado
         shell: pwsh
+        env:
+          AUDIT_INSTALLER: Aula-Colegio-Instalador-${{ matrix.version }}.exe
+          AUDIT_SHA256: ${{ matrix.sha256 }}
         run: |
-          $Expected = '7852d8436ae2678ad33a1e1b55022e93949754d795f00f5ec517408fe8e5d8ad'
-          $Actual = (Get-FileHash audit/incoming/Aula-Colegio-Instalador-1.0.8.exe -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($Actual -ne $Expected) { throw 'El archivo no coincide con el instalador reportado. No se continuará.' }
+          $Target = Join-Path 'audit/incoming' $env:AUDIT_INSTALLER
+          $Actual = (Get-FileHash $Target -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($Actual -ne $env:AUDIT_SHA256) { throw 'El archivo no coincide con el instalador oficial. No se continuará.' }
+          $Signature = Get-AuthenticodeSignature $Target
+          $Signer = if ($Signature.SignerCertificate) { $Signature.SignerCertificate.Subject } else { $null }
+          New-Item -ItemType Directory -Force -Path audit/identity | Out-Null
+          [PSCustomObject]@{name=$env:AUDIT_INSTALLER;sha256=$Actual;signatureStatus="$($Signature.Status)";signer=$Signer} |
+            ConvertTo-Json | Set-Content 'audit/identity/archivo.json' -Encoding utf8
+          Write-Host "::notice title=Identidad del instalador::$($env:AUDIT_INSTALLER); SHA256 $Actual; firma $($Signature.Status)"
       - name: Analizar sin ejecutar ni instalar el archivo
         shell: pwsh
         run: |
@@ -54,6 +75,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Informe-Defender-1.0.8
-          path: ${{ runner.temp }}/Aula-Antivirus/*
+          name: Informe-Defender-${{ matrix.version }}
+          path: |
+            ${{ runner.temp }}/Aula-Antivirus/*
+            audit/identity/*
           if-no-files-found: warn
