@@ -94,7 +94,7 @@ jobs:
 
           Aplicación local para una PC Windows 10/11 de 64 bits. Incluye Python, ventana propia, acceso directo y perfil de pruebas independiente. Una nueva instalación solicita el nombre del colegio y crea una base vacía; las actualizaciones conservan los datos e identidad del colegio existente. Instala con la misma cuenta de Windows y crea un respaldo externo antes de actualizar.
 
-          Novedades: diseño original de Aula y primer mes a cobrar independiente del período académico. Las altas e importaciones nuevas comienzan en el mes de carga, sin mensualidades previas salvo que administración elija un mes anterior. La plantilla Excel añade primer_mes_cobro y admite archivos anteriores. Conserva cargos, pagos, recibos y respaldos de alumnos existentes; el pase de año usa el inicio del nuevo período aprobado.
+          Novedades: constancia limpia con Fecha de nacimiento opcional (Pendiente si no se conoce) y mes abreviado en mayúsculas. Editar y Eliminar del directorio visibles junto al nombre; archivo reversible de alumnos y representantes sin borrar pagos, recuperación de fichas y eliminación de grados sin alumnos. Corrección de mensualidades desde Morosidad/Cuenta con vista previa, motivo y protección de pagos y convenios. Confirmación adicional si se adelanta el primer mes al editar. Respaldo previo y posterior. Conserva el diseño original y los datos existentes.
 
           Emite comprobantes administrativos, no facturas fiscales. Esta versión no certifica cumplimiento de todos los requisitos de SENIAT o Zona Educativa. La tasa BCV se registra manualmente. Cerrar X oculta la aplicación junto al reloj; usa Salir y cerrar Aula para detenerla. WebView2 de Microsoft puede requerir conexión en la primera instalación.
 
@@ -102,7 +102,7 @@ jobs:
           '@
           [System.IO.File]::WriteAllText('dist/notas-version.txt', $Body, [System.Text.UTF8Encoding]::new($false))
           # Keep the artifact as a draft until checks and its release notes have been reviewed.
-          $ReleaseOutput = @(gh release create "desktop-$Version" "dist/Aula-Colegio-Instalador-$Version.exe" "dist/Aula-Colegio-Instalador-$Version.exe.sha256" "descargas/Aula-Windows.zip" "descargas/Aula-Windows.sha256" --target $env:GITHUB_SHA --title "Aula - Diseño original - Windows $Version - revisión" --notes-file dist/notas-version.txt --draft 2>&1)
+          $ReleaseOutput = @(gh release create "desktop-$Version" "dist/Aula-Colegio-Instalador-$Version.exe" "dist/Aula-Colegio-Instalador-$Version.exe.sha256" "descargas/Aula-Windows.zip" "descargas/Aula-Windows.sha256" --target $env:GITHUB_SHA --title "Aula - Correcciones y directorios - Windows $Version - revisión" --notes-file dist/notas-version.txt --draft 2>&1)
           $ReleaseExit = $LASTEXITCODE
           $ReleaseOutput | ForEach-Object { Write-Host $_ }
           if ($ReleaseExit -ne 0) {

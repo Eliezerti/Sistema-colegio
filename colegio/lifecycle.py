@@ -11,7 +11,7 @@ def roster_for_year(db,year):
     year=integer(year,2000,2099)
     students=[dict(s) for s in db.execute('''SELECT s.*,gr.name AS grade_name,g.name AS guardian_name
         FROM students s JOIN grades gr ON gr.id=s.grade_id JOIN guardians g ON g.id=s.guardian_id
-        WHERE school_year=? ORDER BY gr.name,s.name''',(year,))]
+        WHERE school_year=? AND s.archived=0 ORDER BY gr.name,s.name''',(year,))]
     return {'source_year':year,'students':students,'preview_hash':hashlib.sha256(json.dumps(students,sort_keys=True).encode()).hexdigest()}
 
 

@@ -17,6 +17,27 @@ def amount(cents, currency='USD'):
     return f'{currency} {value}'
 
 
+SHORT_MONTHS = ('ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC')
+
+
+def school_month(value):
+    try:
+        parsed = datetime.strptime(value, '%Y-%m')
+        return f'{SHORT_MONTHS[parsed.month-1]}. {parsed.year:04d}'
+    except (ValueError, TypeError):
+        return 'Pendiente'
+
+
+def school_birth_date(value):
+    try:
+        parsed = datetime.strptime(value, '%Y-%m-%d')
+        if parsed.year < 1900:
+            return 'Pendiente'
+        return f'{parsed.day:02d} {school_month(value[:7])}'
+    except (ValueError, TypeError):
+        return 'Pendiente'
+
+
 def enrollment(db, student_id, user_id):
     row = db.execute('''SELECT s.*,g.name AS guardian_name,g.document AS guardian_document,
         g.phone AS guardian_phone,g.email AS guardian_email,g.address AS guardian_address,
@@ -796,16 +817,15 @@ def render_pdf(kind, data, paper='a4'):
         s = data['student']; pdf = PDF(f"CONSTANCIA DE MATRÍCULA · M-{data['id']:06d}", data['school'])
         pdf.line('Fecha de emisión: '+data.get('issued_on', data['created_at'][:10]))
         for line in (f"Alumno: {s['name']}", f"Código único: {s['student_code']} | Cédula: {s['document'] if s['document']!=s['student_code'] else 'Sin cédula propia'}",
-                     f"Nacimiento: {s['birth_date']}", f"Grado / sección: {s['grade_name']} | Año escolar: {s['school_year']}–{s['school_year']+1}",
+                     f"Fecha de nacimiento: {school_birth_date(s['birth_date'])}", f"Grado / sección: {s['grade_name']} | Año escolar: {s['school_year']}–{s['school_year']+1}",
                      f"Representante: {s['guardian_name']} | Cédula: {s['guardian_document']}",
                      f"Contacto: {s['guardian_phone']} | {s['guardian_email']}", f"Dirección: {s['guardian_address']}",
                      f"Período académico: {s['enrollment_start']} al {s['enrollment_end']} | Estado: {'Activo' if s['status']=='active' else 'Inactivo'}",
-                     f"Mensualidades desde: {s.get('billing_start') or s['enrollment_start'][:7]}"):
+                     f"Mensualidades desde: {school_month(s.get('billing_start') or s['enrollment_start'][:7])}"):
             pdf.line(line)
         pdf.y += 12
         pdf.table(['Mensualidad base USD','Descuento','Mensualidad final USD'],
                   [[amount(s['monthly_fee']), f"{s['discount']} %", amount(s['net_fee'])]], [180,120,219])
-        pdf.line('La tarifa se aplica a cargos nuevos. Los cargos existentes conservan su importe.')
         pdf.line('Observaciones: '+s['notes'])
     elif kind == 'payroll-plan':
         pdf = PDF(f"RELACIÓN DE PAGO · N-{data['id']:06d}", data['school'], True)

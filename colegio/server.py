@@ -28,6 +28,7 @@ from .administration import (import_roster, import_template, cash_summary, close
 from .documents import enrollment, payroll, load_document, render_pdf
 from .branding import SCHEMA_VERSION, LOGO_FILE
 from .lifecycle import roster_for_year, transition_year, create_plan, cancel_plan, plan_status
+from .student_admin import DIRECTORY_ACTIONS, directory_action, correct_billing_start
 from .demo import DemoWorkspace
 from .salary import details as salary_details, issue_salary_receipt, load_salary_receipt
 from .reset_records import reset_preview, reset_records
@@ -128,12 +129,14 @@ def save_record(db, table, fields, data):
 
 def mutate(db, endpoint, data, user, *, synchronize=True):
     uid = user['id']
-    admin_paths = {'settings','grades','guardians','students','employees','users','password','void-payment','void-expense','cancel-charge','positions','payroll-plans','import-roster','reopen-cash','transition-year','cancel-plan'}
+    admin_paths = {'settings','grades','guardians','students','employees','users','password','void-payment','void-expense','cancel-charge','positions','payroll-plans','import-roster','reopen-cash','transition-year','cancel-plan','correct-billing-start'} | DIRECTORY_ACTIONS
     if user['role'] == 'reader' or (endpoint in admin_paths and user['role'] != 'admin'):
         raise PermissionError('Tu perfil no permite esta operación.')
     # Calculate outstanding months before editing tariffs, dates or student status.
     if synchronize: synchronize_monthly_charges(db)
     batch_record=lambda db,endpoint,data,user: mutate(db,endpoint,data,user,synchronize=False)
+    if endpoint in DIRECTORY_ACTIONS: return directory_action(db, endpoint, data, user)
+    if endpoint=='correct-billing-start': return correct_billing_start(db, data, user)
     if endpoint=='import-roster': return import_roster(db,data,user,batch_record)
     if endpoint=='close-cash': return close_cash(db,data,user)
     if endpoint=='reopen-cash': return reopen_cash(db,data,user)
@@ -236,7 +239,7 @@ def mutate(db, endpoint, data, user, *, synchronize=True):
         if len(document)>200:
             raise ValidationError('Documento demasiado largo.')
         fields = {'name': required(data, 'name'), 'document': document,
-                  'birth_date': valid_date(data.get('birth_date')),
+                  'birth_date': valid_date(data.get('birth_date')) if data.get('birth_date') else '',
                   'guardian_id': integer(data.get('guardian_id'), 1, 2147483647),
                   'grade_id': integer(data.get('grade_id'), 1, 2147483647),
                   'school_year': integer(data.get('school_year'), 2000, 2100),
@@ -257,6 +260,15 @@ def mutate(db, endpoint, data, user, *, synchronize=True):
         fields['billing_start'] = valid_period(data.get('billing_start') or default_billing)
         if not fields['enrollment_start'][:7] <= fields['billing_start'] <= fields['enrollment_end'][:7]:
             raise ValidationError('El primer mes a cobrar debe estar dentro del período académico del alumno. Selecciona el mes de cobro si estás registrando un año anterior.')
+        if fields['birth_date'] and fields['birth_date'] < '1900-01-01':
+            raise ValidationError('Revisa la fecha de nacimiento. Si no la conoces, deja el campo vacío.')
+        if existing and existing['archived'] and fields['status']=='active':
+            raise ValidationError('Recupera la ficha del directorio antes de activar esta matrícula.')
+        if existing and fields['billing_start'] < default_billing and data.get('billing_change_confirmed') not in (True,'on'):
+            raise ValidationError('Elegiste un mes anterior: confirma expresamente que deben generarse esas mensualidades.')
+        guardian = db.execute('SELECT archived FROM guardians WHERE id=?',(fields['guardian_id'],)).fetchone()
+        if guardian and guardian['archived'] and (fields['status']=='active' or not existing or existing['guardian_id']!=fields['guardian_id']):
+            raise ValidationError('Recupera la ficha del representante antes de vincular nuevos alumnos.')
         if fields['birth_date'] > local_today().isoformat():
             raise ValidationError('La fecha de nacimiento no puede ser futura.')
         grade = db.execute('SELECT capacity FROM grades WHERE id=?', (fields['grade_id'],)).fetchone()
@@ -652,12 +664,12 @@ class Handler(BaseHTTPRequestHandler):
                     db.execute('DELETE FROM sessions WHERE token=?', (user['token'],))
                     result = {'ok': True}
                 else:
-                    if endpoint in ('import-roster','transition-year') and data.get('preview') is not True and user['role']=='admin':
+                    if (endpoint in DIRECTORY_ACTIONS or endpoint=='correct-billing-start' or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True)) and user['role']=='admin':
                         status=self.server.make_backup()
-                        if status.get('local_error'): raise ValidationError('No se puede importar sin completar primero un respaldo local.')
+                        if status.get('local_error'): raise ValidationError('No se puede realizar la operación sin completar primero un respaldo local.')
                     result = mutate(db, endpoint, data, user)
                 db.commit()
-                if endpoint in ('payments','expenses','salary-receipts','void-payment','void-expense','close-cash','reopen-cash','settings','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
+                if endpoint in DIRECTORY_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','expenses','salary-receipts','void-payment','void-expense','close-cash','reopen-cash','settings','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
                     status=self.server.make_backup()
                     if status.get('local_error') or status.get('secondary_error'):
                         result['backup_warning']=status.get('local_error') or status.get('secondary_error')

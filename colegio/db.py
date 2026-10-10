@@ -193,7 +193,8 @@ def initialize(path):
         # Additive upgrades preserve IDs, balances and historical receipts.
         additions = {
             'sessions': {'rate_confirmed_on': "TEXT NOT NULL DEFAULT ''"},
-            'students': {'student_code': "TEXT NOT NULL DEFAULT ''", 'billing_start': "TEXT NOT NULL DEFAULT ''"},
+            'students': {'student_code': "TEXT NOT NULL DEFAULT ''", 'billing_start': "TEXT NOT NULL DEFAULT ''", 'archived': 'INTEGER NOT NULL DEFAULT 0'},
+            'guardians': {'archived': 'INTEGER NOT NULL DEFAULT 0'},
             'employees': {'position_id': 'INTEGER REFERENCES positions(id)',
                 'bank': "TEXT NOT NULL DEFAULT ''", 'bank_account': "TEXT NOT NULL DEFAULT ''",
                 'account_holder': "TEXT NOT NULL DEFAULT ''", 'holder_document': "TEXT NOT NULL DEFAULT ''",
@@ -307,7 +308,7 @@ def synchronize_monthly_charges(db, today=None):
     settings = dict(db.execute('SELECT key,value FROM settings'))
     start_month, due_day = int(settings['start_month']), int(settings['due_day'])
     created = assessed = 0
-    for student in db.execute("SELECT * FROM students WHERE status='active'").fetchall():
+    for student in db.execute("SELECT * FROM students WHERE status='active' AND archived=0").fetchall():
         start = max(date.fromisoformat(student['enrollment_start']), date(student['school_year'], start_month, 1))
         start = max(start, date.fromisoformat((student['billing_start'] or student['enrollment_start'][:7]) + '-01'))
         academic_end = date(student['school_year'] + 1, start_month, 1) - timedelta(days=1)
@@ -342,7 +343,7 @@ def generate_month(db, data, user_id):
     due_day = int(settings['due_day'])
     created = 0
     month_end = first.replace(day=calendar.monthrange(first.year, first.month)[1]).isoformat()
-    for student in db.execute("""SELECT * FROM students WHERE status='active' AND school_year=?
+    for student in db.execute("""SELECT * FROM students WHERE status='active' AND archived=0 AND school_year=?
       AND enrollment_start<=? AND enrollment_end>=?""", (school_year, month_end, first.isoformat())).fetchall():
         if period < (student['billing_start'] or student['enrollment_start'][:7]):
             continue

@@ -226,7 +226,7 @@ def import_roster(db,data,user,save_record):
             else: guardian_id=save_record(db,'guardians',fields,user)['id']
             grade = db.execute('SELECT id FROM grades WHERE name=? COLLATE NOCASE',(required(r,'grado'),)).fetchone()
             if not grade: raise ValidationError('Grado / sección inexistente. Créalo antes de importar y copia su nombre exacto.')
-            name,birth = required(r,'alumno_nombre'),import_date(r['nacimiento'],'nacimiento')
+            name,birth = required(r,'alumno_nombre'),import_date(r['nacimiento'],'nacimiento') if r['nacimiento'] else ''
             if r['estado'].lower() not in ('','activo','inactivo','active','inactive'):
                 raise ValidationError('estado: escribe activo o inactivo; vacío significa activo.')
             if db.execute('SELECT 1 FROM students WHERE guardian_id=? AND name=? COLLATE NOCASE AND birth_date=?',(guardian_id,name,birth)).fetchone():

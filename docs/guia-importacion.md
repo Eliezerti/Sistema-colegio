@@ -24,7 +24,7 @@
 | representante_direccion | No | Dirección del representante; puede quedar vacía. | Sector Centro, Calle 10 |
 | alumno_nombre | Sí | Nombre completo del alumno; una fila por alumno. | Sofía Pérez |
 | alumno_cedula | No | Cédula propia del alumno si la tiene. Nunca la del representante. Vacía: código AL automático. Celda como Texto. |  |
-| nacimiento | Sí | Fecha real de nacimiento. AAAA-MM-DD como Texto o fecha de Excel; sin fórmulas. | 2016-04-23 |
+| nacimiento | No | Fecha real de nacimiento. AAAA-MM-DD como Texto o fecha de Excel; sin fórmulas. Si no la tienes, deja vacío: se mostrará Pendiente. | 2016-04-23 |
 | grado | Sí | Nombre completo EXACTO de un grado/sección ya creado en Aula. | 1° PRIMARIA / A |
 | ano_escolar | Sí | Año en que comienza el ciclo: 2026 significa 2026–2027. Entero, sin guion. | 2026 |
 | mensualidad_usd | Sí | Mensualidad base en dólares, antes del descuento. Hasta dos decimales. Sin $ ni separadores de miles. | 100.00 |
