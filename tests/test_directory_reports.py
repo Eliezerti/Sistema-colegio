@@ -2,7 +2,7 @@ import re
 import unittest
 
 from colegio.db import ValidationError
-from colegio.directory_reports import directory_pdf, directory_report
+from colegio.directory_reports import directory_pdf, directory_report, daily_report, daily_pdf
 
 
 def directory_state():
@@ -85,6 +85,64 @@ class DirectoryReportsTests(unittest.TestCase):
                 directory_report(data, kind, query)
         pdf = directory_pdf(directory_report(data, 'students', {'search': ['inexistente']}))
         self.assertIn(b'No hay registros', pdf)
+
+    def test_daily_totals_separate_currencies_keep_original_equivalents_and_exclude_voids(self):
+        data = directory_state()
+        data['students'][0].update(overdue=5000, guardian_phone='04121234567')
+        for s in data['students'][1:]:
+            s.update(overdue=0, guardian_phone='')
+        data['students'][2]['overdue'] = 1000  # Archived pupils still owe real debt.
+        base = dict(student_id=1, student_name='Alumno Uno', paid_on=data['today'],
+                    method='Transferencia', reference='BANCO-001', voided=0)
+        data['payments'] = [dict(base, id=1, currency='USD', received_amount=1000, amount=1000),
+            dict(base, id=2, currency='VES', received_amount=25000, amount=250),
+            dict(base, id=3, currency='VES', received_amount=50000, amount=500, voided=1),
+            dict(base, id=4, currency='USD', received_amount=9000, amount=9000, paid_on='2026-10-09')]
+        data['charges'] = [dict(student_id=1, overdue=True, days_overdue=40),
+                           dict(student_id=1, overdue=True, days_overdue=10),
+                           dict(student_id=3, overdue=True, days_overdue=70)]
+        report = daily_report(data)
+        self.assertEqual(report['received_usd'], 1000)
+        self.assertEqual(report['received_ves'], 25000)
+        self.assertEqual(report['income_usd'], 1250)
+        self.assertEqual(report['payment_count'], 2)
+        self.assertEqual(report['overdue_usd'], 6000)
+        self.assertEqual(report['debtor_count'], 2)
+        self.assertEqual(len(report['sections'][0]['lines']), 3)
+        self.assertIn('Anulado', report['sections'][0]['lines'][2][-1])
+        self.assertEqual(report['sections'][1]['lines'][0][-1], '40 días')
+        self.assertIn('Archivado', report['sections'][1]['lines'][1][1])
+        self.assertEqual(data['payments'][1]['amount'], 250)
+        pdf = daily_pdf(report)
+        for value in (b'USD 12,50', b'Bs 250,00', b'USD 60,00', b'BANCO-001', b'R-000003'):
+            self.assertIn(value, pdf)
+        self.assertNotIn(b'R-000004', pdf)
+
+    def test_empty_daily_report_has_clear_zero_totals_and_no_invented_debt(self):
+        data = directory_state()
+        data['payments'] = []; data['charges'] = []
+        for s in data['students']:
+            s.update(overdue=0, guardian_phone='')
+        report = daily_report(data)
+        self.assertEqual(report['income_usd'], 0)
+        self.assertEqual(report['overdue_usd'], 0)
+        pdf = daily_pdf(report)
+        self.assertIn(b'No hay cobros con fecha de hoy.', pdf)
+        self.assertIn(b'No hay alumnos con deuda vencida.', pdf)
+
+    def test_long_daily_report_repeats_section_headers_and_keeps_all_debtors(self):
+        data = directory_state()
+        base = data['students'][0]
+        data['students'] = [dict(base, id=i, name=f'Alumno {i:04d}', student_code=f'AL-{i:06d}',
+                                overdue=100, guardian_phone='04120000000') for i in range(150)]
+        data['payments'] = []
+        data['charges'] = [dict(student_id=i, overdue=True, days_overdue=10) for i in range(150)]
+        report = daily_report(data)
+        self.assertEqual(report['overdue_usd'], 15000)
+        pdf = daily_pdf(report)
+        self.assertGreater(pdf.count(b'(Morosidad actual)'), 1)
+        for i in range(150):
+            self.assertIn(f'AL-{i:06d}'.encode(), pdf)
 
 
 if __name__ == '__main__':

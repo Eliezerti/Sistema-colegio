@@ -16,6 +16,8 @@ const fs=require('node:fs');
     await page.locator('.layout').waitFor();assert.match(await page.locator('.demo-banner').innerText(),/Modo prueba/);
     const initial=await page.evaluate(async()=>await(await fetch('/api/state')).json());
     assert.equal(initial.user.role,'admin');assert.deepEqual(initial.students,[]);assert.deepEqual(initial.expenses,[]);
+    await nav('reports');await click('daily-report');await page.locator('dialog[open] .daily-report').waitFor();assert.match(await page.locator('dialog[open] .daily-report').innerText(),/PRUEBA SIN VALIDEZ/);
+    const reportPdf=await page.evaluate(async()=>await(await fetch('/api/daily-report.pdf')).text());assert.ok(reportPdf.includes('PRUEBA SIN VALIDEZ'));await click('close');
     await nav('settings');assert.equal(await page.locator('[name="backup_directory"]').count(),0);assert.equal(await page.locator('[data-action="reset-review"]').count(),0);
     await nav('employees');await click('positions');await fill('name','Docente');await submit();
     await click('employee');await fill('name','Ana Docente · Prueba');await fill('document','V-12345678');await fill('salary','120');

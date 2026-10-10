@@ -93,8 +93,9 @@ class DirectoryPDF(AdministrativePDF):
         self.y += 8
         self.text(42, self.h-35, 'Listado administrativo · '+self.data['issued_at'], 8)
 
-    def directory_table(self):
-        widths = self.data['widths']
+    def directory_table(self, section=None):
+        data = section or self.data
+        widths = data['widths']
 
         def draw(cells, height, header=False, shaded=False):
             if header or shaded:
@@ -107,14 +108,17 @@ class DirectoryPDF(AdministrativePDF):
             self.y += height
             self.rule(self.y)
 
-        headings = [self.wrap(v, w-12, 9) for v, w in zip(self.data['headings'], widths)]
+        headings = [self.wrap(v, w-12, 9) for v, w in zip(data['headings'], widths)]
         header_height = 12*max(map(len, headings))+12
 
         def header():
+            if section:
+                self.line(section['title'], True)
             draw(headings, header_height, header=True)
 
+        self.ensure(header_height+70)
         header()
-        for index, row in enumerate(self.data['lines']):
+        for index, row in enumerate(data['lines']):
             cells = [self.wrap(v, w-12, 9) for v, w in zip(row, widths)]
             length = max(map(len, cells))
             offset = 0
@@ -129,13 +133,83 @@ class DirectoryPDF(AdministrativePDF):
                 draw([cell[offset:offset+take] for cell in cells], take*12+12, shaded=index%2 == 1)
                 offset += take
         self.y += 18
-        self.line(self.data['note'])
-        self.line('Generado por: '+self.data['operator'])
-        if not self.data['lines']:
-            self.line('No hay registros con los filtros seleccionados.')
+        if not data['lines']:
+            self.line(data.get('empty_message', 'No hay registros con los filtros seleccionados.'))
+        if not section:
+            self.line(self.data['note'])
+            self.line('Generado por: '+self.data['operator'])
 
 
 def directory_pdf(data):
     pdf = DirectoryPDF(data)
     pdf.directory_table()
+    return pdf.output()
+
+
+def daily_report(state, payment_people=None):
+    """Today's dated payments and current outstanding arrears, with separate currencies."""
+    today = state['today']
+    payments = [p for p in state['payments'] if p['paid_on'] == today]
+    valid = [p for p in payments if not p['voided']]
+    debtors = sorted((s for s in state['students'] if s['overdue'] > 0),
+                     key=lambda s: (-s['overdue'], s['name']))
+    student_map = {s['id']: s for s in state['students']}
+    collected_usd = sum(p['received_amount'] for p in valid if p['currency'] == 'USD')
+    collected_ves = sum(p['received_amount'] for p in valid if p['currency'] == 'VES')
+    income = sum(p['amount'] for p in valid)
+    overdue = sum(s['overdue'] for s in debtors)
+    summaries = [('Recibido en dólares', amount(collected_usd)),
+                 ('Recibido en bolívares', amount(collected_ves, 'Bs')),
+                 ('Total cobrado · equivalente USD', amount(income)),
+                 ('Deuda vencida actual · USD', amount(overdue))]
+    payment_lines = []
+    for n, p in enumerate(payments, 1):
+        current = student_map[p['student_id']]
+        person = payment_people.get(p['id'], {}) if payment_people is not None else {
+            'student_name': p['student_name'], 'grade_name': current['grade_name'],
+            'guardian_name': current['guardian_name']}
+        payment_lines.append([str(n), f"R-{p['id']:06d}",
+            person.get('student_name', p['student_name'])+'\n'+(person.get('grade_name') or 'Grado no registrado'),
+            person.get('guardian_name', current['guardian_name']), p['method']+'\n'+(p['reference'] or 'Sin referencia'),
+            amount(p['received_amount'], 'Bs' if p['currency'] == 'VES' else 'USD'),
+            amount(p['amount'])+'\n'+('Anulado' if p['voided'] else 'Válido')])
+    debtor_lines = []
+    for n, s in enumerate(debtors, 1):
+        days = max((c['days_overdue'] for c in state['charges']
+                    if c['student_id'] == s['id'] and c['overdue']), default=0)
+        debtor_lines.append([str(n), s['name']+'\n'+s['student_code']+('\nArchivado' if s.get('archived') else ''),
+            s['grade_name'], s['guardian_name']+'\n'+(s['guardian_phone'] or 'Sin teléfono'),
+            amount(s['overdue']), f'{days} días'])
+    now = datetime.now(timezone(timedelta(hours=-4)))
+    day_label = datetime.strptime(today, '%Y-%m-%d').strftime('%d/%m/%Y')
+    return {'title': 'Reporte diario de cobros y morosidad', 'school': state['settings'],
+        'issued_on': today, 'issued_at': now.strftime('%d/%m/%Y · %H:%M'), 'operator': state['user']['name'],
+        'filter_label': f'Cobros del {day_label} · Morosidad actual al emitir el reporte',
+        'count_label': f"{len(valid)} {'cobro válido' if len(valid) == 1 else 'cobros válidos'} · "
+                       f"{len(debtors)} {'alumno' if len(debtors) == 1 else 'alumnos'} con deuda vencida",
+        'summaries': summaries, 'payment_count': len(valid), 'debtor_count': len(debtors),
+        'received_usd': collected_usd, 'received_ves': collected_ves, 'income_usd': income, 'overdue_usd': overdue,
+        'sections': [
+            {'title': 'Cobros del día', 'headings': ['N.º', 'Recibo', 'Alumno / grado', 'Representante',
+                'Método / referencia', 'Recibido', 'Equivalente USD / estado'],
+             'widths': [26, 76, 163, 144, 122, 117, 110], 'lines': payment_lines,
+             'empty_message': 'No hay cobros con fecha de hoy.'},
+            {'title': 'Morosidad actual', 'headings': ['N.º', 'Alumno / código', 'Grado',
+                'Representante / contacto', 'Vencido USD', 'Mayor atraso'],
+             'widths': [26, 180, 115, 240, 105, 92], 'lines': debtor_lines,
+             'empty_message': 'No hay alumnos con deuda vencida.'}],
+        'note': 'Los totales incluyen cobros válidos; las anulaciones se muestran y se excluyen de los totales. '
+                'Cada pago conserva su conversión original. La morosidad incluye cargos vencidos pendientes '
+                'al generar el reporte, también de fichas archivadas.'}
+
+
+def daily_pdf(data):
+    pdf = DirectoryPDF(data)
+    for label, value in data['summaries']:
+        pdf.line(label+': '+value, True)
+    pdf.y += 10
+    for section in data['sections']:
+        pdf.directory_table(section)
+    pdf.line(data['note'])
+    pdf.line('Generado por: '+data['operator'])
     return pdf.output()

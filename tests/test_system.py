@@ -63,12 +63,35 @@ class SystemTests(unittest.TestCase):
         self.assertEqual(self.request('directory/students?search=inexistente')['count'], 0)
         self.assertEqual(self.request(f'directory/students?grade={self.grade}')['count'], 1)
         self.request('directory/students?grade=999', status=400)
+        report = self.request('daily-report')
+        self.assertEqual(report['payment_count'], 0)
+        self.assertEqual(report['overdue_usd'], before['summary']['overdue'])
+        self.assertTrue(self.request('daily-report.pdf').startswith(b'%PDF-1.4'))
         after = self.request('state')
         self.assertEqual(after['payments'], before['payments'])
         self.assertEqual(after['charges'], before['charges'])
         self.assertEqual(after['enrollments'], before['enrollments'])
         self.request('logout', {})
         self.request('directory/students.pdf', status=401)
+        self.request('daily-report.pdf', status=401)
+
+    def test_daily_payments_keep_receipt_identity_and_voided_rows_leave_totals(self):
+        payment = self.request('payments', self.payment(amount='10', paid_on=local_today().isoformat()))['id']
+        self.request('grades', {'id': self.grade, 'name': 'Grado cambiado', 'capacity': 2})
+        self.request('guardians', {'id': self.guardian, 'name': 'Representante cambiado', 'document': 'V-123'})
+        self.request('students', self.student_data(id=self.student, name='Alumno cambiado'))
+        report = self.request('daily-report')
+        row = report['sections'][0]['lines'][0]
+        self.assertIn('Alumno Uno', row[2])
+        self.assertIn('Primaria A', row[2])
+        self.assertEqual(row[3], 'Representante Uno')
+        self.assertIn('Alumno cambiado', report['sections'][1]['lines'][0][1])
+        self.assertEqual(report['income_usd'], 1000)
+        self.request('void-payment', {'id': payment, 'reason': 'Prueba de anulación'})
+        report = self.request('daily-report')
+        self.assertEqual(report['income_usd'], 0)
+        self.assertEqual(report['payment_count'], 0)
+        self.assertIn('Anulado', report['sections'][0]['lines'][0][-1])
 
     def tearDown(self):
         self.server.shutdown()

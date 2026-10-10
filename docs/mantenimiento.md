@@ -60,6 +60,18 @@ El error de un segundo respaldo no borra ni repite un cobro ya confirmado; se mu
 
 Las actualizaciones conservan la base y crean una copia antes de actualizar el esquema. Desinstalar el programa conserva los datos. No abras una base actualizada con una versión antigua: las versiones anteriores no reconocen el primer mes a cobrar y podrían generar mensualidades previas. Conserva el respaldo anterior a la actualización para cualquier revisión. Una verificación correcta no equivale a una auditoría contable completa ni garantiza que los datos introducidos sean correctos.
 
+## Enviar información diaria al colegio
+
+Si el personal solo necesita ver pagos y morosidad, utiliza un PDF diario: no hace falta instalar otra base de Aula ni restaurarla para leerlo.
+
+1. Al terminar de registrar los movimientos del día, abre **Reportes → Reporte diario PDF**.
+2. Revisa los cobros con fecha de hoy, sus referencias y los totales. Los nombres, representante y grado del cobro proceden del recibo conservado; no se sustituyen por una edición posterior. Se separan los dólares realmente recibidos, los bolívares realmente recibidos y el equivalente USD original de los cobros válidos. Las anulaciones quedan identificadas y fuera de los totales.
+3. Revisa **Morosidad actual**: alumnos con deuda vencida, grado, representante y teléfono, importe vencido y mayor atraso. Incluye también deudas de fichas archivadas. Es el corte al generar el documento, no una reconstrucción histórica de otra fecha.
+4. Pulsa **Descargar PDF** y envía el archivo `reporte-diario-AAAA-MM-DD.pdf` por correo. El personal lo abre o imprime como cualquier PDF; no debe usar Restaurar respaldo para este documento.
+5. Vuelve a generar el PDF si guardaste cobros o correcciones después de descargarlo. Indica la fecha y hora del reporte para que sepan hasta qué momento llega la información.
+
+El envío es manual desde tu correo; Aula genera el documento, pero no lo envía automáticamente. Mantén los respaldos completos como protección de los datos; un PDF no permite recuperar toda la base ni modificar registros. Si necesitan registrar cobros desde el colegio, un reporte no reemplaza el acceso a la base principal.
+
 ## Llevar tus datos a otra PC para mostrar Aula
 
 1. En la PC donde estás cargando los datos, entra como administrador y abre Configuración → Crear respaldo ahora. Después pulsa Descargar copia y guarda el archivo `colegio-AAAA-MM-DD.sqlite3` en un USB. La descarga es una copia completa y consistente; no copies la base activa de la carpeta de datos.
@@ -73,7 +85,7 @@ Las actualizaciones conservan la base y crean una copia antes de actualizar el e
 
 Si la PC de casa es la base principal, crea allí un usuario **Consulta** para el colegio en Configuración → Usuarios antes de descargar el respaldo. En casa se registran los cambios reales; en el colegio consultan la copia recibida, con información hasta la fecha de ese respaldo.
 
-- **Desde casa:** Crear respaldo ahora → Descargar copia → adjuntar el `.sqlite3` al correo e indicar su fecha. Si el correo no admite esa extensión, envíalo comprimido en ZIP.
+- **Desde casa:** Crear respaldo ahora → Descargar copia → adjuntar el `.sqlite3` al correo e indicar su fecha. Si el correo no admite esa extensión, envíalo comprimido en ZIP. Si supera su límite de tamaño, utiliza un USB o un enlace privado a la copia.
 - **En el colegio:** descargar y extraer el ZIP si corresponde → guardar un respaldo de la base actual → cerrar Aula completamente → Inicio de Windows → Restaurar respaldo → seleccionar la copia recibida → escribir RESTAURAR → abrir Aula, confirmar tasa y comprobar alumnos, saldos y último recibo → entrar con el usuario Consulta.
 - No necesitan reinstalar el programa en cada envío. El respaldo actualiza datos; el instalador actualiza el programa. El colegio debe tener la misma versión o una más reciente que la usada para generar la copia.
 - Si registran un cobro, matrícula o edición en el colegio, la próxima restauración lo reemplazaría. Este procedimiento no sirve para trabajar con modificaciones reales simultáneas en ambas computadoras. Mantén también la copia anterior por si hay que revisar una diferencia.
