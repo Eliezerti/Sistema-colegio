@@ -197,6 +197,9 @@ body{font-size:14px}.main{max-width:1800px}.card{box-shadow:var(--shadow);border
 .logo-editor{flex-direction:row}.logo-editor label{min-width:0}.logo-editor input[type=file]{width:100%}
 
 .form-grid #billing-start-preview{grid-column:1/-1;margin:0;padding:12px 14px;border-left:3px solid var(--green);background:#f7f9f8;font-size:12px;line-height:1.7}
-.directory-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;max-width:270px}
+.row-actions .actions{justify-content:flex-end;flex-wrap:nowrap}
+@media(max-width:1200px){.row-actions .actions{flex-wrap:wrap;min-width:150px}table:has(.row-actions) th,table:has(.row-actions) td{padding-left:12px;padding-right:12px}}
+tr:has(.row-actions) td{vertical-align:middle}
+table:has(.row-actions) th:last-child{text-align:right}
 .directory-filter{display:flex;align-items:center;gap:7px;font-size:12px;white-space:nowrap}
 .directory-filter input{width:auto;margin:0}
