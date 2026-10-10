@@ -203,3 +203,17 @@ tr:has(.row-actions) td{vertical-align:middle}
 table:has(.row-actions) th:last-child{text-align:right}
 .directory-filter{display:flex;align-items:center;gap:7px;font-size:12px;white-space:nowrap}
 .directory-filter input{width:auto;margin:0}
+
+.directory-report{padding:22px 0;border:0;border-radius:0;color:#243449}
+.directory-report .document-header{margin-bottom:22px}
+.directory-report h2{font-size:22px;color:#243449;margin-bottom:14px}
+.directory-report-meta{display:flex;justify-content:space-between;gap:12px;font-size:12px}
+.directory-report-filter{font-size:11px;color:#617287;margin:8px 0 16px}
+.directory-report .table-wrap{border:0;overflow:auto;margin:0 0 18px}
+.directory-report table{table-layout:fixed;min-width:900px;margin:0;width:100%;border:0}
+.directory-report th,.directory-report td{white-space:normal;overflow-wrap:anywhere;text-align:left;border:0;border-bottom:1px solid #e4eaee;vertical-align:top;padding:10px 8px;font-size:11px;color:#243449}
+.directory-report th{background:#eaf2ee;color:#356e57;letter-spacing:.25px;font-size:10px}
+.directory-report tbody tr:nth-child(even){background:#f7f9f9}
+.directory-report footer{font-size:10px;color:#617287;border-top:1px solid #e4eaee;padding-top:12px}
+@page directory-landscape{size:A4 landscape;margin:12mm}
+@media print{.directory-report{page:directory-landscape;padding:0}.directory-report .table-wrap{overflow:visible}.directory-report table{min-width:0}.directory-report th,.directory-report td{font-size:8pt;padding:6pt 4pt;print-color-adjust:exact}.directory-report thead{display:table-header-group}.directory-report tr{break-inside:avoid}.directory-report .document-header{break-inside:avoid}.directory-report footer{break-inside:avoid}}

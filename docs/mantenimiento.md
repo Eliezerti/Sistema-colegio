@@ -60,6 +60,26 @@ El error de un segundo respaldo no borra ni repite un cobro ya confirmado; se mu
 
 Las actualizaciones conservan la base y crean una copia antes de actualizar el esquema. Desinstalar el programa conserva los datos. No abras una base actualizada con una versión antigua: las versiones anteriores no reconocen el primer mes a cobrar y podrían generar mensualidades previas. Conserva el respaldo anterior a la actualización para cualquier revisión. Una verificación correcta no equivale a una auditoría contable completa ni garantiza que los datos introducidos sean correctos.
 
+## Llevar tus datos a otra PC para mostrar Aula
+
+1. En la PC donde estás cargando los datos, entra como administrador y abre Configuración → Crear respaldo ahora. Después pulsa Descargar copia y guarda el archivo `colegio-AAAA-MM-DD.sqlite3` en un USB. La descarga es una copia completa y consistente; no copies la base activa de la carpeta de datos.
+2. Lleva también el instalador de Aula. En el colegio instala la misma versión o una más reciente, con la cuenta de Windows que usarán en esa PC. No abras el respaldo con una versión anterior.
+3. Cierra Aula completamente en la PC del colegio, incluida la bandeja junto al reloj. Desde Inicio de Windows abre Restaurar respaldo, selecciona el `.sqlite3` del USB y escribe RESTAURAR. Esto reemplaza los datos que hubiera en esa PC; no fusiona bases. Si ya hay datos importantes allí, descarga primero una copia de ellos.
+4. Abre Aula e inicia sesión con el usuario y la contraseña de Aula que ya usas en tu PC. El respaldo lleva alumnos, representantes, personal, cargos, pagos, recibos, usuarios, logo y configuración guardados en la base.
+5. Confirma la tasa del día; compara la cantidad de alumnos, un saldo conocido y el último recibo. Ejecuta Configuración → Verificar datos y cobros. Revisa también la segunda carpeta de respaldos: la ruta de tu PC puede no existir en la del colegio; configura el USB o destino que tenga esa computadora.
+6. Las dos instalaciones son independientes. Un cobro o edición en el colegio no aparecerá en casa automáticamente. Para usar esta etapa en una sola PC, decide cuál será la base principal y realiza allí los cambios reales. Llevar después otra copia reemplaza la base completa; no combina cambios de ambas computadoras.
+
+### Enviar un respaldo por correo cada 2 o 3 días
+
+Si la PC de casa es la base principal, crea allí un usuario **Consulta** para el colegio en Configuración → Usuarios antes de descargar el respaldo. En casa se registran los cambios reales; en el colegio consultan la copia recibida, con información hasta la fecha de ese respaldo.
+
+- **Desde casa:** Crear respaldo ahora → Descargar copia → adjuntar el `.sqlite3` al correo e indicar su fecha. Si el correo no admite esa extensión, envíalo comprimido en ZIP.
+- **En el colegio:** descargar y extraer el ZIP si corresponde → guardar un respaldo de la base actual → cerrar Aula completamente → Inicio de Windows → Restaurar respaldo → seleccionar la copia recibida → escribir RESTAURAR → abrir Aula, confirmar tasa y comprobar alumnos, saldos y último recibo → entrar con el usuario Consulta.
+- No necesitan reinstalar el programa en cada envío. El respaldo actualiza datos; el instalador actualiza el programa. El colegio debe tener la misma versión o una más reciente que la usada para generar la copia.
+- Si registran un cobro, matrícula o edición en el colegio, la próxima restauración lo reemplazaría. Este procedimiento no sirve para trabajar con modificaciones reales simultáneas en ambas computadoras. Mantén también la copia anterior por si hay que revisar una diferencia.
+
+Para demostrar operaciones ficticias utiliza Aula - Pruebas. Ese perfil comienza vacío y se elimina al cerrar; no reutiliza ni altera la base real restaurada.
+
 ## Recuperar usuarios y contraseñas
 
 Si otro administrador puede entrar: Configuración → Usuarios → **Cambiar clave**. Puede restablecer claves de Administración, Caja y Consulta. El nombre de usuario figura en esa tabla.

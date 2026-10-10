@@ -52,6 +52,24 @@ class SystemTests(unittest.TestCase):
         self.guardian = self.request('guardians', {'name':'Representante Uno','document':'V-123','phone':'04120000000'})['id']
         self.student = self.request('students', self.student_data())['id']
 
+    def test_directory_downloads_are_authenticated_filtered_and_do_not_issue_financial_documents(self):
+        before = self.request('state')
+        for kind in ('students', 'guardians', 'employees'):
+            report = self.request('directory/'+kind)
+            self.assertEqual(report['count'], len(before[kind]))
+            pdf = self.request('directory/'+kind+'.pdf')
+            self.assertTrue(pdf.startswith(b'%PDF-1.4'))
+            self.assertIn(b'J-50835934-8', pdf)
+        self.assertEqual(self.request('directory/students?search=inexistente')['count'], 0)
+        self.assertEqual(self.request(f'directory/students?grade={self.grade}')['count'], 1)
+        self.request('directory/students?grade=999', status=400)
+        after = self.request('state')
+        self.assertEqual(after['payments'], before['payments'])
+        self.assertEqual(after['charges'], before['charges'])
+        self.assertEqual(after['enrollments'], before['enrollments'])
+        self.request('logout', {})
+        self.request('directory/students.pdf', status=401)
+
     def tearDown(self):
         self.server.shutdown()
         self.server.server_close()

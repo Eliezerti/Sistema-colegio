@@ -26,6 +26,7 @@ from .storage import DataLock, consistent_backup, daily_backup, automatic_backup
 from .administration import (import_roster, import_template, cash_summary, close_cash, reopen_cash,
     ensure_open_day, guardian_account, issue_guardian_document, load_administrative_document)
 from .documents import enrollment, payroll, load_document, render_pdf
+from .directory_reports import directory_report, directory_pdf
 from .branding import SCHEMA_VERSION, LOGO_FILE
 from .lifecycle import roster_for_year, transition_year, create_plan, cancel_plan, plan_status
 from .student_admin import DIRECTORY_ACTIONS, directory_action, correct_billing_start
@@ -699,6 +700,16 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(200,cash_summary(db,parse_qs(url.query).get('date',[local_today().isoformat()])[0]))
             elif endpoint=='backup-status':
                 self.respond(200,self.server.backup_status())
+            elif endpoint.startswith('directory/'):
+                raw = endpoint.split('/', 1)[1]
+                kind = raw.removesuffix('.pdf')
+                document = directory_report(snapshot(db, user), kind, parse_qs(url.query))
+                self.server.mark_document(document)
+                if raw.endswith('.pdf'):
+                    self.respond(200, directory_pdf(document), 'application/pdf',
+                        {'Content-Disposition': f'attachment; filename="listado-{kind}-{local_today()}.pdf"'})
+                else:
+                    self.respond(200, document)
             elif endpoint=='year-roster':
                 if user['role']!='admin': raise PermissionError('Solo administración puede realizar el pase de año.')
                 self.respond(200,roster_for_year(db,parse_qs(url.query).get('year',[''])[0]))

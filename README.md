@@ -8,9 +8,13 @@ Cada alumno tiene un **Primer mes a cobrar**, independiente del período académ
 
 ## Descargar el sistema
 
-**Directorios más limpios · 1.0.18 en borrador:** Morosidad muestra Cuenta, Aviso, Convenio y Registrar pago. Editar y Eliminar se agrupan en Acciones, a la derecha, en Alumnos, Representantes y Grados. La corrección de mensualidades y el seguimiento siguen dentro de Cuenta. El instalador superó 117 pruebas en Windows, la instalación y conservación de datos, y ambos análisis de Defender con las firmas registradas. Permanece sin publicar mientras se aclara el aviso de antivirus reportado por el usuario para 1.0.8 y 1.0.14; ambas están retiradas. Se necesita identificar el nombre de amenaza y el archivo afectado dentro del aviso: los análisis de otro equipo no explican por sí solos ese aviso. No desactives Defender ni añadas exclusiones. Conserva `%LOCALAPPDATA%\AulaColegio` y los respaldos. [Seguimiento y resultados](docs/revision-defender.md).
+**Listados PDF e impresión · próxima versión 1.0.19 en revisión:** incluye listados de alumnos, representantes y personal con membrete, filtros y encabezados repetidos en A4 horizontal. La comprobación del instalador Windows está pendiente. Permanece sin publicar mientras se aclara el aviso de antivirus reportado por el usuario para 1.0.8 y 1.0.14; ambas están retiradas. Los análisis de otro equipo no explican por sí solos ese aviso. No desactives Defender ni añadas exclusiones. Conserva `%LOCALAPPDATA%\AulaColegio` y los respaldos. [Seguimiento y resultados](docs/revision-defender.md).
 
 El **instalador de escritorio para Windows 10/11 de 64 bits** se publica en [Versiones e instaladores](https://github.com/Eliezerti/Sistema-colegio/releases). Descarga el archivo **Aula-Colegio-Instalador-…exe**, no el ZIP de código fuente. Incluye Python y la aplicación; no necesitas instalar Python por separado. La compilación Windows y la prueba de la ventana deben terminar correctamente para que aparezca el instalador.
+
+Los directorios de **Alumnos y matrículas**, **Representantes** y **Personal del colegio** incluyen **PDF / Imprimir**. El listado respeta la búsqueda, grado y archivados del directorio; la vista previa permite descargar PDF o imprimir en A4 horizontal con el membrete, fecha, cantidad de registros y encabezados repetidos. Las mensualidades y saldos son USD; los salarios son referencias, no constancias de pago. Los documentos de prueba llevan su identificación de prueba.
+
+Para llevar la base a otra PC: **Configuración → Descargar copia**, guardar el `.sqlite3` en USB, instalar Aula y usar **Inicio de Windows → Restaurar respaldo** con Aula cerrada. Lleva usuarios y configuración; las dos PC quedan independientes. [Pasos completos y precauciones para evitar perder cambios](docs/mantenimiento.md#llevar-tus-datos-a-otra-pc-para-mostrar-aula).
 
 ## Instalar, actualizar y recuperar
 

@@ -108,6 +108,21 @@ const fs = require('node:fs');
     const salaryDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await salaryDownload).saveAs('/tmp/aula-salary-receipt.pdf');
     await page.screenshot({path:'/tmp/aula-salary-receipt.png',fullPage:true});await page.locator('dialog[open] [data-action="close"]').first().click();
     await nav('expenses');await click('salary-document');await page.locator('dialog[open] .salary-document').waitFor();await page.locator('dialog[open] [data-action="close"]').first().click();
+    for(const kind of ['students','guardians','employees']){
+      await nav(kind);await click('directory-report');await page.locator('dialog[open] .directory-report').waitFor();
+      assert.match(await page.locator('dialog[open] .directory-report').innerText(),/J-12345678-9/);
+      assert.equal(await page.locator('dialog[open] .directory-report .school-emblem img').count(),1);
+      const download=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();
+      const saved='/tmp/aula-listado-'+kind+'.pdf';await(await download).saveAs(saved);assert.ok(fs.readFileSync(saved).subarray(0,8).toString().startsWith('%PDF-1.4'));
+      await page.screenshot({path:'/tmp/aula-listado-'+kind+'.png',fullPage:true});
+      await page.evaluate(()=>{window.aulaPrintCalls=0;window.print=()=>{window.aulaPrintCalls++;};});await click('print-receipt');assert.equal(await page.evaluate(()=>window.aulaPrintCalls),1);
+      assert.match(await page.locator('#print-area').textContent(),/J-12345678-9/);
+      await page.emulateMedia({media:'print'});assert.equal(await page.locator('#print-area .directory-report').isVisible(),true);await page.emulateMedia({media:'screen'});
+      await page.locator('dialog[open] [data-action="close"]').first().click();
+    }
+    await nav('students');await page.locator('#search').fill('inexistente');await page.waitForFunction(()=>document.querySelector('#search').value==='inexistente'&&document.querySelector('#page-content').textContent.includes('Aún no hay alumnos matriculados'));await click('directory-report');
+    assert.match(await page.locator('dialog[open] .directory-report').innerText(),/0 registros/);assert.match(await page.locator('dialog[open] .directory-report').innerText(),/Búsqueda: inexistente/);
+    assert.match(await page.getByRole('link',{name:'Descargar PDF'}).getAttribute('href'),/search=inexistente/);await page.locator('dialog[open] [data-action="close"]').first().click();
     await nav('reports');await page.getByRole('heading',{name:'Reportes administrativos'}).waitFor();
     await page.evaluate(()=>window.print=()=>{});await click('print-report');
     assert.match(await page.locator('#print-area').textContent(),/J-12345678-9/);
@@ -188,6 +203,6 @@ const fs = require('node:fs');
     const cleaned=await page.evaluate(async()=>await(await fetch('/api/state')).json());assert.deepEqual(cleaned.students,[]);assert.deepEqual(cleaned.payments,[]);assert.deepEqual(cleaned.employees,[]);
     assert.equal(cleaned.users.length,2);assert.equal(cleaned.settings.rif,'J-12345678-9');
     assert.deepEqual(errors,[]);
-    console.log('PASS: fiscal settings, PNG logo, fiscal letterheads and printing, daily rate checkpoint and reopening, guardian search, live discount, automatic student code, enrollment PDF, automatic arrears without manual monthly generation, BCV payment and receipt PDF, arrears, job catalogue, banks, consolidated payroll PDF and VES expense, reports, family account and solvency PDFs, CSV preview and import, cash close and reopening, backup status, thermal tickets, bulk promotion and archived PDF, payment plan, responsive layout, read-only role.');
+    console.log('PASS: fiscal settings, PNG logo, fiscal letterheads and printing, daily rate checkpoint and reopening, guardian search, live discount, automatic student code, enrollment PDF, automatic arrears without manual monthly generation, BCV payment and receipt PDF, arrears, job catalogue, banks, consolidated payroll PDF and VES expense, filtered directory PDFs and printing, reports, family account and solvency PDFs, CSV preview and import, cash close and reopening, backup status, thermal tickets, bulk promotion and archived PDF, payment plan, responsive layout, read-only role.');
   }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});
