@@ -61,3 +61,14 @@ El usuario identificó ambos nombres de instalador, sin recordar el nombre de am
 La [nueva auditoría de ambos instaladores](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38014556607), commit `50aca54c9928f31e212f92b7cb043326133d14d7`, verificó los SHA256 oficiales y analizó los artefactos sin instalar ni ejecutarlos. Ambos finalizaron con salida 0 y `found no threats`, motor `1.1.26080.3`, producto `4.18.26080.4`, firmas `1.459.645.0` actualizadas el `2026-10-09T16:49:58+00:00`. Se confirmó `NotSigned` para los dos instaladores: no tienen certificado comercial. La falta de firma no demuestra malware ni prueba que sea la causa del aviso. Estos análisis estáticos no equivalen a observar la detección en el equipo afectado y no permiten declarar falso positivo.
 
 El flujo `windows-antivirus-audit.yml` ahora revisa ambos archivos con SHA256 fijados, independientemente, y conserva informes separados. No recompila ni sustituye la muestra reportada. Las anotaciones muestran el hash, estado de firma, motor y resultado. No se añadió ninguna exclusión ni se desactivó Defender.
+
+
+## Primer mes a cobrar · 1.0.16 en borrador
+
+Se añade un primer mes a cobrar separado del período académico. Las altas e importaciones nuevas proponen el mes de carga, con opción de elegirlo expresamente; se acepta la plantilla anterior de 16 columnas y la nueva de 17. La actualización al esquema 9 conserva el límite anterior de alumnos existentes, cargos, pagos y documentos archivados. El pase de año establece el inicio del nuevo ciclo aprobado. El diseño original continúa activo.
+
+La [compilación de Windows 1.0.16](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38015634580), commit `a4483521bfd0aa7acce28cecc07be590570d7a24`, terminó correctamente: 104 pruebas en Windows, instalación, accesos, ventanas normal/pruebas, bandeja, actualización y desinstalación conservando datos. En Linux terminó la misma suite con una prueba omitida por depender de Windows; también pasaron los flujos del navegador normal, prueba y móvil, y se comprobó visualmente el formulario en escritorio y teléfono usando datos aislados.
+
+Ambos análisis de Defender de esta compilación terminaron con salida 0 y `found no threats`, motor `1.1.26080.3`, firmas `1.459.645.0`, actualizadas el `2026-10-09T16:49:58+00:00`. Archivo: `Aula-Colegio-Instalador-1.0.16.exe`, 20.443.512 bytes; SHA256 `95e8f612ff64034714b7f85e7b785dcf960ab438b804e741167602da9c724500`. Se descargó el artefacto del borrador y se comprobó contra el archivo de verificación y las anotaciones del análisis.
+
+**1.0.16 permanece en borrador**, sin publicar como nueva descarga recomendada. Falta contrastar las alertas de 1.0.8 y 1.0.14 con el Historial de protección de la PC afectada. Los análisis del runner no resuelven ese reporte. No se ejecutaron las muestras reportadas en el equipo del usuario ni se añadieron exclusiones.

@@ -22,7 +22,7 @@ Cerrar la ventana principal con X oculta Aula junto al reloj. Para cerrar comple
 ## Rutina diaria
 
 - Consulta la tasa oficial y confírmala antes de trabajar. Una variación mayor del 10 % requiere confirmación adicional. Cada cobro conserva su tasa original.
-- No hace falta generar mensualidades para ver la deuda: las matrículas activas generan automáticamente los meses transcurridos completos, dentro de su ciclo. No hay prorrateo por días.
+- No hace falta generar mensualidades para ver la deuda: las matrículas activas generan automáticamente los meses transcurridos completos desde el primer mes a cobrar, dentro de su ciclo. En una matrícula nueva se propone el mes de carga, aunque el período académico haya empezado antes. No hay prorrateo por días.
 - Antes de guardar un cobro revisa alumno, fecha, moneda, importe y referencia. Los abonos se aplican a los cargos pendientes más antiguos.
 - El recibo indica abono o pago completo sobre la deuda registrada del alumno, deuda anterior, importe aplicado y saldo pendiente al cobrar. Ese saldo no cambia con pagos posteriores; no es una constancia de solvencia. El saldo de un concepto puede ser cero y todavía quedar deuda de otro mes.
 - Revisa **Último respaldo** y los avisos de error. Configuración → **Crear respaldo ahora** crea una copia verificada y la copia al segundo destino configurado. **Descargar copia** guarda otro archivo donde elijas.
@@ -46,7 +46,7 @@ El error de un segundo respaldo no borra ni repite un cobro ya confirmado; se mu
 5. Usa Configuración → **Verificar datos y cobros**. Comprueba integridad SQLite, relaciones, aplicaciones de cobros y coherencia de mensualidades. No repara ni modifica datos.
 6. Si detecta un problema, guarda una copia y solicita revisión. No reinstales repetidamente ni borres WAL/SHM intentando arreglar una base activa.
 
-Las actualizaciones conservan la base y crean una copia antes de actualizar el esquema. Desinstalar el programa conserva los datos. No instales una versión antigua sobre un esquema más reciente; la aplicación rechaza una versión de base no soportada. Una verificación correcta no equivale a una auditoría contable completa ni garantiza que los datos introducidos sean correctos.
+Las actualizaciones conservan la base y crean una copia antes de actualizar el esquema. Desinstalar el programa conserva los datos. No abras una base actualizada con una versión antigua: las versiones anteriores no reconocen el primer mes a cobrar y podrían generar mensualidades previas. Conserva el respaldo anterior a la actualización para cualquier revisión. Una verificación correcta no equivale a una auditoría contable completa ni garantiza que los datos introducidos sean correctos.
 
 ## Recuperar usuarios y contraseñas
 
