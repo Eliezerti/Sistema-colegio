@@ -85,3 +85,16 @@ La [compilación Windows 1.0.17](https://github.com/Eliezerti/Sistema-colegio/ac
 Ambos análisis de Defender de esta compilación finalizaron con salida 0 y `found no threats`, motor `1.1.26080.3`, firmas `1.459.647.0`, actualizadas el `2026-10-09T19:56:15+00:00`. Archivo: `Aula-Colegio-Instalador-1.0.17.exe`, 20.444.315 bytes; SHA256 `e936786fb61e9ba6ddaed2b474d65f9284e8d2e2764a01e1c6d6f2275c8c5fa7`. Se descargó del borrador y se verificó contra su archivo de suma y las anotaciones de los análisis.
 
 **1.0.17 permanece en borrador.** El usuario indicó que instaló 1.0.16 y utiliza alumnos reales, pero no se recibió el detalle de las alertas anteriores de 1.0.8/1.0.14. Los resultados del runner no prueban que esas detecciones se hayan resuelto ni equivalen a una revisión de Microsoft. No se añadieron exclusiones ni se cambió la protección del equipo.
+
+
+## Directorios más limpios · 1.0.18 en borrador
+
+Morosidad deja cuatro acciones: Cuenta, Aviso, Convenio y Registrar pago. Editar matrícula, Corregir mensualidades y Seguimiento permanecen dentro de Cuenta. En Alumnos y Representantes, Editar y Eliminar del directorio se agrupan junto a la cuenta y los documentos en la columna Acciones de la derecha; en Grados, Editar y Eliminar también se mueven allí. Se conserva el archivo reversible y la protección de datos. No cambia el esquema ni el motor financiero.
+
+Pasaron los flujos de navegador normal y de directorios, incluyendo edición, corrección, protección de registros vinculados, archivo y recuperación. Se revisaron las cuatro tablas con datos ficticios aislados y pantallas de 1440 y 1100 píxeles; en pantallas estrechas las acciones se acomodan dentro de su columna.
+
+La primera ejecución de la [compilación Windows 1.0.18](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38022271156), commit `f291a3feeaf25ecab35aa4feeba2a21d617fe41b`, completó 117 pruebas y generó el instalador. Se detuvo en la actualización de firmas de Defender: Windows Update y el canal oficial MMPC devolvieron un error. No llegó a analizar ni ejecutar el instalador, ni guardó una nueva descarga. Se repite el trabajo en un runner nuevo, manteniendo todas las verificaciones.
+
+La segunda ejecución terminó correctamente: 117 pruebas, instalación, accesos directos, ventanas normal/pruebas, bandeja, actualización y desinstalación conservando datos. Ambos análisis finalizaron con salida 0 y `found no threats`, motor `1.1.26080.3`, firmas `1.459.647.0`, actualizadas el `2026-10-09T19:56:15+00:00`. Archivo: `Aula-Colegio-Instalador-1.0.18.exe`, 20,446,514 bytes; SHA256 `70a5881fb83281d2315384e8b7243bfa5444bbd1f1e37ebdc29d1da6e6ea20e8`. Se descargó del borrador y se verificó contra la suma suministrada y la evidencia de ambos análisis.
+
+**1.0.18 permanece en borrador.** No se recibió el detalle del Historial de protección de la PC para las alertas anteriores. La revisión en el runner no resuelve ese reporte. No se desactivó Defender ni se añadieron exclusiones.
