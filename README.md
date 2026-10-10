@@ -6,7 +6,7 @@ Sistema administrativo para colegios de Venezuela, con una **base central en una
 
 ## Descargar el sistema
 
-**Último instalador publicado (diseño anterior a esta restauración), 1.0.14:** [descargar el instalador .exe](https://github.com/Eliezerti/Sistema-colegio/releases/download/desktop-1.0.14/Aula-Colegio-Instalador-1.0.14.exe). Superó las pruebas de Windows y dos análisis de Defender, antes y después de las pruebas de instalación. La versión 1.0.8 permanece retirada por la alerta reportada; esos resultados nuevos no explican la alerta antigua ni garantizan ausencia universal de amenazas. Si Defender bloquea un archivo, no añadas exclusiones ni lo permitas para instalarlo. Conserva `%LOCALAPPDATA%\AulaColegio` y los respaldos. [Seguimiento y resultados](docs/revision-defender.md).
+**Diseño original restaurado · 1.0.15 en borrador:** el nuevo instalador superó las pruebas de Windows y ambos análisis de Defender con las firmas registradas. Permanece sin publicar mientras se aclara el aviso de antivirus reportado en el equipo del usuario. Se necesita identificar la versión, archivo y nombre de amenaza: los análisis de otro equipo no explican por sí solos ese aviso. No desactives Defender ni añadas exclusiones. Conserva `%LOCALAPPDATA%\AulaColegio` y los respaldos. [Seguimiento y resultados](docs/revision-defender.md).
 
 El **instalador de escritorio para Windows 10/11 de 64 bits** se publica en [Versiones e instaladores](https://github.com/Eliezerti/Sistema-colegio/releases). Descarga el archivo **Aula-Colegio-Instalador-…exe**, no el ZIP de código fuente. Incluye Python y la aplicación; no necesitas instalar Python por separado. La compilación Windows y la prueba de la ventana deben terminar correctamente para que aparezca el instalador.
 

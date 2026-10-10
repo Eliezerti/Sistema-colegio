@@ -43,3 +43,12 @@ La [compilación de la nueva identidad](https://github.com/Eliezerti/Sistema-col
 Los análisis de Defender anteriores y posteriores a ejecutar el instalador finalizaron con salida 0 y `found no threats`: motor `1.1.26080.3`, firmas `1.459.601.0`, actualizadas el `2026-10-07T08:47:31+00:00`. Archivo: `Aula-Colegio-Instalador-1.0.14.exe`, 20.810.537 bytes; SHA256 `ed475caff54c5df4be1f7aff5f17d89181fcddf4524dd5cd46ac1e7f3cc91352`. Se descargó el borrador y se verificó su SHA256 y el archivo de suma antes de publicarlo. Estos resultados corresponden a este archivo y estas firmas; siguen aplicándose las limitaciones del análisis descritas anteriormente.
 
 El instalador lleva el ICO claro oficial de Aula Colegio / ELIEZER PEREZ suministrado por el propietario, sin alterar sus siete tamaños. Se conservan la identificación del instalador y las rutas de instalación y datos; el cambio visual no reemplaza la identidad fiscal guardada de los colegios ni sus recibos emitidos.
+
+
+## Diseño original restaurado · 1.0.15 en borrador
+
+Se restauró el diseño original a petición del usuario, conservando los módulos administrativos, datos y rutas de instalación. La [compilación 1.0.15](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38013749540), commit `428d01c0ac64924172a2f292f86da7075496a076`, superó las 95 pruebas de Windows y la instalación, ventanas normal/de prueba, bandeja, reinstalación y desinstalación conservando la base y los respaldos. El instalador también reemplaza los accesos directos de la identidad 1.0.14 por los originales; se probó con accesos simulados de esa versión.
+
+Ambos análisis de la carpeta dist finalizaron con salida 0 y `found no threats`. Motor `1.1.26080.3`; firmas `1.459.645.0`, actualizadas el `2026-10-09T16:49:58+00:00`. Archivo: `Aula-Colegio-Instalador-1.0.15.exe`, 20.437.843 bytes; SHA256 `e6192a4e41ed409d9b3987385a7f3c812791e6d1d6174ac8063cf9904780fdee`. Se descargó y comprobó el archivo del borrador contra esa suma y contra el archivo de verificación.
+
+El usuario recordó que los instaladores están siendo detectados como virus. No se ha identificado si el aviso corresponde a la antigua 1.0.8 o a una versión posterior; tampoco se ha recibido un nuevo nombre de amenaza. **1.0.15 permanece en borrador, sin una nueva descarga pública recomendada**, hasta contrastar el archivo y la alerta del equipo afectado. Estos dos resultados sin detecciones no resuelven por sí solos el reporte. No se cambió la política de Defender ni se añadieron exclusiones, y no se modificaron los datos del equipo del usuario.
