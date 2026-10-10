@@ -50,6 +50,16 @@ def valid_date(value):
         raise ValidationError('Fecha inválida; usa AAAA-MM-DD.')
 
 
+def valid_period(value):
+    value = str(value).strip()
+    try:
+        if len(value) != 7 or date.fromisoformat(value + '-01').strftime('%Y-%m') != value:
+            raise ValueError()
+    except ValueError:
+        raise ValidationError('Primer mes a cobrar inválido; usa AAAA-MM, por ejemplo 2026-11.')
+    return value
+
+
 def integer(value, minimum, maximum):
     try:
         result = int(value)
@@ -183,7 +193,7 @@ def initialize(path):
         # Additive upgrades preserve IDs, balances and historical receipts.
         additions = {
             'sessions': {'rate_confirmed_on': "TEXT NOT NULL DEFAULT ''"},
-            'students': {'student_code': "TEXT NOT NULL DEFAULT ''"},
+            'students': {'student_code': "TEXT NOT NULL DEFAULT ''", 'billing_start': "TEXT NOT NULL DEFAULT ''"},
             'employees': {'position_id': 'INTEGER REFERENCES positions(id)',
                 'bank': "TEXT NOT NULL DEFAULT ''", 'bank_account': "TEXT NOT NULL DEFAULT ''",
                 'account_holder': "TEXT NOT NULL DEFAULT ''", 'holder_document': "TEXT NOT NULL DEFAULT ''",
@@ -194,6 +204,8 @@ def initialize(path):
             for name, definition in columns.items():
                 if name not in existing:
                     db.execute(f'ALTER TABLE {table} ADD COLUMN {name} {definition}')
+        # Existing pupils retain the original billing boundary and all financial history.
+        db.execute("UPDATE students SET billing_start=substr(enrollment_start,1,7) WHERE billing_start=''")
         for student in db.execute("SELECT id FROM students WHERE student_code='' ").fetchall():
             db.execute('UPDATE students SET student_code=? WHERE id=?', (f"AL-{student['id']:06d}", student['id']))
         db.execute('CREATE UNIQUE INDEX IF NOT EXISTS students_code ON students(student_code)')
@@ -297,6 +309,7 @@ def synchronize_monthly_charges(db, today=None):
     created = assessed = 0
     for student in db.execute("SELECT * FROM students WHERE status='active'").fetchall():
         start = max(date.fromisoformat(student['enrollment_start']), date(student['school_year'], start_month, 1))
+        start = max(start, date.fromisoformat((student['billing_start'] or student['enrollment_start'][:7]) + '-01'))
         academic_end = date(student['school_year'] + 1, start_month, 1) - timedelta(days=1)
         end = min(date.fromisoformat(student['enrollment_end']), academic_end, today)
         if start > end:
@@ -331,6 +344,8 @@ def generate_month(db, data, user_id):
     month_end = first.replace(day=calendar.monthrange(first.year, first.month)[1]).isoformat()
     for student in db.execute("""SELECT * FROM students WHERE status='active' AND school_year=?
       AND enrollment_start<=? AND enrollment_end>=?""", (school_year, month_end, first.isoformat())).fetchall():
+        if period < (student['billing_start'] or student['enrollment_start'][:7]):
+            continue
         new_charges, _ = assess_month(db, student, first, due_day)
         created += new_charges
     audit(db, user_id, 'generate_month', {'period': period, 'created': created})

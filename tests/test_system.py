@@ -80,6 +80,7 @@ class SystemTests(unittest.TestCase):
           'grade_id':self.grade,'school_year':self.year,'monthly_fee':'50','discount':10,'status':'active',
           'enrollment_start':f'{self.year}-09-01','enrollment_end':f'{self.year+1}-08-31'}
         data.update(overrides)
+        data['billing_start']=overrides.get('billing_start',data['enrollment_start'][:7])
         return data
 
     def generate(self,month='01'):
@@ -432,7 +433,7 @@ class SystemTests(unittest.TestCase):
     def roster_file(self,records):
         defaults=dict(zip(COLUMNS,['Representante Nuevo','V-444','04120000001','','',
             'Alumno Importado','','2016-01-01','Primaria A',str(self.year),'50','10',
-            f'{self.year}-09-01',f'{self.year+1}-08-31','activo','']))
+            f'{self.year}-09-01',f'{self.year+1}-08-31','activo','',f'{self.year}-09']))
         out=io.StringIO();writer=csv.DictWriter(out,fieldnames=COLUMNS,delimiter=';');writer.writeheader()
         for record in records: writer.writerow(dict(defaults,**record))
         return {'filename':'alumnos.csv','content':base64.b64encode(out.getvalue().encode('utf-8-sig')).decode()}
@@ -445,18 +446,18 @@ class SystemTests(unittest.TestCase):
         after=self.request('state');self.assertEqual(after['students'],before['students'])
         self.assertEqual(after['guardians'],before['guardians'])
         self.request('import-roster',data,status=400)
-        saved=self.request('import-roster',dict(data,confirmed_hash=preview['hash']))
+        saved=self.request('import-roster',dict(data,confirmed_hash=preview['hash'],confirmed_month=preview['billing_default']))
         self.assertEqual(saved['students'],1)
         self.assertEqual(len(self.request('state')['students']),2)
         again=self.request('import-roster',dict(data,preview=True))
-        self.assertTrue(again['errors']);self.request('import-roster',dict(data,confirmed_hash=preview['hash']),status=400)
+        self.assertTrue(again['errors']);self.request('import-roster',dict(data,confirmed_hash=preview['hash'],confirmed_month=preview['billing_default']),status=400)
         # One valid row followed by an invalid row never partially imports.
         self.request('grades',{'id':self.grade,'name':'Primaria A','capacity':10})
         bad=self.roster_file([{'alumno_nombre':'Otro alumno','representante_cedula':'V-555'},
             {'alumno_nombre':'Alumno errado','representante_cedula':'V-666','grado':'No existe'}])
         count=len(self.request('state')['students']);p=self.request('import-roster',dict(bad,preview=True))
         self.assertEqual(p['students'],1);self.assertEqual(p['errors'][0]['row'],3)
-        self.request('import-roster',dict(bad,confirmed_hash=p['hash']),status=400)
+        self.request('import-roster',dict(bad,confirmed_hash=p['hash'],confirmed_month=p['billing_default']),status=400)
         self.assertEqual(len(self.request('state')['students']),count)
         capacity=self.roster_file([{'alumno_nombre':'Uno nuevo'},{'alumno_nombre':'Dos nuevos'}])
         self.request('grades',{'id':self.grade,'name':'Primaria A','capacity':3})
@@ -467,7 +468,7 @@ class SystemTests(unittest.TestCase):
         raw=self.request('import-template?format=xlsx')
         with zipfile.ZipFile(io.BytesIO(raw)) as z: files={name:z.read(name) for name in z.namelist()}
         vals=['Representante Nuevo','V-444','04120000001','','','Alumno Importado','','42370',
-            'Primaria A',str(self.year),'50.00','10',f'{self.year}-09-01',f'{self.year+1}-08-31','activo','']
+            'Primaria A',str(self.year),'50.00','10',f'{self.year}-09-01',f'{self.year+1}-08-31','activo','',f'{self.year}-09']
         cells=''.join(f'<c r="{chr(65+i)}2" t="inlineStr"><is><t>{value}</t></is></c>' if i!=7 else f'<c r="H2"><v>{value}</v></c>' for i,value in enumerate(vals))
         files['xl/worksheets/sheet1.xml']=files['xl/worksheets/sheet1.xml'].replace(b'</sheetData>',('<row r="2">'+cells+'</row></sheetData>').encode())
         def excel():
@@ -482,7 +483,7 @@ class SystemTests(unittest.TestCase):
         self.request('grades',{'id':self.grade,'name':'Primaria A','capacity':5})
         data=self.roster_file([{}, {'alumno_nombre':'Hermano Importado','nacimiento':'2018-01-01'}])
         p=self.request('import-roster',dict(data,preview=True));self.assertEqual(p['guardians'],1)
-        self.request('import-roster',dict(data,confirmed_hash=p['hash']))
+        self.request('import-roster',dict(data,confirmed_hash=p['hash'],confirmed_month=p['billing_default']))
         siblings=self.request('state')['students']
         self.assertEqual(len({s['student_code'] for s in siblings}),3)
         self.assertEqual(len(self.request('state')['guardians']),2)
@@ -630,6 +631,7 @@ with sqlite3.connect(sys.argv[1],factory=Connection) as db:
         result=self.request('transition-year',dict(data,confirmed_hash=preview['hash']))
         state=self.request('state');by_id={s['id']:s for s in state['students']}
         self.assertEqual(by_id[self.student]['grade_id'],next_grade)
+        self.assertEqual(by_id[self.student]['billing_start'],data['enrollment_start'][:7])
         self.assertEqual(by_id[repeat]['grade_id'],self.grade);self.assertEqual(by_id[repeat]['school_year'],self.year+1)
         self.assertEqual(by_id[withdraw]['school_year'],self.year);self.assertEqual(by_id[withdraw]['status'],'inactive')
         self.assertEqual(state['payments'],before['payments'])

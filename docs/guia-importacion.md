@@ -2,18 +2,18 @@
 
 1. Configura el año escolar, el mes de inicio y el vencimiento en Configuración antes de matricular.
 2. Crea los grados/secciones y su capacidad. Copia sus nombres exactos a la columna grado.
-3. Descarga la plantilla. Rellena únicamente la hoja Alumnos desde la fila 2; conserva sus 16 encabezados y su orden.
+3. Descarga la plantilla. Rellena únicamente la hoja Alumnos desde la fila 2; conserva sus 17 encabezados y su orden. La columna nueva es primer_mes_cobro; también se admite la plantilla anterior de 16 columnas.
 4. Las hojas Instrucciones, Ejemplos y Grados son de consulta y nunca se importan. Los ejemplos son ficticios.
 5. Usa una fila por alumno. Para hermanos, repite exactamente los datos del representante. Si ya existe, los datos deben coincidir con su ficha.
-6. No se importan pagos anteriores ni saldos históricos. Se crean mensualidades completas desde el mes de inicio de matrícula hasta el mes actual, dentro del ciclo. No hay prorrateo por días.
-7. Ejemplo: base 100 USD y descuento 10 generan 90 USD al mes. Una matrícula activa desde septiembre, importada en octubre, genera septiembre y octubre si no existían.
-8. Revisa las deudas que aparecen en la vista previa. Si los meses antiguos ya se pagaron, registra sus pagos reales aparte. No cambies fechas reales para ocultar deuda.
+6. No se importan pagos anteriores ni saldos históricos. Las mensualidades comienzan en primer_mes_cobro, independientemente del inicio del período académico. No hay prorrateo por días.
+7. Ejemplo: base 100 USD y descuento 10 generan 90 USD al mes. Período académico desde septiembre y primer_mes_cobro 2026-11: no se generan septiembre ni octubre. Vacío al cargar en noviembre también comienza en noviembre.
+8. Revisa el primer mes a cobrar y los cargos de la vista previa. Una deuda anterior se registra expresamente como cargo, o elige un mes anterior solo si esos meses realmente deben cobrarse. No inventes pagos para eliminar saldos.
 9. Guarda como .xlsx (recomendado) o CSV UTF-8. No .xls, macros, fórmulas, hojas protegidas ni columnas adicionales. Máximo 2 MB y 1000 alumnos por archivo.
 10. Pulsa Revisar archivo: no guarda datos. Corrige todas las filas señaladas, vuelve a seleccionar el archivo corregido y repite la revisión.
 11. Solo confirma cuando no haya errores y hayas comprobado nombres, fechas, tarifas y cargos. La confirmación guarda el lote completo; si falla una fila no se guarda ninguna.
 12. La importación crea alumnos nuevos; no actualiza fichas existentes. No importes el mismo archivo dos veces.
 
-## Las 16 columnas, en orden
+## Las 17 columnas, en orden
 
 | Columna | Obligatoria | Qué escribir | Ejemplo |
 |---|---|---|---|
@@ -23,20 +23,21 @@
 | representante_email | No | Correo del representante; puede quedar vacío. | ana@example.com |
 | representante_direccion | No | Dirección del representante; puede quedar vacía. | Sector Centro, Calle 10 |
 | alumno_nombre | Sí | Nombre completo del alumno; una fila por alumno. | Sofía Pérez |
-| alumno_cedula | No | Cédula propia del alumno si la tiene. Nunca la del representante. Vacía: código AL automático. Celda como Texto. | Vacía |
+| alumno_cedula | No | Cédula propia del alumno si la tiene. Nunca la del representante. Vacía: código AL automático. Celda como Texto. |  |
 | nacimiento | Sí | Fecha real de nacimiento. AAAA-MM-DD como Texto o fecha de Excel; sin fórmulas. | 2016-04-23 |
 | grado | Sí | Nombre completo EXACTO de un grado/sección ya creado en Aula. | 1° PRIMARIA / A |
 | ano_escolar | Sí | Año en que comienza el ciclo: 2026 significa 2026–2027. Entero, sin guion. | 2026 |
 | mensualidad_usd | Sí | Mensualidad base en dólares, antes del descuento. Hasta dos decimales. Sin $ ni separadores de miles. | 100.00 |
 | descuento_pct | No | Porcentaje entero entre 0 y 100, sin %. Vacío = 0. No es el precio final. | 10 |
-| inicio_matricula | Sí | Primer día de matrícula, dentro del ciclo escolar configurado. AAAA-MM-DD o fecha Excel. | 2026-09-01 |
-| fin_matricula | Sí | Último día incluido, dentro del mismo ciclo y no anterior al inicio. | 2027-08-31 |
+| inicio_matricula | No | Inicio del período académico de referencia, no la fecha exacta de inscripción. Vacío = inicio del ciclo configurado. No determina el primer mes a cobrar. | 2026-09-01 |
+| fin_matricula | No | Fin del período, dentro del mismo ciclo. Vacío = fin del ciclo configurado. | 2027-08-31 |
 | estado | No | activo o inactivo. Vacío = activo. Los inactivos no generan mensualidades automáticas. | activo |
 | observaciones | No | Notas administrativas, sin fórmulas. | Beca aprobada del 10 % |
+| primer_mes_cobro | No | Primer mes que Aula generará, en AAAA-MM. Vacío = mes de carga (o inicio del período si es futuro). Los meses anteriores no se cobran automáticamente. Para años ya terminados debes elegir un mes del período. | 2026-11 |
 
 ## Ejemplo: dos hermanos
 
-Primero crea el grado **1° PRIMARIA / A** y otro llamado **3° PRIMARIA / A**, con capacidad suficiente. Configura año 2026 y mes de inicio septiembre. Estas fechas son un ejemplo; usa las fechas reales de tu colegio.
+Primero crea el grado **1° PRIMARIA / A** y otro llamado **3° PRIMARIA / A**, con capacidad suficiente. Configura año 2026 y mes de inicio septiembre. Este ejemplo supone que cargas los alumnos en noviembre de 2026. Usa el período académico de tu colegio y el primer mes que realmente quieres cobrar; no hace falta inventar la fecha exacta de inscripción.
 
 | Columna | Primera fila: Sofía | Segunda fila: Luis |
 |---|---|---|
@@ -56,6 +57,7 @@ Primero crea el grado **1° PRIMARIA / A** y otro llamado **3° PRIMARIA / A**, 
 | fin_matricula | 2027-08-31 | 2027-08-31 |
 | estado | activo | activo |
 | observaciones | Beca aprobada del 10 % | dejar vacío |
+| primer_mes_cobro | 2026-11 | 2026-11 |
 
 No escribas «dejar vacío» en una celda: déjala vacía de verdad. Sofía tendrá una mensualidad de USD 90 y Luis de USD 100. Al confirmar se crea un representante y dos alumnos con códigos únicos distintos. No repitas la cédula de Ana en alumno_cedula.
 
@@ -78,7 +80,7 @@ No escribas «dejar vacío» en una celda: déjala vacía de verdad. Sofía tend
 
 | Mensaje o problema | Cómo corregirlo |
 |---|---|
-| Encabezados incorrectos | Descarga la plantilla de esta versión; conserva las 16 columnas y el orden. Completa Alumnos, no Ejemplos ni Instrucciones. |
+| Encabezados incorrectos | Descarga la plantilla de esta versión; conserva las 17 columnas y el orden (la anterior de 16 también se admite). Completa Alumnos, no Ejemplos ni Instrucciones. |
 | Grado / sección inexistente | Créalo previamente y copia el nombre exacto de Grados. |
 | Cédula del representante con datos distintos | Revisa su ficha. Repite exactamente nombre, teléfono, correo y dirección en los hermanos; no sobrescribe la ficha existente. |
 | Documento repetido | Deja alumno_cedula vacía si el niño no tiene documento propio. No uses la cédula del representante. |
@@ -89,7 +91,7 @@ No escribas «dejar vacío» en una celda: déjala vacía de verdad. Sofía tend
 | Mensualidad inválida | Número sin moneda ni miles, con hasta dos decimales. |
 | Fórmulas no permitidas | Copia y pega como valores; elimina fórmulas también en columnas aparentemente vacías. |
 | El grado alcanzó su capacidad | Revisa los inscritos de ese ciclo y corrige capacidad o sección antes de importar. |
-| Deuda mayor de lo esperado | Revisa inicio de matrícula: genera todos los meses transcurridos completos. No incorpora pagos anteriores. Registra los pagos reales por separado. |
+| Deuda mayor de lo esperado | Revisa primer_mes_cobro: solo se generan mensualidades desde ese mes. Si queda vacío, usa el mes de carga. Los pagos y deudas de meses anteriores no se importan. |
 | No hay filas | La plantilla viene vacía a propósito. Los ejemplos están en una hoja separada; escribe los alumnos reales en Alumnos. |
 
 ## CSV
@@ -98,4 +100,11 @@ La alternativa recomendada sigue siendo .xlsx. Si usas CSV, descarga la plantill
 
 ## Antes de usar los saldos para cobrar
 
-La importación no copia una contabilidad anterior. Revisa cuáles mensualidades ya se pagaron y registra esos cobros con su fecha, moneda, tasa y referencia originales. No cargues como activo un retiro sin revisar su expediente; inactivo no genera nuevas mensualidades. Un error de escritura debe corregirse desde la ficha; no vuelvas a importar el archivo completo para «actualizarlo».
+La importación no copia una contabilidad anterior. Elige primer_mes_cobro para no volver a cobrar períodos ya pagados o de los que no tengas constancia. Si hay deuda anterior real, crea un cargo identificado; si decides generar esos meses, registra después sus pagos reales con fecha, moneda, tasa y referencia originales. No cargues como activo un retiro sin revisar su expediente; inactivo no genera nuevas mensualidades. Un error de escritura debe corregirse desde la ficha; no vuelvas a importar el archivo completo para «actualizarlo».
+
+
+## Si no conoces la fecha exacta de inscripción
+
+Puedes dejar inicio_matricula y fin_matricula vacíos: se usará el período académico configurado. Si el curso empieza en septiembre y cargas un alumno en noviembre, deja primer_mes_cobro vacío o escribe `2026-11` y únicamente comenzará a generar noviembre. No se generan septiembre ni octubre por compartir la fecha de inicio del curso. Para comenzar antes, escribe expresamente ese mes y revisa los cargos de la vista previa.
+
+Las fichas ya existentes conservan el inicio de cobro anterior. Cambiar el primer mes no elimina cargos ni modifica abonos o recibos guardados. Un cargo anterior erróneo, sin pagos, se revisa y anula expresamente en Mensualidades y cargos; los cargos con abonos requieren revisar los movimientos, no borrarlos. El pase de año masivo comienza a cobrar desde el inicio del nuevo período aprobado.

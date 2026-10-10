@@ -799,7 +799,8 @@ def render_pdf(kind, data, paper='a4'):
                      f"Nacimiento: {s['birth_date']}", f"Grado / sección: {s['grade_name']} | Año escolar: {s['school_year']}–{s['school_year']+1}",
                      f"Representante: {s['guardian_name']} | Cédula: {s['guardian_document']}",
                      f"Contacto: {s['guardian_phone']} | {s['guardian_email']}", f"Dirección: {s['guardian_address']}",
-                     f"Matrícula: {s['enrollment_start']} al {s['enrollment_end']} | Estado: {'Activo' if s['status']=='active' else 'Inactivo'}"):
+                     f"Período académico: {s['enrollment_start']} al {s['enrollment_end']} | Estado: {'Activo' if s['status']=='active' else 'Inactivo'}",
+                     f"Mensualidades desde: {s.get('billing_start') or s['enrollment_start'][:7]}"):
             pdf.line(line)
         pdf.y += 12
         pdf.table(['Mensualidad base USD','Descuento','Mensualidad final USD'],

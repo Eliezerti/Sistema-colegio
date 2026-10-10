@@ -52,3 +52,12 @@ Se restauró el diseño original a petición del usuario, conservando los módul
 Ambos análisis de la carpeta dist finalizaron con salida 0 y `found no threats`. Motor `1.1.26080.3`; firmas `1.459.645.0`, actualizadas el `2026-10-09T16:49:58+00:00`. Archivo: `Aula-Colegio-Instalador-1.0.15.exe`, 20.437.843 bytes; SHA256 `e6192a4e41ed409d9b3987385a7f3c812791e6d1d6174ac8063cf9904780fdee`. Se descargó y comprobó el archivo del borrador contra esa suma y contra el archivo de verificación.
 
 El usuario recordó que los instaladores están siendo detectados como virus. No se ha identificado si el aviso corresponde a la antigua 1.0.8 o a una versión posterior; tampoco se ha recibido un nuevo nombre de amenaza. **1.0.15 permanece en borrador, sin una nueva descarga pública recomendada**, hasta contrastar el archivo y la alerta del equipo afectado. Estos dos resultados sin detecciones no resuelven por sí solos el reporte. No se cambió la política de Defender ni se añadieron exclusiones, y no se modificaron los datos del equipo del usuario.
+
+
+## Reporte confirmado de 1.0.8 y 1.0.14
+
+El usuario identificó ambos nombres de instalador, sin recordar el nombre de amenaza de la alerta actual. La publicación de 1.0.14 se retiró convirtiéndola en borrador; 1.0.8 ya estaba retirada. Los instaladores nuevos siguen sin publicarse mientras se contrastan la detección y el archivo afectado del Historial de protección. No se ha revisado la PC ni confirmado que sus archivos coincidan con los oficiales.
+
+La [nueva auditoría de ambos instaladores](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38014556607), commit `50aca54c9928f31e212f92b7cb043326133d14d7`, verificó los SHA256 oficiales y analizó los artefactos sin instalar ni ejecutarlos. Ambos finalizaron con salida 0 y `found no threats`, motor `1.1.26080.3`, producto `4.18.26080.4`, firmas `1.459.645.0` actualizadas el `2026-10-09T16:49:58+00:00`. Se confirmó `NotSigned` para los dos instaladores: no tienen certificado comercial. La falta de firma no demuestra malware ni prueba que sea la causa del aviso. Estos análisis estáticos no equivalen a observar la detección en el equipo afectado y no permiten declarar falso positivo.
+
+El flujo `windows-antivirus-audit.yml` ahora revisa ambos archivos con SHA256 fijados, independientemente, y conserva informes separados. No recompila ni sustituye la muestra reportada. Las anotaciones muestran el hash, estado de firma, motor y resultado. No se añadió ninguna exclusión ni se desactivó Defender.

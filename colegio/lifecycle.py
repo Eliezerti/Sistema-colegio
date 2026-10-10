@@ -66,12 +66,12 @@ def transition_year(db,data,user,save_record):
     for plan in plans:
         s=plan['source']
         if plan['action']=='skip': continue
-        update={k:s[k] for k in ('id','name','document','birth_date','guardian_id','grade_id','school_year','discount','status','notes','enrollment_start','enrollment_end')}
+        update={k:s[k] for k in ('id','name','document','birth_date','guardian_id','grade_id','school_year','discount','status','notes','enrollment_start','enrollment_end','billing_start')}
         update['monthly_fee']=f"{s['monthly_fee']/100:.2f}"
         if plan['action']=='withdraw': update['status']='inactive'
         else:
             update.update(grade_id=plan['grade_id'],school_year=target,enrollment_start=start,enrollment_end=end,
-                monthly_fee=f"{plan['monthly_fee']/100:.2f}",status='active')
+                billing_start=start[:7],monthly_fee=f"{plan['monthly_fee']/100:.2f}",status='active')
         save_record(db,'students',update,user)
     synchronize_monthly_charges(db)
     school_year=db.execute("SELECT value FROM settings WHERE key='school_year'").fetchone()[0]

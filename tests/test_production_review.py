@@ -129,8 +129,8 @@ class ProductionReviewTests(unittest.TestCase):
         with self.assertRaises(ValidationError):parse_import({'filename':'empty.xlsx','content':base64.b64encode(raw).decode()})
 
     def test_import_accepts_local_formats_and_keeps_error_row_numbers(self):
-        defaults=['Beatriz','V-999','04120001111','','','Mateo','','23/04/2016','Primaria A','2020','100,50','10','01/09/2020','31/08/2021','activo','']
-        out=io.StringIO();writer=csv.writer(out,delimiter=';');writer.writerow(COLUMNS);writer.writerow(['']*16);writer.writerow(defaults)
+        defaults=['Beatriz','V-999','04120001111','','','Mateo','','23/04/2016','Primaria A','2020','100,50','10','01/09/2020','31/08/2021','activo','','2020-09']
+        out=io.StringIO();writer=csv.writer(out,delimiter=';');writer.writerow(COLUMNS);writer.writerow(['']*len(COLUMNS));writer.writerow(defaults)
         data={'filename':'students.csv','content':base64.b64encode(out.getvalue().encode()).decode(),'preview':True}
         with self.db:result=mutate(self.db,'import-roster',data,self.user)
         self.assertEqual(result['errors'],[]);self.assertEqual(result['lines'][0]['row'],3)

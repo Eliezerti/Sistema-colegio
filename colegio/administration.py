@@ -13,13 +13,14 @@ from decimal import Decimal, InvalidOperation
 from pathlib import PurePosixPath
 from xml.etree import ElementTree as ET
 
-from .db import ValidationError, audit, charges, integer, local_today, money, required, valid_date, synchronize_monthly_charges
+from .db import ValidationError, audit, charges, integer, local_today, money, required, valid_date, valid_period, synchronize_monthly_charges
 from .documents import store
 
-COLUMNS = ('representante_nombre','representante_cedula','representante_telefono',
+LEGACY_COLUMNS = ('representante_nombre','representante_cedula','representante_telefono',
     'representante_email','representante_direccion','alumno_nombre','alumno_cedula',
     'nacimiento','grado','ano_escolar','mensualidad_usd','descuento_pct',
     'inicio_matricula','fin_matricula','estado','observaciones')
+COLUMNS = LEGACY_COLUMNS + ('primer_mes_cobro',)
 NS = {'s': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
 
 
@@ -47,6 +48,16 @@ def import_amount(value):
         raise ValidationError('mensualidad_usd: usa dólares sin símbolos ni miles, con hasta dos decimales; ejemplo 100.00. No escribas el precio ya descontado.')
 
 
+def import_period(value):
+    value = str(value).strip()
+    if not value:
+        return ''
+    # Excel can store the selected month as a date rather than a text cell.
+    if len(value) != 7:
+        value = import_date(value,'primer_mes_cobro')[:7]
+    return valid_period(value)
+
+
 def import_integer(value,column,minimum,maximum):
     try: return integer(value,minimum,maximum)
     except ValidationError:
@@ -67,6 +78,7 @@ def import_template(xlsx=False, grades=(), settings=None):
     example = [f[3] for f in FIELDS]
     example[8:10] = [grades[0] if grades else 'CREA UN GRADO Y COPIA SU NOMBRE',str(year)]
     example[12:14] = [start,end]
+    example[-1] = max(local_today().strftime('%Y-%m'),start[:7])
     sheets = [
         ('Alumnos',[COLUMNS],True),
         ('Instrucciones',[['PASO','INSTRUCCIÓN']]+[[str(i),t] for i,t in enumerate(STEPS,1)]+[['','','','']]+[['COLUMNA','OBLIGATORIA','QUÉ ESCRIBIR','EJEMPLO']]+FIELDS,False),
@@ -105,7 +117,8 @@ def parse_import(data):
         try: text = raw.decode('utf-8-sig')
         except UnicodeDecodeError: text = raw.decode('cp1252')
         try:
-            dialect = csv.Sniffer().sniff(text[:8000],delimiters=';,\t')
+            # Optional final cells may be omitted; detect the separator from the fixed header.
+            dialect = csv.Sniffer().sniff(text.splitlines()[0],delimiters=';,\t')
             matrix = list(csv.reader(io.StringIO(text),dialect))
         except csv.Error:
             raise ValidationError('CSV inválido. Usa la plantilla con separador punto y coma.')
@@ -150,7 +163,7 @@ def parse_import(data):
                             if val: raise ValidationError('El Excel contiene columnas adicionales; usa la plantilla.')
                             continue
                         if matrix and kind not in ('s','inlineStr','str','d') and val:
-                            if COLUMNS[col-1] in ('nacimiento','inicio_matricula','fin_matricula'):
+                            if COLUMNS[col-1] in ('nacimiento','inicio_matricula','fin_matricula','primer_mes_cobro'):
                                 val = (epoch+timedelta(days=int(Decimal(val)))).isoformat()
                             else: val = format(Decimal(val),'f').rstrip('0').rstrip('.') if '.' in val else val
                         values[col-1]=val
@@ -161,9 +174,11 @@ def parse_import(data):
     else:
         raise ValidationError('Selecciona un archivo .csv o .xlsx (no .xls).')
     headers = tuple(str(c).strip().lower() for c in matrix[0]) if matrix else ()
-    if headers != COLUMNS:
+    if physical_rows and headers == LEGACY_COLUMNS + ('',):
+        headers = LEGACY_COLUMNS
+    if headers not in (COLUMNS,LEGACY_COLUMNS):
         missing = [c for c in COLUMNS if c not in headers]
-        raise ValidationError('Encabezados incorrectos. Completa la primera hoja Alumnos, conserva las 16 columnas y su orden.' + (' Faltan: '+', '.join(missing) if missing else ' Descarga una plantilla nueva.'))
+        raise ValidationError('Encabezados incorrectos. Completa la primera hoja Alumnos, conserva las 17 columnas y su orden. También se admite la plantilla anterior de 16 columnas.' + (' Faltan: '+', '.join(missing) if missing else ' Descarga una plantilla nueva.'))
     # Preserve physical Excel/CSV row numbers even when users leave blank rows.
     numbered = [((physical_rows[i-1] if physical_rows else i),r) for i,r in enumerate(matrix[1:],2) if any(str(v).strip() for v in r)]
     matrix = [r for _,r in numbered]
@@ -171,6 +186,10 @@ def parse_import(data):
         raise ValidationError('El archivo debe contener entre 1 y 1000 filas de alumnos.')
     records = []
     for index,row in numbered:
+        if len(row)==len(LEGACY_COLUMNS):
+            row=list(row)+['']
+        if headers==LEGACY_COLUMNS and len(row)==len(COLUMNS) and str(row[-1]).strip():
+            raise ValidationError('Columna adicional sin encabezado: descarga la plantilla con primer_mes_cobro.')
         if len(row)!=len(COLUMNS) or any(len(str(v))>2000 for v in row):
             raise ValidationError('Fila con columnas incorrectas o un campo demasiado largo.')
         records.append(dict(zip(COLUMNS,(str(v).strip() for v in row)), _row=index))
@@ -182,6 +201,9 @@ def import_roster(db,data,user,save_record):
     preview = data.get('preview') is True
     if not preview and data.get('confirmed_hash')!=digest:
         raise ValidationError('Revisa la vista previa antes de confirmar este archivo.')
+    billing_default = local_today().strftime('%Y-%m')
+    if not preview and data.get('confirmed_month') != billing_default:
+        raise ValidationError('Vuelve a revisar el archivo: el mes de cobro debe coincidir con el de la vista previa.')
     errors, imported = [], []
     before_guardians = db.execute('SELECT COUNT(*) FROM guardians').fetchone()[0]
     before_balance = sum(c['balance'] for c in charges(db))
@@ -212,17 +234,18 @@ def import_roster(db,data,user,save_record):
             student = save_record(db,'students',{'name':name,'document':r['alumno_cedula'],
                 'birth_date':birth,'guardian_id':guardian_id,'grade_id':grade['id'],
                 'school_year':import_integer(r['ano_escolar'],'ano_escolar',2000,2100),'monthly_fee':import_amount(r['mensualidad_usd']),
-                'discount':import_integer(r['descuento_pct'] or '0','descuento_pct',0,100),'enrollment_start':import_date(r['inicio_matricula'],'inicio_matricula'),
-                'enrollment_end':import_date(r['fin_matricula'],'fin_matricula'),'status':{'activo':'active','inactivo':'inactive'}.get(r['estado'].lower(),r['estado'].lower() or 'active'),
+                'discount':import_integer(r['descuento_pct'] or '0','descuento_pct',0,100),'enrollment_start':import_date(r['inicio_matricula'],'inicio_matricula') if r['inicio_matricula'] else '',
+                'enrollment_end':import_date(r['fin_matricula'],'fin_matricula') if r['fin_matricula'] else '',
+                'billing_start':import_period(r['primer_mes_cobro']),'status':{'activo':'active','inactivo':'inactive'}.get(r['estado'].lower(),r['estado'].lower() or 'active'),
                 'notes':r['observaciones']},user)
             imported.append({'row':index,'student_name':name,'guardian_name':fields['name'],
-                'grade_name':r['grado'],'student_code':student['student_code']})
+                'grade_name':r['grado'],'student_code':student['student_code'],'billing_start':student['billing_start']})
             db.execute('RELEASE roster_row')
         except (ValidationError,sqlite3.IntegrityError) as error:
             db.execute('ROLLBACK TO roster_row'); db.execute('RELEASE roster_row')
             errors.append({'row':index,'message':str(error) if isinstance(error,ValidationError) else 'Documento repetido o estado inválido.'})
     synchronize_monthly_charges(db)
-    result = {'hash':digest,'rows':len(records),'students':len(imported),
+    result = {'hash':digest,'billing_default':billing_default,'rows':len(records),'students':len(imported),
         'guardians':db.execute('SELECT COUNT(*) FROM guardians').fetchone()[0]-before_guardians,
         'new_balance':sum(c['balance'] for c in charges(db))-before_balance,
         'errors':errors,'lines':imported[:100],'preview':preview}

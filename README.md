@@ -4,9 +4,12 @@ Se ha restaurado el diseño original: tonos verdes, tipografía e iconos anterio
 
 Sistema administrativo para colegios de Venezuela, con una **base central en una computadora Windows**. La distribución actual inicia en modo local para una sola PC. La expansión a otras computadoras queda para una etapa posterior. Las mensualidades y la deuda se expresan en **USD**; los cobros y egresos pueden registrarse en **USD o bolívares (VES)** con la tasa BCV correspondiente a la fecha de la operación.
 
+
+Cada alumno tiene un **Primer mes a cobrar**, independiente del período académico. Para alumnos nuevos se propone el mes de carga; por ejemplo, en noviembre no se generan septiembre ni octubre aunque el ciclo escolar empiece en septiembre. Puedes elegir otro mes antes de guardar. La plantilla incluye `primer_mes_cobro`, con vista previa; también acepta la plantilla anterior de 16 columnas. Las fichas existentes conservan su límite anterior y sus cargos, pagos y recibos. Las fechas académicas vacías usan el ciclo configurado.
+
 ## Descargar el sistema
 
-**Diseño original restaurado · 1.0.15 en borrador:** el nuevo instalador superó las pruebas de Windows y ambos análisis de Defender con las firmas registradas. Permanece sin publicar mientras se aclara el aviso de antivirus reportado en el equipo del usuario. Se necesita identificar la versión, archivo y nombre de amenaza: los análisis de otro equipo no explican por sí solos ese aviso. No desactives Defender ni añadas exclusiones. Conserva `%LOCALAPPDATA%\AulaColegio` y los respaldos. [Seguimiento y resultados](docs/revision-defender.md).
+**Diseño original restaurado · 1.0.15 en borrador:** el nuevo instalador superó las pruebas de Windows y ambos análisis de Defender con las firmas registradas. Permanece sin publicar mientras se aclara el aviso de antivirus reportado por el usuario para 1.0.8 y 1.0.14; ambas están retiradas. Se necesita identificar el nombre de amenaza y el archivo afectado dentro del aviso: los análisis de otro equipo no explican por sí solos ese aviso. No desactives Defender ni añadas exclusiones. Conserva `%LOCALAPPDATA%\AulaColegio` y los respaldos. [Seguimiento y resultados](docs/revision-defender.md).
 
 El **instalador de escritorio para Windows 10/11 de 64 bits** se publica en [Versiones e instaladores](https://github.com/Eliezerti/Sistema-colegio/releases). Descarga el archivo **Aula-Colegio-Instalador-…exe**, no el ZIP de código fuente. Incluye Python y la aplicación; no necesitas instalar Python por separado. La compilación Windows y la prueba de la ventana deben terminar correctamente para que aparezca el instalador.
 

@@ -12,7 +12,7 @@ import threading
 import traceback
 import webbrowser
 from contextlib import closing, contextmanager
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from decimal import Decimal
@@ -20,7 +20,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from .db import (ValidationError, RateConfirmationRequired, audit, charges, check_password, connect, convert_received,
                  generate_month, hash_password, initialize, integer, money, record_payment,
-                 required, valid_date, valid_rate, local_today, synchronize_monthly_charges)
+                 required, valid_date, valid_period, valid_rate, local_today, synchronize_monthly_charges)
 from .db import next_record_id
 from .storage import DataLock, consistent_backup, daily_backup, automatic_backup, backup_status
 from .administration import (import_roster, import_template, cash_summary, close_cash, reopen_cash,
@@ -225,7 +225,7 @@ def mutate(db, endpoint, data, user, *, synchronize=True):
                   'phone': str(data.get('phone', ''))[:100], 'email': str(data.get('email', ''))[:200],
                   'address': str(data.get('address', ''))[:500]}
     elif endpoint == 'students':
-        existing = db.execute('SELECT student_code FROM students WHERE id=?', (data.get('id'),)).fetchone() if data.get('id') else None
+        existing = db.execute('SELECT * FROM students WHERE id=?', (data.get('id'),)).fetchone() if data.get('id') else None
         next_id = next_record_id(db, 'students')
         code = existing['student_code'] if existing else f'AL-{next_id:06d}'
         # A legacy document may resemble an automatic code; skip it without changing legacy IDs.
@@ -244,15 +244,19 @@ def mutate(db, endpoint, data, user, *, synchronize=True):
                   'status': data.get('status', 'active'), 'notes': str(data.get('notes', ''))[:2000]}
         if not data.get('id'):
             fields.update(id=next_id, student_code=code)
-        fields['enrollment_start'] = valid_date(data.get('enrollment_start'))
-        fields['enrollment_end'] = valid_date(data.get('enrollment_end'))
-        if fields['enrollment_end'] < fields['enrollment_start']:
-            raise ValidationError('El fin de la matrícula debe ser posterior al inicio.')
         settings = dict(db.execute('SELECT key,value FROM settings'))
         academic_start = date(fields['school_year'], int(settings['start_month']), 1).isoformat()
         academic_end = date(fields['school_year'] + 1, int(settings['start_month']), 1).isoformat()
+        fields['enrollment_start'] = valid_date(data.get('enrollment_start') or academic_start)
+        fields['enrollment_end'] = valid_date(data.get('enrollment_end') or (date.fromisoformat(academic_end)-timedelta(days=1)).isoformat())
+        if fields['enrollment_end'] < fields['enrollment_start']:
+            raise ValidationError('El fin del período debe ser posterior al inicio.')
         if not academic_start <= fields['enrollment_start'] <= fields['enrollment_end'] < academic_end:
             raise ValidationError('Las fechas de matrícula deben estar dentro del año escolar seleccionado.')
+        default_billing = (existing['billing_start'] or existing['enrollment_start'][:7]) if existing else max(local_today().strftime('%Y-%m'),fields['enrollment_start'][:7])
+        fields['billing_start'] = valid_period(data.get('billing_start') or default_billing)
+        if not fields['enrollment_start'][:7] <= fields['billing_start'] <= fields['enrollment_end'][:7]:
+            raise ValidationError('El primer mes a cobrar debe estar dentro del período académico del alumno. Selecciona el mes de cobro si estás registrando un año anterior.')
         if fields['birth_date'] > local_today().isoformat():
             raise ValidationError('La fecha de nacimiento no puede ser futura.')
         grade = db.execute('SELECT capacity FROM grades WHERE id=?', (fields['grade_id'],)).fetchone()
@@ -354,6 +358,7 @@ def mutate(db, endpoint, data, user, *, synchronize=True):
         if synchronize: synchronize_monthly_charges(db)
         result['document_id'] = enrollment(db, record_id, uid)
         result['student_code'] = db.execute('SELECT student_code FROM students WHERE id=?', (record_id,)).fetchone()[0]
+        result['billing_start'] = fields['billing_start']
     elif endpoint == 'expenses' and fields['category'] == 'Nómina':
         result['salary_receipt_id'] = issue_salary_receipt(db, record_id, data, uid)
     return result

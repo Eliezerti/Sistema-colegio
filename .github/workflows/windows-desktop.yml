@@ -90,9 +90,11 @@ jobs:
         run: |
           $Version = "1.0.${{ github.run_number }}"
           $Body = @'
+          BORRADOR: pendientes las alertas de Defender reportadas para 1.0.8 y 1.0.14. Los análisis del runner no resuelven por sí solos el reporte del equipo del usuario.
+
           Aplicación local para una PC Windows 10/11 de 64 bits. Incluye Python, ventana propia, acceso directo y perfil de pruebas independiente. Una nueva instalación solicita el nombre del colegio y crea una base vacía; las actualizaciones conservan los datos e identidad del colegio existente. Instala con la misma cuenta de Windows y crea un respaldo externo antes de actualizar.
 
-          Novedades: se restaura el diseño original de Aula, con su paleta verde, tipografía y logotipos e iconos anteriores. Se conservan todos los módulos de mensualidades, abonos, recibos, importación, mantenimiento, recuperación y perfil de pruebas. La actualización conserva la base, los respaldos y la información fiscal del colegio; solo reemplaza la apariencia y los accesos del producto.
+          Novedades: diseño original de Aula y primer mes a cobrar independiente del período académico. Las altas e importaciones nuevas comienzan en el mes de carga, sin mensualidades previas salvo que administración elija un mes anterior. La plantilla Excel añade primer_mes_cobro y admite archivos anteriores. Conserva cargos, pagos, recibos y respaldos de alumnos existentes; el pase de año usa el inicio del nuevo período aprobado.
 
           Emite comprobantes administrativos, no facturas fiscales. Esta versión no certifica cumplimiento de todos los requisitos de SENIAT o Zona Educativa. La tasa BCV se registra manualmente. Cerrar X oculta la aplicación junto al reloj; usa Salir y cerrar Aula para detenerla. WebView2 de Microsoft puede requerir conexión en la primera instalación.
 

@@ -5,7 +5,7 @@ import base64
 from functools import lru_cache
 from pathlib import Path
 
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 9
 INSTITUTION_TYPE = 'Unidad Educativa Colegio'
 SCHOOL_NAME = 'Unidad Educativa Colegio Alejandro Von Humboldt'
 LOGO_FILE = 'logo-colegio-v1.png'
