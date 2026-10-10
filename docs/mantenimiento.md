@@ -19,6 +19,18 @@ Usa siempre la misma cuenta de Windows: otra cuenta tiene otra carpeta local y p
 
 Cerrar la ventana principal con X oculta Aula junto al reloj. Para cerrar completamente: menú Colegio → **Salir y cerrar Aula**, o clic derecho en el icono junto al reloj → esa misma opción. El modo prueba sí termina al cerrar su ventana.
 
+## Editar y corregir registros
+
+Las acciones requieren perfil Administrador. En Alumnos y Representantes, Editar y Eliminar del directorio aparecen junto al nombre. Eliminar del directorio archiva la ficha, conserva su historial y permite recuperarla con Mostrar archivados. Un alumno archivado queda inactivo; sus deudas existentes siguen registradas y dejan de generarse mensualidades nuevas. Un representante vinculado a alumnos sin archivar requiere reasignar esos alumnos o archivar sus fichas antes.
+
+En Grados y secciones, Eliminar solo permite quitar grados sin alumnos vinculados, incluidos inactivos y archivados. Se exige motivo y confirmación escrita. Las operaciones de archivo, recuperación, eliminación de grados y corrección mensual crean una copia previa y otra después de guardar; si falla la copia local previa, no se confirma la operación.
+
+Para corregir septiembre cuando el cobro debía comenzar en octubre: Morosidad → Corregir mensualidades → primer mes correcto octubre → revisar septiembre e importe → escribir el motivo → confirmar. También está en Cuenta. La corrección anula los cargos anteriores sin pagos y fija el primer mes; no borra movimientos ni modifica recibos antiguos. Si ya habías vuelto a poner octubre en la ficha, también puedes anular el septiembre que quedó registrado. Si hay pagos aplicados o un convenio vigente, revisa esos movimientos antes: la corrección se bloquea.
+
+Para un cargo individual usa Cuenta → Anular cargo con motivo. Adelantar el primer mes hacia un mes anterior en una edición exige confirmación adicional: puede generar nuevas mensualidades. Cambiar una fecha por sí solo no elimina cargos existentes.
+
+La fecha de nacimiento es opcional. Si no la tienes, déjala vacía: la constancia dice Fecha de nacimiento: Pendiente. El mes de inicio del cobro se imprime como OCT. 2026. Se conserva la información original de las constancias archivadas.
+
 ## Rutina diaria
 
 - Consulta la tasa oficial y confírmala antes de trabajar. Una variación mayor del 10 % requiere confirmación adicional. Cada cobro conserva su tasa original.
