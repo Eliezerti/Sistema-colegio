@@ -1,26 +1,16 @@
 {
   "id": "/",
-  "name": "Aula Colegio",
-  "short_name": "Aula Colegio",
-  "description": "Gestión escolar más simple · ELIEZER PEREZ. Administración, mensualidades y cobros.",
+  "name": "Aula · Administración escolar",
+  "short_name": "Aula",
+  "description": "Administración escolar, mensualidades y cobros del colegio.",
   "lang": "es-VE",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#F8FAFC",
-  "theme_color": "#1E3A8A",
+  "background_color": "#f4f6f1",
+  "theme_color": "#142b29",
   "icons": [
-    {
-      "src": "/icon-mobile-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icon-mobile-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    {"src": "/icon-mobile-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "/icon-mobile-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
   ]
 }

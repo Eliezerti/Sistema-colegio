@@ -4,12 +4,12 @@
 
 1. Usa Windows 10/11 de 64 bits y descarga el instalador de esta versión desde la publicación del repositorio. Comprueba que Defender no lo bloquee; una detección requiere detener la instalación y revisar el archivo, no añadir exclusiones.
 2. Ejecuta el .exe con la cuenta de Windows que utilizará el colegio. No necesitas instalar Python. WebView2 de Microsoft puede necesitar internet la primera vez.
-3. Abre **Aula Colegio** desde el escritorio. Esta versión inicia localmente, sin configurar teléfonos ni otras computadoras.
+3. Abre **Aula - Administración escolar** desde el escritorio. Esta versión inicia localmente, sin configurar teléfonos ni otras computadoras.
 4. Escribe el nombre del colegio, tu nombre, usuario y una contraseña de al menos diez caracteres. Conserva el usuario y la contraseña en un lugar seguro.
 5. Confirma la tasa BCV vigente del día. En Configuración completa razón social, RIF, domicilio fiscal, tipo de institución, teléfono, correo y logo.
 6. Define calendario y fecha de vencimiento antes de matricular. Crea los grados/secciones y cargos del personal según tu colegio; no existen catálogos académicos universales obligatorios.
 7. Configura la segunda carpeta de respaldos, por ejemplo `E:\RespaldosColegio` para un USB o una carpeta local sincronizada por Drive. Tiene que estar fuera de la carpeta de datos de Aula.
-8. Abre **Aula Colegio - Pruebas** para practicar con acceso de administrador. Los datos de esa sesión se eliminan al cerrar su ventana y nunca se mezclan con los reales.
+8. Abre **Aula - Pruebas** para practicar con acceso de administrador. Los datos de esa sesión se eliminan al cerrar su ventana y nunca se mezclan con los reales.
 
 ## Dónde están los datos
 
@@ -74,4 +74,4 @@ La restauración no fusiona bases: los cobros posteriores a la copia seleccionad
 
 ## Vaciar registros
 
-No se necesita para actualizar, importar, pasar de año ni hacer pruebas. Es una operación destructiva reservada a administración avanzada: exige contraseña, revisión de cantidades, frase de confirmación y respaldo previo verificado en ambos destinos cuando existe una segunda carpeta. Conserva usuarios y configuración, pero borra registros administrativos y financieros. Para practicar usa **Aula Colegio - Pruebas**.
+No se necesita para actualizar, importar, pasar de año ni hacer pruebas. Es una operación destructiva reservada a administración avanzada: exige contraseña, revisión de cantidades, frase de confirmación y respaldo previo verificado en ambos destinos cuando existe una segunda carpeta. Conserva usuarios y configuración, pero borra registros administrativos y financieros. Para practicar usa **Aula - Pruebas**.

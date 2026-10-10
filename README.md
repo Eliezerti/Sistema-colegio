@@ -1,20 +1,20 @@
-# Aula Colegio · ELIEZER PEREZ
+# Aula · Administración de colegios
 
-La interfaz y la aplicación Windows usan la nueva identidad **Aula Colegio**, azul y verde, con los logotipos e iconos oficiales. La marca del producto y los datos fiscales del colegio se mantienen separados. [Recursos y mantenimiento de la identidad visual](docs/identidad-visual.md).
+Se ha restaurado el diseño original: tonos verdes, tipografía e iconos anteriores. Se conservan los módulos de cobros, recibos, importación, respaldos, recuperación y perfil de pruebas.
 
 Sistema administrativo para colegios de Venezuela, con una **base central en una computadora Windows**. La distribución actual inicia en modo local para una sola PC. La expansión a otras computadoras queda para una etapa posterior. Las mensualidades y la deuda se expresan en **USD**; los cobros y egresos pueden registrarse en **USD o bolívares (VES)** con la tasa BCV correspondiente a la fecha de la operación.
 
 ## Descargar el sistema
 
-**Nueva identidad · versión 1.0.14:** [descargar el instalador .exe](https://github.com/Eliezerti/Sistema-colegio/releases/download/desktop-1.0.14/Aula-Colegio-Instalador-1.0.14.exe). Superó las pruebas de Windows y dos análisis de Defender, antes y después de las pruebas de instalación. La versión 1.0.8 permanece retirada por la alerta reportada; esos resultados nuevos no explican la alerta antigua ni garantizan ausencia universal de amenazas. Si Defender bloquea un archivo, no añadas exclusiones ni lo permitas para instalarlo. Conserva `%LOCALAPPDATA%\AulaColegio` y los respaldos. [Seguimiento y resultados](docs/revision-defender.md).
+**Último instalador publicado (diseño anterior a esta restauración), 1.0.14:** [descargar el instalador .exe](https://github.com/Eliezerti/Sistema-colegio/releases/download/desktop-1.0.14/Aula-Colegio-Instalador-1.0.14.exe). Superó las pruebas de Windows y dos análisis de Defender, antes y después de las pruebas de instalación. La versión 1.0.8 permanece retirada por la alerta reportada; esos resultados nuevos no explican la alerta antigua ni garantizan ausencia universal de amenazas. Si Defender bloquea un archivo, no añadas exclusiones ni lo permitas para instalarlo. Conserva `%LOCALAPPDATA%\AulaColegio` y los respaldos. [Seguimiento y resultados](docs/revision-defender.md).
 
 El **instalador de escritorio para Windows 10/11 de 64 bits** se publica en [Versiones e instaladores](https://github.com/Eliezerti/Sistema-colegio/releases). Descarga el archivo **Aula-Colegio-Instalador-…exe**, no el ZIP de código fuente. Incluye Python y la aplicación; no necesitas instalar Python por separado. La compilación Windows y la prueba de la ventana deben terminar correctamente para que aparezca el instalador.
 
 ## Instalar, actualizar y recuperar
 
-Abre **Aula Colegio** desde el acceso del escritorio. La primera instalación local no requiere configurar redes. Crea el administrador y escribe el nombre de tu colegio, confirma la tasa BCV y completa sus datos en Configuración. Una base nueva empieza sin RIF ni logo de otra institución; una actualización conserva la identidad y los datos existentes.
+Abre **Aula - Administración escolar** desde el acceso del escritorio. La primera instalación local no requiere configurar redes. Crea el administrador y escribe el nombre de tu colegio, confirma la tasa BCV y completa sus datos en Configuración. Una base nueva empieza sin RIF ni logo de otra institución; una actualización conserva la identidad y los datos existentes.
 
-La ventana funciona sin consola. **X** oculta la aplicación junto al reloj; para detenerla utiliza **Colegio → Salir y cerrar Aula**. **Aula Colegio - Pruebas** abre una base temporal independiente y la elimina al cerrar su ventana.
+La ventana funciona sin consola. **X** oculta la aplicación junto al reloj; para detenerla utiliza **Colegio → Salir y cerrar Aula**. **Aula - Pruebas** abre una base temporal independiente y la elimina al cerrar su ventana.
 
 Antes de actualizar, crea y descarga un respaldo desde Configuración. Cierra Aula completamente y ejecuta el instalador nuevo con la misma cuenta de Windows. Los datos continúan en `%LOCALAPPDATA%\AulaColegio`; el instalador no los elimina ni los cambia de cuenta. No uses Vaciar registros para actualizar.
 
@@ -74,7 +74,7 @@ La PC principal y el router deben estar encendidos, con internet y sin suspensi�
 
 Los respaldos, la restauración y la recuperación local de contraseñas se administran en la PC principal. Una carpeta de Drive o un USB sirve para copiar **respaldos**, nunca para compartir la base activa. Si cambias la PC principal o su nombre en Tailscale, vuelve a ejecutar Configurar-Red.bat con el nuevo enlace y comunica ese enlace a los usuarios. El archivo red.json es configuración del equipo, y no forma parte del respaldo SQLite.
 
-El **modo de prueba es local y separado**: usa el acceso **Aula Colegio - Pruebas**, o Iniciar-Pruebas.bat si usas el ZIP, en la computadora donde quieras experimentar. No comparte ni abre la base real del colegio.
+El **modo de prueba es local y separado**: usa el acceso **Aula - Pruebas**, o Iniciar-Pruebas.bat si usas el ZIP, en la computadora donde quieras experimentar. No comparte ni abre la base real del colegio.
 
 Esta versión valida el acceso a través de un intermediario HTTPS privado, permisos y cobros simultáneos. La instalación de Tailscale, sus permisos, los certificados HTTPS y la conexión real entre tus computadoras deben configurarse y comprobarse en esos equipos antes de trabajar con los datos del colegio.
 

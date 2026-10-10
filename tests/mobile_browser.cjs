@@ -81,7 +81,7 @@ const fs = require('node:fs');
     // Production registration is restricted to the private HTTPS origin.
     await page.evaluate(async () => { await navigator.serviceWorker.register('/service-worker.js'); await navigator.serviceWorker.ready; });
     await page.waitForFunction(() => navigator.serviceWorker.controller !== null);
-    const cached = await page.evaluate(async () => { const cache = await caches.open('aula-mobile-public-v2'); return (await cache.keys()).map(r => new URL(r.url).pathname).sort(); });
+    const cached = await page.evaluate(async () => { const cache = await caches.open('aula-mobile-public-v3'); return (await cache.keys()).map(r => new URL(r.url).pathname).sort(); });
     assert.deepEqual(cached,['/icon-mobile-192.png','/offline.html'],'No account or financial data is cached');
     await context.setOffline(true);
     await page.locator('#connection-status').waitFor({state:'visible'});

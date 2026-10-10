@@ -13,9 +13,9 @@ def main():
     output = Path(args.output).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
-        for path in sorted((root / 'static').rglob('*')):
-            if path.is_file() and path.suffix in ('.html', '.css', '.js', '.png', '.svg', '.webmanifest', '.ttf', '.txt', '.json'):
-                archive.writestr('Aula-Movil/' + path.relative_to(root / 'static').as_posix(), path.read_bytes())
+        for path in sorted((root / 'static').iterdir()):
+            if path.is_file() and path.suffix in ('.html', '.css', '.js', '.png', '.svg', '.webmanifest'):
+                archive.writestr('Aula-Movil/' + path.name, path.read_bytes())
         archive.writestr('Aula-Movil/LEEME.md', (root / 'docs' / 'telefono.md').read_bytes())
     with zipfile.ZipFile(output) as archive:
         if archive.testzip():

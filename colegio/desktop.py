@@ -17,11 +17,7 @@ from .server import ROOT, open_school
 from .storage import DataLock
 from .branding import SCHOOL_NAME
 
-TITLE='Aula Colegio · Gestión escolar'
-
-def set_dialog_icon(root):
-    if sys.platform == 'win32':
-        root.iconbitmap(str(ROOT/'static'/'brand'/'app.ico'))
+TITLE='Aula · Administración escolar'
 
 
 def data_directory():
@@ -101,7 +97,7 @@ def configure(directory):
     if current['mode']=='primary' and (Path(directory)/'red.json').exists():
         try:origin=load_config(Path(directory)/'red.json')
         except ValueError:origin=''
-    root=tk.Tk();set_dialog_icon(root);root.title('Configurar Aula Colegio');root.resizable(False,False)
+    root=tk.Tk();root.title('Configurar Aula');root.resizable(False,False)
     body=ttk.Frame(root,padding=24);body.pack(fill='both',expand=True)
     ttk.Label(body,text=TITLE,font=('Segoe UI',14,'bold'),wraplength=490).pack(anchor='w',pady=(0,15))
     ttk.Label(body,text='¿Cómo usarás esta computadora?',font=('Segoe UI',11,'bold')).pack(anchor='w')
@@ -159,7 +155,7 @@ def recovery(directory,action):
     from tkinter import filedialog, simpledialog, messagebox
     from .restore import restore
     from .reset_password import reset_password, list_administrators
-    root=tk.Tk();set_dialog_icon(root);root.withdraw()
+    root=tk.Tk();root.withdraw()
     try:
         if action=='restore':
             file=filedialog.askopenfilename(parent=root,title='Selecciona un respaldo de Aula',filetypes=[('Respaldo de Aula','*.sqlite3')])
@@ -189,7 +185,7 @@ def tray_icon(window,quit_app):
     from PIL import Image
     def show(*_):window.show();window.restore()
     icon=pystray.Icon('AulaColegio',Image.open(ROOT/'static'/'aula-app.png'),
-                      'Aula Colegio · ELIEZER PEREZ',pystray.Menu(
+                      'Colegio · aplicación activa',pystray.Menu(
                       pystray.MenuItem('Abrir Aula',show,default=True),
                       pystray.MenuItem('Salir y cerrar Aula',lambda *_:quit_app())))
     return icon
@@ -218,7 +214,7 @@ def launch_window(url,*,host=None,demo=False,storage=None,smoke=False,smoke_phon
             try:
                 # Exercise the real Windows renderer, bundled JS and image.
                 for _ in range(100):
-                    ready=window.evaluate_js("Boolean(document.querySelector('form') && document.querySelector('.product-brand img')?.naturalWidth > 0 && typeof api==='function')")
+                    ready=window.evaluate_js("Boolean(document.querySelector('form') && document.querySelector('.brand img,.brand .school-placeholder') && typeof api==='function')")
                     if ready:break
                     time.sleep(.1)
                 if not ready:raise RuntimeError('La interfaz de escritorio no cargó el formulario, logo y JavaScript.')
@@ -286,7 +282,7 @@ def choose_phone_address():
     from .phone_demo import local_addresses
     addresses=local_addresses()
     if not addresses:raise ValueError('Conecta esta PC al Wi-Fi y vuelve a abrir «Probar en teléfono».')
-    root=tk.Tk();set_dialog_icon(root);root.title('Aula Colegio · Prueba en teléfono');root.resizable(False,False)
+    root=tk.Tk();root.title('Probar en teléfono');root.resizable(False,False)
     body=ttk.Frame(root,padding=24);body.pack(fill='both',expand=True)
     ttk.Label(body,text='Prueba Aula desde tu teléfono',font=('Segoe UI',16,'bold')).pack(anchor='w')
     ttk.Label(body,text='Conecta la PC y el teléfono al mismo Wi-Fi.\nEsta prueba usa datos temporales y no modifica la base real.\nAl abrir, Aula mostrará la dirección y el código para el teléfono.',wraplength=470).pack(anchor='w',pady=15)
@@ -340,7 +336,7 @@ def main():
         if args.self_test or args.self_test_demo or args.self_test_phone:raise
         import tkinter as tk
         from tkinter import messagebox
-        root=tk.Tk();set_dialog_icon(root);root.withdraw()
+        root=tk.Tk();root.withdraw()
         try:messagebox.showerror('Aula · no se pudo continuar',str(error)+'\n\nRevisa la configuración o el registro en la carpeta de datos.',parent=root)
         finally:root.destroy()
 

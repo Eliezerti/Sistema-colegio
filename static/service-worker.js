@@ -1,7 +1,7 @@
 'use strict';
 // Keep only a public offline notice and the logo. No accounts, API responses,
 // documents, payments or application pages are ever put in Cache Storage.
-const CACHE = 'aula-mobile-public-v2';
+const CACHE = 'aula-mobile-public-v3';
 const PUBLIC_FILES = ['/offline.html', '/icon-mobile-192.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(PUBLIC_FILES)).then(() => self.skipWaiting()));

@@ -23,17 +23,28 @@ $Before = (Get-FileHash $Database -Algorithm SHA256).Hash
 $BeforeBackup = (Get-FileHash $Backup -Algorithm SHA256).Hash
 
 try {
+    # Simulate the desktop shortcuts from the rejected 1.0.14 identity.
+    $Desktop = [Environment]::GetFolderPath('Desktop')
+    $Shell = New-Object -ComObject WScript.Shell
+    foreach ($PreviousName in @('Aula Colegio.lnk', 'Aula Colegio - Pruebas.lnk')) {
+        $Previous = $Shell.CreateShortcut((Join-Path $Desktop $PreviousName))
+        $Previous.TargetPath = Join-Path $InstallDir 'Aula.exe'
+        $Previous.Save()
+    }
     $Arguments = @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',"/DIR=`"$InstallDir`"",'/TASKS=desktopicon')
     Execute-Checked $Installer $Arguments
+    foreach ($PreviousName in @('Aula Colegio.lnk', 'Aula Colegio - Pruebas.lnk')) {
+        if (Test-Path (Join-Path $Desktop $PreviousName)) { throw 'No se reemplazó un acceso directo de la identidad anterior.' }
+    }
     $Executable = Join-Path $InstallDir 'Aula.exe'
     if (-not (Test-Path $Executable)) { throw 'No se instaló Aula.exe.' }
     $Desktop = [Environment]::GetFolderPath('Desktop')
     $Shell = New-Object -ComObject WScript.Shell
-    $ShortcutPath = Join-Path $Desktop 'Aula Colegio.lnk'
+    $ShortcutPath = Join-Path $Desktop 'Aula - Administración escolar.lnk'
     if (-not (Test-Path $ShortcutPath)) { throw 'No se creó el acceso directo del escritorio.' }
     $Shortcut = $Shell.CreateShortcut($ShortcutPath)
     if ($Shortcut.TargetPath -ne $Executable) { throw 'El acceso directo no abre el ejecutable instalado.' }
-    $Trial = $Shell.CreateShortcut((Join-Path $Desktop 'Aula Colegio - Pruebas.lnk'))
+    $Trial = $Shell.CreateShortcut((Join-Path $Desktop 'Aula - Pruebas.lnk'))
     if ($Trial.Arguments -ne '--demo') { throw 'El acceso de pruebas no abre el modo aislado.' }
     Execute-Checked $Executable @('--self-test')
     Execute-Checked $Executable @('--self-test-demo')
