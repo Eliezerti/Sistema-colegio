@@ -249,6 +249,8 @@ def import_roster(db,data,user,save_record):
         raise ValidationError('Vuelve a revisar el archivo: el mes de cobro debe coincidir con el de la vista previa.')
     errors, imported = [], []
     before_guardians = db.execute('SELECT COUNT(*) FROM guardians').fetchone()[0]
+    original_guardian_ids={g[0] for g in db.execute('SELECT id FROM guardians')}
+    original_student_ids={s[0] for s in db.execute('SELECT id FROM students')}
     before_grades = db.execute('SELECT COUNT(*) FROM grades').fetchone()[0]
     before_balance = sum(c['balance'] for c in charges(db))
     source_balance=0;archived_guardians=set();capacities={};guardian_states={}
@@ -281,7 +283,7 @@ def import_roster(db,data,user,save_record):
                 'phone':r['representante_telefono'],'email':r['representante_email'],'address':r['representante_direccion']}
             if matches:
                 g = matches[0]
-                if exported and bool(g['archived'])!=bool(guardian_archived):
+                if exported and g['id'] in original_guardian_ids and bool(g['archived'])!=bool(guardian_archived):
                     raise ValidationError('El representante existente tiene un estado de archivo distinto. Revisa su ficha.')
                 for key in ('name','phone','email','address'):
                     if fields[key] and normalized(fields[key])!=normalized(g[key]):
@@ -301,7 +303,8 @@ def import_roster(db,data,user,save_record):
             name,birth = required(r,'alumno_nombre'),import_date(r['nacimiento'],'nacimiento') if r['nacimiento'] else ''
             if r['estado'].lower() not in ('','activo','inactivo','active','inactive'):
                 raise ValidationError('estado: escribe activo o inactivo; vacío significa activo.')
-            if db.execute('SELECT 1 FROM students WHERE guardian_id=? AND name=? COLLATE NOCASE AND birth_date=?',(guardian_id,name,birth)).fetchone():
+            duplicates=db.execute('SELECT id FROM students WHERE guardian_id=? AND name=? COLLATE NOCASE AND birth_date=?',(guardian_id,name,birth)).fetchall()
+            if any(not exported or s[0] in original_student_ids for s in duplicates):
                 raise ValidationError('Alumno repetido: mismo nombre, nacimiento y representante.')
             student = save_record(db,'students',{'name':name,'document':r['alumno_cedula'],
                 '_import_code':code or None,'_import_archived':bool(archived),

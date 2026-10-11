@@ -30,6 +30,7 @@ class RosterExportTests(unittest.TestCase):
             'school_year':self.year,'enrollment_start':f'{self.year}-09-01',
             'enrollment_end':f'{self.year+1}-08-31','billing_start':self.month,'birth_date':'',
             'notes':"'Observación de prueba"}
+        self.common=common
         self.active=mutate(self.source,'students',dict(common,name='A Alumno activo',status='active'),
                            self.user,import_code='AL-000045')['id']
         mutate(self.source,'students',dict(common,name='B Alumno inactivo',status='inactive',document='V-9876543'),
@@ -133,6 +134,35 @@ class RosterExportTests(unittest.TestCase):
             mutate(self.target,'import-roster',dict(payload,confirmed_hash=preview['hash'],confirmed_month=preview['billing_default']),self.user)
         state=snapshot(self.target,self.user)
         self.assertEqual(state['students'],[]);self.assertEqual(state['guardians'],[]);self.assertEqual(state['grades'],[])
+
+    def test_archived_guardian_with_two_children_imports_as_one_archived_family(self):
+        gid=self.source.execute("SELECT id FROM guardians WHERE document='V-555'").fetchone()[0]
+        self.source.execute('UPDATE guardians SET archived=0 WHERE id=?',(gid,))
+        mutate(self.source,'students',dict(self.common,name='D Hermano archivado',guardian_id=gid,status='inactive'),
+               self.user,import_code='AL-000047',import_archived=True)
+        self.source.execute('UPDATE guardians SET archived=1 WHERE id=?',(gid,))
+        self.import_data(self.payload(export_roster(snapshot(self.source,self.user)),'csv'))
+        target=snapshot(self.target,self.user)
+        guardian=next(g for g in target['guardians'] if g['document']=='V-555')
+        children=[s for s in target['students'] if s['guardian_id']==guardian['id']]
+        self.assertEqual(guardian['archived'],1);self.assertEqual(len(children),2)
+        self.assertTrue(all(s['archived'] and s['status']=='inactive' for s in children))
+
+    def test_distinct_original_codes_preserve_students_with_the_same_name(self):
+        mutate(self.source,'students',dict(self.common,name='A Alumno activo',status='active'),
+               self.user,import_code='AL-000099')
+        self.import_data(self.payload(export_roster(snapshot(self.source,self.user)),'csv'))
+        children=[s for s in snapshot(self.target,self.user)['students'] if s['name']=='A Alumno activo']
+        self.assertEqual({s['student_code'] for s in children},{'AL-000045','AL-000099'})
+
+    def test_existing_pupil_is_not_duplicated_under_a_different_imported_code(self):
+        guardian=dict(self.source.execute('SELECT * FROM guardians WHERE document=?',('V-12345678',)).fetchone())
+        guardian.pop('id');gid=mutate(self.target,'guardians',guardian,self.user)['id']
+        grade=mutate(self.target,'grades',{'name':'Primero A','capacity':30},self.user)['id']
+        mutate(self.target,'students',dict(self.common,guardian_id=gid,grade_id=grade,name='A Alumno activo',status='active'),self.user)
+        preview=self.import_data(self.payload(export_roster(snapshot(self.source,self.user)),'csv'),False)
+        self.assertIn('Alumno repetido',preview['errors'][0]['message'])
+        self.assertEqual(len(snapshot(self.target,self.user)['students']),1)
 
     def test_old_nine_column_listing_reports_missing_data_without_guessing_a_fee(self):
         raw='Alumno;Codigo;Documento;Grado;Ano escolar;Representante;Telefono;Estado;Saldo USD\n'
