@@ -113,3 +113,13 @@ La compilación 1.0.19 fue cancelada deliberadamente para incluir la petición p
 Ambos análisis terminaron con salida 0 y `found no threats`, motor `1.1.26080.3`, firmas `1.459.647.0`, actualizadas el `2026-10-09T19:56:15+00:00`. Archivo: `Aula-Colegio-Instalador-1.0.20.exe`, 20,458,722 bytes; SHA256 `33f1799c9281387d34f8c15ab25c279b00d26653e2d00175bc9dc705fe622cdf`. Se descargó del borrador y se verificó contra la suma suministrada y la evidencia de ambos análisis.
 
 **1.0.20 permanece en borrador.** Falta el detalle del Historial de protección de la PC para las alertas anteriores de 1.0.8/1.0.14. El resultado del runner no demuestra que ese reporte se haya resuelto. No se desactivó Defender ni se añadieron exclusiones.
+
+## Recibos por WhatsApp · 1.0.21 en borrador
+
+El recibo incorpora Compartir por WhatsApp, con teléfono y mensaje editables sin modificar la ficha ni el cobro. Usa los datos conservados del comprobante: alumno, grado, importe recibido y saldo al registrar el pago; distingue abonos, pagos completos, recibos históricos sin saldo, anulaciones y pruebas. Valida el teléfono venezolano antes de mostrar el enlace. El usuario descarga el PDF en el formato elegido, abre WhatsApp en el navegador de Windows y adjunta el documento manualmente antes de enviar. No se envían mensajes automáticamente ni se publican enlaces locales de recibos. El panel queda fuera de la impresión.
+
+Pasaron navegador normal y perfil de prueba en bases ficticias aisladas, incluyendo teléfonos inválidos, edición del mensaje, igualdad del PDF descargado y conservación de los importes y la ficha. En Linux pasaron las 126 pruebas aplicables (127 descubiertas, una exclusiva de Windows omitida). La [compilación Windows 1.0.21](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38172546900), commit `37132cc0d0413cfba61dbaadb748ece8e04211bd`, completó 127 pruebas, instalación, ventanas normal/pruebas, bandeja, actualización y desinstalación conservando los datos.
+
+Los análisis de Defender antes y después de las pruebas finalizaron con salida 0 y `found no threats`: motor `1.1.26080.3`, firmas `1.459.675.0`, actualización `2026-10-11T14:15:07+00:00`. Archivo: `Aula-Colegio-Instalador-1.0.21.exe`, 20,460,551 bytes; SHA256 `ac24e6660d2bd84cddd8b4d1229333f1ec346ae5b1f27ec6e6206401eeb90e15`. La descarga del borrador coincide con la suma suministrada y con los hashes emitidos por ambos análisis en el registro de la compilación.
+
+**1.0.21 permanece en borrador.** Las alertas anteriores de 1.0.8/1.0.14 siguen pendientes del detalle del Historial de protección de la PC. Estos resultados corresponden al archivo analizado y las firmas indicadas; no resuelven por sí solos las alertas anteriores. No se desactivó Defender ni se añadieron exclusiones.
