@@ -70,6 +70,30 @@ const fs = require('node:fs');
     const halfDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await halfDownload).saveAs('/tmp/aula-half-letter.pdf');
     assert.ok(fs.readFileSync('/tmp/aula-half-letter.pdf').includes(Buffer.from('/MediaBox [0 0 612 396]')));
 
+    const whatsappRequests=[];page.on('request',request=>{if(request.url().startsWith('https://wa.me/'))whatsappRequests.push(request.url());});
+    await click('share-receipt');assert.equal(await page.locator('#receipt-share-phone').inputValue(),'04121234567');
+    const sharedUrl=new URL(await page.locator('#wa-receipt').getAttribute('href'));
+    assert.equal(sharedUrl.pathname,'/584121234567');const sharedMessage=sharedUrl.searchParams.get('text');
+    assert.match(sharedMessage,/R-000001/);assert.match(sharedMessage,/Sofía Pérez · Primaria · Sección A/);
+    assert.match(sharedMessage,/Abono recibido/);assert.match(sharedMessage,/Bs 1\.000,00/);
+    assert.ok(sharedMessage.includes(new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format((4500*expectedMonths-1000)/100)));
+    assert.ok(!sharedMessage.includes('127.0.0.1'),'Do not send inaccessible local URLs');
+    for(const phone of ['+58 (412) 123-4567','4121234567','04121234567']){await page.locator('#receipt-share-phone').fill(phone);assert.equal(new URL(await page.locator('#wa-receipt').getAttribute('href')).pathname,'/584121234567');}
+    for(const phone of ['','123','04121234567abc','+1 202 555 0123']){await page.locator('#receipt-share-phone').fill(phone);assert.equal(await page.locator('#wa-receipt').isVisible(),false);assert.equal(await page.locator('#wa-receipt').getAttribute('href'),null);}
+    await page.locator('#receipt-share-phone').fill('04261234567');await page.locator('#receipt-share-text').fill('Comprobante de Sofía & Ana: abono $10.');
+    const editedUrl=new URL(await page.locator('#wa-receipt').getAttribute('href'));assert.equal(editedUrl.pathname,'/584261234567');assert.equal(editedUrl.searchParams.get('text'),'Comprobante de Sofía & Ana: abono $10.');
+    const sharedDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await sharedDownload).saveAs('/tmp/aula-whatsapp-receipt.pdf');
+    assert.deepEqual(fs.readFileSync('/tmp/aula-whatsapp-receipt.pdf'),fs.readFileSync('/tmp/aula-half-letter.pdf'),'Sharing must download the original receipt in the selected size');
+    const afterSharing=await page.evaluate(async()=>await(await fetch('/api/state')).json());assert.equal(afterSharing.payments.length,1);assert.equal(afterSharing.guardians[0].phone,'04121234567');assert.equal(afterSharing.students[0].balance,4500*expectedMonths-1000);
+    assert.equal(await page.locator('#print-area #receipt-share').count(),0);assert.deepEqual(whatsappRequests,[],'Only the operator opens WhatsApp');
+    await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);await page.screenshot({path:'/tmp/aula-whatsapp-mobile.png',fullPage:true});await page.setViewportSize({width:1440,height:1050});
+    await page.screenshot({path:'/tmp/aula-whatsapp-receipt.png',fullPage:true});await click('share-receipt');assert.equal(await page.locator('#receipt-share').isVisible(),false);
+    const statuses=await page.evaluate(()=>{
+      const base={settings:{school_name:'Prueba'},payment:{id:1,student_name:'Sofía',guardian_name:'Ana',paid_on:'2026-10-11',currency:'USD',received_amount:1000,amount:1000,balance_after:0}};
+      const message=r=>{const el=document.createElement('div');el.innerHTML=receiptShare(r);return el.querySelector('textarea').value;};
+      return [message(base),message({...base,payment:{...base.payment,balance_after:null}}),message({...base,payment:{...base.payment,voided:1}}),message({...base,demo:true})];
+    });assert.match(statuses[0],/Pago completo de cargos registrados/);assert.match(statuses[1],/saldo al emitirlo no disponible/);assert.ok(!statuses[1].includes('Saldo pendiente al registrar'));assert.match(statuses[2],/COMPROBANTE ANULADO/);assert.match(statuses[3],/PRUEBA SIN VALIDEZ/);
+
     await page.locator('#receipt-paper').selectOption('ticket-80');
     const ticketDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await ticketDownload).saveAs('/tmp/aula-ticket-80.pdf');
     assert.ok(fs.readFileSync('/tmp/aula-ticket-80.pdf').includes(Buffer.from('/MediaBox [0 0 226.772 ')));
@@ -209,6 +233,6 @@ const fs = require('node:fs');
     const cleaned=await page.evaluate(async()=>await(await fetch('/api/state')).json());assert.deepEqual(cleaned.students,[]);assert.deepEqual(cleaned.payments,[]);assert.deepEqual(cleaned.employees,[]);
     assert.equal(cleaned.users.length,2);assert.equal(cleaned.settings.rif,'J-12345678-9');
     assert.deepEqual(errors,[]);
-    console.log('PASS: fiscal settings, PNG logo, fiscal letterheads and printing, daily rate checkpoint and reopening, guardian search, live discount, automatic student code, enrollment PDF, automatic arrears without manual monthly generation, BCV payment and receipt PDF, arrears, job catalogue, banks, consolidated payroll PDF and VES expense, filtered directory PDFs and printing, daily payments/arrears PDF, reports, family account and solvency PDFs, CSV preview and import, cash close and reopening, backup status, thermal tickets, bulk promotion and archived PDF, payment plan, responsive layout, read-only role.');
+    console.log('PASS: fiscal settings, PNG logo, fiscal letterheads and printing, daily rate checkpoint and reopening, guardian search, live discount, automatic student code, enrollment PDF, automatic arrears without manual monthly generation, BCV payment and receipt PDF, manual WhatsApp sharing with editable phone/message and unchanged financial records, arrears, job catalogue, banks, consolidated payroll PDF and VES expense, filtered directory PDFs and printing, daily payments/arrears PDF, reports, family account and solvency PDFs, CSV preview and import, cash close and reopening, backup status, thermal tickets, bulk promotion and archived PDF, payment plan, responsive layout, read-only role.');
   }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});
