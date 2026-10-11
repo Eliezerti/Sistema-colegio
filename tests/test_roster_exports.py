@@ -122,6 +122,18 @@ class RosterExportTests(unittest.TestCase):
         self.assertEqual(preview['grades'],0)
         self.assertEqual(snapshot(self.target,self.user)['grades'][0]['capacity'],1)
 
+    def test_conflicting_parent_archive_states_block_the_entire_batch(self):
+        rows=list(csv.reader(io.StringIO(export_roster(snapshot(self.source,self.user)).decode('utf-8-sig')),delimiter=';'))
+        rows[2][19:21]=['1','1']
+        out=io.StringIO();csv.writer(out,delimiter=';').writerows(rows)
+        payload=self.payload(out.getvalue().encode(),'csv');preview=self.import_data(payload,False)
+        self.assertEqual(len(preview['errors']),1)
+        self.assertIn('representante tiene estados',preview['errors'][0]['message'])
+        with self.assertRaises(ValidationError):
+            mutate(self.target,'import-roster',dict(payload,confirmed_hash=preview['hash'],confirmed_month=preview['billing_default']),self.user)
+        state=snapshot(self.target,self.user)
+        self.assertEqual(state['students'],[]);self.assertEqual(state['guardians'],[]);self.assertEqual(state['grades'],[])
+
     def test_old_nine_column_listing_reports_missing_data_without_guessing_a_fee(self):
         raw='Alumno;Codigo;Documento;Grado;Ano escolar;Representante;Telefono;Estado;Saldo USD\n'
         raw+='Alumno;AL-000001;AL-000001;Primero;2026;Representante;04121234567;active;200.00\n'

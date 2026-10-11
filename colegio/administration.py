@@ -251,7 +251,7 @@ def import_roster(db,data,user,save_record):
     before_guardians = db.execute('SELECT COUNT(*) FROM guardians').fetchone()[0]
     before_grades = db.execute('SELECT COUNT(*) FROM grades').fetchone()[0]
     before_balance = sum(c['balance'] for c in charges(db))
-    source_balance=0;archived_guardians=set();capacities={}
+    source_balance=0;archived_guardians=set();capacities={};guardian_states={}
     db.execute('SAVEPOINT roster_batch')
     for r in records:
         index=r['_row']
@@ -272,6 +272,9 @@ def import_roster(db,data,user,save_record):
                     raise ValidationError('saldo_usd_informativo: importe USD inválido. Este campo no se usa como tarifa ni restaura deudas.')
                 exported_balance=int(Decimal(r['saldo_usd_informativo'])*100)
             doc = required(r,'representante_cedula')
+            guardian_key=normalized(doc)
+            if exported and guardian_key in guardian_states and guardian_states[guardian_key]!=guardian_archived:
+                raise ValidationError('El mismo representante tiene estados de archivo distintos en el archivo.')
             matches = [g for g in db.execute('SELECT * FROM guardians') if normalized(g['document'])==normalized(doc)]
             if len(matches)>1: raise ValidationError('Hay más de un representante con esa cédula; revisa el directorio.')
             fields = {'name':required(r,'representante_nombre'),'document':doc,
@@ -310,6 +313,7 @@ def import_roster(db,data,user,save_record):
                 'notes':r['observaciones']},user)
             if exported:
                 capacities[key]=capacity
+                guardian_states[guardian_key]=guardian_archived
                 if guardian_archived: archived_guardians.add(guardian_id)
                 source_balance+=exported_balance
             imported.append({'row':index,'student_name':name,'guardian_name':fields['name'],
