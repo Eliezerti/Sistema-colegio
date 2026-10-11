@@ -119,13 +119,3 @@ La restauración no fusiona bases: los cobros posteriores a la copia seleccionad
 ## Vaciar registros
 
 No se necesita para actualizar, importar, pasar de año ni hacer pruebas. Es una operación destructiva reservada a administración avanzada: exige contraseña, revisión de cantidades, frase de confirmación y respaldo previo verificado en ambos destinos cuando existe una segunda carpeta. Conserva usuarios y configuración, pero borra registros administrativos y financieros. Para practicar usa **Aula - Pruebas**.
-
-## Enviar un recibo por WhatsApp
-
-1. En Caja y cobros abre el recibo del pago y pulsa **Compartir por WhatsApp**. También aparece al terminar de registrar el cobro.
-2. Revisa el teléfono del representante y el mensaje. Puedes corregir ambos para este envío sin cambiar la ficha ni el pago. Un abono indica lo recibido y el saldo pendiente al registrar ese cobro; no es el saldo actualizado con pagos posteriores.
-3. Pulsa **Descargar PDF** y guárdalo donde puedas encontrarlo. Usa el tamaño de recibo que prefieras.
-4. Pulsa **Abrir WhatsApp**, inicia sesión en WhatsApp Web o en la aplicación de Windows y verifica el destinatario.
-5. Adjunta el PDF con el clip de WhatsApp (Documento), revisa el mensaje y envíalo.
-
-El enlace no adjunta el PDF ni envía nada automáticamente. Comparte únicamente el comprobante correspondiente, no la base ni un respaldo. Los recibos de prueba y anulados llevan su aviso en el mensaje y en el documento.

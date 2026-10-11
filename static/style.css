@@ -224,6 +224,3 @@ table:has(.row-actions) th:last-child{text-align:right}
 .daily-report section>h3{font-size:16px;color:#356e57;margin:22px 0 12px}
 @media(max-width:700px){.daily-report-totals{grid-template-columns:1fr 1fr}}
 @media print{.daily-report-totals{grid-template-columns:repeat(4,minmax(0,1fr));break-inside:avoid;print-color-adjust:exact}.daily-report section>h3{break-after:avoid}}
-
-/* Manual receipt sharing stays outside the printable document. */
-.receipt-share{background:#f4f8f5;border:1px solid #dce6df;border-radius:12px;padding:20px;margin:16px 0;color:#173b36}.receipt-share h3{font-size:16px;margin:0 0 8px}.receipt-share p{line-height:1.65}.receipt-share .field{margin:14px 0}.receipt-share textarea{resize:vertical;min-height:140px;line-height:1.55}.receipt-share .hint{font-size:12px;overflow-wrap:anywhere}

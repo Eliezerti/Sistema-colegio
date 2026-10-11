@@ -362,7 +362,7 @@ function schoolHeader(s,title,code,on) {
 }
 function documentActions(path) {
   const isReceipt=path.startsWith('receipt/');
-  return `<div class="actions document-actions">${isReceipt?`<label class="receipt-paper-control">Tamaño del recibo<select id="receipt-paper"><option value="half-letter" ${receiptPaper==='half-letter'?'selected':''}>Media carta · horizontal</option><option value="a4" ${receiptPaper==='a4'?'selected':''}>A4 · vertical</option><option value="ticket-80" ${receiptPaper==='ticket-80'?'selected':''}>Ticket térmico · 80 mm</option><option value="ticket-58" ${receiptPaper==='ticket-58'?'selected':''}>Ticket térmico · 58 mm</option></select></label>`:''}<a class="btn primary" href="/api/${path}.pdf${isReceipt?'?paper='+receiptPaper:''}" download>${icon('download')} Descargar PDF</a>${btn(`${icon('print')} Imprimir`,'print-receipt')}${isReceipt?'<button class="btn" data-action="share-receipt" aria-controls="receipt-share" aria-expanded="false">Compartir por WhatsApp</button>':''}</div>${isReceipt?'<p class="receipt-paper-help" id="receipt-paper-help"></p>':''}`;
+  return `<div class="actions document-actions">${isReceipt?`<label class="receipt-paper-control">Tamaño del recibo<select id="receipt-paper"><option value="half-letter" ${receiptPaper==='half-letter'?'selected':''}>Media carta · horizontal</option><option value="a4" ${receiptPaper==='a4'?'selected':''}>A4 · vertical</option><option value="ticket-80" ${receiptPaper==='ticket-80'?'selected':''}>Ticket térmico · 80 mm</option><option value="ticket-58" ${receiptPaper==='ticket-58'?'selected':''}>Ticket térmico · 58 mm</option></select></label>`:''}<a class="btn primary" href="/api/${path}.pdf${isReceipt?'?paper='+receiptPaper:''}" download>${icon('download')} Descargar PDF</a>${btn(`${icon('print')} Imprimir`,'print-receipt')}</div>${isReceipt?'<p class="receipt-paper-help" id="receipt-paper-help"></p>':''}`;
 }
 function setReceiptPaper(paper) {
   receiptPaper=['a4','half-letter','ticket-58','ticket-80'].includes(paper)?paper:'half-letter';
@@ -391,25 +391,6 @@ async function receipt(id) {
   const period = value => /^\d{4}-(0[1-9]|1[0-2])$/.test(value)?monthLabel(value):value;
   const markup=`<article class="receipt school-document payment-receipt">${schoolHeader(r.settings,'Comprobante de pago','R-'+String(p.id).padStart(6,'0'),p.paid_on)}${p.voided?`<div class="receipt-void"><b>COMPROBANTE ANULADO</b><p>${esc(p.void_reason)}</p></div>`:''}<div class="receipt-parties"><section><span class="receipt-label">Representante legal</span><h2>${esc(p.guardian_name)}</h2><p>Cédula: ${esc(p.guardian_document)}</p>${p.guardian_phone?`<p>${esc(p.guardian_phone)}</p>`:''}</section><section><span class="receipt-label">Alumno · Grado / sección</span><h2>${esc(p.student_name)}${p.grade_name?`<span class="receipt-student-grade"> · ${esc(p.grade_name)}</span>`:''}</h2>${p.grade_name?'':'<p>Grado no registrado</p>'}<p>Código: ${esc(p.student_code||p.student_document)}</p></section></div>${p.guardian_address?`<p class="receipt-address"><span>Dirección del representante</span>${esc(p.guardian_address)}</p>`:''}<section class="receipt-charges"><h3 class="receipt-label">Conceptos abonados</h3>${table(['Descripción','Período','Aplicado · USD','Pendiente · USD'],r.allocations,a=>`<td>${esc(a.concept)}</td><td>${esc(period(a.period))}</td><td class="money">${usd(a.amount)}</td><td class="money">${a.balance_after===undefined?'—':usd(a.balance_after)}</td>`)}</section><div class="receipt-payment"><section class="receipt-method"><span class="receipt-label">Método de pago</span><p class="receipt-method-name">${esc(p.method)}</p>${p.reference?`<span class="receipt-label">Referencia / comprobante</span><p>${esc(p.reference)}</p>`:''}</section><section class="receipt-amount"><span class="receipt-label">Importe recibido · ${p.currency==='VES'?'Bolívares':'USD'}</span><div class="receipt-amount-value">${p.currency==='VES'?bs(p.received_amount):usd(p.received_amount)}</div><div class="receipt-applied"><span>Total aplicado en USD</span><b>${usd(p.amount)}</b></div>${p.currency==='VES'?`<p class="receipt-rate">Tasa BCV aplicada: Bs ${esc(p.exchange_rate)} por USD</p>`:''}</section></div>${receiptBalance(p)}${p.notes?`<section class="receipt-notes"><span class="receipt-label">Observaciones</span><p>${esc(p.notes)}</p></section>`:''}<div class="signature-row"><span>Firma de administración</span><span>Firma del representante</span></div><footer class="receipt-bottom"><p>Registrado por: ${esc(p.operator)}</p><p>Comprobante administrativo · No sustituye una factura fiscal.</p></footer></article>`;
   showDocument('Comprobante de pago','receipt/'+id,markup);
-  modal.querySelector('.document-actions').insertAdjacentHTML('afterend',receiptShare(r));
-  updateReceiptShare();
-}
-function receiptShare(r) {
-  const p=r.payment,code='R-'+String(p.id).padStart(6,'0');
-  const lines=[r.demo?'PRUEBA SIN VALIDEZ':'',p.voided?'COMPROBANTE ANULADO':'',r.settings.legal_name||r.settings.school_name,`Comprobante de pago ${code}`,`Representante: ${p.guardian_name}`,`Alumno: ${p.student_name}${p.grade_name?' · '+p.grade_name:''}`,`Fecha: ${dateLabel(p.paid_on)}`,`Importe recibido: ${p.currency==='VES'?bs(p.received_amount):usd(p.received_amount)}`,`Aplicado en USD: ${usd(p.amount)}`];
-  if(p.balance_after!==null&&p.balance_after!==undefined){lines.push(p.balance_after?'Abono recibido':'Pago completo de cargos registrados',`Saldo pendiente al registrar este pago: ${usd(p.balance_after)}`);}
-  else lines.push('Recibo histórico: saldo al emitirlo no disponible.');
-  if(p.reference)lines.push(`Referencia: ${p.reference}`);
-  lines.push('Adjunto el comprobante administrativo en PDF.');
-  return `<section id="receipt-share" class="receipt-share" hidden aria-label="Compartir comprobante"><h3>Enviar el comprobante por WhatsApp</h3><p>1. Descarga el PDF con el botón de arriba.<br>2. Abre WhatsApp y adjunta ese PDF con el clip antes de enviar.</p><label class="field">Teléfono del representante<input id="receipt-share-phone" type="tel" autocomplete="tel" maxlength="25" value="${esc(p.guardian_phone||'')}" placeholder="0412 123 4567 o +58 412 123 4567"></label><label class="field">Mensaje<textarea id="receipt-share-text" rows="7" maxlength="4000">${esc(lines.filter(Boolean).join('\n'))}</textarea></label><p id="receipt-share-status" class="hint" role="status"></p><div class="actions"><a id="wa-receipt" class="btn primary" target="_blank" rel="noopener noreferrer" hidden>Abrir WhatsApp</a></div><p class="hint">Revisa el destinatario y el mensaje. El PDF se adjunta manualmente; abrir WhatsApp no envía nada. El saldo corresponde a la fecha de este cobro.</p></section>`;
-}
-function updateReceiptShare(){
-  const phone=$('#receipt-share-phone');if(!phone)return;
-  const digits=whatsappNumber(phone.value),link=$('#wa-receipt');
-  link.hidden=!digits;
-  if(digits)link.href=`https://wa.me/${digits}?text=${encodeURIComponent($('#receipt-share-text').value)}`;
-  else link.removeAttribute('href');
-  $('#receipt-share-status').textContent=digits?'Destinatario: +'+digits+' · Este cambio no modifica la ficha del representante.':'Escribe un teléfono venezolano válido para abrir WhatsApp.';
 }
 function printReport() {
   const income=state.payments.filter(p=>!p.voided&&p.paid_on>=reportFrom&&p.paid_on<=reportTo).reduce((t,p)=>t+p.amount,0), expenses=state.expenses.filter(e=>!e.voided&&e.spent_on>=reportFrom&&e.spent_on<=reportTo).reduce((t,e)=>t+e.amount,0);
@@ -436,7 +417,6 @@ document.addEventListener('click',async event=>{
       case 'correct-billing':openBillingCorrection(id);break;
       case 'void-payment':case 'void-expense':case 'cancel-charge':openVoid(action,id);break;
       case 'user':openUser();break;case 'password':openPassword(id);break;case 'receipt':await receipt(id);break;
-      case 'share-receipt':{const panel=$('#receipt-share');panel.hidden=!panel.hidden;target.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden)$('#receipt-share-phone').focus();break;}
       case 'daily-report':await openDailyReport();break;case 'directory-report':await openDirectoryReport(id);break;case 'print-receipt':window.print();break;case 'print-report':printReport();break;
       case 'copy-collection':await navigator.clipboard.writeText($('#collection-text').value);toast('Aviso copiado.');break;
       case 'rate-inline':await rateInline();break;
@@ -484,7 +464,6 @@ document.addEventListener('submit',async event=>{
 });
 document.addEventListener('input',event=>{
   const el=event.target;
-  if(el.id==='receipt-share-phone'||el.id==='receipt-share-text')updateReceiptShare();
   if(el.id==='collection-text'){const link=$('#wa-collection');if(link){const url=new URL(link.href);url.searchParams.set('text',el.value);link.href=url.href;}}
   if(el.id==='plan-count'){buildPlanRows();return;}
   if(el.closest('form[data-endpoint="correct-billing-start"]')&&el.name==='billing_start')updateBillingCorrection();
@@ -713,14 +692,9 @@ function dashboardUpcoming(due){
   return due.length ? card('Vencimientos de esta semana',`<div class="dashboard-upcoming">${table(['Alumno / grado','Vence','Saldo USD'],due.slice(0,5),c=>`<td><button class="btn ghost" data-action="account" data-id="${c.student_id}">${esc(c.student_name)}</button><span class="sub">${esc(c.grade_name)} · ${esc(c.concept)} · ${esc(c.period)}</span></td><td>${dateLabel(c.due_date)}</td><td class="money">${usd(c.balance)}</td>`)}</div>`,btn('Ver cargos →','nav','ghost','billing')) : '';
 }
 
-function whatsappNumber(phone){
-  if(!/^[+\d\s().-]+$/.test(String(phone||'')))return '';
-  let digits=String(phone).replace(/\D/g,'');if(digits.length===11&&digits[0]==='0')digits='58'+digits.slice(1);else if(digits.length===10)digits='58'+digits;
-  return /^58[1-9]\d{9}$/.test(digits)?digits:'';
-}
 function whatsappLink(phone,text){
-  const digits=whatsappNumber(phone);
-  if(!digits)return '<small>Completa un teléfono venezolano válido para abrir WhatsApp.</small>';
+  let digits=String(phone||'').replace(/\D/g,'');if(digits.length===11&&digits[0]==='0')digits='58'+digits.slice(1);else if(digits.length===10)digits='58'+digits;
+  if(!/^58\d{10}$/.test(digits))return '<small>Completa un teléfono venezolano válido para abrir WhatsApp.</small>';
   return `<a id="wa-collection" class="btn" href="https://wa.me/${digits}?text=${encodeURIComponent(text)}" target="_blank" rel="noopener noreferrer">Abrir WhatsApp con el aviso</a>`;
 }
 
