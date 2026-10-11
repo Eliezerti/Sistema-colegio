@@ -39,8 +39,12 @@ class DirectoryReportsTests(unittest.TestCase):
 
     def test_guardian_children_and_employee_bank_account_keep_all_digits(self):
         data = directory_state()
+        data['students'][1]['status']='inactive'
         guardian = directory_report(data, 'guardians', {})
-        self.assertIn('Alumno Archivado · Primero A (archivado)', guardian['lines'][0][-1])
+        self.assertIn('Alumno Uno · Primero A (Activo)', guardian['lines'][0][-1])
+        self.assertIn('Alumno Dos · Primero A (Inactivo)', guardian['lines'][0][-1])
+        self.assertIn('Alumno Archivado · Primero A (Inactivo · Archivado)', guardian['lines'][0][-1])
+        self.assertTrue(b'Inactivo' in directory_pdf(guardian),'Estado inactivo visible en PDF')
         employee = directory_report(data, 'employees', {})
         self.assertIn('01020000000012345678', employee['lines'][0][4])
         self.assertEqual(employee['lines'][0][5], 'USD 120,00')

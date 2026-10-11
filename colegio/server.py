@@ -23,7 +23,7 @@ from .db import (ValidationError, RateConfirmationRequired, audit, charges, chec
                  required, valid_date, valid_period, valid_rate, local_today, synchronize_monthly_charges)
 from .db import next_record_id
 from .storage import DataLock, consistent_backup, daily_backup, automatic_backup, backup_status
-from .administration import (import_roster, import_template, cash_summary, close_cash, reopen_cash,
+from .administration import (import_roster, import_template, export_roster, cash_summary, close_cash, reopen_cash,
     ensure_open_day, guardian_account, issue_guardian_document, load_administrative_document)
 from .documents import enrollment, payroll, load_document, render_pdf
 from .directory_reports import directory_report, directory_pdf, daily_report, daily_pdf
@@ -128,14 +128,16 @@ def save_record(db, table, fields, data):
     return result.lastrowid
 
 
-def mutate(db, endpoint, data, user, *, synchronize=True):
+def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, import_archived=False):
     uid = user['id']
     admin_paths = {'settings','grades','guardians','students','employees','users','password','void-payment','void-expense','cancel-charge','positions','payroll-plans','import-roster','reopen-cash','transition-year','cancel-plan','correct-billing-start'} | DIRECTORY_ACTIONS
     if user['role'] == 'reader' or (endpoint in admin_paths and user['role'] != 'admin'):
         raise PermissionError('Tu perfil no permite esta operación.')
     # Calculate outstanding months before editing tariffs, dates or student status.
     if synchronize: synchronize_monthly_charges(db)
-    batch_record=lambda db,endpoint,data,user: mutate(db,endpoint,data,user,synchronize=False)
+    batch_record=lambda db,endpoint,data,user: mutate(db,endpoint,data,user,synchronize=False,
+        import_code=data.get('_import_code') if endpoint=='students' else None,
+        import_archived=data.get('_import_archived',False) if endpoint=='students' else False)
     if endpoint in DIRECTORY_ACTIONS: return directory_action(db, endpoint, data, user)
     if endpoint=='correct-billing-start': return correct_billing_start(db, data, user)
     if endpoint=='import-roster': return import_roster(db,data,user,batch_record)
@@ -231,9 +233,9 @@ def mutate(db, endpoint, data, user, *, synchronize=True):
     elif endpoint == 'students':
         existing = db.execute('SELECT * FROM students WHERE id=?', (data.get('id'),)).fetchone() if data.get('id') else None
         next_id = next_record_id(db, 'students')
-        code = existing['student_code'] if existing else f'AL-{next_id:06d}'
+        code = existing['student_code'] if existing else import_code or f'AL-{next_id:06d}'
         # A legacy document may resemble an automatic code; skip it without changing legacy IDs.
-        while not existing and db.execute('SELECT id FROM students WHERE document=? OR student_code=?', (code, code)).fetchone():
+        while not existing and not import_code and db.execute('SELECT id FROM students WHERE document=? OR student_code=?', (code, code)).fetchone():
             next_id += 1
             code = f'AL-{next_id:06d}'
         document = str(data.get('document', '')).strip() or code
@@ -247,7 +249,7 @@ def mutate(db, endpoint, data, user, *, synchronize=True):
                   'monthly_fee': money(data.get('monthly_fee')), 'discount': integer(data.get('discount', 0), 0, 100),
                   'status': data.get('status', 'active'), 'notes': str(data.get('notes', ''))[:2000]}
         if not data.get('id'):
-            fields.update(id=next_id, student_code=code)
+            fields.update(id=next_id, student_code=code, archived=int(bool(import_archived)))
         settings = dict(db.execute('SELECT key,value FROM settings'))
         academic_start = date(fields['school_year'], int(settings['start_month']), 1).isoformat()
         academic_end = date(fields['school_year'] + 1, int(settings['start_month']), 1).isoformat()
@@ -803,6 +805,13 @@ class Handler(BaseHTTPRequestHandler):
             elif endpoint == 'export':
                 state = snapshot(db, public_user)
                 kind = parse_qs(url.query).get('type', ['arrears'])[0]
+                if kind=='students':
+                    file_format=parse_qs(url.query).get('format',['csv'])[0]
+                    if file_format not in ('csv','xlsx'): raise ValidationError('Selecciona Excel o CSV.')
+                    self.respond(200,export_roster(state,file_format=='xlsx'),
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' if file_format=='xlsx' else 'text/csv; charset=utf-8',
+                        {'Content-Disposition':f'attachment; filename="students-{local_today()}.{file_format}"'})
+                    return
                 if kind == 'arrears':
                     entries = [{'Alumno': c['student_name'], 'Representante': c['guardian_name'], 'Telefono': c['guardian_phone'],
                       'Grado': c['grade_name'], 'Concepto': c['concept'], 'Periodo': c['period'], 'Vencimiento': c['due_date'],
@@ -813,11 +822,6 @@ class Handler(BaseHTTPRequestHandler):
                       'Recibido': f"{p['received_amount']/100:.2f}", 'Tasa Bs por USD': p['exchange_rate'], 'Equivalente USD': f"{p['amount']/100:.2f}",
                       'Metodo': p['method'], 'Referencia': p['reference'], 'Estado': 'Anulado' if p['voided'] else 'Valido'} for p in state['payments']]
                     columns = ['Recibo','Fecha','Alumno','Moneda','Recibido','Tasa Bs por USD','Equivalente USD','Metodo','Referencia','Estado']
-                elif kind == 'students':
-                    entries = [{'Alumno': s['name'], 'Codigo': s['student_code'], 'Documento': s['document'], 'Grado': s['grade_name'], 'Ano escolar': s['school_year'],
-                      'Representante': s['guardian_name'], 'Telefono': s['guardian_phone'], 'Estado': s['status'],
-                      'Saldo USD': f"{s['balance']/100:.2f}"} for s in state['students']]
-                    columns = ['Alumno','Codigo','Documento','Grado','Ano escolar','Representante','Telefono','Estado','Saldo USD']
                 elif kind == 'expenses':
                     entries = [{'Fecha': e['spent_on'], 'Concepto': e['concept'], 'Categoria': e['category'], 'Moneda': e['currency'],
                       'Pagado': f"{e['received_amount']/100:.2f}", 'Tasa Bs por USD': e['exchange_rate'],

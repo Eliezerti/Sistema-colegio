@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta, timezone
 
 from .db import ValidationError, integer
-from .documents import AdministrativePDF, amount, school_month
+from .documents import AdministrativePDF, amount, school_month, student_status
 
 
 TITLES = {'students': 'Alumnos y matrículas', 'guardians': 'Representantes',
@@ -42,7 +42,7 @@ def directory_report(state, kind, query):
             children = [s for s in state['students'] if s['guardian_id'] == r['id']]
             lines.append([str(n), r['name']+'\n'+r['document']+('\nArchivado' if r.get('archived') else ''),
                 '\n'.join(filter(None, [r['phone'], r['email']])) or '—', r['address'] or '—',
-                '\n'.join(s['name']+' · '+s['grade_name']+(' (archivado)' if s.get('archived') else '')
+                '\n'.join(s['name']+' · '+s['grade_name']+' ('+student_status(s)+')'
                           for s in children) or 'Sin alumnos vinculados'])
         else:
             lines.append([str(n), r['name']+'\n'+r['document'], r['position'], r['phone'] or '—',
@@ -51,7 +51,7 @@ def directory_report(state, kind, query):
     headings, widths = {
         'students': (['N.º', 'Alumno / código', 'Grado / año', 'Representante', 'Mensualidad',
                       'Cobrar desde', 'Estado', 'Saldo USD'], [26, 150, 108, 157, 85, 83, 65, 84]),
-        'guardians': (['N.º', 'Representante / cédula', 'Contacto', 'Dirección', 'Alumnos / grado'],
+        'guardians': (['N.º', 'Representante / cédula', 'Contacto', 'Dirección', 'Alumnos / grado / estado'],
                       [26, 180, 140, 170, 242]),
         'employees': (['N.º', 'Empleado / cédula', 'Cargo', 'Teléfono', 'Banco / cuenta', 'Salario USD', 'Estado'],
                       [26, 180, 125, 100, 168, 89, 70]),
@@ -69,7 +69,7 @@ def directory_report(state, kind, query):
             'headings': headings, 'widths': widths, 'lines': lines,
             'note': 'Los importes se expresan en USD. El saldo corresponde a los cargos registrados al emitir el listado.'
                     if kind == 'students' else 'Salarios de referencia; este listado no acredita pagos de nómina.'
-                    if kind == 'employees' else 'Alumnos vinculados según el directorio al emitir este listado.'}
+                    if kind == 'employees' else 'Cada alumno indica su estado actual: Activo, Inactivo o Inactivo · Archivado. Se conservan todos los vínculos con el representante.'}
 
 
 class DirectoryPDF(AdministrativePDF):

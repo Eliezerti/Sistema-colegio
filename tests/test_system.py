@@ -504,6 +504,28 @@ class SystemTests(unittest.TestCase):
         self.request('grades',{'id':self.grade,'name':'Primaria A','capacity':3})
         p=self.request('import-roster',dict(capacity,preview=True));self.assertEqual(len(p['errors']),1)
 
+    def test_complete_student_export_endpoints_include_import_fields_and_real_excel(self):
+        for extension in ('csv','xlsx'):
+            raw=self.request('export?type=students&format='+extension)
+            if extension=='xlsx':self.assertTrue(raw.startswith(b'PK'))
+            records,_=parse_import({'filename':'students.'+extension,'content':base64.b64encode(raw).decode()})
+            self.assertEqual(records[0]['_format'],'export')
+            self.assertEqual(records[0]['representante_cedula'],'V-123')
+            self.assertEqual(records[0]['alumno_codigo'],self.request('state')['students'][0]['student_code'])
+            self.assertIn('mensualidad_usd',records[0])
+            self.assertIn('primer_mes_cobro',records[0])
+        self.request('export?type=students&format=pdf',status=400)
+
+    def test_guardian_directory_and_account_pdf_identify_inactive_children_at_their_cut(self):
+        self.request('students',self.student_data(id=self.student,status='inactive'))
+        report=self.request('directory/guardians')
+        self.assertIn('(Inactivo)',report['lines'][0][-1])
+        self.assertTrue(b'Inactivo' in self.request('directory/guardians.pdf'),'PDF debe identificar al alumno inactivo')
+        saved=self.request('guardian-documents',{'guardian_id':self.guardian,'kind':'account'})
+        self.assertTrue(b'Inactivo' in self.request(f"guardian-document/{saved['id']}.pdf"),'El documento conserva el estado al emitirlo')
+        self.request('students',self.student_data(id=self.student,status='active'))
+        self.assertTrue(b'Inactivo' in self.request(f"guardian-document/{saved['id']}.pdf"),'El documento conserva el estado al emitirlo')
+
     def test_excel_template_numeric_dates_shared_siblings_and_formula_rejection(self):
         import zipfile
         raw=self.request('import-template?format=xlsx')

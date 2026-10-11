@@ -20,6 +20,7 @@ FIELDS = [
 ]
 
 STEPS = [
+ 'Para reutilizar alumnos ya registrados, usa Alumnos y matrículas → Exportar Excel / CSV → Exportar Excel (.xlsx). El archivo de exportación nuevo se importa directamente, conserva códigos y crea los grados que falten con sus cupos. Los CSV antiguos de 9 columnas son listados incompletos: vuelve a exportar con la versión nueva.',
  'Configura el año escolar, el mes de inicio y el vencimiento en Configuración antes de matricular.',
  'Crea los grados/secciones y su capacidad. Copia sus nombres exactos a la columna grado.',
  'Descarga la plantilla. Rellena únicamente la hoja Alumnos desde la fila 2; conserva sus 17 encabezados y su orden. La columna nueva es primer_mes_cobro; también se admite la plantilla anterior de 16 columnas.',
@@ -28,8 +29,10 @@ STEPS = [
  'No se importan pagos anteriores ni saldos históricos. Las mensualidades comienzan en primer_mes_cobro, independientemente del inicio del período académico. No hay prorrateo por días.',
  'Ejemplo: base 100 USD y descuento 10 generan 90 USD al mes. Período académico desde septiembre y primer_mes_cobro 2026-11: no se generan septiembre ni octubre. Vacío al cargar en noviembre también comienza en noviembre.',
  'Revisa el primer mes a cobrar y los cargos de la vista previa. Una deuda anterior se registra expresamente como cargo, o elige un mes anterior solo si esos meses realmente deben cobrarse. No inventes pagos para eliminar saldos.',
- 'Guarda como .xlsx (recomendado) o CSV UTF-8. No .xls, macros, fórmulas, hojas protegidas ni columnas adicionales. Máximo 2 MB y 1000 alumnos por archivo.',
+ 'Guarda como .xlsx (recomendado) o CSV UTF-8. Si Excel pregunta si debe quitar ceros iniciales, elige No convertir. No .xls, macros, fórmulas, hojas protegidas ni columnas adicionales. Máximo 2 MB y 1000 alumnos por archivo.',
  'Pulsa Revisar archivo: no guarda datos. Corrige todas las filas señaladas, vuelve a seleccionar el archivo corregido y repite la revisión.',
  'Solo confirma cuando no haya errores y hayas comprobado nombres, fechas, tarifas y cargos. La confirmación guarda el lote completo; si falla una fila no se guarda ninguna.',
  'La importación crea alumnos nuevos; no actualiza fichas existentes. No importes el mismo archivo dos veces.',
+ 'Para mostrar el directorio en Aula - Pruebas, abre un perfil de prueba vacío, confirma su tasa e importa el Excel exportado. Revisa la vista previa antes de confirmar. Los datos temporales se borran al cerrar y salir del perfil de prueba.',
+ 'Excel/CSV contiene matrículas y representantes vinculados; no traslada pagos, recibos ni saldos históricos. Para instalar otra PC con toda la información exacta usa Configuración → Crear respaldo ahora → Descargar copia, cierra Aula en la PC de destino y abre Inicio → Restaurar respaldo. Las PC no se sincronizan.',
 ]

@@ -119,3 +119,17 @@ La restauración no fusiona bases: los cobros posteriores a la copia seleccionad
 ## Vaciar registros
 
 No se necesita para actualizar, importar, pasar de año ni hacer pruebas. Es una operación destructiva reservada a administración avanzada: exige contraseña, revisión de cantidades, frase de confirmación y respaldo previo verificado en ambos destinos cuando existe una segunda carpeta. Conserva usuarios y configuración, pero borra registros administrativos y financieros. Para practicar usa **Aula - Pruebas**.
+
+## Llevar alumnos a Aula - Pruebas
+
+1. Actualiza Aula con la misma cuenta de Windows, sin vaciar registros. Crea antes un respaldo externo.
+2. En la aplicación real abre Alumnos y matrículas → Exportar Excel / CSV → Exportar Excel (.xlsx). Guarda el archivo.
+3. Abre Aula - Pruebas vacío y confirma la tasa. Si ya estabas probando, usa Cerrar y borrar pruebas y vuelve a abrirlo para comenzar vacío.
+4. Revisa que el ciclo escolar y las reglas de cobro de Pruebas sean los que quieres mostrar. El nombre y logo del colegio se configuran allí por separado.
+5. En Alumnos y matrículas → Importar Excel / CSV selecciona el mismo archivo exportado. No necesitas rellenar otra plantilla ni crear a mano los grados que falten.
+6. Pulsa Revisar archivo. Comprueba cantidad, códigos, grados y cupos, activos/inactivos, tarifas y primer mes a cobrar. La revisión no guarda nada.
+7. Revisa los cargos nuevos: el saldo de origen es informativo. Los pagos y recibos anteriores no viajan en Excel, así que los saldos de prueba pueden ser distintos.
+8. Marca la casilla y pulsa Confirmar importación. Se carga todo el lote; si hay errores no se guarda ninguna fila. No lo importes dos veces.
+9. Para el documento presentable, usa PDF / Imprimir en Alumnos o Representantes. El PDF de representantes identifica el estado de cada alumno.
+
+El CSV antiguo de nueve columnas no contiene la información necesaria: vuelve a exportar desde la versión nueva. Si abres CSV en Excel y ofrece quitar ceros iniciales, elige No convertir. Para llevar toda la base real a la PC del colegio usa respaldo y restauración, no Excel. La importación tampoco traslada personal ni representantes que no tengan alumnos vinculados.

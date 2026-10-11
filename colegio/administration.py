@@ -21,6 +21,10 @@ LEGACY_COLUMNS = ('representante_nombre','representante_cedula','representante_t
     'nacimiento','grado','ano_escolar','mensualidad_usd','descuento_pct',
     'inicio_matricula','fin_matricula','estado','observaciones')
 COLUMNS = LEGACY_COLUMNS + ('primer_mes_cobro',)
+EXPORT_COLUMNS = COLUMNS + ('alumno_codigo','grado_capacidad','alumno_archivado',
+                            'representante_archivado','saldo_usd_informativo')
+OLD_EXPORT_COLUMNS = ('alumno','codigo','documento','grado','ano escolar',
+                      'representante','telefono','estado','saldo usd')
 NS = {'s': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
 
 
@@ -64,7 +68,7 @@ def import_integer(value,column,minimum,maximum):
         raise ValidationError(f'{column}: escribe un entero entre {minimum} y {maximum}, sin símbolos. El año escolar lleva solo el año de inicio y el descuento no lleva %.')
 
 
-def import_template(xlsx=False, grades=(), settings=None):
+def import_template(xlsx=False, grades=(), settings=None, roster_rows=None, columns=COLUMNS):
     from xml.sax.saxutils import escape
     from .import_guide import FIELDS, STEPS
     if not xlsx:
@@ -80,7 +84,7 @@ def import_template(xlsx=False, grades=(), settings=None):
     example[12:14] = [start,end]
     example[-1] = max(local_today().strftime('%Y-%m'),start[:7])
     sheets = [
-        ('Alumnos',[COLUMNS],True),
+        ('Alumnos',[columns]+(roster_rows or []),True),
         ('Instrucciones',[['PASO','INSTRUCCIÓN']]+[[str(i),t] for i,t in enumerate(STEPS,1)]+[['','','','']]+[['COLUMNA','OBLIGATORIA','QUÉ ESCRIBIR','EJEMPLO']]+FIELDS,False),
         ('Ejemplos',[COLUMNS,example,example[:5]+['Luis Pérez','', '2018-08-10']+example[8:]],True),
         ('Grados',[['NOMBRE EXACTO DEL GRADO / SECCIÓN']]+[[g] for g in grades],False),
@@ -94,7 +98,7 @@ def import_template(xlsx=False, grades=(), settings=None):
         z.writestr('xl/_rels/workbook.xml.rels','<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+''.join(f'<Relationship Id="rId{i}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet{i}.xml"/>' for i in range(1,5))+'<Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>')
         z.writestr('xl/styles.xml','<styleSheet xmlns="'+NS['s']+'"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF245D50"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"><alignment vertical="top" wrapText="1"/></xf><xf numFmtId="49" fontId="1" fillId="2" borderId="0" xfId="0"><alignment wrapText="1"/></xf><xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0"><alignment vertical="top" wrapText="1"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>')
         for i,(name,records,roster) in enumerate(sheets,1):
-            widths = [24]*16 if roster else ([12,110,55,28] if name=='Instrucciones' else [65])
+            widths = [24]*len(columns) if roster else ([12,110,55,28] if name=='Instrucciones' else [65])
             cols=''.join(f'<col min="{n}" max="{n}" width="{w}" customWidth="1" style="2"/>' for n,w in enumerate(widths,1))
             rows=[]
             for n,record in enumerate(records,1):
@@ -102,6 +106,29 @@ def import_template(xlsx=False, grades=(), settings=None):
                 rows.append(f'<row r="{n}" ht="{36 if roster else 50}" customHeight="1">{cells}</row>')
             z.writestr(f'xl/worksheets/sheet{i}.xml','<worksheet xmlns="'+NS['s']+'"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>'+cols+'</cols><sheetData>'+''.join(rows)+'</sheetData></worksheet>')
     return out.getvalue()
+
+
+def export_roster(state, xlsx=False):
+    """Export the current enrollment and linked guardian, not the financial ledger."""
+    guardians = {g['id']:g for g in state['guardians']}
+    grades = {g['id']:g for g in state['grades']}
+    records = []
+    for s in state['students']:
+        g = guardians[s['guardian_id']]
+        records.append([g['name'],g['document'],g['phone'],g['email'],g['address'],
+            s['name'],'' if s['document']==s['student_code'] else s['document'],s['birth_date'] if s['birth_date']>='1900-01-01' else '',
+            s['grade_name'],str(s['school_year']),format(Decimal(s['monthly_fee'])/100,'.2f'),
+            str(s['discount']),s['enrollment_start'],s['enrollment_end'],s['status'],s['notes'],
+            s['billing_start'] or s['enrollment_start'][:7],s['student_code'],
+            str(grades[s['grade_id']]['capacity']),str(int(bool(s['archived']))),
+            str(int(bool(g['archived']))),format(Decimal(s['balance'])/100,'.2f')])
+    if xlsx:
+        return import_template(True,[g['name'] for g in state['grades']],state['settings'],records,EXPORT_COLUMNS)
+    out=io.StringIO(newline='');writer=csv.writer(out,delimiter=';');writer.writerow(EXPORT_COLUMNS)
+    for record in records:
+        # Escape both formula-like text and literal leading quotes reversibly.
+        writer.writerow(["'"+v if v.startswith("'") or v.lstrip().startswith(('=','+','-','@')) else v for v in record])
+    return out.getvalue().encode('utf-8-sig')
 
 
 def parse_import(data):
@@ -147,7 +174,7 @@ def parse_import(data):
                     strings = [''.join(e.itertext()) for e in xml('xl/sharedStrings.xml').findall('s:si',NS)]
                 matrix, physical_rows = [], []
                 for row in xml(path).findall('s:sheetData/s:row',NS):
-                    values = ['']*len(COLUMNS)
+                    values = ['']*len(EXPORT_COLUMNS)
                     for cell in row.findall('s:c',NS):
                         if cell.find('s:f',NS) is not None:
                             raise ValidationError('No se importan fórmulas. En Excel pega los datos como valores.')
@@ -159,11 +186,11 @@ def parse_import(data):
                         kind = cell.get('t','')
                         if kind=='s': val=strings[int(val)]
                         if kind=='inlineStr': val=''.join(cell.find('s:is',NS).itertext())
-                        if col>len(COLUMNS):
+                        if col>len(EXPORT_COLUMNS):
                             if val: raise ValidationError('El Excel contiene columnas adicionales; usa la plantilla.')
                             continue
                         if matrix and kind not in ('s','inlineStr','str','d') and val:
-                            if COLUMNS[col-1] in ('nacimiento','inicio_matricula','fin_matricula','primer_mes_cobro'):
+                            if str(matrix[0][col-1]).strip().lower() in ('nacimiento','inicio_matricula','fin_matricula','primer_mes_cobro'):
                                 val = (epoch+timedelta(days=int(Decimal(val)))).isoformat()
                             else: val = format(Decimal(val),'f').rstrip('0').rstrip('.') if '.' in val else val
                         values[col-1]=val
@@ -174,9 +201,11 @@ def parse_import(data):
     else:
         raise ValidationError('Selecciona un archivo .csv o .xlsx (no .xls).')
     headers = tuple(str(c).strip().lower() for c in matrix[0]) if matrix else ()
-    if physical_rows and headers == LEGACY_COLUMNS + ('',):
-        headers = LEGACY_COLUMNS
-    if headers not in (COLUMNS,LEGACY_COLUMNS):
+    if physical_rows:
+        while headers and not headers[-1]: headers=headers[:-1]
+    if headers == OLD_EXPORT_COLUMNS:
+        raise ValidationError('Este es un listado antiguo de 9 columnas, no una exportación completa para importar. Le faltan cédulas de representantes, tarifas, descuentos y fechas. En la versión nueva, vuelve a exportar desde Alumnos y matrículas y selecciona Excel o CSV. No uses Saldo USD como mensualidad. Para trasladar también pagos y saldos exactos, usa un respaldo completo.')
+    if headers not in (COLUMNS,LEGACY_COLUMNS,EXPORT_COLUMNS):
         missing = [c for c in COLUMNS if c not in headers]
         raise ValidationError('Encabezados incorrectos. Completa la primera hoja Alumnos, conserva las 17 columnas y su orden. También se admite la plantilla anterior de 16 columnas.' + (' Faltan: '+', '.join(missing) if missing else ' Descarga una plantilla nueva.'))
     # Preserve physical Excel/CSV row numbers even when users leave blank rows.
@@ -186,13 +215,27 @@ def parse_import(data):
         raise ValidationError('El archivo debe contener entre 1 y 1000 filas de alumnos.')
     records = []
     for index,row in numbered:
+        if physical_rows:
+            if any(str(v).strip() for v in row[len(headers):]):
+                raise ValidationError(f'Fila {index}: columna adicional sin encabezado. Usa la plantilla o la exportación completa.')
+            row=row[:len(headers)]
+        if headers==EXPORT_COLUMNS:
+            if len(row)!=len(EXPORT_COLUMNS):
+                raise ValidationError(f'Fila {index}: columnas de exportación incompletas o campo demasiado largo.')
+            values=[str(v).strip() for v in row]
+            if not physical_rows:
+                values=[v[1:] if v.startswith("'") else v for v in values]
+            if any(len(v)>2000 for v in values):
+                raise ValidationError(f'Fila {index}: campo demasiado largo.')
+            records.append(dict(zip(EXPORT_COLUMNS,values),_row=index,_format='export'))
+            continue
         if len(row)==len(LEGACY_COLUMNS):
             row=list(row)+['']
         if headers==LEGACY_COLUMNS and len(row)==len(COLUMNS) and str(row[-1]).strip():
             raise ValidationError('Columna adicional sin encabezado: descarga la plantilla con primer_mes_cobro.')
         if len(row)!=len(COLUMNS) or any(len(str(v))>2000 for v in row):
             raise ValidationError('Fila con columnas incorrectas o un campo demasiado largo.')
-        records.append(dict(zip(COLUMNS,(str(v).strip() for v in row)), _row=index))
+        records.append(dict(zip(COLUMNS,(str(v).strip() for v in row)), _row=index,_format='template'))
     return records, hashlib.sha256(raw).hexdigest()
 
 
@@ -206,12 +249,28 @@ def import_roster(db,data,user,save_record):
         raise ValidationError('Vuelve a revisar el archivo: el mes de cobro debe coincidir con el de la vista previa.')
     errors, imported = [], []
     before_guardians = db.execute('SELECT COUNT(*) FROM guardians').fetchone()[0]
+    before_grades = db.execute('SELECT COUNT(*) FROM grades').fetchone()[0]
     before_balance = sum(c['balance'] for c in charges(db))
+    source_balance=0;archived_guardians=set();capacities={}
     db.execute('SAVEPOINT roster_batch')
     for r in records:
         index=r['_row']
         db.execute('SAVEPOINT roster_row')
         try:
+            exported=r['_format']=='export'
+            archived=import_integer(r['alumno_archivado'],'alumno_archivado',0,1) if exported else 0
+            guardian_archived=import_integer(r['representante_archivado'],'representante_archivado',0,1) if exported else 0
+            if guardian_archived and not archived:
+                raise ValidationError('Un representante archivado solo puede tener alumnos archivados en esta exportación.')
+            if archived and r['estado'].lower() not in ('inactive','inactivo'):
+                raise ValidationError('Un alumno archivado debe estar inactivo.')
+            code=r['alumno_codigo'] if exported else ''
+            if exported and (not re.fullmatch(r'AL-\d{6,10}',code) or db.execute('SELECT 1 FROM students WHERE student_code=? OR document=?',(code,code)).fetchone()):
+                raise ValidationError('Código de alumno inválido o ya existente. No se puede importar dos veces la misma ficha.')
+            if exported:
+                if not re.fullmatch(r'\d{1,18}(?:\.\d{1,2})?',r['saldo_usd_informativo']):
+                    raise ValidationError('saldo_usd_informativo: importe USD inválido. Este campo no se usa como tarifa ni restaura deudas.')
+                exported_balance=int(Decimal(r['saldo_usd_informativo'])*100)
             doc = required(r,'representante_cedula')
             matches = [g for g in db.execute('SELECT * FROM guardians') if normalized(g['document'])==normalized(doc)]
             if len(matches)>1: raise ValidationError('Hay más de un representante con esa cédula; revisa el directorio.')
@@ -219,12 +278,22 @@ def import_roster(db,data,user,save_record):
                 'phone':r['representante_telefono'],'email':r['representante_email'],'address':r['representante_direccion']}
             if matches:
                 g = matches[0]
+                if exported and bool(g['archived'])!=bool(guardian_archived):
+                    raise ValidationError('El representante existente tiene un estado de archivo distinto. Revisa su ficha.')
                 for key in ('name','phone','email','address'):
                     if fields[key] and normalized(fields[key])!=normalized(g[key]):
                         raise ValidationError('La cédula del representante existe con datos distintos. Corrige el archivo o el directorio.')
                 guardian_id=g['id']
             else: guardian_id=save_record(db,'guardians',fields,user)['id']
             grade = db.execute('SELECT id FROM grades WHERE name=? COLLATE NOCASE',(required(r,'grado'),)).fetchone()
+            if exported:
+                capacity=import_integer(r['grado_capacidad'],'grado_capacidad',1,500)
+                key=r['grado'].casefold()
+                if key in capacities and capacities[key]!=capacity:
+                    raise ValidationError('El mismo grado tiene capacidades distintas en el archivo.')
+                if not grade:
+                    grade_id=save_record(db,'grades',{'name':r['grado'],'capacity':capacity},user)['id']
+                    grade={'id':grade_id}
             if not grade: raise ValidationError('Grado / sección inexistente. Créalo antes de importar y copia su nombre exacto.')
             name,birth = required(r,'alumno_nombre'),import_date(r['nacimiento'],'nacimiento') if r['nacimiento'] else ''
             if r['estado'].lower() not in ('','activo','inactivo','active','inactive'):
@@ -232,20 +301,31 @@ def import_roster(db,data,user,save_record):
             if db.execute('SELECT 1 FROM students WHERE guardian_id=? AND name=? COLLATE NOCASE AND birth_date=?',(guardian_id,name,birth)).fetchone():
                 raise ValidationError('Alumno repetido: mismo nombre, nacimiento y representante.')
             student = save_record(db,'students',{'name':name,'document':r['alumno_cedula'],
+                '_import_code':code or None,'_import_archived':bool(archived),
                 'birth_date':birth,'guardian_id':guardian_id,'grade_id':grade['id'],
                 'school_year':import_integer(r['ano_escolar'],'ano_escolar',2000,2100),'monthly_fee':import_amount(r['mensualidad_usd']),
                 'discount':import_integer(r['descuento_pct'] or '0','descuento_pct',0,100),'enrollment_start':import_date(r['inicio_matricula'],'inicio_matricula') if r['inicio_matricula'] else '',
                 'enrollment_end':import_date(r['fin_matricula'],'fin_matricula') if r['fin_matricula'] else '',
                 'billing_start':import_period(r['primer_mes_cobro']),'status':{'activo':'active','inactivo':'inactive'}.get(r['estado'].lower(),r['estado'].lower() or 'active'),
                 'notes':r['observaciones']},user)
+            if exported:
+                capacities[key]=capacity
+                if guardian_archived: archived_guardians.add(guardian_id)
+                source_balance+=exported_balance
             imported.append({'row':index,'student_name':name,'guardian_name':fields['name'],
-                'grade_name':r['grado'],'student_code':student['student_code'],'billing_start':student['billing_start']})
+                'grade_name':r['grado'],'student_code':student['student_code'],'billing_start':student['billing_start'],
+                'status':r['estado'].lower() or 'active','archived':archived})
             db.execute('RELEASE roster_row')
         except (ValidationError,sqlite3.IntegrityError) as error:
             db.execute('ROLLBACK TO roster_row'); db.execute('RELEASE roster_row')
             errors.append({'row':index,'message':str(error) if isinstance(error,ValidationError) else 'Documento repetido o estado inválido.'})
+    for guardian_id in archived_guardians:
+        db.execute('UPDATE guardians SET archived=1 WHERE id=?',(guardian_id,))
     synchronize_monthly_charges(db)
     result = {'hash':digest,'billing_default':billing_default,'rows':len(records),'students':len(imported),
+        'source':'export' if records[0]['_format']=='export' else 'template',
+        'grades':db.execute('SELECT COUNT(*) FROM grades').fetchone()[0]-before_grades,
+        'source_balance':source_balance if records[0]['_format']=='export' else None,
         'guardians':db.execute('SELECT COUNT(*) FROM guardians').fetchone()[0]-before_guardians,
         'new_balance':sum(c['balance'] for c in charges(db))-before_balance,
         'errors':errors,'lines':imported[:100],'preview':preview}
@@ -253,7 +333,7 @@ def import_roster(db,data,user,save_record):
     db.execute('RELEASE roster_batch')
     if not preview and errors:
         raise ValidationError(f"No se importó ninguna fila. Fila {errors[0]['row']}: {errors[0]['message']}")
-    if not preview: audit(db,user['id'],'roster-import',{'students':len(imported),'guardians':result['guardians'],'file_hash':digest})
+    if not preview: audit(db,user['id'],'roster-import',{'students':len(imported),'guardians':result['guardians'],'grades':result['grades'],'file_hash':digest})
     return result
 
 

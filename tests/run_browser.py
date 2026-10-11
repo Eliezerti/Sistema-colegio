@@ -17,6 +17,7 @@ def main():
     mode.add_argument('--mobile',action='store_true')
     mode.add_argument('--phone',action='store_true')
     mode.add_argument('--directory',action='store_true')
+    mode.add_argument('--roster',action='store_true')
     args=parser.parse_args()
     root = Path(__file__).resolve().parent.parent
     with tempfile.TemporaryDirectory(prefix='aula-e2e-') as temp:
@@ -57,7 +58,7 @@ def main():
                 if args.phone:
                     line=next(line for line in (Path(temp)/'server.log').read_text().splitlines() if line.startswith('PHONE-DEMO '))
                     _,runtime_env['AULA_TEST_URL'],runtime_env['AULA_TEST_PIN']=line.split()
-                script = 'tests/directory_browser.cjs' if args.directory else 'tests/demo_browser.cjs' if args.demo else 'tests/mobile_browser.cjs' if args.mobile or args.phone else 'tests/browser.cjs'
+                script = 'tests/roster_browser.cjs' if args.roster else 'tests/directory_browser.cjs' if args.directory else 'tests/demo_browser.cjs' if args.demo else 'tests/mobile_browser.cjs' if args.mobile or args.phone else 'tests/browser.cjs'
                 result = subprocess.run(['node', script], cwd=root, env=runtime_env)
                 if result.returncode:
                     print((Path(temp) / 'server.log').read_text(), file=sys.stderr)

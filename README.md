@@ -269,6 +269,18 @@ En **Alumnos y matrículas → Importar Excel / CSV**, descarga la plantilla `.x
 
 Los hermanos repiten los datos del representante. La cédula identifica al representante existente; datos distintos para la misma cédula producen un error, nunca una actualización silenciosa. Se revisan documentos repetidos, nombre/nacimiento/representante, fechas, cupos y tarifas. La vista previa no guarda filas y muestra los cargos que se generarían. Si hay errores, ninguna fila se importa. Corrige el archivo y vuelve a revisarlo; solo confirma después de comprobar fechas, tarifas y deudas. Límite: 2 MB y 1000 alumnos por archivo. Se crea un respaldo local antes de confirmar. Esta importación no importa pagos históricos.
 
+### Exportar e importar la misma matrícula
+
+**Exportar Excel / CSV** en Alumnos y matrículas ofrece Excel real `.xlsx` (recomendado) y CSV. Ambos incluyen las 17 columnas de matrícula más `alumno_codigo`, `grado_capacidad`, `alumno_archivado`, `representante_archivado` y `saldo_usd_informativo`. Se conservan cédulas, contactos, tarifa base, descuento, fechas, primer mes a cobrar, código y estados. Los grados que falten se crean con la capacidad exportada; los existentes conservan sus cupos. Los códigos repetidos y datos incompatibles bloquean el lote completo. La vista previa no guarda nada.
+
+Para una demostración: actualiza Aula con la misma cuenta de Windows, conserva tu base, exporta Excel desde la aplicación real, abre Aula - Pruebas vacío, confirma la tasa e importa ese mismo archivo. Pulsa Revisar archivo, verifica nombres, estados, grados, tarifas y cargos, marca la revisión y confirma. PDF / Imprimir en el directorio permite descargar el listado presentable. Al cerrar y salir de Pruebas se borran esos datos temporales.
+
+El listado antiguo `Alumno;Codigo;Documento;Grado;Ano escolar;Representante;Telefono;Estado;Saldo USD` tiene solo nueve columnas. Le faltan cédulas del representante, tarifas y fechas; no se puede reconstruir una matrícula fiable solo con él. Vuelve a exportar desde la versión nueva, sin borrar los datos existentes. Si abres un CSV con Excel y pregunta por conversiones, elige **No convertir** para conservar ceros iniciales. Excel `.xlsx` exportado por Aula guarda esos campos como texto.
+
+**`saldo_usd_informativo` no restaura la deuda ni importa pagos.** Al cargar las matrículas se generan cargos según las fechas, tarifas y reglas de la aplicación de destino. La vista previa muestra por separado el saldo de origen y los cargos que se crearán. Para llevar al colegio todos los cobros, recibos, saldos, usuarios, configuración y logo, usa el respaldo completo `.sqlite3` y Restaurar respaldo; el CSV no sustituye esa copia. El archivo solo incluye representantes vinculados a alumnos, no representantes sin alumnos ni personal.
+
+El PDF del directorio de representantes identifica cada alumno como Activo, Inactivo o Inactivo · Archivado. Los estados de cuenta y solvencias nuevos también guardan el estado al emitir el documento; los documentos históricos sin ese dato indican Estado no registrado. Los alumnos inactivos conservan su vínculo e historial.
+
 ### Cierre diario y arqueo
 
 En **Cierre de caja** (también destacado en Reportes), selecciona una fecha y pulsa **Revisar / cerrar caja**. El corte separa ingresos y egresos por **método y moneda**, usando importes realmente recibidos/pagados. Los equivalentes USD se muestran aparte; no se suman USD y Bs. Los anulados se excluyen de los totales y se mantienen en el detalle.
@@ -344,6 +356,7 @@ Validación opcional de interfaz, con Node, Playwright y Chromium disponibles:
 ```bash
 python tests/run_browser.py
 python tests/run_browser.py --demo
+python tests/run_browser.py --roster
 python tests/run_browser.py --mobile
 python tests/run_browser.py --phone
 ```

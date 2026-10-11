@@ -12,6 +12,11 @@ def converted(cents, rate):
     return int((Decimal(cents) * Decimal(rate)).quantize(Decimal('1'), rounding=ROUND_HALF_UP))
 
 
+def student_status(record):
+    if record.get('archived'): return 'Inactivo · Archivado'
+    return {'active':'Activo','inactive':'Inactivo'}.get(record.get('status'),'Estado no registrado')
+
+
 def amount(cents, currency='USD'):
     value = f'{cents // 100:,}.{cents % 100:02d}'.translate(str.maketrans({',':'.', '.':','}))
     return f'{currency} {value}'
@@ -734,9 +739,9 @@ def administrative_pdf(kind,data):
         g=data['guardian']
         pdf.line(f"Representante: {g['name']} | Cédula: {g['document']}",True)
         if g['phone']: pdf.line('Contacto: '+g['phone'])
-        pdf.table(['Alumno / código','Grado / sección','Año escolar'],
-            [[f"{s['name']}\n{s['student_code']}",s['grade_name'],f"{s['school_year']}–{s['school_year']+1}"] for s in data['students']],
-            [220,200,99])
+        pdf.table(['Alumno / código','Grado / sección','Año escolar','Estado'],
+            [[f"{s['name']}\n{s['student_code']}",s['grade_name'],f"{s['school_year']}–{s['school_year']+1}",student_status(s)] for s in data['students']],
+            [195,150,90,84])
         if data['kind']=='solvency':
             pdf.line('Se hace constar que los alumnos vinculados a este representante no presentan saldo pendiente en los cargos registrados al emitir este documento.',True)
             pdf.line('El corte incluye las mensualidades calculadas hasta el mes de emisión y cualquier cargo futuro ya registrado. No acredita períodos futuros que aún no estén cargados ni pagos externos sin registrar.')
