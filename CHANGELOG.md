@@ -1,5 +1,12 @@
 # Historial de cambios
 
+## Sin publicar · identificación del alumno en recibos
+
+- La pantalla de recibo, la impresión y los PDF A4, media carta y térmicos muestran el código interno de Aula, nunca el documento del alumno como reemplazo.
+- Los recibos anteriores sin código muestran «Código interno no registrado». Se conserva la identificación del representante y el documento del alumno en la ficha y la constancia de matrícula.
+- Pruebas con código presente, ausente, vacío y nulo; no se modifica SQLite, cobros ni instantáneas históricas. No se ha aplicado el cifrado ni comenzado los puntos posteriores.
+- Validación Linux: 188 pruebas, 187 correctas y una exclusiva de Windows omitida; navegadores normal, Pruebas e importación correctos.
+
 ## Fase 1, punto 2 · controlador del reloj
 
 - Control persistente separado de los datos contables, con publicación atómica y sincronización.

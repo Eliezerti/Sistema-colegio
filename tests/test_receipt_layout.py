@@ -1,7 +1,7 @@
 import re
 import unittest
 from colegio.branding import SCHOOL_PROFILE
-from colegio.documents import render_pdf
+from colegio.documents import render_pdf, receipt_student_details
 
 
 def document(currency='VES', rows=1, voided=False, notes=''):
@@ -16,6 +16,33 @@ def document(currency='VES', rows=1, voided=False, notes=''):
 
 
 class ReceiptLayoutTests(unittest.TestCase):
+    def test_student_document_is_never_printed_in_any_receipt_format(self):
+        for code in ('AL-000001', None, ''):
+            for paper in ('a4', 'half-letter', 'ticket-58', 'ticket-80'):
+                with self.subTest(code=code, paper=paper):
+                    data = document()
+                    data['payment']['student_document'] = 'CE-199998887771'
+                    data['payment']['student_code'] = code
+                    pdf = render_pdf('receipt', data, paper)
+                    self.assertNotIn(b'CE-199998887771', pdf)
+                    self.assertIn(b'V-12345678', pdf, 'Se conserva la identificación del representante')
+                    expected = b'AL-000001' if code else b'interno no registrado'
+                    self.assertIn(expected, pdf)
+                    self.assertIn(b'USD 10,00', pdf)
+
+    def test_legacy_receipt_without_internal_code_does_not_substitute_school_document(self):
+        data = document()
+        data['payment'].pop('student_code')
+        data['payment']['student_document'] = 'CE-199998887771'
+        original = dict(data['payment'])
+        name, detail = receipt_student_details(data['payment'])
+        self.assertEqual(name, 'Sofía Pérez · Primero / A')
+        self.assertEqual(detail, 'Código interno no registrado')
+        for paper in ('a4', 'half-letter', 'ticket-58', 'ticket-80'):
+            with self.subTest(paper=paper):
+                self.assertNotIn(b'CE-199998887771', render_pdf('receipt', data, paper))
+        self.assertEqual(data['payment'], original, 'No se modifica la información histórica')
+
     def test_half_letter_has_true_half_sheet_dimensions_and_complete_single_page(self):
         for currency in ('USD','VES'):
             with self.subTest(currency=currency):

@@ -81,6 +81,25 @@ const fs = require('node:fs');
     assert.ok(await page.locator('dialog[open] .receipt-charges th').nth(2).evaluate(el=>el.getBoundingClientRect().width)>90,'Applied amount must remain readable');
     await page.screenshot({path:'/tmp/aula-new-receipt.png',fullPage:true});
     assert.match(await page.locator('dialog[open] .receipt-parties section').nth(1).innerText(),/Sofía Pérez.*Primaria · Sección A/);
+    // Mock only the receipt response: never create another payment to check old snapshots.
+    for(const internalCode of ['AL-000001',null,'',undefined]){
+      await page.route('**/api/receipt/1',async route=>{
+        const response=await route.fetch();const data=await response.json();
+        data.payment.student_document='CE-199998887771';
+        if(internalCode===undefined)delete data.payment.student_code;
+        else data.payment.student_code=internalCode;
+        await route.fulfill({response,json:data});
+      });
+      await page.evaluate(()=>receipt(1));
+      for(const selector of ['dialog[open] .payment-receipt','#print-area .payment-receipt']){
+        const text=await page.locator(selector).innerText();
+        assert.equal(text.includes('CE-199998887771'),false,'School document must not appear on payment receipts');
+        assert.ok(text.includes(internalCode||'Código interno no registrado'));
+        assert.ok(text.includes('V-12345678'),'Guardian identification remains visible');
+      }
+      await page.unroute('**/api/receipt/1');
+    }
+    await page.evaluate(()=>receipt(1));
     assert.match(await page.locator('dialog[open] .document-header').innerText(),/Colegio Los Cedros, C.A./);
     assert.match(await page.locator('dialog[open] .document-header').innerText(),/J-12345678-9/);
     assert.match(await page.locator('dialog[open] .document-header').innerText(),/Dirección fiscal de prueba/);

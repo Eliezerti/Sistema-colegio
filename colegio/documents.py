@@ -261,7 +261,10 @@ def period_label(value):
 
 def receipt_student_details(payment):
     name = payment['student_name']
-    code = 'Código: '+payment.get('student_code',payment['student_document'])
+    # Identification belongs to the school record, never to the payment receipt.
+    # Older snapshots may not contain the internal code; do not substitute a document.
+    internal_code = payment.get('student_code')
+    code = 'Código: '+internal_code if internal_code else 'Código interno no registrado'
     grade = payment.get('grade_name')
     if grade:
         name += ' · '+grade
