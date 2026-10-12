@@ -6,6 +6,14 @@ Sistema administrativo para colegios de Venezuela, con una **base central en una
 
 Cada alumno tiene un **Primer mes a cobrar**, independiente del período académico. Para alumnos nuevos se propone el mes de carga; por ejemplo, en noviembre no se generan septiembre ni octubre aunque el ciclo escolar empiece en septiembre. Puedes elegir otro mes antes de guardar. La plantilla incluye `primer_mes_cobro`, con vista previa; también acepta la plantilla anterior de 16 columnas. Las fichas existentes conservan su límite anterior y sus cargos, pagos y recibos. Las fechas académicas vacías usan el ciclo configurado.
 
+## Avisos de respaldo y revisión de Windows · Fase 1, punto 1
+
+Administrador y Caja ven un aviso permanente si falta la segunda carpeta de copias, no hay copia externa confirmada, la última tiene más de tres días o falló el último respaldo local/externo. Aparece también al confirmar la tasa; permanece al navegar, buscar o filtrar y no tiene botón de cierre. Se revisa cada 30 segundos mientras la pantalla está visible. Solo desaparece cuando se resuelve el problema. Caja solicita ayuda al administrador; no obtiene permisos de configuración. Consulta y Pruebas no muestran este aviso.
+
+En **Configuración → Protección y mantenimiento** se revisan los permisos de la carpeta de datos (ACL) y BitLocker del disco que contiene esa carpeta. La comprobación funciona en segundo plano, sin cambiar permisos, activar cifrado ni pedir elevación. Un resultado desconocido dice **No se pudo comprobar**: nunca se presenta como protección activa. Windows puede impedir la consulta de BitLocker a una cuenta sin privilegios. [Guía de avisos y revisión de protección](docs/proteccion-respaldos.md).
+
+Este punto no cambia el esquema, los datos, su ubicación, WAL, `synchronous=FULL` ni los respaldos de cinco minutos. Las copias todavía no están cifradas; el cifrado se implementará por separado. Estos cambios de código no implican que exista un nuevo instalador validado en Windows. [Historial de cambios](CHANGELOG.md).
+
 ## Descargar el sistema
 
 **Reporte diario y listados PDF · 1.0.20 en borrador:** incluye listados de alumnos, representantes y personal, y un reporte diario de cobros y morosidad, con membrete y encabezados repetidos en A4 horizontal. El instalador superó 127 pruebas en Windows, la instalación y conservación de datos, y ambos análisis de Defender sin detecciones con las firmas registradas. Permanece sin publicar mientras se aclara el aviso de antivirus reportado por el usuario para 1.0.8 y 1.0.14; ambas están retiradas. Los análisis de otro equipo no explican por sí solos ese aviso. No desactives Defender ni añadas exclusiones. Conserva `%LOCALAPPDATA%\AulaColegio` y los respaldos. [Seguimiento y resultados](docs/revision-defender.md).

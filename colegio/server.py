@@ -23,6 +23,8 @@ from .db import (ValidationError, RateConfirmationRequired, audit, charges, chec
                  required, valid_date, valid_period, valid_rate, local_today, synchronize_monthly_charges)
 from .db import next_record_id
 from .storage import DataLock, consistent_backup, daily_backup, automatic_backup, backup_status
+from .backup_health import describe_backup
+from .protection import ProtectionMonitor
 from .administration import (import_roster, import_template, export_roster, cash_summary, close_cash, reopen_cash,
     ensure_open_day, guardian_account, issue_guardian_document, load_administrative_document)
 from .documents import enrollment, payroll, load_document, render_pdf
@@ -396,8 +398,10 @@ class SchoolServer(ThreadingHTTPServer):
         self.backup_thread = None
         super().__init__(address, Handler)
         self.db_path = db_path
+        self.protection = ProtectionMonitor(Path(db_path).parent)
         self.login_attempts = {}
         self.backup_lock=threading.Lock()
+        self.last_backup_error = ''
         self.backup_stop=threading.Event()
         self.backup_thread=threading.Thread(target=self.backup_loop,daemon=True)
         self.backup_thread.start()
@@ -459,15 +463,24 @@ class SchoolServer(ThreadingHTTPServer):
     def backup_status(self):
         if self.demo:
             return {'demo': True, 'data_path': str(Path(self.db_path).resolve())}
-        return backup_status(self.db_path)
+        status = backup_status(self.db_path)
+        if self.last_backup_error:
+            status['local_error'] = self.last_backup_error
+        status = describe_backup(self.db_path, status)
+        status['protection'] = self.protection.snapshot()
+        return status
 
     def make_backup(self):
         if self.demo:
             return self.backup_status()
         with self.backup_lock:
-            try: return automatic_backup(self.db_path)
+            try:
+                status = automatic_backup(self.db_path)
+                self.last_backup_error = ''
+                return status
             except Exception:
-                return {'local_error':'No se pudo completar el respaldo. Revisa el espacio y los permisos de la carpeta de datos.'}
+                self.last_backup_error = 'No se pudo completar el respaldo. Revisa el espacio y los permisos de la carpeta de datos.'
+                return self.backup_status()
 
     def backup_loop(self):
         while not self.backup_stop.wait(300): self.make_backup()
@@ -479,6 +492,7 @@ class SchoolServer(ThreadingHTTPServer):
         self.backup_stop.set()
         if self.backup_thread:
             self.backup_thread.join()
+        self.protection.close()
         super().server_close()
 
 
@@ -619,6 +633,7 @@ class Handler(BaseHTTPRequestHandler):
                 on = local_today().isoformat()
                 rate = db.execute('SELECT rate FROM exchange_rates WHERE rate_date=?', (on,)).fetchone()
                 self.respond(200, {'today': on, 'rate': rate['rate'] if rate else '', 'role': user['role'],
+                                   'backup': self.server.backup_status(),
                                    'school': {k:v for k,v in db.execute('SELECT key,value FROM settings') if k in ('school_name','institution_type','logo')}})
                 return
             if endpoint not in ('confirm-rate','rate-gate','logout','backup','health','demo-exit') and user['rate_confirmed_on'] != local_today().isoformat():

@@ -219,6 +219,18 @@ table:has(.row-actions) th:last-child{text-align:right}
 @media print{.directory-report{page:directory-landscape;padding:0}.directory-report .table-wrap{overflow:visible}.directory-report table{min-width:0}.directory-report th,.directory-report td{font-size:8pt;padding:6pt 4pt;print-color-adjust:exact}.directory-report thead{display:table-header-group}.directory-report tr{break-inside:avoid}.directory-report .document-header{break-inside:avoid}.directory-report footer{break-inside:avoid}}
 
 .daily-report-totals{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;background:#f2f6f3;padding:18px;margin:0 0 24px}
+.backup-alerts{position:sticky;top:8px;z-index:5;margin-bottom:22px}
+.backup-alerts:empty{display:none}
+.backup-persistent{background:#fff7e8;border-color:#e8c78b;color:#6f4d17;margin:0;box-shadow:0 3px 10px #203c3510}
+.backup-persistent>div{min-width:0}
+.backup-persistent ul{margin:6px 0 10px;padding-left:18px}
+.backup-persistent li+li{margin-top:4px}
+.backup-next-step{font-weight:600}
+.gate-card .backup-alerts{position:static;margin-bottom:20px}
+.protection-check{padding:12px 0;border-bottom:1px solid var(--line);font-size:12px}
+.protection-check>b{display:block;margin-bottom:4px}
+.protection-check>span{font-weight:600}
+.protection-check p{margin-top:4px;color:var(--muted);font-size:11px}
 .daily-report-totals span{display:block;font-size:10px;color:#617287;margin-bottom:6px}
 .daily-report-totals b{font-size:17px;color:#243449}
 .daily-report section>h3{font-size:16px;color:#356e57;margin:22px 0 12px}

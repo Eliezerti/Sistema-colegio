@@ -85,8 +85,12 @@ def daily_backup(database):
 
 def backup_status(database):
     database=Path(database)
-    try: status=json.loads((database.parent/'backup-status.json').read_text())
-    except (OSError,ValueError): status={}
+    try:
+        status=json.loads((database.parent/'backup-status.json').read_text(encoding='utf-8'))
+        if not isinstance(status,dict): raise ValueError('Invalid backup status')
+    except FileNotFoundError: status={}
+    except (OSError,ValueError):
+        status={'local_error':'No se pudo comprobar el último respaldo. Revisa la carpeta de datos y crea un respaldo ahora.'}
     status['data_path']=str(database.resolve())
     return status
 

@@ -49,6 +49,10 @@ Una transacción no protege contra toda falla del disco, sistema operativo o sum
 
 El error de un segundo respaldo no borra ni repite un cobro ya confirmado; se muestra un aviso. Una carpeta de Drive se sincroniza mediante el cliente de Drive cuando tenga conexión: Aula no comprueba que la copia ya haya llegado al servicio en la nube.
 
+Administrador y Caja ven un aviso permanente cuando falta configurar la segunda carpeta, no hay una copia externa confirmada, la última tiene más de tres días o falló el último respaldo. No se puede cerrar: permanece en todas las secciones y al confirmar la tasa. Se actualiza cada 30 segundos con la pantalla visible y al volver a ella. Consulta y Pruebas no lo muestran. Administrador puede ir a Configuración; Caja debe solicitar su ayuda.
+
+En Configuración → Protección y mantenimiento aparecen **BitLocker** y **Permisos de la carpeta de datos**. Es una revisión de solo lectura en segundo plano, cada cinco minutos. Aula no cambia permisos ni activa cifrado. Si Windows no permite comprobarlos, se muestra **No se pudo comprobar**. Las copias locales de cinco minutos mantienen su comportamiento; los respaldos todavía no están cifrados. Consulta la [guía de avisos y revisión de Windows](proteccion-respaldos.md).
+
 ## Actualizar sin perder registros
 
 1. En la versión que está funcionando, crea un respaldo y descarga otra copia. Comprueba la fecha y guarda una fuera de este disco.
