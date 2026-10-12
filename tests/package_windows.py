@@ -12,7 +12,7 @@ def main():
     args = parser.parse_args()
     output = Path(args.output).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    files = [root / name for name in ('README.md','desktop_entry.py','requirements-desktop.txt','Iniciar-Aula.bat','Iniciar-Pruebas.bat','Probar-en-telefono.bat','Configurar-Red.bat','Iniciar-Red.bat','Restaurar-respaldo.bat','Abrir-carpeta-de-datos.bat','Recuperar-clave-admin.bat')]
+    files = [root / name for name in ('README.md','desktop_entry.py','requirements.txt','requirements-desktop.txt','Iniciar-Aula.bat','Iniciar-Pruebas.bat','Probar-en-telefono.bat','Configurar-Red.bat','Iniciar-Red.bat','Restaurar-respaldo.bat','Abrir-carpeta-de-datos.bat','Recuperar-clave-admin.bat')]
     files.extend(p for p in (root/'docs').glob('*') if p.suffix in ('.md','.html'))
     # Only named, manifest-verified fictional historical fixtures; never arbitrary databases.
     import json
