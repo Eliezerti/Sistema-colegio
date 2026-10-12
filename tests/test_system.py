@@ -623,6 +623,43 @@ class SystemTests(unittest.TestCase):
         bad={'school_name':'Colegio Prueba','school_year':self.year,'due_day':10,'backup_directory':str(self.path.parent/'backups')}
         self.request('settings',bad,status=400)
 
+    def test_backup_destination_form_only_edits_destination_and_preserves_financial_records(self):
+        before = self.request('state')
+        secondary = tempfile.TemporaryDirectory();self.addCleanup(secondary.cleanup)
+        destination = str(Path(secondary.name)/'copias')
+        self.request('backup-directory', {'backup_directory': destination,
+                     'school_name': 'No debe cambiar', 'school_year': 2099, 'due_day': 31})
+        after = self.request('state')
+        expected = dict(before['settings'], backup_directory=destination)
+        self.assertEqual(after['settings'], expected)
+        for key in ('students', 'charges', 'payments', 'enrollments'):
+            self.assertEqual(after[key], before[key], key)
+        status = self.request('backup-status')
+        self.assertEqual(status['secondary_directory'], destination)
+        self.assertTrue(status['secondary_at'])
+        with closing(connect(self.path)) as db:
+            entry = json.loads(db.execute("SELECT details FROM audit WHERE action='backup_directory' ORDER BY id DESC").fetchone()[0])
+            self.assertEqual(entry, {'before': before['settings']['backup_directory'], 'after': destination})
+            self.assertEqual(db.execute('PRAGMA journal_mode').fetchone()[0], 'wal')
+            self.assertEqual(db.execute('PRAGMA synchronous').fetchone()[0], 2)
+
+    def test_backup_destination_scoped_route_keeps_csrf_roles_and_validation(self):
+        self.request('backup-directory', {'backup_directory': str(self.path.parent/'backups')}, status=400)
+        self.request('backup-directory', {'backup_directory': None}, status=400)
+        previous = self.csrf
+        self.csrf = ''
+        self.request('backup-directory', {'backup_directory': ''}, status=403)
+        self.csrf = previous
+        for role in ('cashier', 'reader'):
+            self.request('users', {'name': role, 'username': role, 'password': 'Prueba-segura-2026', 'role': role})
+        self.request('logout', {})
+        for role in ('cashier', 'reader'):
+            self.request('login', {'username': role, 'password': 'Prueba-segura-2026'})
+            self.csrf = self.request('session')['user']['csrf']
+            self.request('confirm-rate', {'rate_date': local_today().isoformat(), 'rate': '100'})
+            self.request('backup-directory', {'backup_directory': ''}, status=403)
+            self.request('logout', {})
+
     def test_process_killed_during_and_after_payment_preserves_atomicity(self):
         script=r"""
 import json,sqlite3,sys

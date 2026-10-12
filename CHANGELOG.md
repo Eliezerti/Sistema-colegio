@@ -1,5 +1,14 @@
 # Historial de cambios
 
+## Sin publicar · configuración organizada por apartados
+
+- Pestañas independientes de Identidad y calendario, Protección y mantenimiento, Usuarios y acceso y Bitácora; navegación accesible por teclado y un solo apartado visible.
+- El destino de respaldo se guarda con una operación limitada a esa ruta, sin modificar identidad, calendario ni datos contables. Conserva permisos de Administrador, CSRF, validación de ruta, bitácora y respaldo posterior.
+- Los borradores de identidad y destino se conservan en memoria al cambiar de pestaña y guardar otro apartado; se borran al cerrar sesión. No se guardan contraseñas en esos borradores.
+- Ayuda de Windows distingue BitLocker, su recuperación de 48 dígitos y las llaves de acceso de Microsoft. No activa BitLocker ni presenta un resultado desconocido como activo.
+- Preferencias permanentes registradas en AGENTS.md. Sin migración de esquema, cambio de ubicación, modificación de registros existentes, móvil/PWA o nómina.
+- Validación Linux: 198 descubiertas, 197 correctas y una exclusiva de Windows omitida. Navegadores normal, Pruebas e importación correctos; dos pruebas nuevas de servidor y ampliación del recorrido de Configuración.
+
 ## Sin publicar · carpeta de nube declarada por administración
 
 - Declaración manual de una carpeta sincronizada con Drive, OneDrive o Dropbox, después de verificar una copia reciente en su web. Sustituye únicamente el aviso de disco desconocido por un recordatorio discreto.

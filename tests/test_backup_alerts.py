@@ -266,6 +266,7 @@ class BackupAlertAccessTests(unittest.TestCase):
         try:
             self.cookie = self.cookie.replace('school_session=', 'school_demo_session=')
             self.request('backup-cloud-declare', {'directory': destination, 'reviewed': True}, csrf=csrf, expected=403)
+            self.request('backup-directory', {'backup_directory': ''}, csrf=csrf, expected=403)
         finally:
             self.server.demo = False
 

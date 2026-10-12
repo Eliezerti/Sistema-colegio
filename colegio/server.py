@@ -131,11 +131,36 @@ def save_record(db, table, fields, data):
     return result.lastrowid
 
 
+def prepare_backup_directory(db, value, uid):
+    directory = str(value).strip()
+    if directory:
+        path = Path(directory)
+        live = Path(db.execute('PRAGMA database_list').fetchone()[2]).resolve().parent
+        if len(directory)>500 or not path.is_absolute() or path.resolve()==live or live in path.resolve().parents:
+            raise ValidationError('El segundo respaldo debe usar una ruta absoluta fuera de la carpeta de datos de Aula.')
+    previous = db.execute("SELECT value FROM settings WHERE key='backup_directory'").fetchone()
+    if directory != (previous[0] if previous else ''):
+        declaration = db.execute('SELECT value FROM settings WHERE key=?', (CLOUD_KEY,)).fetchone()
+        if declaration:
+            audit(db, uid, 'backup_cloud_declaration_cleared',
+                  {'before': cloud_declaration(declaration[0], previous[0] if previous else ''), 'after': None})
+            db.execute('DELETE FROM settings WHERE key=?', (CLOUD_KEY,))
+    return directory
+
+
 def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, import_archived=False):
     uid = user['id']
-    admin_paths = {'settings','grades','guardians','students','employees','users','password','void-payment','void-expense','cancel-charge','positions','payroll-plans','import-roster','reopen-cash','transition-year','cancel-plan','correct-billing-start'} | DIRECTORY_ACTIONS
+    admin_paths = {'settings','backup-directory','grades','guardians','students','employees','users','password','void-payment','void-expense','cancel-charge','positions','payroll-plans','import-roster','reopen-cash','transition-year','cancel-plan','correct-billing-start'} | DIRECTORY_ACTIONS
     if user['role'] == 'reader' or (endpoint in admin_paths and user['role'] != 'admin'):
         raise PermissionError('Tu perfil no permite esta operación.')
+    if endpoint == 'backup-directory':
+        if not isinstance(data.get('backup_directory'), str):
+            raise ValidationError('Indica la ruta de la carpeta de copias o déjala vacía.')
+        previous = db.execute("SELECT value FROM settings WHERE key='backup_directory'").fetchone()
+        directory = prepare_backup_directory(db, data['backup_directory'], uid)
+        db.execute("UPDATE settings SET value=? WHERE key='backup_directory'", (directory,))
+        audit(db, uid, 'backup_directory', {'before': previous[0] if previous else '', 'after': directory})
+        return {'saved': True}
     # Calculate outstanding months before editing tariffs, dates or student status.
     if synchronize: synchronize_monthly_charges(db)
     batch_record=lambda db,endpoint,data,user: mutate(db,endpoint,data,user,synchronize=False,
@@ -210,20 +235,7 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
             if key in data:
                 fields[key] = str(data[key]).strip()[:limit]
         if 'backup_directory' in data:
-            directory=str(data['backup_directory']).strip()
-            if directory:
-                path=Path(directory)
-                live=Path(db.execute('PRAGMA database_list').fetchone()[2]).resolve().parent
-                if len(directory)>500 or not path.is_absolute() or path.resolve()==live or live in path.resolve().parents:
-                    raise ValidationError('El segundo respaldo debe usar una ruta absoluta fuera de la carpeta de datos de Aula.')
-            fields['backup_directory']=directory
-            previous = db.execute("SELECT value FROM settings WHERE key='backup_directory'").fetchone()
-            if directory != (previous[0] if previous else ''):
-                declaration = db.execute('SELECT value FROM settings WHERE key=?', (CLOUD_KEY,)).fetchone()
-                if declaration:
-                    audit(db, uid, 'backup_cloud_declaration_cleared',
-                          {'before': cloud_declaration(declaration[0], previous[0] if previous else ''), 'after': None})
-                    db.execute('DELETE FROM settings WHERE key=?', (CLOUD_KEY,))
+            fields['backup_directory'] = prepare_backup_directory(db, data['backup_directory'], uid)
         db.executemany('UPDATE settings SET value=? WHERE key=?', [(v, k) for k, v in fields.items()])
         audit(db, uid, 'settings', {k:(bool(v) if k=='logo' else v) for k,v in fields.items()})
         return {'saved': True}
@@ -675,6 +687,8 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 if self.server.demo and endpoint == 'settings' and data.get('backup_directory'):
                     raise ValidationError('Las pruebas no se copian a USB ni a la nube. Deja vacía la segunda carpeta de respaldos.')
+                if self.server.demo and endpoint == 'backup-directory':
+                    raise PermissionError('Las pruebas no configuran respaldos reales.')
                 if endpoint == 'backup-now':
                     if user['role']!='admin' or self.server.demo:
                         raise PermissionError('Solo administración puede respaldar los datos reales.')
@@ -721,7 +735,7 @@ class Handler(BaseHTTPRequestHandler):
                 if endpoint not in ('logout','demo-exit'):
                     self.server.clock.require()
                 db.commit()
-                if endpoint in DIRECTORY_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','expenses','salary-receipts','void-payment','void-expense','close-cash','reopen-cash','settings','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
+                if endpoint in DIRECTORY_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','expenses','salary-receipts','void-payment','void-expense','close-cash','reopen-cash','settings','backup-directory','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
                     status=self.server.make_backup()
                     if status.get('local_error') or status.get('secondary_error'):
                         result['backup_warning']=status.get('local_error') or status.get('secondary_error')
