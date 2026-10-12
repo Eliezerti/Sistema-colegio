@@ -82,8 +82,35 @@ La validación de instalación/ventanas del instalador actual se reporta aparte;
 - Los cortes utilizan terminación real de un subproceso antes de retirar WAL/SHM, después de retirarlos, después de reemplazar y después de registrar la operación. El siguiente inicio completa la intención confirmada antes de inicializar/generar y conserva la copia anterior con los dos cobros.
 - Esquema 99 rechazado tanto al restaurar como al iniciar una base futura, sin migración ni sustitución. Registro pendiente truncado impide abrir y generar.
 
-Windows, instalador, accesos de Inicio, ventanas nativas y Defender se documentarán con los resultados del runner; no se consideran aprobados por las pruebas Linux. No se han ejecutado pruebas en la PC real del usuario.
+Windows se ejecutó por separado y sus resultados se detallan abajo. No se han ejecutado pruebas en la PC real del usuario.
 
 El instalador conserva Tcl/Tk y la lista de dependencias vigente: no se excluyen módulos del PYZ en A1. Su cambio funcional es el acceso independiente Probar respaldo. El ZIP de código fuente incluye las cuatro bases ficticias SHA256 del manifiesto para que las pruebas históricas también puedan ejecutarse desde esa distribución; no incorpora información real.
 
 La revisión y la columna Tipo del CSV muestran nombres de registros en español. El comprobador de Inicio comunica archivos dañados con un mensaje en español en lugar del error técnico de SQLite; queda cubierto por la prueba nativa de ventanas.
+
+## Validación Windows y descarga · A1 1.0.34
+
+[Instalador 1.0.34 en borrador](https://github.com/Eliezerti/Sistema-colegio/releases/tag/untagged-b8516bfc22356d89ae3f). Descarga **Aula-Colegio-Instalador-1.0.34.exe**, no el ZIP fuente. Instala con la misma cuenta Windows después de crear/verificar una copia externa y cerrar Aula completamente. Una actualización conserva la base; no uses Vaciar registros para actualizar.
+
+[Runner Windows 2022, Python 3.12](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38303608499), commit **7a349eb74ab601103faf520c3aedff18e999bb2b**:
+
+- Unitarias: **223 correctas en 255.960 s, sin omisiones**. Incluye los cuatro cortes reales, cuatro fixtures publicadas y la ventana Tk de revisión/comprobador independiente. La prueba de archivo dañado provoca deliberadamente un registro ERROR de diagnóstico, comprueba el mensaje en español y termina correctamente; no es un fallo de la suite.
+- Instalador: acceso Probar respaldo con destino Aula.exe y argumento --test-backup; instalación, ventanas normal/Pruebas, bandeja, reinstalación y desinstalación sin cambiar las huellas de la base o respaldo preparados por la prueba.
+- Defender antes y después: motor **1.1.26080.3**, firmas **1.459.690.0**, sin detecciones. Los dos registros de análisis indican el mismo hash del ejecutable.
+- Archivo descargado de la versión: **20,541,854 bytes**, SHA256 **cd88a16defd595c2374cee29a9281abc71911a8ed728bf9e0743344b0bad9ec8**, comprobado contra el sidecar y ambos análisis. El servicio de artefactos rechazó la descarga; se verificó el mismo ejecutable desde la versión de GitHub sin omitir TLS ni comprobación de hash.
+- La compilación inicial A1 1.0.33 aprobó sus pruebas; 1.0.34 añade los nombres/mensajes en español que se entregan. No se ofrece una versión con validación fallida.
+
+No se probaron instalación bajo otra cuenta Windows ni actualización desde los ejecutables históricos 1.0.4/6/7/13. Sus bases sí se reprodujeron desde tags reales y restauraron/abrieron en Linux y Windows. La reinstalación probada utiliza el instalador actual. Tampoco se verificó Defender, BitLocker, energía o restauración de datos reales en la PC del usuario.
+
+Las alertas antiguas de 1.0.8/1.0.14 siguen pendientes: este análisis no las explica ni garantiza detección universal. No desactives Defender ni añadas exclusiones. A1 no firma el ejecutable, cifra las copias ni endurece sesiones/bitácora/permisos: eso pertenece a tandas posteriores. Las huellas de restauración detectan inconsistencia, no impiden alteraciones de quien controla Windows. Un máximo ilegible exige correlativos declarados correctos; si se desconocen, cancela y pide revisión técnica.
+
+## Archivos y pruebas de esta entrega
+
+- Núcleo: colegio/backup_inspection.py, restore.py, restore_journal.py y restore_reports.py. Integración de inicio: colegio/server.py y reset_password.py (en este último solo resolver/bloquear una restauración pendiente antes de abrir; no cambia el comportamiento de sesiones).
+- Interfaz: colegio/desktop.py y static/app.js. Instalador: packaging/Aula.iss, packaging/test_installer.ps1 y .github/workflows/windows-desktop.yml. Se conserva Tcl/Tk y las dependencias existentes.
+- Trece métodos de prueba nuevos: nueve en tests/test_restore_safety.py, uno en test_historical_restore.py (cuatro subcasos históricos), dos en test_system.py y uno nativo en test_restore_windows_ui.py. El corte real cubre cuatro etapas en subcasos. tests/browser.cjs añade copia válida/corrupta y conservación del historial.
+- Adaptación al flujo de revisión obligatorio: tests/restore_helpers.py, test_recovery.py y test_institution_archive.py. Reproducción histórica: tests/generate_restore_fixtures.py y tests/fixtures/restore/ (cuatro SQLite ficticias y manifest.json con tags/commits/SHA256).
+- Distribución: tests/package_windows.py y descargas/Aula-Windows.zip/.sha256. Documentación: README.md, CHANGELOG.md, docs/restauracion-segura.md/.html y docs/mantenimiento.html.
+- Commits de implementación: **e3f54cc** (núcleo), **7a7c6e2** (comprobador/revisión), **b5670df** (instalador/distribución), **7a349eb** (textos en español). La actualización posterior de resultados/documentación no modifica el código validado.
+
+No hay nueva migración: esquema 10 vigente, motor financiero y ubicación intactos. No se editó información real. A1 termina aquí; A2 requiere confirmación.
