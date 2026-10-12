@@ -26,7 +26,7 @@ def directory_report(state, kind, query):
     if grade and grade_name is None:
         raise ValidationError('El grado seleccionado no existe.')
     records = [r for r in state[kind] if (not grade or r['grade_id'] == grade)
-               and (kind == 'employees' or not r.get('archived') or archived == '1')
+               and (archived == '1' or (r['status']=='active' if kind=='employees' else not r.get('archived')))
                and (not search or any(search.lower() in str(r.get(k) or '').lower()
                     for k in ('name', 'document', 'student_code', 'guardian_name', 'phone', 'position')))]
     lines = []
@@ -59,8 +59,8 @@ def directory_report(state, kind, query):
     filters = ['Búsqueda: '+search] if search else []
     if grade_name:
         filters.append('Grado: '+grade_name)
-    if kind != 'employees':
-        filters.append('Incluye archivados' if archived == '1' else 'Sin fichas archivadas')
+    filters.append(('Incluye personal inactivo' if archived=='1' else 'Solo personal activo') if kind=='employees'
+                   else 'Incluye archivados' if archived=='1' else 'Sin fichas archivadas')
     now = datetime.now(timezone(timedelta(hours=-4)))
     return {'kind': kind, 'title': TITLES[kind], 'school': state['settings'], 'issued_on': state['today'],
             'issued_at': now.strftime('%d/%m/%Y · %H:%M'), 'operator': state['user']['name'],

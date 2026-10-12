@@ -62,6 +62,10 @@ def store(db, table, data, user_id, student_id=None):
     if student_id is not None:
         fields += ',student_id'
         values.append(student_id)
+    if table == 'enrollment_documents':
+        from .db import next_record_id
+        fields += ',id'
+        values.append(next_record_id(db, table))
     result = db.execute(f'INSERT INTO {table}({fields}) VALUES({",".join("?" for _ in values)})', values)
     audit(db, user_id, table, {'id': result.lastrowid})
     return result.lastrowid

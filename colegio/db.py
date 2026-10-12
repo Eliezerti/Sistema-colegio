@@ -124,7 +124,7 @@ def connect(path):
 
 
 def next_record_id(db, table):
-    if table not in ('payments', 'expenses', 'students'):
+    if table not in ('payments', 'expenses', 'students', 'guardians', 'employees', 'enrollment_documents'):
         raise ValueError('Correlativo desconocido.')
     floor = db.execute('SELECT value FROM settings WHERE key=?', ('id_floor_'+table,)).fetchone()
     largest = db.execute(f'SELECT COALESCE(MAX(id),0) FROM {table}').fetchone()[0]

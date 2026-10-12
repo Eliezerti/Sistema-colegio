@@ -1,10 +1,20 @@
 # Historial de cambios
 
+## Sin publicar · Archivo de la institución
+
+- Módulo exclusivo de Administración con apartados de alumnos, representantes y personal, búsqueda, filtro por estado y una sola acción de revisión por fila. Las acciones de archivo salen de los directorios habituales.
+- Archivo/recuperación conserva historial; personal reutiliza su estado Inactivo. El listado y PDF de personal permiten incluir inactivos explícitamente, sin cambios al motor de nómina.
+- Borrado definitivo limitado a fichas archivadas sin cargos, pagos, egresos, convenios, seguimientos, documentos financieros o vínculos. Un saldo de $0 no basta. Las constancias propias sin movimientos se detallan y eliminan junto a una ficha de alumno vacía.
+- Administración, CSRF, contraseña, motivo, confirmación escrita y revisión vigente se comprueban en servidor. Copias previas únicas verificadas localmente y en el segundo destino configurado; fallo de cualquier copia cancela el borrado.
+- Conserva bitácora, fichas ajenas y correlativos de fichas/constancias eliminadas. No elimina respaldos anteriores ni archivos descargados. Sin migración de esquema o modificación automática de fichas existentes.
+- Validación Linux: 209 pruebas descubiertas, 208 correctas y una exclusiva de Windows omitida; recorridos de navegador normal, Pruebas e importación correctos. Nueve pruebas nuevas de archivo, permisos, historial con saldo cero, documentos con vínculos históricos, copias verificadas/restaurables, fallos y correlativos.
+
 ## Sin publicar · Pago móvil y recibos más claros
 
 - Pago móvil disponible en cobros y separado en reportes y cierres; conserva moneda, tasa, referencia, transacciones e idempotencia. No cambia métodos ni cálculos de nómina.
 - Recibos HTML, impresión y PDF A4/media carta/tickets sin cédula escolar ni código AL-. Se mantienen número R-, identificación del representante e instantáneas históricas.
 - Arqueo indica «Efectivo inicial en caja» y explica que el saldo bancario y los cobros electrónicos no son efectivo físico. Sin migración de esquema.
+- Validación independiente de este cambio: 200 pruebas descubiertas en Linux, 199 correctas y una exclusiva de Windows omitida; los tres recorridos de navegador correctos. Prueba real de Pago móvil en bolívares, reintento idempotente y cierre separando efectivo USD/Bs de cobros electrónicos; PDF de todos los formatos sin AL- ni identificación escolar.
 
 ## Sin publicar · configuración organizada por apartados
 

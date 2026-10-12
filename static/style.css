@@ -243,3 +243,5 @@ table:has(.row-actions) th:last-child{text-align:right}
 .daily-report section>h3{font-size:16px;color:#356e57;margin:22px 0 12px}
 @media(max-width:700px){.daily-report-totals{grid-template-columns:1fr 1fr}}
 @media print{.daily-report-totals{grid-template-columns:repeat(4,minmax(0,1fr));break-inside:avoid;print-color-adjust:exact}.daily-report section>h3{break-after:avoid}}
+.archive-controls{padding:22px 24px 4px}
+.archive-controls .actions{justify-content:flex-start;flex-wrap:wrap}

@@ -33,6 +33,7 @@ from .directory_reports import directory_report, directory_pdf, daily_report, da
 from .branding import SCHEMA_VERSION, LOGO_FILE
 from .lifecycle import roster_for_year, transition_year, create_plan, cancel_plan, plan_status
 from .student_admin import DIRECTORY_ACTIONS, directory_action, correct_billing_start
+from .institution_archive import ARCHIVE_ACTIONS, archive_action, record_preview
 from .demo import DemoWorkspace
 from .salary import details as salary_details, issue_salary_receipt, load_salary_receipt
 from .reset_records import reset_preview, reset_records
@@ -125,7 +126,7 @@ def save_record(db, table, fields, data):
         db.execute(f'UPDATE {table} SET ' + ','.join(f'{k}=?' for k in fields) + ' WHERE id=?',
                    [*fields.values(), record_id])
         return record_id
-    if table in ('students', 'expenses'):
+    if table in ('students', 'expenses', 'guardians', 'employees'):
         fields = dict(fields, id=next_record_id(db, table))
     result = db.execute(f'INSERT INTO {table}(' + ','.join(fields) + ') VALUES(' + ','.join('?' for _ in fields) + ')', list(fields.values()))
     return result.lastrowid
@@ -150,7 +151,7 @@ def prepare_backup_directory(db, value, uid):
 
 def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, import_archived=False):
     uid = user['id']
-    admin_paths = {'settings','backup-directory','grades','guardians','students','employees','users','password','void-payment','void-expense','cancel-charge','positions','payroll-plans','import-roster','reopen-cash','transition-year','cancel-plan','correct-billing-start'} | DIRECTORY_ACTIONS
+    admin_paths = {'settings','backup-directory','grades','guardians','students','employees','users','password','void-payment','void-expense','cancel-charge','positions','payroll-plans','import-roster','reopen-cash','transition-year','cancel-plan','correct-billing-start'} | DIRECTORY_ACTIONS | ARCHIVE_ACTIONS
     if user['role'] == 'reader' or (endpoint in admin_paths and user['role'] != 'admin'):
         raise PermissionError('Tu perfil no permite esta operación.')
     if endpoint == 'backup-directory':
@@ -163,6 +164,7 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
         return {'saved': True}
     # Calculate outstanding months before editing tariffs, dates or student status.
     if synchronize: synchronize_monthly_charges(db)
+    if endpoint in ARCHIVE_ACTIONS: return archive_action(db, endpoint, data, user)
     batch_record=lambda db,endpoint,data,user: mutate(db,endpoint,data,user,synchronize=False,
         import_code=data.get('_import_code') if endpoint=='students' else None,
         import_archived=data.get('_import_archived',False) if endpoint=='students' else False)
@@ -728,14 +730,14 @@ class Handler(BaseHTTPRequestHandler):
                     db.execute('DELETE FROM sessions WHERE token=?', (user['token'],))
                     result = {'ok': True}
                 else:
-                    if (endpoint in DIRECTORY_ACTIONS or endpoint=='correct-billing-start' or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True)) and user['role']=='admin':
+                    if (endpoint in DIRECTORY_ACTIONS or endpoint in ('archive-employee','restore-employee') or endpoint=='correct-billing-start' or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True)) and user['role']=='admin':
                         status=self.server.make_backup()
                         if status.get('local_error'): raise ValidationError('No se puede realizar la operación sin completar primero un respaldo local.')
                     result = mutate(db, endpoint, data, user)
                 if endpoint not in ('logout','demo-exit'):
                     self.server.clock.require()
                 db.commit()
-                if endpoint in DIRECTORY_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','expenses','salary-receipts','void-payment','void-expense','close-cash','reopen-cash','settings','backup-directory','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
+                if endpoint in DIRECTORY_ACTIONS or endpoint in ARCHIVE_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','expenses','salary-receipts','void-payment','void-expense','close-cash','reopen-cash','settings','backup-directory','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
                     status=self.server.make_backup()
                     if status.get('local_error') or status.get('secondary_error'):
                         result['backup_warning']=status.get('local_error') or status.get('secondary_error')
@@ -748,6 +750,10 @@ class Handler(BaseHTTPRequestHandler):
                 result['demo']=self.server.demo
                 result['access']=self.server.access.snapshot()
                 self.respond(200, result)
+            elif endpoint.startswith('archive-preview/'):
+                parts=endpoint.split('/')
+                if len(parts)!=3: raise ValidationError('Selecciona una ficha válida.')
+                self.respond(200, record_preview(db, parts[1], parts[2], user))
             elif endpoint == 'reset-preview':
                 if self.server.demo or user['role'] != 'admin':
                     raise PermissionError('Esta operación solo está disponible para administración en el sistema real.')
