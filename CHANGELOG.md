@@ -39,3 +39,10 @@
 - Prueba adicional: Pruebas no muestra avisos reales. Sin cambios de esquema ni datos existentes.
 
 Validación del seguimiento: 161 descubiertas en Linux (160 correctas, una exclusiva de Windows omitida); navegadores normal, Pruebas e importación correctos. La consulta física de Windows y su revisión en la PC del colegio no se certifican con estas pruebas Linux.
+
+## Validación del punto 2 · instalador 1.0.27 en borrador
+
+- Linux: 186 descubiertas, 185 correctas y una exclusiva de Windows omitida; navegadores normal, Pruebas e importación correctos. Windows: 186 correctas, instalación, ventanas, reinstalación y desinstalación conservando datos.
+- Intento 1 detenido al fallar actualización de firmas; no se analizó ni ejecutó el instalador. Un único reintento en runner nuevo pasó ambos análisis de Defender sin detecciones, motor 1.1.26080.3 y firmas 1.459.680.0.
+- ZIP de código fuente antiguo retirado del borrador y actualización del ZIP del repositorio con verificación de módulos del reloj. El ejecutable validado no cambia.
+- No se comenzó el cifrado del punto 3. Sin migración SQLite, cambio de ubicación ni modificación de datos contables anteriores.

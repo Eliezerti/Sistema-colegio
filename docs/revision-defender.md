@@ -150,3 +150,9 @@ La [compilación Windows 1.0.26](https://github.com/Eliezerti/Sistema-colegio/ac
 Defender no detectó amenazas antes ni después de la ejecución en el runner, motor `1.1.26080.3`, firmas `1.459.678.0`. Instalador de 20.472.557 bytes; SHA-256 `5af7f253eda03dc5bd913780190d32e792832cba5e51bce964e5c20f59a41067`, también verificado tras descargarlo. Estos resultados no explican las alertas antiguas ni garantizan el resultado en otra PC. Se conserva el borrador, sin desactivar Defender ni añadir exclusiones.
 
 [Informe completo y límites](validacion-fase1-punto1.md). La protección real de la PC del colegio sigue pendiente de revisión; «No se pudo comprobar» nunca se presenta como BitLocker activo.
+
+## Protección del reloj · 1.0.27 en borrador
+
+[Validación Windows](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38203112527), commit `cd8c72f52e1ce22ecd92ab7ae3340bba47d57de8`: 186 pruebas correctas en el intento 2; instalación, ventanas y conservación de datos correctas. El intento 1 no pudo actualizar firmas por Windows Update ni MMPC; no analizó ni ejecutó el instalador. Un único reintento en runner nuevo pasó sin modificar controles.
+
+Defender antes y después: sin detecciones, motor `1.1.26080.3`, firmas `1.459.680.0`. Instalador de 20.490.719 bytes; SHA-256 `328e35f2530b3e89f380eef2e684780403ae21308e90a6cda4e75eeaadbc60bd`, coincidente tras descargarlo. Los resultados no resuelven las alertas antiguas ni garantizan ausencia de detecciones en otra PC. Sigue en borrador. [Informe del punto 2](validacion-fase1-punto2.md).

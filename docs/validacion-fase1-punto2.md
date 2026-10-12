@@ -32,7 +32,28 @@ Las pruebas de recuperación dirigen la falla al archivo de copia externo en vez
 
 ## Windows y límites
 
-Pendiente de la compilación y pruebas nativas de GitHub Actions. Linux no prueba el mutex ni la ventana de Windows, y tampoco certifica BitLocker, discos físicos ni ACL de la PC del colegio.
+La [ejecución Windows 1.0.27](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38203112527), commit `cd8c72f52e1ce22ecd92ab7ae3340bba47d57de8`, terminó correctamente en el intento 2. Ejecutó las 186 pruebas, sin omisiones, en 160,672 segundos. Instalación, accesos, ventanas normal/Pruebas, bandeja, reinstalación y desinstalación conservaron datos. Es reinstalación de la misma versión, no una prueba entre versiones distintas.
+
+Comandos del flujo:
+
+```powershell
+./packaging/build_windows.ps1 -Version "1.0.27"
+./packaging/scan_windows.ps1 -Path dist
+./packaging/test_installer.ps1 -Version "1.0.27"
+./packaging/scan_windows.ps1 -Path dist -ReportDir "$env:RUNNER_TEMP/defender-after-runtime"
+```
+
+El intento 1 pasó las 186 pruebas y compilación, pero no pudo actualizar las firmas de Defender por Windows Update ni MMPC. No hubo análisis ni detección en ese intento; no se ejecutó el instalador. Un único reintento en runner nuevo, sin cambiar protecciones, pasó las actualizaciones y ambos análisis sin detecciones. Motor `1.1.26080.3`, firmas `1.459.680.0`.
+
+Instalador en borrador de 20.490.719 bytes, también descargado y verificado contra su hash y el del análisis:
+
+```text
+328e35f2530b3e89f380eef2e684780403ae21308e90a6cda4e75eeaadbc60bd
+```
+
+El ZIP de código fuente antiguo fue retirado del borrador: no incluía el controlador del reloj ni la retención nueva. Se actualiza por separado el ZIP del repositorio mediante `python tests/package_windows.py --output descargas/Aula-Windows.zip`; se comprueba integridad y que sus módulos coincidan byte por byte con el código probado. El instalador validado no se modifica.
+
+Linux no prueba el mutex ni la ventana de Windows. Los resultados del runner no certifican BitLocker, discos físicos ni ACL de la PC del colegio, ni explican las alertas antiguas de Defender. La versión sigue en borrador.
 
 No se verificó la hora por internet ni se hicieron cortes eléctricos en una PC real. La primera fecha de una instalación sin actividad no tiene referencia externa. Las copias antiguas sin registro de orden solo tienen una estimación inicial basada en metadatos. Quien controle Windows puede modificar archivos: este control no reemplaza seguridad del sistema ni la bitácora protegida del punto 5.
 
