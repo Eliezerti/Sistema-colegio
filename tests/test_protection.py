@@ -122,3 +122,25 @@ class ProtectionTests(unittest.TestCase):
             monitor.snapshot()
             monitor.close()
         self.assertEqual(monitor.snapshot()['bitlocker']['status'], 'unknown')
+
+    def test_real_same_filesystem_is_detected_without_claiming_windows_bitlocker(self):
+        with tempfile.TemporaryDirectory() as folder, patch('colegio.protection.os', SimpleNamespace(name='posix')):
+            destination = Path(folder)/'second';destination.mkdir()
+            result = inspect_protection(folder, str(destination))
+            self.assertEqual(result['disk_relation']['status'], 'same')
+            self.assertEqual(result['bitlocker']['status'], 'unknown')
+
+    def test_destination_change_does_not_reuse_old_disk_confirmation(self):
+        monitor = ProtectionMonitor('.')
+        with patch('colegio.protection.inspect_protection', return_value=dict(unknown_protection(),disk_relation={'status':'different'})):
+            monitor.snapshot('old');monitor.worker.join(timeout=2)
+        entered, release = threading.Event(), threading.Event()
+        def check(*args):
+            entered.set();release.wait(timeout=2)
+            return unknown_protection()
+        with patch('colegio.protection.inspect_protection', side_effect=check):
+            try:
+                self.assertEqual(monitor.snapshot('new')['disk_relation']['status'], 'unknown')
+                self.assertTrue(entered.wait(timeout=1))
+            finally:
+                release.set();monitor.close()

@@ -29,7 +29,7 @@ class BackupHealthTests(unittest.TestCase):
             db.execute("INSERT OR REPLACE INTO settings VALUES('backup_directory', ?)", (destination,))
 
     def describe(self, **status):
-        return describe_backup(self.path, status, now=self.now)
+        return describe_backup(self.path, status, now=self.now, disk_relation={'status':'different'})
 
     def codes(self, result):
         return [a['code'] for a in result['alerts']]
@@ -67,6 +67,13 @@ class BackupHealthTests(unittest.TestCase):
         self.describe()
         self.assertEqual(self.path.read_bytes(), before)
         self.assertFalse((self.path.parent/'backups').exists())
+
+    def test_same_disk_has_its_own_warning_even_with_recent_successful_copy(self):
+        self.configure(self.destination)
+        for relation, expected in (({'status':'same'}, 'same_disk'), ({'status':'unknown'}, 'disk_unknown')):
+            result = describe_backup(self.path, {'secondary_directory':self.destination,
+                'secondary_at':self.now.isoformat()}, now=self.now, disk_relation=relation)
+            self.assertEqual(self.codes(result), [expected])
 
     def test_invalid_status_file_warns_and_successful_backup_clears_error(self):
         target = self.path.parent/'backup-status.json'

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
-def describe_backup(database, status, *, now=None):
+def describe_backup(database, status, *, now=None, disk_relation=None):
     result = dict(status)
     now = now or datetime.now(timezone.utc)
     alerts = []
@@ -30,17 +30,24 @@ def describe_backup(database, status, *, now=None):
         alerts.append({'code': 'secondary_missing', 'message':
             'No hay una segunda carpeta de respaldos configurada. Las copias de este disco también pueden perderse si el disco falla.'})
     elif directory:
+        relation = disk_relation or {'status': 'unknown'}
+        if relation.get('status') == 'same':
+            alerts.append({'code': 'same_disk', 'message':
+                'La segunda carpeta está en el mismo disco que la base. Esta copia no protege si ese disco falla. Usa otro dispositivo o verifica la sincronización en la aplicación de nube.'})
+        elif relation.get('status') != 'different':
+            alerts.append({'code': 'disk_unknown', 'message':
+                'No se pudo comprobar si la segunda carpeta está en otro disco. Una carpeta distinta puede estar en el mismo disco; pide al administrador que lo revise.'})
         try:
             external = datetime.fromisoformat(result.get('secondary_at', ''))
             if external.tzinfo is None or external > now:
                 raise ValueError('Unconfirmed timestamp')
         except (ValueError, TypeError):
             alerts.append({'code': 'secondary_unconfirmed', 'message':
-                'No hay una copia confirmada en la segunda carpeta. Revisa el destino y crea un respaldo ahora.'})
+                'No hay una copia escrita y confirmada en la segunda carpeta. Revisa el destino y crea un respaldo ahora.'})
         else:
             if now - external > timedelta(days=3):
                 alerts.append({'code': 'secondary_stale', 'message':
-                    'La última copia confirmada en la segunda carpeta tiene más de 3 días. Revisa el USB o la carpeta y crea un respaldo ahora.'})
+                    'La última copia escrita en la segunda carpeta tiene más de 3 días. Revisa el USB o la carpeta y crea un respaldo ahora.'})
     result['alerts'] = alerts
     result['checked_at'] = now.isoformat()
     return result

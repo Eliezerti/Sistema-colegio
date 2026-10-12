@@ -14,6 +14,7 @@ const fs=require('node:fs');
     await page.goto(url);await page.getByRole('button',{name:/Entrar como administrador de prueba/}).click();
     await page.getByLabel('Bolívares por 1 USD').fill('100');await page.getByRole('button',{name:'Confirmar tasa y entrar'}).click();
     await page.locator('.layout').waitFor();assert.match(await page.locator('.demo-banner').innerText(),/Modo prueba/);
+    assert.equal(await page.locator('.backup-persistent').count(),0,'Trial must not show real backup warnings');
     const initial=await page.evaluate(async()=>await(await fetch('/api/state')).json());
     assert.equal(initial.user.role,'admin');assert.deepEqual(initial.students,[]);assert.deepEqual(initial.expenses,[]);
     await nav('reports');await click('daily-report');await page.locator('dialog[open] .daily-report').waitFor();assert.match(await page.locator('dialog[open] .daily-report').innerText(),/PRUEBA SIN VALIDEZ/);

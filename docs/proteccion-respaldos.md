@@ -39,3 +39,8 @@ Esta revisión se limita a la carpeta; archivos internos pueden tener permisos d
 5. En Configuración revisa BitLocker y ACL. Contrasta los resultados con un técnico desde Windows. Si no se pudo comprobar, debe decirlo claramente.
 
 No cambies la fecha del equipo con datos reales para simular tres días: todavía falta la protección del reloj. El límite de antigüedad y sus casos de error se comprueban en pruebas automatizadas con datos temporales.
+
+
+La segunda carpeta se compara con el disco de la base: si comparte disco, aparece un aviso propio aunque la copia esté recién escrita. Si no se puede determinar, se indica. En Windows se comparan unidades y particiones; unidades distintas pueden compartir disco físico. En otros sistemas solo se confirma el mismo sistema de archivos; no se supone independencia entre volúmenes. El almacenamiento virtual y las carpetas de nube requieren comprobar su protección real. Aula no verifica la subida a la nube.
+
+BitLocker se consulta con los permisos de la cuenta que abrió Aula; una cuenta estándar puede no tener permiso. «Cómo comprobarlo desde Windows» explica cómo revisarlo con ayuda del administrador de Windows. Una comprobación manual no convierte el resultado automático desconocido en «Activo».

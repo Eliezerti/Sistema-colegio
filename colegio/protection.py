@@ -11,7 +11,7 @@ from pathlib import Path
 WINDOWS_CHECK = r"""
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 $ErrorActionPreference = 'Stop'
-$result = @{acl = $null; bitlocker = $null}
+$result = @{acl = $null; bitlocker = $null; disk_relation = @{status = 'unknown'}}
 try {
     $identity = [System.Security.Principal.WindowsIdentity]::GetCurrent()
     $acl = Get-Acl -LiteralPath $env:AULA_PROTECTION_DIRECTORY
@@ -27,6 +27,25 @@ try {
         $result.bitlocker = @{protection = [int]$volume.ProtectionStatus; volume = [int]$volume.VolumeStatus}
     }
 } catch { }
+try {
+    if ($env:AULA_BACKUP_DESTINATION) {
+        $source = (Get-Item -LiteralPath $env:AULA_PROTECTION_DIRECTORY).PSDrive.Name
+        $target = (Get-Item -LiteralPath $env:AULA_BACKUP_DESTINATION).PSDrive.Name
+        if ($source -match '^[A-Za-z]$' -and $target -match '^[A-Za-z]$') {
+            if ($source -eq $target) { $result.disk_relation = @{status = 'same'} }
+            else {
+                $first = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='$($source):'"
+                $second = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='$($target):'"
+                $a = @(Get-CimAssociatedInstance -InputObject $first -Association Win32_LogicalDiskToPartition | ForEach-Object { $_.DiskIndex })
+                $b = @(Get-CimAssociatedInstance -InputObject $second -Association Win32_LogicalDiskToPartition | ForEach-Object { $_.DiskIndex })
+                if ($a.Count -and $b.Count) {
+                    $same = @($a | Where-Object { $b -contains $_ }).Count -gt 0
+                    $result.disk_relation = @{status = $(if ($same) {'same'} else {'different'})}
+                }
+            }
+        }
+    }
+} catch { }
 $result | ConvertTo-Json -Depth 5 -Compress
 """
 
@@ -35,6 +54,7 @@ def unknown_protection(detail='La revisión está pendiente.'):
     return {
         'acl': {'status': 'unknown', 'label': 'No se pudo comprobar', 'detail': detail},
         'bitlocker': {'status': 'unknown', 'label': 'No se pudo comprobar', 'detail': detail},
+        'disk_relation': {'status': 'unknown'},
     }
 
 
@@ -85,12 +105,20 @@ def classify_bitlocker(data):
     return unknown_protection()['bitlocker']
 
 
-def inspect_protection(directory):
+def inspect_protection(directory, destination=''):
     if os.name != 'nt':
-        return unknown_protection('Esta revisión requiere Windows. No se comprobó la protección del disco ni los permisos de Windows.')
+        result = unknown_protection('Esta revisión requiere Windows. No se comprobó la protección del disco ni los permisos de Windows.')
+        if destination:
+            try:
+                if Path(directory).stat().st_dev == Path(destination).stat().st_dev:
+                    result['disk_relation'] = {'status': 'same'}
+            except OSError:
+                pass
+        return result
     result = unknown_protection('Windows no permitió completar la revisión. Puede requerir ayuda de un técnico; Aula no solicita permisos de administrador.')
     # Fixed script + environment argument: paths are never interpreted as PowerShell code.
-    environment = dict(os.environ, AULA_PROTECTION_DIRECTORY=str(Path(directory).resolve()))
+    environment = dict(os.environ, AULA_PROTECTION_DIRECTORY=str(Path(directory).resolve()),
+                       AULA_BACKUP_DESTINATION=str(Path(destination).resolve()) if destination else '')
     try:
         executable = Path(os.environ.get('SystemRoot', r'C:\Windows'))/'System32/WindowsPowerShell/v1.0/powershell.exe'
         command = subprocess.run([str(executable), '-NoProfile', '-NonInteractive', '-Command', WINDOWS_CHECK],
@@ -105,6 +133,9 @@ def inspect_protection(directory):
             result['acl'] = classify_acl(data['acl'])
         if data.get('bitlocker') is not None:
             result['bitlocker'] = classify_bitlocker(data['bitlocker'])
+        relation = data.get('disk_relation')
+        if isinstance(relation, dict) and relation.get('status') in ('same', 'different'):
+            result['disk_relation'] = {'status': relation['status']}
     except (OSError, ValueError, subprocess.TimeoutExpired):
         pass
     return result
@@ -119,22 +150,28 @@ class ProtectionMonitor:
         self.last_check = None
         self.worker = None
         self.closed = False
+        self.destination = ''
 
-    def _check(self):
+    def _check(self, destination):
         try:
-            result = inspect_protection(self.directory)
+            result = inspect_protection(self.directory, destination) if destination else inspect_protection(self.directory)
         except Exception:
             result = unknown_protection('No se pudo completar la revisión de Windows.')
         result['checked_at'] = datetime.now(timezone.utc).isoformat()
         with self.lock:
-            self.result = result
-            self.last_check = time.monotonic()
+            if destination == self.destination:
+                self.result = result
+                self.last_check = time.monotonic()
 
-    def snapshot(self):
+    def snapshot(self, destination=''):
         with self.lock:
+            if destination != self.destination:
+                self.destination = destination
+                self.result = unknown_protection()
+                self.last_check = None
             due = self.last_check is None or time.monotonic()-self.last_check >= 300
             if due and not self.closed and (self.worker is None or not self.worker.is_alive()):
-                self.worker = threading.Thread(target=self._check, daemon=True)
+                self.worker = threading.Thread(target=self._check, args=(destination,), daemon=True)
                 self.worker.start()
             return dict(self.result)
 

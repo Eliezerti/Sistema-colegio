@@ -467,7 +467,9 @@ class SchoolServer(ThreadingHTTPServer):
         if self.last_backup_error:
             status['local_error'] = self.last_backup_error
         status = describe_backup(self.db_path, status)
-        status['protection'] = self.protection.snapshot()
+        protection = self.protection.snapshot(status.get('secondary_directory', ''))
+        status = describe_backup(self.db_path, status, disk_relation=protection.get('disk_relation'))
+        status['protection'] = protection
         return status
 
     def make_backup(self):

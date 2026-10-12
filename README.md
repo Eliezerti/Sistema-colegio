@@ -383,3 +383,8 @@ La compilación requiere Windows 10/11 de 64 bits, Python 3.12 e Inno Setup 6. E
 ```
 
 Para probar el escritorio desde código en Windows: `py -3 -m pip install -r requirements-desktop.txt` y `py -3 -m colegio.desktop`. El servidor de desarrollo y sus pruebas en Linux siguen usando únicamente la biblioteca estándar; las dependencias de escritorio no son necesarias para ese flujo.
+
+
+La segunda carpeta se compara con el disco de la base: si comparte disco, aparece un aviso propio aunque la copia esté recién escrita. Si no se puede determinar, se indica. En Windows se comparan unidades y particiones; unidades distintas pueden compartir disco físico. En otros sistemas solo se confirma el mismo sistema de archivos; no se supone independencia entre volúmenes. El almacenamiento virtual y las carpetas de nube requieren comprobar su protección real. Aula no verifica la subida a la nube.
+
+BitLocker se consulta con los permisos de la cuenta que abrió Aula; una cuenta estándar puede no tener permiso. «Cómo comprobarlo desde Windows» explica cómo revisarlo con ayuda del administrador de Windows. Una comprobación manual no convierte el resultado automático desconocido en «Activo».

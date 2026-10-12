@@ -9,3 +9,12 @@
 - Sin migración de esquema ni cambios en datos existentes, carpeta de datos, transacciones de cobros, respaldos de cinco minutos, móvil/PWA o módulo de nómina.
 - Validación: Linux, 158 descubiertas (157 correctas y una omitida); Windows, 158 correctas. Navegadores normal, Pruebas e importación correctos. Instalador 1.0.26 en borrador, con validación nativa y conservación de datos.
 - Pendiente: comprobación de BitLocker/ACL en la PC del colegio y revisión de las alertas de Defender anteriores. Los análisis del runner no certifican esa PC.
+
+## Seguimiento del punto 1
+
+- Aclarado en pantalla: copia escrita en la carpeta, no subida a la nube.
+- Aviso propio por mismo disco, y estado desconocido cuando no puede verificarse.
+- Ayuda para comprobar BitLocker/ACL desde Windows con los permisos adecuados, sin elevar Aula.
+- Prueba adicional: Pruebas no muestra avisos reales. Sin cambios de esquema ni datos existentes.
+
+Validación del seguimiento: 161 descubiertas en Linux (160 correctas, una exclusiva de Windows omitida); navegadores normal, Pruebas e importación correctos. La consulta física de Windows y su revisión en la PC del colegio no se certifican con estas pruebas Linux.
