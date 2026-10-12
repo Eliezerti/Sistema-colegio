@@ -153,17 +153,30 @@ class DesktopHost:
 def recovery(directory,action):
     import tkinter as tk
     from tkinter import filedialog, simpledialog, messagebox
-    from .restore import restore
+    from .restore import restore, preview_restore, review_text, last_restore
+    from .backup_inspection import SEQUENCES
     from .reset_password import reset_password, list_administrators
     root=tk.Tk();root.withdraw()
     try:
         if action=='restore':
             file=filedialog.askopenfilename(parent=root,title='Selecciona un respaldo de Aula',filetypes=[('Respaldo de Aula','*.sqlite3')])
             if not file:return
-            answer=simpledialog.askstring('Restaurar respaldo','Cierra Aula en la PC principal. Se conservará un respaldo del estado actual.\nEscribe RESTAURAR para reemplazar los datos con la copia seleccionada:',parent=root)
-            if answer!='RESTAURAR':return
-            restore(file,directory)
-            messagebox.showinfo('Restauración completa','Puedes abrir Aula. Se han restaurado los datos y los usuarios del respaldo.',parent=root)
+            review=preview_restore(file,directory)
+            if not messagebox.askokcancel('Revisar restauración',review_text(review),parent=root):return
+            floors=None
+            if review['requires_floor_review']:
+                labels={'payments':'recibos R','expenses':'egresos E','students':'alumnos AL','guardians':'representantes','employees':'personal','enrollment_documents':'constancias M'}
+                floors={}
+                for table in SEQUENCES:
+                    number=simpledialog.askinteger('Revisar correlativos','No se pudo leer el último número de '+labels[table]+'.\nEscribe el mayor número ya utilizado. Si no lo conoces, cancela y solicita ayuda técnica.',minvalue=review['floors'][table],maxvalue=2147483646,parent=root)
+                    if number is None:return
+                    floors[table]=number
+            answer=simpledialog.askstring('Confirmar restauración','Se conservará el estado actual y los informes de pérdida.\nEscribe '+review['confirmation']+':',parent=root)
+            if answer!=review['confirmation']:return
+            restore(file,directory,preview_hash=review['preview_hash'],confirmation=answer,emergency_floors=floors)
+            result=last_restore(directory)
+            paths='\n'.join(result['reports']) or 'No hubo diferencias que perder.'
+            messagebox.showinfo('Restauración completa','Puedes abrir Aula. Los correlativos se conservaron.\n\nInformes: '+paths+'\n\nCopia previa: '+(result['previous_backup'] or result['original_files']),parent=root)
         else:
             users=list_administrators(directory)
             if not users: raise ValueError('No hay administradores registrados en esta base.')
@@ -337,7 +350,10 @@ def main():
         import tkinter as tk
         from tkinter import messagebox
         root=tk.Tk();root.withdraw()
-        try:messagebox.showerror('Aula · no se pudo continuar',str(error)+'\n\nRevisa la configuración o el registro en la carpeta de datos.',parent=root)
+        from .restore_journal import RecoveryRequired
+        title='Aula · Recuperación pendiente' if isinstance(error,RecoveryRequired) else 'Aula · no se pudo continuar'
+        help_text='\n\nCarpeta de datos: '+str(directory) if isinstance(error,RecoveryRequired) else '\n\nRevisa la configuración o el registro en la carpeta de datos.'
+        try:messagebox.showerror(title,str(error)+help_text,parent=root)
         finally:root.destroy()
 
 

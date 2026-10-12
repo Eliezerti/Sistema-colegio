@@ -1,95 +1,180 @@
+"""Reviewed, replayable restoration. Does not migrate schema or generate tuition."""
 import argparse
+import json
 import os
 import shutil
 import sqlite3
 import tempfile
-from datetime import datetime
-from pathlib import Path
+import uuid
 from contextlib import closing
+from datetime import datetime, timezone
+from pathlib import Path
 
-from .server import ROOT
+from .backup_inspection import (SEQUENCES, NewerSchemaError, fingerprint, file_hash,
+                                inspect_copy, staged_backup, probe_backup)
+from .db import audit
+from .restore_journal import (finish_pending, store_pending, sync_file,
+                              sync_directory, windows_actor, HISTORY)
+from .restore_reports import compare, loss_csv, loss_pdf
 from .storage import DataLock, consistent_backup
 
+PLAIN='RESTAURAR'
+LOSS='RESTAURAR CON PÉRDIDA DE DATOS'
+UNKNOWN='RESTAURAR SIN PODER COMPARAR'
 
-def restore(backup, directory):
-    backup = Path(backup).resolve()
-    directory = Path(directory).resolve()
-    target = directory / 'colegio.sqlite3'
-    if not backup.is_file() or backup == target:
-        raise ValueError('Selecciona un archivo de respaldo distinto de la base activa.')
-    with closing(sqlite3.connect(backup.as_uri() + '?mode=ro', uri=True)) as db:
-        if db.execute('PRAGMA integrity_check').fetchone()[0] != 'ok':
-            raise ValueError('El respaldo tiene errores de integridad.')
-        tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-        expected = {'settings','students','guardians','grades','charges','payments','allocations',
-                    'expenses','employees','users','sessions','exchange_rates','audit'}
-        columns = {r[1] for r in db.execute('PRAGMA table_info(payments)')}
-        if not expected <= tables or not {'receipt_snapshot','exchange_rate','received_amount'} <= columns:
-            raise ValueError('El archivo no es un respaldo compatible de Aula.')
-        if db.execute('PRAGMA foreign_key_check').fetchone():
-            raise ValueError('El respaldo contiene referencias inválidas.')
-    with DataLock(directory):
-        with tempfile.TemporaryDirectory(dir=directory) as temp:
-            temp = Path(temp)
-            replacement = Path(temp) / 'restaurado.sqlite3'
-            # Prepare a checked replacement before touching the current database.
-            consistent_backup(backup, replacement)
-            originals = [target.with_name(target.name + suffix) for suffix in ('', '-wal', '-shm', '-journal')]
-            originals = [file for file in originals if file.exists()]
-            if originals:
-                stamp = f'{datetime.now():%Y%m%d-%H%M%S-%f}'
-                backups = directory / 'backups'
-                backups.mkdir(parents=True, exist_ok=True)
-                raw = temp / 'estado-original'
-                raw.mkdir()
-                # Preserve exact files before SQLite attempts to read a damaged DB.
-                for original in originals:
-                    shutil.copy2(original, raw / original.name)
-                previous = temp / 'anterior.sqlite3'
-                try:
-                    if not target.exists():
-                        raise sqlite3.DatabaseError('Falta la base principal; se conservan sus archivos auxiliares.')
-                    consistent_backup(target, previous)
-                except (sqlite3.DatabaseError, RuntimeError):
-                    # A corrupt current DB must not prevent restoring a valid backup.
-                    # This is forensic preservation, not a usable SQLite backup.
-                    os.replace(raw, backups / f'danado-antes-restauracion-{stamp}')
-                else:
-                    os.replace(previous, backups / f'antes-restauracion-{stamp}.sqlite3')
-            for suffix in ('-wal','-shm','-journal'):
-                target.with_name(target.name + suffix).unlink(missing_ok=True)
-            os.replace(replacement, target)
+
+class ReviewRequired(ValueError):
+    pass
+
+
+def current_copy(directory,temporary):
+    target=directory/'colegio.sqlite3'
+    if not target.exists() and not any(target.with_name(target.name+s).exists() for s in ('-wal','-shm','-journal')):
+        return 'absent',None
+    copy=Path(temporary)/'actual.sqlite3'
+    try:
+        if not target.is_file(): return 'unreadable',None
+        consistent_backup(target,copy)
+        return 'readable',inspect_copy(copy)
+    except NewerSchemaError: raise
+    except (sqlite3.Error,ValueError,RuntimeError): return 'unreadable',None
+    # IO/permission failures are not disguised as corruption to bypass comparison.
+
+
+def make_review(incoming,source_hash,state,current):
+    comparison=compare(current,incoming) if current else {'has_loss':False,'counts':{},'details':[],
+        'payment_changes':None if state=='unreadable' else 0,'expense_changes':None if state=='unreadable' else 0}
+    phrase=UNKNOWN if state=='unreadable' else LOSS if comparison['has_loss'] else PLAIN
+    floors={t:max(incoming['floors'][t],current['floors'][t] if current else 0) for t in SEQUENCES}
+    result={'backup':incoming['summary'],'current':current['summary'] if current else None,
+        'current_state':state,'comparison':comparison,'confirmation':phrase,'floors':floors,
+        'comparison_note':'No se pudo comparar' if state=='unreadable' else 'No hay base actual' if state=='absent' else 'Comparación completa',
+        'sha256':source_hash,'requires_floor_review':state=='unreadable','unencrypted':True}
+    result['preview_hash']=fingerprint({'result':result,'current_records':current['records'] if current else None})
+    return result
+
+
+def preview_restore(backup,directory):
+    directory=Path(directory).resolve()
+    if Path(backup).resolve()==directory/'colegio.sqlite3': raise ValueError('Selecciona un respaldo distinto de la base activa.')
+    with staged_backup(backup) as (_,incoming,digest),DataLock(directory):
+        finish_pending(directory)
+        with tempfile.TemporaryDirectory(prefix='aula-comparar-') as temp:
+            state,current=current_copy(directory,temp)
+            return make_review(incoming,digest,state,current)
+
+
+def restore(backup,directory,*,preview_hash=None,confirmation=None,emergency_floors=None):
+    directory=Path(directory).resolve();target=directory/'colegio.sqlite3'
+    if Path(backup).resolve()==target: raise ValueError('Selecciona un respaldo distinto de la base activa.')
+    with staged_backup(backup) as (staged,incoming,digest),DataLock(directory):
+        finish_pending(directory)
+        with tempfile.TemporaryDirectory(prefix='aula-comparar-') as temp:
+            state,current=current_copy(directory,temp)
+            review=make_review(incoming,digest,state,current)
+        if confirmation!=review['confirmation'] or preview_hash!=review['preview_hash']:
+            raise ReviewRequired('Revisa nuevamente la comparación y escribe '+review['confirmation']+'. No se reemplazó la base.')
+        floors=dict(review['floors'])
+        if review['requires_floor_review']:
+            if not isinstance(emergency_floors,dict) or set(emergency_floors)!=set(SEQUENCES):
+                raise ReviewRequired('No se pudieron comprobar los últimos correlativos de la base dañada. Revisa los seis números antes de recuperar.')
+            for table in SEQUENCES:
+                value=emergency_floors[table]
+                if isinstance(value,bool) or not isinstance(value,int) or not floors[table]<=value<2147483647:
+                    raise ReviewRequired('Un correlativo declarado es inválido o menor que el del respaldo.')
+                floors[table]=value
+        operation_id=uuid.uuid4().hex
+        folder=directory/'backups';folder.mkdir(exist_ok=True)
+        raw=folder/f'originales-antes-restauracion-{operation_id}';raw.mkdir()
+        originals=[target.with_name(target.name+s) for s in ('','-wal','-shm','-journal')]
+        raw_hashes={}
+        for original in originals:
+            if original.exists():
+                shutil.copy2(original,raw/original.name);sync_file(raw/original.name)
+                raw_hashes[original.name]=file_hash(raw/original.name)
+        sync_directory(raw)
+        previous=folder/f'antes-restauracion-{operation_id}.sqlite3' if state=='readable' else None
+        if previous:
+            consistent_backup(target,previous)
+            old=inspect_copy(previous)
+            if fingerprint(old['records'])!=fingerprint(current['records']):
+                raise ReviewRequired('La base actual cambió durante la revisión. No se restauró; vuelve a comparar.')
+        elif state=='unreadable':
+            damaged=folder/f'danado-antes-restauracion-{operation_id}'
+            raw.rename(damaged);raw=damaged
+        candidate_dir=folder/f'restauracion-{operation_id}';candidate_dir.mkdir()
+        candidate=candidate_dir/'candidata.sqlite3'
+        consistent_backup(staged,candidate)
+        event={'operation_id':operation_id,'action':'restore-backup','at':datetime.now(timezone.utc).isoformat(),
+            'actor':windows_actor(),'source_sha256':digest,'source_schema':incoming['summary']['schema'],
+            'current_state':state,'comparison_counts':review['comparison']['counts'],
+            'payment_changes':review['comparison']['payment_changes'],'expense_changes':review['comparison']['expense_changes'],
+            'floors':floors,'floors_declared':bool(emergency_floors),'confirmation':confirmation}
+        reports={}
+        if review['comparison']['has_loss']:
+            for extension,payload in [('csv',loss_csv(review['comparison'])),('pdf',loss_pdf(review['comparison'],operation_id))]:
+                report=folder/f'antes-restauracion-{operation_id}-perdidas.{extension}'
+                with open(report,'xb') as saved:
+                    saved.write(payload);saved.flush();os.fsync(saved.fileno())
+                reports[report.relative_to(directory).as_posix()]=file_hash(report)
+        event['reports']=[str(directory/r) for r in reports]
+        event['previous_backup']=str(previous) if previous else None
+        event['original_files']=str(raw)
+        with closing(sqlite3.connect(candidate)) as db,db:
+            db.execute('PRAGMA synchronous=FULL')
+            for table,floor in floors.items():
+                db.execute('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
+                           ('id_floor_'+table,str(floor)))
+            audit(db,None,'restore-backup',event)
+        sync_file(candidate);probe_backup(candidate)
+        operation={'id':operation_id,'phase':'prepared','candidate':candidate.relative_to(directory).as_posix(),
+            'candidate_hash':file_hash(candidate),'previous':previous.relative_to(directory).as_posix() if previous else None,
+            'previous_hash':file_hash(previous) if previous else None,'raw':raw.relative_to(directory).as_posix(),
+            'raw_hashes':raw_hashes,'event':event,'reports':reports}
+        sync_directory(folder);sync_directory(candidate_dir)
+        store_pending(directory,operation)
+        finish_pending(directory)
     return target
 
 
+def last_restore(directory):
+    return json.loads((Path(directory)/HISTORY).read_text(encoding='utf-8'))[-1]
+
+
+def review_text(review):
+    def summary(title,s):
+        if s is None:return title+': '+review['comparison_note']
+        last=s['last_payment'];last_label=f"{last['receipt']} · pago {last['paid_on']} · registrado {last['created_at']}" if last else 'Sin pagos'
+        return f"{title}: {s['students']} alumnos; {s['payments']} pagos ({s['voided_payments']} anulados); cobrado USD {s['income_usd']/100:.2f}.\nÚltimo pago: {last_label}"
+    lines=[summary('Base actual',review['current']),summary('Respaldo',review['backup']),review['backup']['creation_note'],
+        'El respaldo no está cifrado. No se generan mensualidades al revisarlo.']
+    lines.extend(f'{table}: {count} registros ausentes o diferentes' for table,count in review['comparison']['counts'].items())
+    if review['requires_floor_review']:lines.append('No se pudieron comprobar los correlativos actuales. Debes revisar los últimos números utilizados.')
+    return '\n\n'.join(lines)
+
+
 def main():
-    parser = argparse.ArgumentParser(description='Restaurar un respaldo de Aula con el sistema cerrado.')
-    parser.add_argument('--data-dir', default=str(ROOT / 'data'))
-    parser.add_argument('--backup')
-    args = parser.parse_args()
-    backup = args.backup
-    if not backup:
-        try:
+    parser=argparse.ArgumentParser(description='Revisar y restaurar respaldos con Aula cerrado.')
+    parser.add_argument('--data-dir',default=str(Path(__file__).resolve().parent.parent/'data'));parser.add_argument('--backup')
+    args=parser.parse_args()
+    try:
+        if not args.backup:
             import tkinter as tk
             from tkinter.filedialog import askopenfilename
-            root = tk.Tk()
-            root.withdraw()
-            backup = askopenfilename(title='Selecciona el respaldo de Aula', filetypes=[('Base de datos Aula','*.sqlite3')])
-            root.destroy()
-        except Exception:
-            raise SystemExit('No se pudo abrir el selector. Usa --backup "ruta del respaldo.sqlite3".')
-    if not backup:
-        return
-    print(f'Se restaurará: {backup}\nDestino: {Path(args.data_dir).resolve()}')
-    print('Se conservará una copia del estado actual antes de reemplazarlo, incluso si la base está dañada.')
-    if input('Escribe RESTAURAR para continuar: ').strip() != 'RESTAURAR':
-        print('Restauración cancelada.')
-        return
-    try:
-        print(f'Respaldo restaurado correctamente: {restore(backup, args.data_dir)}')
-    except (ValueError, RuntimeError, sqlite3.Error, OSError) as error:
-        raise SystemExit(f'No se restauró: {error}')
+            root=tk.Tk();root.withdraw()
+            try:args.backup=askopenfilename(title='Selecciona el respaldo de Aula',filetypes=[('Base de Aula','*.sqlite3')])
+            finally:root.destroy()
+            if not args.backup:return
+        review=preview_restore(args.backup,args.data_dir);print(review_text(review))
+        floors=None
+        if review['requires_floor_review']:
+            floors={t:int(input(f'Último número usado de {t} (mínimo {review["floors"][t]}): ')) for t in SEQUENCES}
+        answer=input('Escribe '+review['confirmation']+' para continuar: ').strip()
+        if answer!=review['confirmation']:print('Restauración cancelada.');return
+        restore(args.backup,args.data_dir,preview_hash=review['preview_hash'],confirmation=answer,emergency_floors=floors)
+        result=last_restore(args.data_dir)
+        print('Restauración completa. Informes: '+(', '.join(result['reports']) or 'No hubo diferencias que perder.'))
+    except (ValueError,RuntimeError,sqlite3.Error,OSError) as error: raise SystemExit(str(error))
 
 
-if __name__ == '__main__':
-    main()
+if __name__=='__main__': main()

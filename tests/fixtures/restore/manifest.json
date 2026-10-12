@@ -1,0 +1,42 @@
+[
+  {
+    "tag": "desktop-1.0.4",
+    "commit": "612e7e31b6047d2c63e25f35fe8aa069051bb551",
+    "schema": 7,
+    "sha256": "34a465d522a3c6ce3b1fcfa3e8be399cf2e638df729a69606063e68cead514f9",
+    "fictional": true,
+    "payments": 1,
+    "balance_usd": 5000,
+    "filename": "desktop-1.0.4.sqlite3"
+  },
+  {
+    "tag": "desktop-1.0.6",
+    "commit": "027f3a4ffc13ab317ed28d0fe6a3ef5c370cd7b1",
+    "schema": 7,
+    "sha256": "6a41e3889bd2da243bedf67d1ed079d81f9edadd742dc00febc7f83da0bdaf6e",
+    "fictional": true,
+    "payments": 1,
+    "balance_usd": 5000,
+    "filename": "desktop-1.0.6.sqlite3"
+  },
+  {
+    "tag": "desktop-1.0.7",
+    "commit": "ece5227dfefa4d5ebc5c184b1e486485787355aa",
+    "schema": 7,
+    "sha256": "8c40dedf474942d1a4a481241dfd67a8129d1fa712ae94f22b51f7859d028755",
+    "fictional": true,
+    "payments": 1,
+    "balance_usd": 5000,
+    "filename": "desktop-1.0.7.sqlite3"
+  },
+  {
+    "tag": "desktop-1.0.13",
+    "commit": "cabeab4361a9acc7e1b73274a60d045ac9210c16",
+    "schema": 8,
+    "sha256": "df2612ca09080cae3a60ccad2f01cbccd32dc7aa9f86c5dbf47ab50c1d3ffa16",
+    "fictional": true,
+    "payments": 1,
+    "balance_usd": 5000,
+    "filename": "desktop-1.0.13.sqlite3"
+  }
+]

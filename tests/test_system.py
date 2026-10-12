@@ -18,7 +18,7 @@ from colegio.db import initialize, money, valid_rate, ValidationError, local_tod
 from colegio.administration import COLUMNS, parse_import
 from colegio.server import SchoolServer
 from colegio.storage import DataLock, daily_backup
-from colegio.restore import restore
+from tests.restore_helpers import approved_restore as restore
 from colegio.branding import SCHOOL_PROFILE, LOGO_FILE, SCHEMA_VERSION
 
 

@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from colegio.db import connect, local_today
-from colegio.restore import restore
+from tests.restore_helpers import approved_restore as restore
 from tests import test_system as system
 
 

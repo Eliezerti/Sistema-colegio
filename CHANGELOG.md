@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## A1 · restauración segura (sin nueva migración)
+
+- Revisión de esquema/integridad/referencias en copia temporal; esquema 99 rechazado. Comparación por identidad/contenido y confirmaciones reforzadas para pérdida o base ilegible.
+- Copia previa, originales y candidata preservados; intención persistente comprobada. Inicio recupera la operación antes de conectar/migrar/generar mensualidades; registro dañado bloquea el inicio.
+- Conserva máximos de seis correlativos, informes de pérdida PDF/CSV sin cuentas bancarias/contraseñas y registros en SQLite y archivo externo.
+- Fixtures generadas desde tags publicados 1.0.4/6/7/13, con manifiesto SHA256; pruebas de cortes reales y saldos después de las migraciones ya existentes.
+- Cifrado, sesiones, cadena de bitácora, privilegios, reducción y firma permanecen fuera de A1.
+
 ## Sin publicar · Archivo de la institución
 
 - El Administrador temporal de Aula - Pruebas puede borrar fichas ficticias sin una contraseña desconocida: motivo, confirmación, revisión y copia temporal siguen siendo obligatorios. Esta excepción depende del modo del servidor; el sistema real exige contraseña incluso si el cliente envía «demo». No accede a la base real ni copia pruebas a la nube.

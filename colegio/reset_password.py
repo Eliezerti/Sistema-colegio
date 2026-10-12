@@ -13,22 +13,28 @@ def list_administrators(directory):
     """Local OS access only; no public endpoint or password disclosure."""
     directory=Path(directory).resolve(); database=directory/'colegio.sqlite3'
     if not database.is_file(): raise ValidationError('No existe una base en esa carpeta. No se creará un sistema vacío.')
-    with DataLock(directory),closing(connect(database)) as db:
-        return [dict(r) for r in db.execute("SELECT username,name FROM users WHERE role='admin' ORDER BY name")]
+    with DataLock(directory):
+        from .restore_journal import finish_pending
+        finish_pending(directory)
+        with closing(connect(database)) as db:
+            return [dict(r) for r in db.execute("SELECT username,name FROM users WHERE role='admin' ORDER BY name")]
 
 
 def reset_password(directory,username,password):
     directory=Path(directory).resolve();database=directory/'colegio.sqlite3'
     if not database.is_file(): raise ValidationError('No existe la base en esa ruta. No se creará un sistema vacío.')
     hashed=hash_password(password)
-    with DataLock(directory),closing(connect(database)) as db:
-        user=db.execute("SELECT id FROM users WHERE username=? AND role='admin'",(username.strip().lower(),)).fetchone()
-        if not user: raise ValidationError('No existe un administrador con ese usuario.')
-        consistent_backup(database,directory/'backups'/f'recuperacion-clave-{datetime.now():%Y%m%d-%H%M%S-%f}.sqlite3')
-        with db:
-            db.execute('UPDATE users SET password=? WHERE id=?',(hashed,user['id']))
-            db.execute('DELETE FROM sessions WHERE user_id=?',(user['id'],))
-            audit(db,None,'local-admin-password-reset',{'user_id':user['id']})
+    with DataLock(directory):
+        from .restore_journal import finish_pending
+        finish_pending(directory)
+        with closing(connect(database)) as db:
+            user=db.execute("SELECT id FROM users WHERE username=? AND role='admin'",(username.strip().lower(),)).fetchone()
+            if not user: raise ValidationError('No existe un administrador con ese usuario.')
+            consistent_backup(database,directory/'backups'/f'recuperacion-clave-{datetime.now():%Y%m%d-%H%M%S-%f}.sqlite3')
+            with db:
+                db.execute('UPDATE users SET password=? WHERE id=?',(hashed,user['id']))
+                db.execute('DELETE FROM sessions WHERE user_id=?',(user['id'],))
+                audit(db,None,'local-admin-password-reset',{'user_id':user['id']})
 
 
 def main():

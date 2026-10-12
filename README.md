@@ -18,6 +18,10 @@ El recibo de pago muestra nombre y grado del alumno, sin cédula escolar ni cód
 
 Los cobros incluyen **Pago móvil** como método separado en recibos, reportes y cierre de caja. El **efectivo inicial en caja** son billetes y monedas al comenzar el día, no el saldo bancario; pagos móviles y transferencias no se suman al arqueo físico. [Guía de cobros y arqueo](docs/cobros-y-arqueo.md).
 
+## Restauración segura · A1
+
+La restauración exige revisar la comparación y confirmar según sus diferencias. Conserva la copia previa, informes PDF/CSV de pérdida y los máximos de los seis correlativos. Rechaza esquemas futuros y resuelve operaciones pendientes antes de abrir la base. **Probar respaldo** revisa una copia temporal sin escribir en el origen, desde Configuración o Inicio de Windows. No añade migraciones ni adelanta A2. [Guía y prueba manual con datos ficticios](docs/restauracion-segura.md).
+
 ## Avisos de respaldo y revisión de Windows · Fase 1, punto 1
 
 El [control persistente del reloj](docs/reloj-core.md) utiliza un archivo de seguridad separado de SQLite, sin migración de esquema. La política aprobada es siete días entre aperturas y dos minutos de tolerancia para ajustes; no modifica documentos históricos.

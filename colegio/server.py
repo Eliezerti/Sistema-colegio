@@ -407,6 +407,8 @@ class SchoolServer(ThreadingHTTPServer):
     daemon_threads = True
 
     def __init__(self, address, db_path, demo=False, remote_origin=''):
+        from .restore_journal import PENDING, fail_closed
+        if (Path(db_path).parent/PENDING).exists(): raise fail_closed()
         if address[0]!='127.0.0.1':
             raise ValueError('Aula escucha solo en 127.0.0.1. Usa Tailscale Serve para compartir el acceso privado.')
         if demo and remote_origin:
@@ -947,6 +949,8 @@ def open_school(path, port, demo=False, remote_origin=''):
     """Own the data lock and resources for both CLI and desktop lifetimes."""
     path=Path(path)
     with DataLock(path.parent):
+        from .restore_journal import finish_pending
+        finish_pending(path.parent)  # Before connecting, upgrading or generating any charge.
         if not path.exists() and any((path.parent / 'backups').glob('*.sqlite3')):
             raise SystemExit('No se encuentra la base de datos, pero hay respaldos anteriores. '
                              'Ejecuta Restaurar-respaldo.bat para recuperar tus datos antes de abrir Aula. '

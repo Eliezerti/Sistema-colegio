@@ -15,7 +15,7 @@ from unittest.mock import patch
 
 from colegio.branding import SCHEMA_VERSION
 from colegio.db import connect, initialize, record_payment
-from colegio.restore import restore
+from tests.restore_helpers import approved_restore as restore
 from colegio.storage import consistent_backup, automatic_backup
 
 
@@ -121,7 +121,7 @@ class RecoveryTests(unittest.TestCase):
                 real_sync(descriptor)
 
             # Linux accepts read-only fsync; emulate Windows's stricter _commit.
-            with patch('colegio.storage.open',new=tracked_open,create=True), patch('colegio.clock_guard.open',new=tracked_open,create=True), patch('colegio.clock_guard.sync_directory'), patch('colegio.storage.os.fsync',new=windows_commit):
+            with patch('colegio.storage.open',new=tracked_open,create=True), patch('colegio.clock_guard.open',new=tracked_open,create=True), patch('colegio.restore.open',new=tracked_open,create=True), patch('colegio.restore_journal.open',new=tracked_open,create=True), patch('colegio.clock_guard.sync_directory'), patch('colegio.restore.sync_directory'), patch('colegio.restore_journal.sync_directory'), patch('colegio.storage.os.fsync',new=windows_commit):
                 status=automatic_backup(source)
                 self.assertFalse(status.get('local_error'));self.assertFalse(status.get('secondary_error'))
                 snapshots=[p for p in calls if Path(p).name.startswith(('.aula-backup-','.aula-copy-'))]
