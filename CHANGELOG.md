@@ -2,12 +2,14 @@
 
 ## Sin publicar · Archivo de la institución
 
+- El Administrador temporal de Aula - Pruebas puede borrar fichas ficticias sin una contraseña desconocida: motivo, confirmación, revisión y copia temporal siguen siendo obligatorios. Esta excepción depende del modo del servidor; el sistema real exige contraseña incluso si el cliente envía «demo». No accede a la base real ni copia pruebas a la nube.
+
 - Módulo exclusivo de Administración con apartados de alumnos, representantes y personal, búsqueda, filtro por estado y una sola acción de revisión por fila. Las acciones de archivo salen de los directorios habituales.
 - Archivo/recuperación conserva historial; personal reutiliza su estado Inactivo. El listado y PDF de personal permiten incluir inactivos explícitamente, sin cambios al motor de nómina.
 - Borrado definitivo limitado a fichas archivadas sin cargos, pagos, egresos, convenios, seguimientos, documentos financieros o vínculos. Un saldo de $0 no basta. Las constancias propias sin movimientos se detallan y eliminan junto a una ficha de alumno vacía.
 - Administración, CSRF, contraseña, motivo, confirmación escrita y revisión vigente se comprueban en servidor. Copias previas únicas verificadas localmente y en el segundo destino configurado; fallo de cualquier copia cancela el borrado.
 - Conserva bitácora, fichas ajenas y correlativos de fichas/constancias eliminadas. No elimina respaldos anteriores ni archivos descargados. Sin migración de esquema o modificación automática de fichas existentes.
-- Validación Linux: 209 pruebas descubiertas, 208 correctas y una exclusiva de Windows omitida; recorridos de navegador normal, Pruebas e importación correctos. Nueve pruebas nuevas de archivo, permisos, historial con saldo cero, documentos con vínculos históricos, copias verificadas/restaurables, fallos y correlativos.
+- Validación Linux: 210 pruebas descubiertas, 209 correctas y una exclusiva de Windows omitida; recorridos de navegador normal, Pruebas e importación correctos. Nueve pruebas nuevas de archivo y una de aislamiento temporal, permisos, historial con saldo cero, documentos con vínculos históricos, copias verificadas/restaurables, fallos y correlativos.
 - Primer intento Windows 1.0.31 detenido antes de generar el instalador: tres conexiones de inspección en las pruebas quedaron abiertas y bloquearon la limpieza de archivos temporales. Se corrige su cierre explícito; no se omiten pruebas ni se altera código de aplicación para resolverlo.
 
 ## Sin publicar · Pago móvil y recibos más claros

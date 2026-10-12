@@ -108,6 +108,19 @@ class DemoProcessTests(unittest.TestCase):
         self.assertEqual(self.process.wait(timeout=8),0);self.assertFalse(folder.exists())
         self.start();self.assertEqual(self.request('state')['expenses'],[])
 
+    def test_archive_deletes_only_trial_empty_records_without_real_admin_password(self):
+        self.start()
+        guardian=self.request('guardians',{'name':'Representante ficticio','document':'V-trial-empty'})['id']
+        self.request('archive-guardian',{'id':guardian,'reason':'Ficha temporal','confirmation':'ARCHIVAR'})
+        preview=self.request(f'archive-preview/guardian/{guardian}')
+        self.assertTrue(preview['can_delete'])
+        result=self.request('delete-unused-record',{'kind':'guardian','id':guardian,
+            'reason':'Eliminar prueba','confirmation':'BORRAR FICHA','preview_hash':preview['preview_hash']})
+        self.assertEqual(self.request('state')['guardians'],[])
+        self.assertTrue(Path(result['backup_path']).is_relative_to(self.temporary))
+        self.assertTrue(Path(result['backup_path']).is_file())
+        self.assertEqual(self.real_data.read_bytes(),b'DATOS REALES: NO MODIFICAR')
+
     def test_forced_kill_is_cleaned_before_the_next_empty_session(self):
         self.start();self.add_salary();abandoned=self.path.parent
         self.process.kill();self.process.wait(timeout=5)

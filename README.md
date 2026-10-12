@@ -10,6 +10,8 @@ Cada alumno tiene un **Primer mes a cobrar**, independiente del período académ
 
 La primera compilación Windows de este módulo (1.0.31) se detuvo por conexiones temporales de pruebas que no se cerraban explícitamente. Se corrigió la limpieza de esas pruebas; no se ofrece ese intento fallido como instalador ni como validación correcta. La entrega nativa se documenta en la guía al terminar la nueva ejecución.
 
+En Aula - Pruebas se puede probar el borrado con motivo y confirmación sin la contraseña desconocida de su cuenta temporal. Las copias previas permanecen en la carpeta temporal y se eliminan con la sesión. El modo real siempre exige la contraseña del Administrador; el cliente no puede activar la excepción de pruebas.
+
 **Configuración tiene apartados separados:** Identidad y calendario, Protección y mantenimiento, Usuarios y acceso y Bitácora. Cada formulario guarda solo sus datos; cambiar de pestaña conserva los borradores de la sesión. La ruta de copias se modifica en Protección y mantenimiento, sin reenviar el calendario ni la identidad. Las preferencias del usuario están documentadas en [AGENTS.md](AGENTS.md) para mantener este criterio en los cambios futuros. [Guía de los apartados y de BitLocker](docs/configuracion.md).
 
 El recibo de pago muestra nombre y grado del alumno, sin cédula escolar ni código interno AL-. Conserva el número R- del comprobante y la identificación del representante. El documento escolar y el código AL- permanecen en la ficha y constancia. [Detalle de esta presentación](docs/identificacion-recibos.md).

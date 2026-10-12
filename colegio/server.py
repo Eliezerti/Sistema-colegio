@@ -149,7 +149,7 @@ def prepare_backup_directory(db, value, uid):
     return directory
 
 
-def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, import_archived=False):
+def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, import_archived=False, demo=False):
     uid = user['id']
     admin_paths = {'settings','backup-directory','grades','guardians','students','employees','users','password','void-payment','void-expense','cancel-charge','positions','payroll-plans','import-roster','reopen-cash','transition-year','cancel-plan','correct-billing-start'} | DIRECTORY_ACTIONS | ARCHIVE_ACTIONS
     if user['role'] == 'reader' or (endpoint in admin_paths and user['role'] != 'admin'):
@@ -164,7 +164,7 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
         return {'saved': True}
     # Calculate outstanding months before editing tariffs, dates or student status.
     if synchronize: synchronize_monthly_charges(db)
-    if endpoint in ARCHIVE_ACTIONS: return archive_action(db, endpoint, data, user)
+    if endpoint in ARCHIVE_ACTIONS: return archive_action(db, endpoint, data, user, demo=demo)
     batch_record=lambda db,endpoint,data,user: mutate(db,endpoint,data,user,synchronize=False,
         import_code=data.get('_import_code') if endpoint=='students' else None,
         import_archived=data.get('_import_archived',False) if endpoint=='students' else False)
@@ -733,7 +733,7 @@ class Handler(BaseHTTPRequestHandler):
                     if (endpoint in DIRECTORY_ACTIONS or endpoint in ('archive-employee','restore-employee') or endpoint=='correct-billing-start' or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True)) and user['role']=='admin':
                         status=self.server.make_backup()
                         if status.get('local_error'): raise ValidationError('No se puede realizar la operación sin completar primero un respaldo local.')
-                    result = mutate(db, endpoint, data, user)
+                    result = mutate(db, endpoint, data, user, demo=self.server.demo)
                 if endpoint not in ('logout','demo-exit'):
                     self.server.clock.require()
                 db.commit()

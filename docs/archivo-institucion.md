@@ -26,6 +26,8 @@ Solo si la ficha ya está archivada y no tiene movimientos ni vínculos protegid
 4. Antes de borrar, crea un respaldo completo `antes-borrar-ficha-…sqlite3` y verifica su integridad. Copia también al segundo destino si está configurado. Si falla cualquier copia, no borra la ficha.
 5. Guarda la operación y su motivo en bitácora. No borra otros alumnos, representantes, empleados ni movimientos. Conserva el correlativo para no reutilizar automáticamente el código o número de una ficha/constancia eliminada.
 
+En **Aula - Pruebas**, la cuenta entra sin una contraseña conocida: el borrado de fichas temporales pide motivo y BORRAR FICHA, conserva la revisión y crea su copia previa en la carpeta temporal, pero no pide la contraseña del sistema real. Solo el modo Pruebas configurado por el servidor permite esto; enviar un campo «demo» desde el navegador al sistema real no lo habilita. El Administrador real siempre debe confirmar con su contraseña. Las copias de la sesión de pruebas se eliminan al cerrar esa sesión.
+
 No hay borrado masivo. Para recuperar una ficha borrada hace falta restaurar el respaldo completo con Aula cerrada; esa restauración reemplaza toda la base y puede dejar fuera cambios posteriores. No es un botón para deshacer una sola ficha.
 
 Los respaldos anteriores, PDF, Excel y archivos enviados siguen conteniendo sus datos. El borrado de Aula no es una eliminación de todas las copias existentes. No se purgan respaldos ni bitácora.
@@ -40,14 +42,14 @@ Prueba primero en Aula - Pruebas: una ficha sin movimientos admite borrado tras 
 
 ## Resultados ejecutados en Linux · 12 de octubre de 2026
 
-- `python -m unittest discover -s tests -v`: 209 descubiertas, 208 correctas y una prueba nativa de Windows omitida (71,466 segundos).
+- `python -m unittest discover -s tests -v`: 210 descubiertas, 209 correctas y una prueba nativa de Windows omitida (71,414 segundos).
 - `python tests/run_browser.py`: correcto; revisa el módulo, borra un representante ficticio vacío, conserva recibos y comprueba que Caja y Consulta no vean el módulo.
 - `python tests/run_browser.py --demo`: correcto.
 - `python tests/run_browser.py --roster`: correcto.
 
-Nueve pruebas nuevas ejercitan copia local/segundo destino, contraseña/CSRF/permisos, revisión desactualizada, conservación de recibos con saldo cero, historia de representantes reasignados, personal pagado/anulado y relaciones de pago, fallos de copia, correlativos y restauración del respaldo en otra carpeta. Las pruebas usan bases temporales y no modifican datos del usuario.
+Nueve pruebas de archivo y una nueva de aislamiento temporal ejercitan copia local/segundo destino, contraseña/CSRF/permisos, revisión desactualizada, conservación de recibos con saldo cero, historia de representantes reasignados, personal pagado/anulado y relaciones de pago, fallos de copia, correlativos y restauración del respaldo en otra carpeta. Las pruebas usan bases temporales y no modifican datos del usuario.
 
-Archivos: `colegio/institution_archive.py`, integración en `colegio/server.py`, correlativos en `colegio/db.py` y `colegio/documents.py`, filtro en `colegio/directory_reports.py`, `static/app.js`, `static/style.css`, `tests/test_institution_archive.py`, `tests/browser.cjs`, `AGENTS.md`, README, CHANGELOG y guías de archivo. Las notas de compilación y el paquete fuente se actualizan para la entrega.
+Archivos: `colegio/institution_archive.py`, integración en `colegio/server.py`, correlativos en `colegio/db.py` y `colegio/documents.py`, filtro en `colegio/directory_reports.py`, `static/app.js`, `static/style.css`, `tests/test_institution_archive.py`, `tests/browser.cjs`, `tests/test_demo.py`, `tests/demo_browser.cjs`, `AGENTS.md`, README, CHANGELOG y guías de archivo. Las notas de compilación y el paquete fuente se actualizan para la entrega.
 
 Pendientes de esta validación Linux: instalación, ACL/BitLocker y análisis con Microsoft Defender requieren Windows. Se reportan por separado cuando termine la compilación nativa. No se comprueba desde aquí el cifrado, permisos ni antivirus de la PC del usuario.
 

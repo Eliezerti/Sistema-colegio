@@ -55,7 +55,7 @@ class InstitutionArchiveTests(unittest.TestCase):
         target=self.empty_guardian()
         preview=self.preview('guardian',target)
         self.assertTrue(preview['can_delete'])
-        for overrides,status in (({'password':'incorrecta'},403),({'confirmation':'BORRAR'},400),({'preview_hash':'stale'},400)):
+        for overrides,status in (({'password':'incorrecta'},403),({'password':'','demo':True},403),({'confirmation':'BORRAR'},400),({'preview_hash':'stale'},400)):
             self.request('delete-unused-record',self.deletion('guardian',target,**overrides),status=status)
         secondary_workspace=tempfile.TemporaryDirectory()
         self.addCleanup(secondary_workspace.cleanup)

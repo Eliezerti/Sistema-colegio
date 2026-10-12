@@ -95,7 +95,7 @@ def record_preview(db, kind, target, user):
     return result
 
 
-def archive_action(db, endpoint, data, user):
+def archive_action(db, endpoint, data, user, *, demo=False):
     admin_only(user)
     if endpoint in ('archive-employee', 'restore-employee'):
         target = integer(data.get('id'), 1, 2147483647)
@@ -122,7 +122,7 @@ def archive_action(db, endpoint, data, user):
     reason = required(data, 'reason', 500)
     password = data.get('password')
     saved = db.execute('SELECT password FROM users WHERE id=?', (user['id'],)).fetchone()
-    if not isinstance(password, str) or len(password)>256 or not saved or not check_password(password, saved[0]):
+    if not demo and (not isinstance(password, str) or len(password)>256 or not saved or not check_password(password, saved[0])):
         raise PermissionError('La contraseña del Administrador no es correcta.')
     path = Path(db.execute('PRAGMA database_list').fetchone()[2])
     name = f'antes-borrar-ficha-{datetime.now():%Y%m%d-%H%M%S-%f}.sqlite3'
