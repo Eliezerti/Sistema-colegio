@@ -94,6 +94,10 @@ jobs:
 
           Aplicación local para una PC Windows 10/11 de 64 bits. Incluye Python, ventana propia, acceso directo y perfil de pruebas independiente. Una nueva instalación solicita el nombre del colegio y crea una base vacía; las actualizaciones conservan los datos e identidad del colegio existente. Instala con la misma cuenta de Windows y crea un respaldo externo antes de actualizar.
 
+          A1: restauración con comparación por identidad/contenido y confirmación reforzada si se pierden o revierten datos. Conserva máximos de correlativos R-/E-/AL-/M-, copia anterior, archivos originales e informes PDF/CSV de pérdida. Una intención persistente permite completar la restauración confirmada después de un cierre inesperado antes de abrir/generar mensualidades; un registro ilegible bloquea el inicio y conserva las copias. Esquemas futuros se rechazan. Sin migración nueva, cifrado ni cambios de nómina/móvil/sesiones.
+
+          Probar respaldo: Configuración → Protección y mantenimiento o Inicio → Aula Colegio → Probar respaldo; funciona sin abrir la base activa, copia el archivo a un temporal y no escribe en el USB/origen. La fecha de creación desconocida se indica sin deducirla del nombre. Restauración con Aula completamente cerrado. Guía instalada restauracion-segura.html incluye prueba ficticia, limitaciones y recuperación de base ilegible: los correlativos desconocidos deben revisarse, nunca inventarse como cero.
+
           Recibos de pago: nombre y grado del alumno, sin cédula escolar ni código AL-. Conserva el número R- y los datos del representante; la identificación escolar y el código permanecen en ficha/constancia, sin alterar pagos ni instantáneas. Cobros por Pago móvil separados en reportes y cierre; arqueo distingue efectivo físico inicial del saldo bancario.
 
           Archivo de la institución: Administración revisa, archiva y recupera alumnos, representantes y personal en un módulo separado. Borrado definitivo solo para fichas archivadas sin movimientos ni vínculos, con contraseña, motivo, revisión vigente y copias previas verificadas. Saldo de $0 no autoriza borrar historial financiero; personal utiliza estado Inactivo sin cambiar cálculos de nómina. Sin migración de esquema ni borrado automático.
@@ -110,7 +114,7 @@ jobs:
           '@
           [System.IO.File]::WriteAllText('dist/notas-version.txt', $Body, [System.Text.UTF8Encoding]::new($false))
           # Keep the artifact as a draft until checks and its release notes have been reviewed.
-          $ReleaseOutput = @(gh release create "desktop-$Version" "dist/Aula-Colegio-Instalador-$Version.exe" "dist/Aula-Colegio-Instalador-$Version.exe.sha256" "descargas/Aula-Windows.zip" "descargas/Aula-Windows.sha256" --target $env:GITHUB_SHA --title "Aula - Archivo, cobros y recibos - Windows $Version - revisión" --notes-file dist/notas-version.txt --draft 2>&1)
+          $ReleaseOutput = @(gh release create "desktop-$Version" "dist/Aula-Colegio-Instalador-$Version.exe" "dist/Aula-Colegio-Instalador-$Version.exe.sha256" "descargas/Aula-Windows.zip" "descargas/Aula-Windows.sha256" --target $env:GITHUB_SHA --title "Aula - Restauración segura A1 - Windows $Version - revisión" --notes-file dist/notas-version.txt --draft 2>&1)
           $ReleaseExit = $LASTEXITCODE
           $ReleaseOutput | ForEach-Object { Write-Host $_ }
           if ($ReleaseExit -ne 0) {

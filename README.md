@@ -72,7 +72,7 @@ Configuración permite cargar un logo PNG/JPG, crear un respaldo manual verifica
 
 Abre [Aula-Windows.zip](https://github.com/Eliezerti/Sistema-colegio/blob/main/descargas/Aula-Windows.zip) y pulsa **Download raw file** (icono de descarga) en GitHub. Si el repositorio es privado, inicia sesión con una cuenta que tenga acceso. El archivo [Aula-Windows.sha256](descargas/Aula-Windows.sha256) permite verificar la integridad del paquete.
 
-El ZIP incluye los archivos del programa y los lanzadores para Windows; no incluye Python ni datos de alumnos. Descomprímelo con **Extraer todo** y sigue estos pasos.
+El ZIP incluye los archivos del programa y los lanzadores para Windows; no incluye Python ni información real de alumnos. Incluye únicamente cuatro bases ficticias verificadas para las pruebas de restauración histórica. Descomprímelo con **Extraer todo** y sigue estos pasos.
 
 ## Instalar y abrir desde el ZIP en Windows
 

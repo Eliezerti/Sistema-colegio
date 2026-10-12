@@ -46,6 +46,11 @@ try {
     if ($Shortcut.TargetPath -ne $Executable) { throw 'El acceso directo no abre el ejecutable instalado.' }
     $Trial = $Shell.CreateShortcut((Join-Path $Desktop 'Aula - Pruebas.lnk'))
     if ($Trial.Arguments -ne '--demo') { throw 'El acceso de pruebas no abre el modo aislado.' }
+    $Group=Join-Path ([Environment]::GetFolderPath('Programs')) 'Aula Colegio'
+    $ProbePath=Join-Path $Group 'Probar respaldo.lnk'
+    if (-not (Test-Path $ProbePath)) { throw 'No se creó Probar respaldo en Inicio.' }
+    $Probe=$Shell.CreateShortcut($ProbePath)
+    if ($Probe.TargetPath -ne $Executable -or $Probe.Arguments -ne '--test-backup') { throw 'Probar respaldo no abre la función independiente.' }
     Execute-Checked $Executable @('--self-test')
     Execute-Checked $Executable @('--self-test-demo')
     Execute-Checked $Executable @('--self-test-phone')

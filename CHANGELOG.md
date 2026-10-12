@@ -7,6 +7,7 @@
 - Conserva máximos de seis correlativos, informes de pérdida PDF/CSV sin cuentas bancarias/contraseñas y registros en SQLite y archivo externo.
 - Fixtures generadas desde tags publicados 1.0.4/6/7/13, con manifiesto SHA256; pruebas de cortes reales y saldos después de las migraciones ya existentes.
 - Probar respaldo disponible en Configuración y como acceso independiente de Inicio; carga autenticada con CSRF, temporal eliminado y límite web de 32 MB. Diálogos nativos muestran comparación y confirmación, rutas de informes y revisión de correlativos ilegibles. Instalador incorpora solo el nuevo acceso.
+- Instalador mantiene Tcl/Tk y dependencias existentes; solo agrega el acceso Probar respaldo y comprueba su destino/argumentos. El ZIP fuente incluye únicamente las cuatro fixtures ficticias verificadas por su manifiesto; excluye bases reales.
 - Cifrado, sesiones, cadena de bitácora, privilegios, reducción y firma permanecen fuera de A1.
 - Validación Linux final: 223 descubiertas en 74.725 s, 221 correctas y dos exclusivas de Windows omitidas; los tres recorridos de navegador correctos. Esquema futuro también bloqueado al iniciar, antes de migrar. Resultados nativos pendientes de la compilación Windows.
 

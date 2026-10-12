@@ -14,6 +14,16 @@ def main():
     output.parent.mkdir(parents=True, exist_ok=True)
     files = [root / name for name in ('README.md','desktop_entry.py','requirements-desktop.txt','Iniciar-Aula.bat','Iniciar-Pruebas.bat','Probar-en-telefono.bat','Configurar-Red.bat','Iniciar-Red.bat','Restaurar-respaldo.bat','Abrir-carpeta-de-datos.bat','Recuperar-clave-admin.bat')]
     files.extend(p for p in (root/'docs').glob('*') if p.suffix in ('.md','.html'))
+    # Only named, manifest-verified fictional historical fixtures; never arbitrary databases.
+    import json
+    fixture_root=root/'tests/fixtures/restore'
+    if (fixture_root/'manifest.json').exists():
+        for fixture in json.loads((fixture_root/'manifest.json').read_text()):
+            name=fixture['filename']
+            if Path(name).name!=name or not fixture.get('fictional'): raise RuntimeError('Fixture inválida.')
+            path=fixture_root/name
+            if hashlib.sha256(path.read_bytes()).hexdigest()!=fixture['sha256']: raise RuntimeError('Fixture histórica alterada.')
+            files.append(path)
     for directory in ('colegio','static','tests','packaging'):
         files.extend(p for p in (root / directory).rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix in ('.py','.js','.cjs','.css','.html','.svg','.png','.ttf','.json','.webmanifest','.txt','.ico','.iss','.ps1'))
     with zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_DEFLATED) as archive:

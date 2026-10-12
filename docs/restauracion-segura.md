@@ -83,3 +83,5 @@ La validación de instalación/ventanas del instalador actual se reporta aparte;
 - Esquema 99 rechazado tanto al restaurar como al iniciar una base futura, sin migración ni sustitución. Registro pendiente truncado impide abrir y generar.
 
 Windows, instalador, accesos de Inicio, ventanas nativas y Defender se documentarán con los resultados del runner; no se consideran aprobados por las pruebas Linux. No se han ejecutado pruebas en la PC real del usuario.
+
+El instalador conserva Tcl/Tk y la lista de dependencias vigente: no se excluyen módulos del PYZ en A1. Su cambio funcional es el acceso independiente Probar respaldo. El ZIP de código fuente incluye las cuatro bases ficticias SHA256 del manifiesto para que las pruebas históricas también puedan ejecutarse desde esa distribución; no incorpora información real.
