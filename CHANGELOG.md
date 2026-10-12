@@ -6,6 +6,7 @@
 - Los recibos anteriores sin código muestran «Código interno no registrado». Se conserva la identificación del representante y el documento del alumno en la ficha y la constancia de matrícula.
 - Pruebas con código presente, ausente, vacío y nulo; no se modifica SQLite, cobros ni instantáneas históricas. No se ha aplicado el cifrado ni comenzado los puntos posteriores.
 - Validación Linux: 188 pruebas, 187 correctas y una exclusiva de Windows omitida; navegadores normal, Pruebas e importación correctos.
+- Instalador 1.0.28 en borrador: 188 pruebas correctas en Windows, instalación/ventanas/reinstalación/desinstalación conservando datos y dos análisis de Defender sin detecciones. SHA256 verificado contra el archivo descargado y el registro del runner. Las alertas anteriores del equipo del usuario siguen pendientes.
 
 ## Fase 1, punto 2 · controlador del reloj
 
