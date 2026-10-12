@@ -90,7 +90,7 @@ La revisión y la columna Tipo del CSV muestran nombres de registros en español
 
 ## Validación Windows y descarga · A1 1.0.34
 
-[Instalador 1.0.34 en borrador](https://github.com/Eliezerti/Sistema-colegio/releases/tag/untagged-b8516bfc22356d89ae3f). Descarga **Aula-Colegio-Instalador-1.0.34.exe**, no el ZIP fuente. Instala con la misma cuenta Windows después de crear/verificar una copia externa y cerrar Aula completamente. Una actualización conserva la base; no uses Vaciar registros para actualizar.
+[Instalador 1.0.34 en borrador](https://github.com/Eliezerti/Sistema-colegio/releases/tag/untagged-53d32cb7abf24fbc94e9). Descarga **Aula-Colegio-Instalador-1.0.34.exe**, no el ZIP fuente. Instala con la misma cuenta Windows después de crear/verificar una copia externa y cerrar Aula completamente. Una actualización conserva la base; no uses Vaciar registros para actualizar.
 
 [Runner Windows 2022, Python 3.12](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38303608499), commit **7a349eb74ab601103faf520c3aedff18e999bb2b**:
 
