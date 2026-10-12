@@ -20,7 +20,7 @@ Los cobros incluyen **Pago móvil** como método separado en recibos, reportes y
 
 ## Respaldos cifrados · A2
 
-Configuración → Protección y mantenimiento → Cifrado de respaldos. Contraseña de mínimo 12 caracteres y recuperación mostrada una vez, con confirmación de últimos cuatro. Segundo destino y Descargar copia entregan .aulabak autenticado y verificado; también las copias externas previas a vaciar/borrar. Los locales continúan sin cifrar y dependen de BitLocker/permisos. Cambiar contraseña afecta solo copias nuevas; las anteriores usan su contraseña original o recuperación. A1 abre ambas clases y conserva todas sus protecciones. No hay migración SQL ni cambios de nómina/sesiones. [Guía, rutas, límites y prueba ficticia](docs/cifrado-respaldos.md) · [Formato documentado](docs/formato-respaldo-cifrado.md).
+Configuración → Protección y mantenimiento → Cifrado de respaldos. Contraseña de mínimo 12 caracteres y recuperación mostrada una vez, con confirmación de últimos cuatro. Segundo destino y Descargar copia entregan .aulabak autenticado y verificado; también las copias externas previas a vaciar/borrar. Los locales continúan sin cifrar y dependen de BitLocker/permisos. Cambiar contraseña afecta solo copias nuevas; las anteriores usan su contraseña original o recuperación. A1 abre ambas clases y conserva todas sus protecciones. No hay migración SQL ni cambios de nómina/sesiones. [Guía, rutas, límites y prueba ficticia](docs/cifrado-respaldos.md) · [Manual instalado](docs/cifrado-respaldos.html) · [Formato documentado](docs/formato-respaldo-cifrado.md).
 
 ## Restauración segura · A1
 

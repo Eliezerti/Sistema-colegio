@@ -150,16 +150,40 @@ class DesktopHost:
     def __exit__(self,*_):self.close()
 
 
+def backup_credentials_dialog(root,file):
+    import tkinter as tk
+    from tkinter import ttk
+    with open(file,'rb') as saved:encrypted=saved.read(8).startswith(b'AULABK')
+    if not encrypted:return None,'password'
+    dialog=tk.Toplevel(root);dialog.title('Abrir respaldo cifrado');dialog.resizable(False,False)
+    body=ttk.Frame(dialog,padding=24);body.pack(fill='both',expand=True)
+    ttk.Label(body,text='Usa la contraseña de esta copia o su clave de recuperación.',wraplength=430).pack(anchor='w')
+    kind=tk.StringVar(value='password');value=tk.StringVar()
+    ttk.Radiobutton(body,text='Contraseña del respaldo',variable=kind,value='password').pack(anchor='w',pady=(12,4))
+    ttk.Radiobutton(body,text='Clave de recuperación',variable=kind,value='recovery').pack(anchor='w')
+    entry=ttk.Entry(body,textvariable=value,show='*',width=55);entry.pack(fill='x',pady=15);entry.focus_set()
+    result=[]
+    def accept():
+        if value.get():result.append((value.get(),kind.get()));dialog.destroy()
+    ttk.Button(body,text='Abrir copia',command=accept).pack(side='right')
+    ttk.Button(body,text='Cancelar',command=dialog.destroy).pack(side='left')
+    dialog.grab_set();root.wait_window(dialog)
+    return result[0] if result else False
+
+
 def probe_dialog():
     import tkinter as tk
     from tkinter import filedialog, messagebox
     from .backup_inspection import probe_backup
     root=tk.Tk();root.withdraw()
     try:
-        file=filedialog.askopenfilename(parent=root,title='Probar respaldo sin restaurar',filetypes=[('Respaldo de Aula','*.sqlite3')])
+        file=filedialog.askopenfilename(parent=root,title='Probar respaldo sin restaurar',filetypes=[('Respaldo de Aula','*.sqlite3 *.aulabak')])
         if not file:return
-        s=probe_backup(file);last=s['last_payment']
-        messagebox.showinfo('Respaldo comprobado','Integridad y referencias: correctas.\nEsquema: '+str(s['schema'])+'\nAlumnos: '+str(s['students'])+'\nPagos: '+str(s['payments'])+'\nÚltimo recibo: '+(last['receipt']+' · '+last['paid_on'] if last else 'Sin pagos')+'\nSaldo pendiente USD: '+f"{s['balance_usd']/100:.2f}"+'\n\n'+s['creation_note']+'\nEl respaldo no está cifrado. No se modificó ni se restauró ninguna base.',parent=root)
+        credentials=backup_credentials_dialog(root,file)
+        if credentials is False:return
+        s=probe_backup(file,*credentials);last=s['last_payment']
+        protection='Advertencia: respaldo antiguo sin cifrar.' if s['unencrypted'] else 'Cifrado autenticado y comprobado.'
+        messagebox.showinfo('Respaldo comprobado','Integridad y referencias: correctas.\nEsquema: '+str(s['schema'])+'\nAlumnos: '+str(s['students'])+'\nPagos: '+str(s['payments'])+'\nÚltimo recibo: '+(last['receipt']+' · '+last['paid_on'] if last else 'Sin pagos')+'\nSaldo pendiente USD: '+f"{s['balance_usd']/100:.2f}"+'\n\n'+s['creation_note']+'\n'+protection+' No se modificó ni se restauró ninguna base.',parent=root)
     finally:root.destroy()
 
 
@@ -198,9 +222,12 @@ def recovery(directory,action):
     root=tk.Tk();root.withdraw()
     try:
         if action=='restore':
-            file=filedialog.askopenfilename(parent=root,title='Selecciona un respaldo de Aula',filetypes=[('Respaldo de Aula','*.sqlite3')])
+            file=filedialog.askopenfilename(parent=root,title='Selecciona un respaldo de Aula',filetypes=[('Respaldo de Aula','*.sqlite3 *.aulabak')])
             if not file:return
-            review=preview_restore(file,directory)
+            credentials=backup_credentials_dialog(root,file)
+            if credentials is False:return
+            credential,kind=credentials
+            review=preview_restore(file,directory,credential=credential,credential_kind=kind)
             if not restoration_review_dialog(root,review):return
             floors=None
             if review['requires_floor_review']:
@@ -212,7 +239,7 @@ def recovery(directory,action):
                     floors[table]=number
             answer=simpledialog.askstring('Confirmar restauración','Se conservará el estado actual y los informes de pérdida.\nEscribe '+review['confirmation']+':',parent=root)
             if answer!=review['confirmation']:return
-            restore(file,directory,preview_hash=review['preview_hash'],confirmation=answer,emergency_floors=floors)
+            restore(file,directory,preview_hash=review['preview_hash'],confirmation=answer,emergency_floors=floors,credential=credential,credential_kind=kind)
             result=last_restore(directory)
             paths='\n'.join(result['reports']) or 'No hubo diferencias que perder.'
             messagebox.showinfo('Restauración completa','Puedes abrir Aula. Se aplicaron los correlativos revisados.\n\nInformes: '+paths+'\n\nCopia previa: '+(result['previous_backup'] or result['original_files']),parent=root)
@@ -320,6 +347,17 @@ def self_test(demo=False,phone=False):
         assert font_data('LiberationSans-Regular.ttf') and font_data('LiberationSans-Bold.ttf')
         with DesktopHost(temp,port=0,demo=demo,demo_root=Path(temp)/'pruebas') as host:
             disposable=host.directory
+            # Exercise bundled cryptography + DPAPI only on this disposable smoke base.
+            from .backup_keys import prepare,confirm
+            from .backup_export import write_encrypted
+            from .backup_inspection import probe_backup
+            from .storage import consistent_backup
+            pending,recovery=prepare(host.directory,'FICTICIO-ventana-cifrado-2026');confirm(host.directory,pending)
+            snapshot=Path(temp)/'snapshot.sqlite3';cipher=Path(temp)/'snapshot.aulabak'
+            consistent_backup(host.directory/'colegio.sqlite3',snapshot)
+            write_encrypted(snapshot,cipher,host.directory)
+            assert probe_backup(cipher,'FICTICIO-ventana-cifrado-2026')['integrity']=='ok'
+            assert probe_backup(cipher,recovery,'recovery')['integrity']=='ok'
             if phone:
                 from .phone_demo import PhoneDemo
                 with PhoneDemo(host.server,'127.0.0.1',0) as gateway:

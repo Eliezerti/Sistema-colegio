@@ -1,3 +1,5 @@
+> A2 amplía este flujo para aceptar .aulabak con contraseña o recuperación. Las .sqlite3 antiguas conservan advertencia. Consulta [la guía A2](cifrado-respaldos.md); las pruebas/instalador A1 de abajo son evidencia histórica, no validación de A2.
+
 # Restauración segura · A1
 
 A1 no añade un esquema nuevo: Aula sigue en esquema 10. Al abrir una copia histórica, utiliza las migraciones que ya existían, con respaldo previo. Las cuentas, saldos y documentos del usuario no se modifican al instalar esta actualización.
@@ -6,7 +8,7 @@ A1 no añade un esquema nuevo: Aula sigue en esquema 10. Al abrir una copia hist
 
 Configuración → Protección y mantenimiento → Probar respaldo → seleccionar .sqlite3 → Comprobar copia. Solo Administrador puede usar el endpoint y exige CSRF. Hasta 32 MB en la ventana; para archivos mayores usa **Inicio de Windows → Aula Colegio → Probar respaldo**, disponible incluso si Aula no puede abrir la base.
 
-Aula copia el archivo a una carpeta temporal y abre SQLite allí en solo lectura. Elimina esa carpeta al terminar, también ante un error. No escribe WAL, SHM ni otros archivos en el USB o carpeta del respaldo. El acceso de Inicio rechaza un archivo con WAL asociado. En el navegador selecciona una copia generada por Aula: el navegador no permite revisar otros archivos de la carpeta de origen. Muestra integridad, referencias, esquema, alumnos, pagos válidos/anulados, último recibo y saldo registrado. No genera mensualidades, migra o reemplaza ninguna base. Las copias actuales no están cifradas; eso corresponde a A2.
+Aula copia el archivo a una carpeta temporal y abre SQLite allí en solo lectura. Elimina esa carpeta al terminar, también ante un error. No escribe WAL, SHM ni otros archivos en el USB o carpeta del respaldo. El acceso de Inicio rechaza un archivo con WAL asociado. En el navegador selecciona una copia generada por Aula: el navegador no permite revisar otros archivos de la carpeta de origen. Muestra integridad, referencias, esquema, alumnos, pagos válidos/anulados, último recibo y saldo registrado. No genera mensualidades, migra o reemplaza ninguna base. Las copias A1 y locales no están cifradas; A2 añade las externas/descargadas cifradas.
 
 No deduce la fecha de creación a partir del nombre o la fecha del archivo. Para copias sin metadatos fiables muestra **No se conoce una fecha fiable de creación de este respaldo**. La fecha del pago es distinta de la fecha en que se registró.
 
