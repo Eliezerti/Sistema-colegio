@@ -23,7 +23,9 @@ def describe_backup(database, status, *, now=None, disk_relation=None):
         result.pop('secondary_error', None)
     result['secondary_directory'] = directory or ''
     for key, code, prefix in (('local_error', 'local_failed', 'Falló el último respaldo local.'),
-                              ('secondary_error', 'secondary_failed', 'Falló la última copia al segundo destino.')):
+                              ('secondary_error', 'secondary_failed', 'Falló la última copia al segundo destino.'),
+                              ('retention_error', 'retention_failed', 'Revisa la conservación de respaldos.'),
+                              ('secondary_retention_error', 'secondary_retention_failed', 'Revisa la conservación de copias en el segundo destino.')):
         if result.get(key):
             alerts.append({'code': code, 'message': prefix + ' ' + str(result[key])})
     if directory == '':

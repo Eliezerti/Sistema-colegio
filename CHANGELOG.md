@@ -14,6 +14,13 @@
 - Limitación de acceso con tiempo monotónico; confirmar el reloj no prolonga sesiones y limita vencimientos excesivos causados por fechas futuras.
 - Prueba explícita del 29 de febrero y conservación de importes/deduplicación.
 
+### Conservación de respaldos
+
+- Orden de publicación persistido en cada destino, independiente de nombres y reloj corregido; mantiene límites de 30 diarias y 90 automáticas.
+- Copias previas a operaciones destructivas no se incluyen en la depuración automática.
+- Un registro de orden ilegible no autoriza borrar copias. Fallar al registrar conservación no impide copiar una instantánea ya verificada al segundo destino; se muestra aviso.
+- Pruebas con fechas futuras de nombres y archivos, posterior corrección, límites independientes, registros corruptos y fallos de sincronización dirigidos a la copia del USB.
+
 ## Sin publicar · Fase 1, punto 1 · 11 de octubre de 2026
 
 - Aviso persistente para Administrador y Caja cuando falta el segundo destino, no hay copia externa confirmada, la copia externa tiene más de tres días o el último respaldo falló. Visible también antes de confirmar la tasa; permanece al buscar y filtrar, sin botón de cierre.

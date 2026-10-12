@@ -106,24 +106,27 @@ class RecoveryTests(unittest.TestCase):
                 record_payment(db,{'student_id':1,'amount':'25','currency':'USD','paid_on':'2025-09-21',
                     'method':'Transferencia','reference':'TR-REC-02','request_key':'wal-fixture'},1)
             original=[tuple(r) for r in db.execute('SELECT * FROM payments ORDER BY id')]
-            permissions={};calls=[];real_sync=os.fsync
+            permissions={};calls=[];real_sync=os.fsync;names={}
 
             def tracked_open(*args,**kwargs):
                 saved=builtins.open(*args,**kwargs)
                 permissions[saved.fileno()]=saved.writable()
+                names[saved.fileno()]=str(args[0])
                 return saved
 
             def windows_commit(descriptor):
                 if not permissions.get(descriptor):
                     raise OSError(errno.EBADF,'Bad file descriptor')
-                calls.append(descriptor)
+                calls.append(names[descriptor])
                 real_sync(descriptor)
 
             # Linux accepts read-only fsync; emulate Windows's stricter _commit.
-            with patch('colegio.storage.open',new=tracked_open,create=True), patch('colegio.storage.os.fsync',new=windows_commit):
+            with patch('colegio.storage.open',new=tracked_open,create=True), patch('colegio.clock_guard.open',new=tracked_open,create=True), patch('colegio.clock_guard.sync_directory'), patch('colegio.storage.os.fsync',new=windows_commit):
                 status=automatic_backup(source)
                 self.assertFalse(status.get('local_error'));self.assertFalse(status.get('secondary_error'))
-                self.assertEqual(len(calls),2)
+                snapshots=[p for p in calls if Path(p).name.startswith(('.aula-backup-','.aula-copy-'))]
+                self.assertEqual(len(snapshots),2)
+                self.assertGreaterEqual(len(calls),4)  # Snapshots and persisted retention inventories.
                 local=Path(status['local_path']);remote=Path(external)/local.name
                 for snapshot in (local,remote):
                     with closing(connect(snapshot)) as copy:
@@ -192,15 +195,21 @@ class RecoveryTests(unittest.TestCase):
                 db.execute("UPDATE settings SET value=? WHERE key='backup_directory'",(external,))
             first=automatic_backup(source)
             prior=Path(external)/Path(first['local_path']).name;original=prior.read_bytes()
-            real_sync=os.fsync;calls=0
+            real_sync=os.fsync;names={};failed=[]
+
+            def tracked_open(*args,**kwargs):
+                saved=builtins.open(*args,**kwargs)
+                names[saved.fileno()]=str(args[0])
+                return saved
 
             def fail_second(descriptor):
-                nonlocal calls
-                calls+=1
-                if calls==2:raise OSError(errno.EIO,'Simulated USB write failure')
+                if Path(names.get(descriptor,'')).name.startswith('.aula-copy-'):
+                    failed.append(descriptor)
+                    raise OSError(errno.EIO,'Simulated USB write failure')
                 real_sync(descriptor)
 
-            with patch('colegio.storage.os.fsync',new=fail_second):status=automatic_backup(source)
+            with patch('colegio.storage.open',new=tracked_open,create=True), patch('colegio.clock_guard.open',new=tracked_open,create=True), patch('colegio.storage.os.fsync',new=fail_second):status=automatic_backup(source)
+            self.assertEqual(len(failed),1)
             self.assertFalse(status.get('local_error'));self.assertTrue(status['secondary_error'])
             self.assertTrue(Path(status['local_path']).is_file())
             self.assertEqual(prior.read_bytes(),original)

@@ -7,6 +7,7 @@ import tempfile
 from contextlib import closing
 from datetime import datetime
 from pathlib import Path
+from .backup_retention import retain_backups
 
 
 class DataLock:
@@ -76,11 +77,14 @@ def daily_backup(database):
     database = Path(database)
     directory = database.parent / 'backups'
     path = directory / f"colegio-{datetime.now():%Y-%m-%d}.sqlite3"
-    if not path.exists():
+    created = not path.exists()
+    if created:
         consistent_backup(database, path)
-    backups = sorted(directory.glob('colegio-????-??-??.sqlite3'))
-    for old in backups[:-30]:
-        old.unlink()
+    try:
+        retain_backups(directory, path, 'colegio-????-??-??.sqlite3', 30, created=created)
+    except OSError:
+        # A valid copy must remain usable even when its retention ledger fails.
+        return {'retention_error':'Se creó la copia diaria, pero no se pudo comprobar la conservación de respaldos.'}
 
 
 def backup_status(database):
@@ -105,14 +109,20 @@ def automatic_backup(database):
     try:
         consistent_backup(database,path)
         status.update(local_at=now,local_path=str(path),local_error='')
-        for old in sorted(directory.glob('aula-auto-????????-??????-??????.sqlite3'))[:-90]: old.unlink()
     except Exception as error:
         status['local_error']=f'No se pudo guardar el respaldo local: {type(error).__name__}.'
+    status['retention_error'] = ''
+    if not status.get('local_error'):
+        try:
+            retain_backups(directory, path, 'aula-auto-????????-??????-??????.sqlite3', 90)
+        except OSError:
+            status['retention_error'] = 'Se creó el respaldo local, pero no se pudo comprobar la conservación de copias. No se eliminaron respaldos por un registro ilegible.'
     with closing(sqlite3.connect(database.resolve().as_uri()+'?mode=ro',uri=True)) as db:
         r=db.execute("SELECT value FROM settings WHERE key='backup_directory'").fetchone()
         secondary=r[0] if r else ''
     if status.get('secondary_directory')!=secondary:
         status.pop('secondary_at',None);status.pop('secondary_error',None)
+        status.pop('secondary_retention_error',None)
     status['secondary_directory']=secondary
     if secondary and not status.get('local_error'):
         handle=None; temporary=None
@@ -126,13 +136,17 @@ def automatic_backup(database):
                 os.fsync(saved.fileno())
             os.replace(temporary,dest/path.name)
             status.update(secondary_at=now,secondary_error='')
-            for old in sorted(dest.glob('aula-auto-????????-??????-??????.sqlite3'))[:-90]: old.unlink()
+            status['secondary_retention_error'] = ''
+            try:
+                retain_backups(dest, dest/path.name, 'aula-auto-????????-??????-??????.sqlite3', 90)
+            except OSError:
+                status['secondary_retention_error'] = 'Se copió el respaldo al segundo destino, pero no se pudo comprobar la conservación de copias allí.'
         except Exception as error:
             status['secondary_error']=f'No se pudo copiar al segundo destino: {type(error).__name__}. Revisa la carpeta o conecta el USB.'
         finally:
             if temporary and Path(temporary).exists(): Path(temporary).unlink()
     elif not secondary:
-        for key in ('secondary_at','secondary_error'): status.pop(key,None)
+        for key in ('secondary_at','secondary_error','secondary_retention_error'): status.pop(key,None)
     target=database.parent/'backup-status.json'; temporary=target.with_suffix('.tmp')
     temporary.write_text(json.dumps(status,ensure_ascii=False),encoding='utf-8')
     os.replace(temporary,target)

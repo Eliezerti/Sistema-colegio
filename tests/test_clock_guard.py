@@ -1,16 +1,13 @@
-import gc
 import json
-import os
 import sqlite3
 import tempfile
 import unittest
 from contextlib import closing
-from datetime import datetime, timedelta, timezone, date
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from colegio.clock_guard import (ClockGuard, ClockConfirmationRequired, ClockInputError,
-                                 atomic_json, get_clock)
+from colegio.clock_guard import ClockGuard, ClockConfirmationRequired, ClockInputError
 from colegio.db import connect, initialize, local_today, synchronize_monthly_charges
 
 
@@ -129,5 +126,18 @@ class ClockGuardTests(unittest.TestCase):
             db.execute("INSERT INTO audit(action,details,created_at) VALUES('fixture','{}',?)",(self.current.isoformat(),))
         reopened=ClockGuard(self.path,now=lambda:self.current,history=True)
         self.assertEqual(reopened.snapshot()['pending']['reason'],'initial_review')
+
+    def test_confirmation_caps_future_sessions_without_extending_shorter_expirations(self):
+        self.guard.require();self.move(3600)
+        short=int(self.current.timestamp())+60
+        with closing(connect(self.path)) as db,db:
+            db.execute("INSERT INTO users(id,username,name,password,role) VALUES(1,'admin','Administración','unused','admin')")
+            db.execute("INSERT INTO sessions(token,user_id,csrf,expires) VALUES('long',1,'a',9999999999)")
+            db.execute("INSERT INTO sessions(token,user_id,csrf,expires) VALUES('short',1,'b',?)",(short,))
+        self.confirmation()
+        with closing(connect(self.path)) as db:
+            sessions=dict(db.execute('SELECT token,expires FROM sessions'))
+        self.assertEqual(sessions['long'],int(self.current.timestamp())+12*3600)
+        self.assertEqual(sessions['short'],short)
 
 

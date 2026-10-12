@@ -47,6 +47,8 @@ Si Aula pide revisar el reloj, no permite cobrar, generar mensualidades ni emiti
 
 Aula usa SQLite WAL con `synchronous=FULL`; los cobros y sus aplicaciones se guardan en una transacción. Hay respaldos después de operaciones financieras y cada cinco minutos mientras está abierto. Se conservan 90 copias recientes y 30 diarias locales; el segundo destino conserva 90 recientes.
 
+El orden de conservación se registra al publicar cada copia, sin depender de la fecha de su nombre. Los respaldos con una fecha futura no eliminan una copia nueva después de corregir Windows. Un registro ilegible no autoriza depurar; una copia ya verificada puede llegar al segundo destino aunque falle el registro de conservación. Revisa el aviso y el espacio disponible.
+
 Una transacción no protege contra toda falla del disco, sistema operativo o suministro. Usa un UPS. Activa cifrado de disco de Windows, como BitLocker si tu equipo lo permite, y conserva su clave de recuperación fuera de la PC. Aula no cifra por sí misma su archivo SQLite; protege también los respaldos externos.
 
 El error de un segundo respaldo no borra ni repite un cobro ya confirmado; se muestra un aviso. Una carpeta de Drive se sincroniza mediante el cliente de Drive cuando tenga conexión: Aula no comprueba que la copia ya haya llegado al servicio en la nube.
