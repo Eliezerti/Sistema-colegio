@@ -71,6 +71,17 @@ class MonthlyAutomationTests(unittest.TestCase):
         self.assertEqual([r['period'] for r in charges(self.db)],['2025-12'])
         self.assertEqual(self.db.execute('SELECT COUNT(*) FROM charges').fetchone()[0],2)
 
+    def test_leap_year_february_29_and_rounding_preserve_existing_amounts(self):
+        with self.db:
+            self.db.execute("UPDATE students SET school_year=2023,enrollment_start='2023-09-01',enrollment_end='2024-08-31',billing_start='2024-02',monthly_fee=10001,discount=10")
+            self.db.execute("UPDATE settings SET value='31' WHERE key='due_day'")
+        self.assertEqual(self.sync('2024-02-29')['created'],1)
+        record=charges(self.db)[0]
+        self.assertEqual(record['due_date'],'2024-02-29')
+        self.assertEqual(record['amount'],9001)
+        self.assertEqual(self.sync('2024-03-01')['created'],1)
+        self.assertEqual(self.sync('2024-03-01')['created'],0)
+
     def test_existing_charge_payment_and_receipt_are_preserved(self):
         with self.db:
             self.db.execute("INSERT INTO charges(student_id,period,concept,amount,due_date) VALUES(1,'2025-09','Mensualidad',7777,'2025-09-10')")

@@ -74,7 +74,7 @@ async function api(path, data) {
   try { result = await response.json(); } catch { throw new Error('El servidor no respondió. Comprueba que la ventana de Aula esté abierta.'); }
   if (!response.ok) {
     if(response.status===409&&result.requires_rate_confirmation&&data&&!data.rate_change_confirmed){if(window.confirm(result.error+' ¿Seguro que deseas usar esta tasa?'))return api(path,{...data,rate_change_confirmed:true});throw new Error('La tasa no se guardó. Revisa el importe.');}
-    if (response.status === 428) { await openRateGate(); }
+    if (response.status === 428) { if(result.requires_clock_confirmation)await openClockGate();else await openRateGate(); }
     if (response.status === 401 && path !== 'login') { state = undefined; await boot(); }
     throw new Error(result.error || 'No se pudo completar la operación.');
   }
@@ -94,10 +94,24 @@ async function boot() {
   } catch (error) { app.innerHTML = `<div class="loading"><h2>No se pudo abrir Aula</h2><p>${esc(error.message)}</p>${btn('Reintentar','boot')}</div>`; }
 }
 async function openRateGate() {
+  const clock=await api('clock-status');if(clock.blocked){await openClockGate(clock);return;}
   const gate = await api('rate-gate'); publicSchool = gate.school || publicSchool;
   gateBackup=gate.backup;gateRole=gate.role;
   state=undefined; modal.close(); $('#print-area').replaceChildren();
   app.innerHTML=demoBanner()+`<div class="rate-screen"><section class="card gate-card"><div id="backup-alerts" class="backup-alerts">${backupProblem()}</div><div class="brand">${schoolLogo(publicSchool)}<div><small>${esc(publicSchool.institution_type||'Administración escolar')}</small><b>${esc(publicSchool.school_name||'Aula')}</b><small>Tasas y respaldo</small></div></div><div class="eyebrow">${dateLabel(gate.today)}</div><h1>Confirma la tasa de hoy</h1><p>Antes de comenzar, revisa la tasa oficial vigente. Se usará para convertir los pagos y la nómina en bolívares.</p><form data-endpoint="confirm-rate"><input type="hidden" name="rate_date" value="${gate.today}">${field('Bolívares por 1 USD','rate',gate.rate,'number',`required min="0.000001" max="1000000" step="0.000001" ${gate.role==='reader'?'readonly':''}`)}<p class="hint">${gate.role==='reader'?'Consulta puede confirmar la tasa registrada. Si falta, administración o caja debe registrarla.':'Consulta bcv.org.ve y registra la tasa vigente, incluso en fines de semana y feriados. La actualización es manual.'}</p><div class="error" role="alert"></div><button class="btn primary" type="submit" ${gate.role==='reader'&&!gate.rate?'disabled':''}>Confirmar tasa y entrar</button></form><div class="gate-footer">${gate.role==='admin'&&!demoMode?'<a class="btn" href="/api/backup" download>Descargar respaldo</a>':''}${btn('Cerrar sesión','logout')}</div></section></div>`;
+}
+function clockTime(value){return value?new Date(value).toLocaleString('es-VE',{timeZone:'America/Caracas',dateStyle:'long',timeStyle:'medium'}):'No disponible';}
+async function openClockGate(given){
+  const clock=given||await api('clock-status');
+  if(!clock.blocked){await openRateGate();return;}
+  const gate=await api('rate-gate');gateBackup=gate.backup;gateRole=gate.role;publicSchool=gate.school||publicSchool;
+  state=undefined;modal.close();$('#print-area').replaceChildren();
+  const p=clock.pending||{},isAdmin=(clock.role||session?.role)==='admin';
+  app.innerHTML=`<div class="rate-screen"><section class="card gate-card clock-gate"><div id="backup-alerts" class="backup-alerts">${backupProblem()}</div><div class="brand">${schoolLogo(publicSchool)}<div><b>${esc(publicSchool.school_name||'Aula')}</b><small>Revisión de fecha y hora</small></div></div><h1>Revisa el reloj de esta PC</h1><p>Por seguridad, están detenidos los cobros, la generación de mensualidades y la emisión de documentos.</p><dl><dt>Última fecha y hora registrada</dt><dd>${esc(clockTime(p.previous_time||clock.last_seen))}</dd><dt>Fecha y hora actuales de Windows</dt><dd>${esc(clockTime(clock.current_time))}</dd></dl><p class="notice warning">${p.reason==='backwards'?'El reloj retrocedió.':p.reason==='forward'?'El reloj avanzó más de lo esperado.':p.reason==='initial_review'?'Esta base tiene actividad anterior, pero falta el control del reloj. Revisa la fecha antes de comenzar.':'No se pudo comprobar o guardar el control del reloj.'}</p><p>Comprueba la fecha y hora de Windows y corrígelas si hace falta. Aula no las cambia automáticamente.</p>${isAdmin?`<form data-endpoint="clock-confirm"><input type="hidden" name="pending_id" value="${esc(p.id)}"><input type="hidden" name="observed_at" value="${esc(clock.current_time)}"><label class="confirm-check"><input name="reviewed" type="checkbox" required> Revisé Windows y confirmo que esta fecha y hora son correctas.</label><div class="error" role="alert"></div><button class="btn primary" type="submit">Confirmar fecha y hora</button></form>`:'<p class="text-red">Pide al administrador de Aula que revise y confirme el reloj. Caja y Consulta no pueden confirmar.</p>'}<div class="gate-footer">${btn('Volver a comprobar','clock-check')}${isAdmin&&!demoMode?'<a class="btn" href="/api/backup" download>Descargar respaldo</a>':''}${btn('Cerrar sesión','logout')}</div><p class="hint">La confirmación deja constancia del administrador y la fecha en la bitácora.</p></section></div>`;
+}
+async function checkedPrint(report=false){
+  const clock=await api('clock-status');if(clock.blocked){await openClockGate(clock);return;}
+  if(report)printReport();else window.print();
 }
 function auth(setup) {
   if(demoMode){demoAuth();return;}
@@ -403,6 +417,7 @@ document.addEventListener('click',async event=>{
   const {action,id}=target.dataset;
   try {
     switch(action) {
+      case 'clock-check':await openClockGate();break;
       case 'windows-protection-help':windowsProtectionHelp();break;
       case 'nav':page=id;filters={};render();break;
       case 'close':modal.close();break;
@@ -420,7 +435,7 @@ document.addEventListener('click',async event=>{
       case 'correct-billing':openBillingCorrection(id);break;
       case 'void-payment':case 'void-expense':case 'cancel-charge':openVoid(action,id);break;
       case 'user':openUser();break;case 'password':openPassword(id);break;case 'receipt':await receipt(id);break;
-      case 'daily-report':await openDailyReport();break;case 'directory-report':await openDirectoryReport(id);break;case 'print-receipt':window.print();break;case 'print-report':printReport();break;
+      case 'daily-report':await openDailyReport();break;case 'directory-report':await openDirectoryReport(id);break;case 'print-receipt':await checkedPrint();break;case 'print-report':await checkedPrint(true);break;
       case 'export-students':openStudentExport();break;
       case 'copy-collection':await navigator.clipboard.writeText($('#collection-text').value);toast('Aviso copiado.');break;
       case 'rate-inline':await rateInline();break;
@@ -439,12 +454,14 @@ document.addEventListener('click',async event=>{
 document.addEventListener('submit',async event=>{
   const form=event.target;if(!form.dataset.endpoint)return;
   event.preventDefault();const endpoint=form.dataset.endpoint, data=Object.fromEntries(new FormData(form));
+  if(endpoint==='clock-confirm')data.reviewed=form.elements.reviewed.checked;
   if(endpoint==='correct-billing-start'){data.charge_ids=JSON.parse(data.charge_ids);data.confirmed=form.elements.confirmed.checked;}
   if(endpoint==='payment-plans'){data.expected_total=Number(data.expected_total);data.installments=Array.from(form.querySelectorAll('[data-plan-row]')).map(row=>({amount:row.querySelector('[data-plan-amount]').value,due_date:row.querySelector('[data-plan-date]').value}));}
   if(endpoint==='payroll-plans') data.lines=Array.from(form.querySelectorAll('[data-payroll-employee]')).map(input=>({employee_id:input.dataset.payrollEmployee,amount:input.value}));
   const submit=form.querySelector('[type="submit"]'), errorBox=$('.error',form);submit.disabled=true;errorBox.textContent='';
   try {
     const result=await api(endpoint,data);
+    if(endpoint==='clock-confirm'){await openRateGate();toast('Fecha y hora confirmadas. La revisión quedó en la bitácora.');return;}
     if(endpoint==='reset-records'){modal.close();await boot();toast('Registros vaciados. Respaldo previo: '+result.backup_path);return;}
     if(['login','setup','demo-login'].includes(endpoint)){await boot();return;}
     if(endpoint==='confirm-rate'){await refresh();return;}
@@ -507,6 +524,7 @@ async function checkDay() {
   if(!session||document.hidden)return;
   try {
     const gate=await api('rate-gate');
+    if(gate.clock?.blocked){gateBackup=gate.backup;gateRole=gate.role;updateBackupWarnings();if(!$('.clock-gate'))await openClockGate({...gate.clock,role:gate.role});return;}
     if(state&&gate.today!==state.today){await openRateGate();return;}
     if(state){
       state.backup=await api('backup-status');

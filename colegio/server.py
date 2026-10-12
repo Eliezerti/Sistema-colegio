@@ -25,6 +25,7 @@ from .db import next_record_id
 from .storage import DataLock, consistent_backup, daily_backup, automatic_backup, backup_status
 from .backup_health import describe_backup
 from .protection import ProtectionMonitor
+from .clock_guard import ClockConfirmationRequired, ClockInputError, get_clock
 from .administration import (import_roster, import_template, export_roster, cash_summary, close_cash, reopen_cash,
     ensure_open_day, guardian_account, issue_guardian_document, load_administrative_document)
 from .documents import enrollment, payroll, load_document, render_pdf
@@ -398,6 +399,7 @@ class SchoolServer(ThreadingHTTPServer):
         self.backup_thread = None
         super().__init__(address, Handler)
         self.db_path = db_path
+        self.clock = get_clock(db_path, history=True)
         self.protection = ProtectionMonitor(Path(db_path).parent)
         self.login_attempts = {}
         self.backup_lock=threading.Lock()
@@ -495,6 +497,7 @@ class SchoolServer(ThreadingHTTPServer):
         if self.backup_thread:
             self.backup_thread.join()
         self.protection.close()
+        self.clock.close()
         super().server_close()
 
 
@@ -607,7 +610,7 @@ class Handler(BaseHTTPRequestHandler):
                         db.execute("UPDATE settings SET value=? WHERE key='school_name'",(required(data,'school_name'),))
                     audit(db, user_id, 'setup', {'user_id': user_id})
                 else:
-                    now = time.time()
+                    now = time.monotonic()
                     attempts = [t for t in self.server.login_attempts.get(self.client_address[0], []) if now - t < 60]
                     if len(attempts) >= 10:
                         self.respond(429, {'error': 'Demasiados intentos. Espera un minuto.'})
@@ -631,11 +634,23 @@ class Handler(BaseHTTPRequestHandler):
             if not user:
                 self.respond(401, {'error': 'Inicia sesión para continuar.'})
                 return
+            if endpoint == 'clock-status' and not post:
+                self.respond(200, dict(self.server.clock.snapshot(), role=user['role']))
+                return
+            if endpoint == 'clock-confirm' and post:
+                if not secrets.compare_digest(self.headers.get('X-CSRF-Token', ''), user['csrf']):
+                    raise PermissionError('Sesión inválida. Recarga la página.')
+                result = self.server.clock.confirm(db, user, data)
+                self.respond(200, result)
+                return
+            if endpoint not in ('rate-gate','backup','backup-now','backup-status','health','logout','demo-exit'):
+                self.server.clock.require()
             if not post and endpoint == 'rate-gate':
                 on = local_today().isoformat()
                 rate = db.execute('SELECT rate FROM exchange_rates WHERE rate_date=?', (on,)).fetchone()
                 self.respond(200, {'today': on, 'rate': rate['rate'] if rate else '', 'role': user['role'],
                                    'backup': self.server.backup_status(),
+                                   'clock': self.server.clock.snapshot(),
                                    'school': {k:v for k,v in db.execute('SELECT key,value FROM settings') if k in ('school_name','institution_type','logo')}})
                 return
             if endpoint not in ('confirm-rate','rate-gate','logout','backup','health','demo-exit') and user['rate_confirmed_on'] != local_today().isoformat():
@@ -688,6 +703,8 @@ class Handler(BaseHTTPRequestHandler):
                         status=self.server.make_backup()
                         if status.get('local_error'): raise ValidationError('No se puede realizar la operación sin completar primero un respaldo local.')
                     result = mutate(db, endpoint, data, user)
+                if endpoint not in ('logout','demo-exit'):
+                    self.server.clock.require()
                 db.commit()
                 if endpoint in DIRECTORY_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','expenses','salary-receipts','void-payment','void-expense','close-cash','reopen-cash','settings','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
                     status=self.server.make_backup()
@@ -874,10 +891,12 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(404, {'error': 'Operación inexistente.'})
         except PermissionError as error:
             self.respond(403, {'error': str(error)})
+        except ClockConfirmationRequired as error:
+            self.respond(428, {'error':str(error), 'requires_clock_confirmation':True, 'clock':error.status})
         except RateConfirmationRequired as error:
             self.respond(409,{'error':str(error),'requires_rate_confirmation':True,'old_rate':error.old,'new_rate':error.new})
         except (ValidationError, json.JSONDecodeError, ValueError, TypeError, KeyError) as error:
-            self.respond(400, {'error': str(error) if isinstance(error, ValidationError) else 'Datos inválidos.'})
+            self.respond(400, {'error': str(error) if isinstance(error, (ValidationError, ClockInputError)) else 'Datos inválidos.'})
         except sqlite3.IntegrityError:
             self.respond(400, {'error': 'Registro duplicado, referencia inexistente o estado inválido. Revisa los datos.'})
         except Exception:
@@ -903,8 +922,12 @@ def open_school(path, port, demo=False, remote_origin=''):
             if needs_upgrade:
                 consistent_backup(path, path.parent / 'backups' / f'antes-actualizacion-{datetime.now():%Y%m%d-%H%M%S}.sqlite3')
         initialize(path)
+        clock = get_clock(path, history=True)
         with closing(connect(path)) as db, db:
-            synchronize_monthly_charges(db)
+            try:
+                synchronize_monthly_charges(db)
+            except ClockConfirmationRequired:
+                db.rollback()  # Do not commit a partially generated month/year.
             if remote_origin and not db.execute("SELECT 1 FROM users WHERE role='admin' LIMIT 1").fetchone():
                 raise SystemExit('Crea primero tu administrador en esta PC con Iniciar-Aula.bat y luego abre Iniciar-Red.bat. No se ha habilitado el acceso remoto.')
             if demo:

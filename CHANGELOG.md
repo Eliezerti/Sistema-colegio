@@ -7,6 +7,13 @@
 - Confirmación exclusiva de Administrador, registro previo en bitácora y bloqueo ante control ausente con historial, ilegible o no publicable.
 - Pruebas de persistencia, permisos, confirmación, ajustes y fallos; sin cambio de esquema ni importes existentes.
 
+### Integración del bloqueo
+
+- Protección en servidor y motor: inicio, consultas, cobros, generación y documentos. Revisión final antes de confirmar modificaciones; un salto durante un cobro revierte la transacción.
+- Pantalla de revisión en horario de Venezuela; solo Administrador confirma con CSRF. La impresión comprueba el reloj y la pantalla elimina documentos pendientes al bloquear.
+- Limitación de acceso con tiempo monotónico; confirmar el reloj no prolonga sesiones y limita vencimientos excesivos causados por fechas futuras.
+- Prueba explícita del 29 de febrero y conservación de importes/deduplicación.
+
 ## Sin publicar · Fase 1, punto 1 · 11 de octubre de 2026
 
 - Aviso persistente para Administrador y Caja cuando falta el segundo destino, no hay copia externa confirmada, la copia externa tiene más de tres días o el último respaldo falló. Visible también antes de confirmar la tasa; permanece al buscar y filtrar, sin botón de cierre.

@@ -281,6 +281,8 @@ def charges(db, student_id=None):
 
 def assess_month(db, student, first, due_day):
     """Assess once, including full scholarships and previously cancelled charges."""
+    from .clock_guard import require_database_clock
+    require_database_clock(db)
     period = first.strftime('%Y-%m')
     if db.execute('SELECT 1 FROM monthly_assessments WHERE student_id=? AND period=?',
                   (student['id'], period)).fetchone():
@@ -304,6 +306,8 @@ def assess_month(db, student, first, due_day):
 
 def synchronize_monthly_charges(db, today=None):
     """Bring active enrollments through this month; caller owns the transaction."""
+    from .clock_guard import require_database_clock
+    require_database_clock(db)
     today = today or local_today()
     settings = dict(db.execute('SELECT key,value FROM settings'))
     start_month, due_day = int(settings['start_month']), int(settings['due_day'])
@@ -328,6 +332,8 @@ def synchronize_monthly_charges(db, today=None):
 
 
 def generate_month(db, data, user_id):
+    from .clock_guard import require_database_clock
+    require_database_clock(db)
     period = required(data, 'period', 7)
     try:
         first = date.fromisoformat(period + '-01')
@@ -354,6 +360,8 @@ def generate_month(db, data, user_id):
 
 
 def record_payment(db, data, user_id):
+    from .clock_guard import require_database_clock
+    require_database_clock(db)
     student_id = integer(data.get('student_id'), 1, 2147483647)
     paid_on = valid_date(data.get('paid_on'))
     if paid_on > local_today().isoformat():

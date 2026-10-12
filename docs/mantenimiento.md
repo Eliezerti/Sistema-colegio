@@ -43,6 +43,8 @@ La fecha de nacimiento es opcional. Si no la tienes, déjala vacía: la constanc
 
 ## Respaldos y cortes de electricidad
 
+Si Aula pide revisar el reloj, no permite cobrar, generar mensualidades ni emitir documentos hasta que el Administrador confirme la fecha y hora correctas. El avance permitido entre aperturas es siete días y la tolerancia de ajustes es dos minutos. Una revisión inicial puede aparecer al actualizar una base con actividad sin archivo de control. [Cómo resolver la revisión](proteccion-reloj.md).
+
 Aula usa SQLite WAL con `synchronous=FULL`; los cobros y sus aplicaciones se guardan en una transacción. Hay respaldos después de operaciones financieras y cada cinco minutos mientras está abierto. Se conservan 90 copias recientes y 30 diarias locales; el segundo destino conserva 90 recientes.
 
 Una transacción no protege contra toda falla del disco, sistema operativo o suministro. Usa un UPS. Activa cifrado de disco de Windows, como BitLocker si tu equipo lo permite, y conserva su clave de recuperación fuera de la PC. Aula no cifra por sí misma su archivo SQLite; protege también los respaldos externos.
