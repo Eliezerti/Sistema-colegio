@@ -94,7 +94,9 @@ jobs:
 
           Aplicación local para una PC Windows 10/11 de 64 bits. Incluye Python, ventana propia, acceso directo y perfil de pruebas independiente. Una nueva instalación solicita el nombre del colegio y crea una base vacía; las actualizaciones conservan los datos e identidad del colegio existente. Instala con la misma cuenta de Windows y crea un respaldo externo antes de actualizar.
 
-          Recibos de pago: la vista, impresión y PDF muestran el código interno de Aula; no utilizan la cédula/documento del alumno como reemplazo. Para recibos anteriores sin código aparece «Código interno no registrado». Se conserva el documento en la ficha y la constancia de matrícula, sin alterar pagos ni instantáneas históricas.
+          Recibos de pago: nombre y grado del alumno, sin cédula escolar ni código AL-. Conserva el número R- y los datos del representante; la identificación escolar y el código permanecen en ficha/constancia, sin alterar pagos ni instantáneas. Cobros por Pago móvil separados en reportes y cierre; arqueo distingue efectivo físico inicial del saldo bancario.
+
+          Archivo de la institución: Administración revisa, archiva y recupera alumnos, representantes y personal en un módulo separado. Borrado definitivo solo para fichas archivadas sin movimientos ni vínculos, con contraseña, motivo, revisión vigente y copias previas verificadas. Saldo de $0 no autoriza borrar historial financiero; personal utiliza estado Inactivo sin cambiar cálculos de nómina. Sin migración de esquema ni borrado automático.
 
           Carpeta de nube: Administración puede declarar manualmente una carpeta de Drive, OneDrive o Dropbox después de revisar una copia reciente en su web. Sustituye solo el aviso de disco desconocido por un recordatorio discreto; Aula no verifica la subida. Los fallos, copias antiguas y aviso de mismo disco permanecen. CSRF, reloj y bitácora protegen la confirmación; cambiar la ruta o usar otra PC exige revisar de nuevo. Sin migración de esquema ni cambio de datos contables.
 
@@ -108,7 +110,7 @@ jobs:
           '@
           [System.IO.File]::WriteAllText('dist/notas-version.txt', $Body, [System.Text.UTF8Encoding]::new($false))
           # Keep the artifact as a draft until checks and its release notes have been reviewed.
-          $ReleaseOutput = @(gh release create "desktop-$Version" "dist/Aula-Colegio-Instalador-$Version.exe" "dist/Aula-Colegio-Instalador-$Version.exe.sha256" "descargas/Aula-Windows.zip" "descargas/Aula-Windows.sha256" --target $env:GITHUB_SHA --title "Aula - Protección del reloj - Windows $Version - revisión" --notes-file dist/notas-version.txt --draft 2>&1)
+          $ReleaseOutput = @(gh release create "desktop-$Version" "dist/Aula-Colegio-Instalador-$Version.exe" "dist/Aula-Colegio-Instalador-$Version.exe.sha256" "descargas/Aula-Windows.zip" "descargas/Aula-Windows.sha256" --target $env:GITHUB_SHA --title "Aula - Archivo, cobros y recibos - Windows $Version - revisión" --notes-file dist/notas-version.txt --draft 2>&1)
           $ReleaseExit = $LASTEXITCODE
           $ReleaseOutput | ForEach-Object { Write-Host $_ }
           if ($ReleaseExit -ne 0) {
