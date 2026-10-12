@@ -11,6 +11,7 @@
 - Conserva bitácora, fichas ajenas y correlativos de fichas/constancias eliminadas. No elimina respaldos anteriores ni archivos descargados. Sin migración de esquema o modificación automática de fichas existentes.
 - Validación Linux: 210 pruebas descubiertas, 209 correctas y una exclusiva de Windows omitida; recorridos de navegador normal, Pruebas e importación correctos. Nueve pruebas nuevas de archivo y una de aislamiento temporal, permisos, historial con saldo cero, documentos con vínculos históricos, copias verificadas/restaurables, fallos y correlativos.
 - Primer intento Windows 1.0.31 detenido antes de generar el instalador: tres conexiones de inspección en las pruebas quedaron abiertas y bloquearon la limpieza de archivos temporales. Se corrige su cierre explícito; no se omiten pruebas ni se altera código de aplicación para resolverlo.
+- Instalador 1.0.32 validado: 210 pruebas correctas en Windows, instalación/ventanas/actualización/desinstalación conservando datos y dos análisis de Defender sin detecciones (firmas 1.459.684.0). SHA256 del ejecutable descargado comprobado. Permanece en borrador por las alertas antiguas pendientes; resultados y pasos manuales en docs/archivo-institucion.md.
 
 ## Sin publicar · Pago móvil y recibos más claros
 

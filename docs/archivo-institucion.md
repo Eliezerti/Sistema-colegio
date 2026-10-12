@@ -10,6 +10,8 @@
 
 El directorio habitual muestra las fichas disponibles. El archivo conserva el historial sin llenar el listado cotidiano. Las fichas ocupan poco espacio: eliminarlas no es una estrategia de mantenimiento de disco.
 
+Al borrar una ficha, el archivo SQLite puede conservar su tamaño y reutilizar después el espacio liberado. No se compacta ni se borra historial automáticamente para reducir ese archivo.
+
 ## Recuperar una ficha
 
 Revisar ficha → Recuperar ficha → motivo y RECUPERAR. El alumno vuelve como inactivo: revisa el primer mes a cobrar, representante y período antes de activarlo. El representante vuelve al directorio. El empleado vuelve como activo; revisa sus datos antes de utilizarlo.
@@ -54,3 +56,16 @@ Archivos: `colegio/institution_archive.py`, integración en `colegio/server.py`,
 Pendientes de esta validación Linux: instalación, ACL/BitLocker y análisis con Microsoft Defender requieren Windows. Se reportan por separado cuando termine la compilación nativa. No se comprueba desde aquí el cifrado, permisos ni antivirus de la PC del usuario.
 
 El [primer intento Windows (1.0.31)](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38265231467) ejecutó 209 pruebas y encontró tres errores de limpieza: las conexiones de inspección de las pruebas seguían abiertas. No se generó el instalador. Se corrige con cierre explícito de esas conexiones, manteniendo las comprobaciones y la aplicación sin cambios; la siguiente ejecución debe validar también esa limpieza.
+
+## Instalador validado · 1.0.32
+
+- Código: commit `fdc52662bb095c074558043dc15544763c80da6e`. [Ejecución nativa Windows](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38266396698).
+- `python -m unittest discover -s tests -v`: 210 pruebas correctas en Python 3.12, ninguna omitida, en 201,892 segundos. La limpieza de bases y copias temporales también pasó.
+- Instalación, accesos directos, ventanas normal/Pruebas, bandeja, actualización y desinstalación conservando datos: correctos.
+- Defender antes/después: sin detecciones, motor `1.1.26080.3`, firmas `1.459.684.0`. Corresponde a ese entorno y archivo; no resuelve las alertas antiguas de 1.0.8/1.0.14 ni verifica el antivirus o BitLocker de la PC del usuario. El instalador permanece en borrador.
+- Archivo descargado: `Aula-Colegio-Instalador-1.0.32.exe`, 20.512.170 bytes. SHA256 `b528eb28f49912a2ec9870d9daab457a589e4c43a37b12080cfdaf6bfc8b97fb`, comprobado contra el archivo de suma y ambos registros de análisis.
+- [Descarga del instalador en borrador](https://github.com/Eliezerti/Sistema-colegio/releases/tag/untagged-ae9f2816f542c272a49d): inicia sesión en GitHub con acceso al repositorio y descarga el `.exe`, no el ZIP fuente.
+
+Antes de actualizar: crea y comprueba tu respaldo externo, cierra Aula completamente e instala con la misma cuenta de Windows. La actualización conserva fichas y movimientos; no archiva ni borra registros automáticamente. Comprueba primero tus saldos y recibos existentes, y después las acciones nuevas en Aula - Pruebas. Mantén Defender activo; no añadas exclusiones para instalar un archivo bloqueado.
+
+Prueba manual sugerida: cobro ficticio por Pago móvil, PDF sin código AL-/cédula escolar pero con número R-, cierre con efectivo inicial físico (saldo bancario excluido), archivo/recuperación de alumno pagado con saldo cero y borrado de representante ficticio sin alumnos. Verifica que los recibos del alumno archivado sigan disponibles. La ficha con historial no se borra definitivamente. Las copias externas siguen sin cifrar y las fases de seguridad pendientes no se adelantaron.
