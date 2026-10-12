@@ -9,6 +9,8 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 from .branding import SCHEMA_VERSION, SCHOOL_PROFILE, INSTITUTION_TYPE, SCHOOL_NAME
 
+PAYMENT_METHODS = ('Efectivo', 'Transferencia', 'Pago móvil', 'Tarjeta', 'Otro')
+
 
 class ValidationError(ValueError):
     pass
@@ -367,7 +369,7 @@ def record_payment(db, data, user_id):
     if paid_on > local_today().isoformat():
         raise ValidationError('La fecha del pago no puede ser futura.')
     method = required(data, 'method')
-    if method not in ('Efectivo', 'Transferencia', 'Tarjeta', 'Otro'):
+    if method not in PAYMENT_METHODS:
         raise ValidationError('Método de pago inválido.')
     request_key = required(data, 'request_key', 100)
     existing = db.execute('SELECT * FROM payments WHERE request_key=?', (request_key,)).fetchone()

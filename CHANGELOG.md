@@ -1,5 +1,11 @@
 # Historial de cambios
 
+## Sin publicar · Pago móvil y recibos más claros
+
+- Pago móvil disponible en cobros y separado en reportes y cierres; conserva moneda, tasa, referencia, transacciones e idempotencia. No cambia métodos ni cálculos de nómina.
+- Recibos HTML, impresión y PDF A4/media carta/tickets sin cédula escolar ni código AL-. Se mantienen número R-, identificación del representante e instantáneas históricas.
+- Arqueo indica «Efectivo inicial en caja» y explica que el saldo bancario y los cobros electrónicos no son efectivo físico. Sin migración de esquema.
+
 ## Sin publicar · configuración organizada por apartados
 
 - Pestañas independientes de Identidad y calendario, Protección y mantenimiento, Usuarios y acceso y Bitácora; navegación accesible por teclado y un solo apartado visible.

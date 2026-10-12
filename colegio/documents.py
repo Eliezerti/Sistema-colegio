@@ -261,16 +261,11 @@ def period_label(value):
 
 def receipt_student_details(payment):
     name = payment['student_name']
-    # Identification belongs to the school record, never to the payment receipt.
-    # Older snapshots may not contain the internal code; do not substitute a document.
-    internal_code = payment.get('student_code')
-    code = 'Código: '+internal_code if internal_code else 'Código interno no registrado'
     grade = payment.get('grade_name')
     if grade:
         name += ' · '+grade
-    else:
-        code += ' | Grado no registrado'
-    return name,code
+    # Keep school identifiers in the record/snapshot, not on the parent receipt.
+    return name, '' if grade else 'Grado no registrado'
 
 
 class ReceiptPDF(PDF):
@@ -359,19 +354,20 @@ class ReceiptPDF(PDF):
 
     def parties(self):
         p = self.payment
-        name, code = receipt_student_details(p)
+        name, detail = receipt_student_details(p)
         columns = [('Representante legal',p['guardian_name'],'Cédula: '+p['guardian_document'],p.get('guardian_phone','')),
-                   ('Alumno / grado',name,code,'')]
+                   ('Alumno / grado',name,detail,'')]
         sizes = []
         for _, name, document, phone in columns:
-            sizes.append(21+len(self.wrap(name,238,11))*15+len(self.wrap(document,238,9))*13+
+            sizes.append(21+len(self.wrap(name,238,11))*15+(len(self.wrap(document,238,9))*13 if document else 0)+
                          (len(self.wrap(phone,238,9))*13 if phone else 0))
         self.ensure(max(sizes)+12)
         bottom = self.y
         for x, (label,name,document,phone) in zip((42,315),columns):
             self.label(label,x,self.y)
             y = self.paragraph(name,x,self.y+21,238,11,True)
-            y = self.paragraph(document,x,y+1,238,9,color=self.muted)
+            if document:
+                y = self.paragraph(document,x,y+1,238,9,color=self.muted)
             if phone:
                 y = self.paragraph(phone,x,y,238,9,color=self.muted)
             bottom = max(bottom,y)
@@ -530,18 +526,19 @@ class HalfLetterReceiptPDF(ReceiptPDF):
 
     def parties(self):
         p = self.payment
-        name, code = receipt_student_details(p)
+        name, detail = receipt_student_details(p)
         contact = ' | Teléfono: '+p['guardian_phone'] if p.get('guardian_phone') else ''
         columns = [('Representante legal',p['guardian_name'],'Cédula: '+p['guardian_document']+contact,''),
-                   ('Alumno / grado',name,code,'')]
-        heights = [14+len(self.wrap(name,264,10))*14+len(self.wrap(document,264,8))*12+
+                   ('Alumno / grado',name,detail,'')]
+        heights = [14+len(self.wrap(name,264,10))*14+(len(self.wrap(document,264,8))*12 if document else 0)+
                    (len(self.wrap(phone,264,8))*12 if phone else 0) for _,name,document,phone in columns]
         self.ensure(max(heights)+6)
         bottom = self.y
         for x,(label,name,document,phone) in zip((26,322),columns):
             self.label(label,x,self.y)
             y = self.paragraph(name,x,self.y+15,264,10,True)
-            y = self.paragraph(document,x,y,264,8,color=self.muted)
+            if document:
+                y = self.paragraph(document,x,y,264,8,color=self.muted)
             if phone:
                 y = self.paragraph(phone,x,y,264,8,color=self.muted)
             bottom = max(bottom,y)
@@ -662,7 +659,8 @@ class TicketReceiptPDF(ReceiptPDF):
         self.ticket_line('REPRESENTANTE',True);self.ticket_line(p['guardian_name'])
         self.ticket_line('Cédula: '+p['guardian_document'])
         self.ticket_line('ALUMNO / GRADO',True)
-        name,code=receipt_student_details(p);self.ticket_line(name);self.ticket_line(code)
+        name,detail=receipt_student_details(p);self.ticket_line(name)
+        if detail:self.ticket_line(detail)
         if p.get('guardian_address'):self.ticket_line('Dirección: '+p['guardian_address'],size=7.5)
         self.y+=6;self.ticket_line('CONCEPTOS ABONADOS',True)
         for row in data['allocations']:
@@ -729,11 +727,11 @@ def administrative_pdf(kind,data):
             [[f"{r['method']} / {r['currency']}",amount(r['income'],r['currency']),amount(r['expense'],r['currency']),signed_amount(r['net'],r['currency'])] for r in data['lines']],
             [150,123,123,123])
         pdf.line('Los importes anteriores son montos reales por moneda; no se suman dólares y bolívares.')
-        pdf.table(['Efectivo','Fondo inicial','Esperado','Contado','Diferencia'],
+        pdf.table(['Efectivo','Inicial en caja','Esperado','Contado','Diferencia'],
             [[r['currency'],amount(r['opening'],r['currency']),amount(r['expected'],r['currency']),amount(r['counted'],r['currency']),signed_amount(r['difference'],r['currency'])] for r in data['counts']],
             [75,111,111,111,111])
         pdf.total(f"Equivalente USD: ingresos {amount(data['income_usd'])} | egresos {amount(data['expense_usd'])}")
-        pdf.line('Arqueo: fondo inicial + ingresos en efectivo - egresos en efectivo. Transferencias, tarjetas y egresos sin método no forman parte del efectivo.')
+        pdf.line('Arqueo: efectivo inicial + ingresos en efectivo - egresos en efectivo. El saldo bancario, pagos móviles, transferencias y tarjetas no forman parte del efectivo.')
         pdf.line('Observaciones: '+(data['notes'] or 'Sin observaciones.'))
         pdf.table(['Movimiento / referencia','Método','Moneda / recibido','Estado'],
             [[f"{'R' if r['type']=='income' else 'E'}-{r['id']:06d}\n{r['reference']}",r['method'],amount(r['received_amount'],r['currency']),'Anulado' if r['voided'] else 'Válido'] for r in data['movements']],

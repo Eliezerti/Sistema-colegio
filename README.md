@@ -8,7 +8,9 @@ Cada alumno tiene un **Primer mes a cobrar**, independiente del período académ
 
 **Configuración tiene apartados separados:** Identidad y calendario, Protección y mantenimiento, Usuarios y acceso y Bitácora. Cada formulario guarda solo sus datos; cambiar de pestaña conserva los borradores de la sesión. La ruta de copias se modifica en Protección y mantenimiento, sin reenviar el calendario ni la identidad. Las preferencias del usuario están documentadas en [AGENTS.md](AGENTS.md) para mantener este criterio en los cambios futuros. [Guía de los apartados y de BitLocker](docs/configuracion.md).
 
-El recibo de pago identifica al alumno por nombre, grado y código interno de Aula: no imprime su cédula escolar ni su documento. En recibos antiguos sin código interno dice «Código interno no registrado»; no sustituye ese código por la identificación escolar. El documento del alumno se conserva en su ficha y constancia de matrícula. [Detalle de esta presentación](docs/identificacion-recibos.md).
+El recibo de pago muestra nombre y grado del alumno, sin cédula escolar ni código interno AL-. Conserva el número R- del comprobante y la identificación del representante. El documento escolar y el código AL- permanecen en la ficha y constancia. [Detalle de esta presentación](docs/identificacion-recibos.md).
+
+Los cobros incluyen **Pago móvil** como método separado en recibos, reportes y cierre de caja. El **efectivo inicial en caja** son billetes y monedas al comenzar el día, no el saldo bancario; pagos móviles y transferencias no se suman al arqueo físico. [Guía de cobros y arqueo](docs/cobros-y-arqueo.md).
 
 ## Avisos de respaldo y revisión de Windows · Fase 1, punto 1
 

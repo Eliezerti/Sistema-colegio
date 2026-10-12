@@ -555,6 +555,35 @@ class SystemTests(unittest.TestCase):
         return dict(closed_on=on,preview_hash=self.request('cash-preview?date='+on)['preview_hash'],
             opening_USD='0',opening_VES='0',counted_USD='0',counted_VES='0',**extra)
 
+    def test_mobile_payments_keep_receipts_idempotency_and_never_enter_physical_cash(self):
+        on=local_today().isoformat()
+        mobile=self.payment(amount='1000',currency='VES',key='mobile',paid_on=on,method='Pago móvil')
+        first=self.request('payments',mobile)['id']
+        self.assertTrue(self.request('payments',mobile)['duplicate'])
+        self.request('payments',self.payment(amount='2000',currency='VES',key='transfer',paid_on=on))
+        self.request('payments',self.payment(amount='7',key='cash',paid_on=on,method='Efectivo'))
+        receipt=self.request(f'receipt/{first}')
+        self.assertEqual(receipt['payment']['method'],'Pago móvil')
+        self.assertEqual(receipt['payment']['amount'],1000)
+        self.assertEqual(receipt['payment']['received_amount'],100000)
+        self.assertTrue(receipt['payment']['student_code'].startswith('AL-'))
+        for paper in ('a4','half-letter','ticket-58','ticket-80'):
+            pdf=self.request(f'receipt/{first}.pdf?paper={paper}')
+            self.assertNotIn(receipt['payment']['student_code'].encode(),pdf)
+            self.assertIn(f'R-{first:06d}'.encode(),pdf)
+        preview=self.request('cash-preview?date='+on)
+        self.assertEqual(next(r for r in preview['lines'] if r['method']=='Pago móvil')['income'],100000)
+        data=self.cash_data(on)
+        data.update(opening_USD='5',opening_VES='200',counted_USD='12',counted_VES='200')
+        closed=self.request('close-cash',data)['id']
+        document=self.request(f'cash-close/{closed}')
+        self.assertEqual(document['income_usd'],3700)
+        self.assertEqual([r['expected'] for r in document['counts']],[1200,20000])
+        self.assertEqual([r['difference'] for r in document['counts']],[0,0])
+        self.assertEqual(len(self.request('state')['payments']),3)
+        self.assertTrue(self.request('payments',mobile)['duplicate'])
+        self.request('payments',dict(mobile,request_key='mobile-after-close',reference='another'),status=400)
+
     def test_cash_close_native_currency_counting_freeze_blocking_reopening_and_stale_preview(self):
         on=local_today().isoformat()
         first=self.request('payments',self.payment(amount='10',paid_on=on,method='Efectivo'))['id']

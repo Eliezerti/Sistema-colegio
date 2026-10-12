@@ -1,16 +1,15 @@
 # Identificación del alumno en el recibo de pago
 
-La identificación escolar guardada en la ficha se conserva en la constancia de matrícula. El recibo de pago muestra nombre del alumno, grado/sección y código interno de Aula, como AL-000038. La cédula/documento del alumno no se utiliza como reemplazo del código interno.
+El comprobante muestra el nombre y grado/sección del alumno. No imprime su cédula escolar ni el código interno AL-. Estos permanecen en la ficha y en la constancia de matrícula. La identificación del representante y el número R- del recibo se conservan.
 
-Esta regla se aplica a la vista del recibo, la impresión desde Aula y los PDF A4, media carta y tickets de 58 y 80 mm. Los datos del representante se mantienen.
+La regla se aplica a la pantalla, impresión y PDF A4, media carta y tickets de 58/80 mm. Si un recibo anterior no tiene grado, indica «Grado no registrado»; no inventa uno actual. Los datos guardados y las instantáneas históricas no se modifican.
 
-Si una instantánea antigua no tiene código interno, el recibo indica «Código interno no registrado»; no toma el código actual ni modifica la instantánea histórica. No se cambian importes, pagos, saldos ni documentos del alumno. Un PDF descargado antes de esta actualización conserva su contenido; volver a descargar el mismo recibo no registra otro cobro.
+Un PDF descargado anteriormente conserva su contenido. Puedes volver a descargar un recibo existente sin registrar otro pago, o probar con datos ficticios en Aula - Pruebas.
 
-Para comprobar la presentación sin registrar cobros reales, utiliza Aula - Pruebas. Si ya existe un pago, consultar su recibo tampoco genera otro pago.
+## Historial de validación de la presentación anterior (1.0.28)
 
-El nombre del campo y la distinción entre cédula escolar y cédula de identidad se revisarán por separado: este cambio solo evita imprimir la identificación del alumno en el recibo de pago.
+La versión 1.0.28 aún mostraba el código interno. La nueva presentación descrita arriba lo elimina; los resultados siguientes corresponden a esa versión anterior.
 
-## Validación
 
 - `python -m unittest discover -s tests -v`: 188 pruebas en Linux, 187 correctas y una exclusiva de Windows omitida.
 - `python tests/run_browser.py`: correcto, incluyendo documento ausente en la vista e impresión para instantáneas con código presente, ausente, vacío y nulo.
@@ -27,6 +26,6 @@ Todas las pruebas utilizan bases temporales. No se han registrado cobros ni modi
 - `Aula-Colegio-Instalador-1.0.28.exe`: 20.496.235 bytes. SHA256 `7be405ab08bfa374aa7a46ef918746f646f7762f415a8c7e24ad41ca1e27aaa0`, comprobado contra el archivo descargado, el archivo de suma y el registro de los dos análisis.
 - [Descarga en borrador](https://github.com/Eliezerti/Sistema-colegio/releases/tag/untagged-3ecc60c8aaea1ad5073f), requiere iniciar sesión en GitHub con acceso al repositorio.
 
-Antes de actualizar, crea y comprueba el respaldo externo. Cierra Aula completamente e instala con la misma cuenta de Windows. Verifica un recibo existente o utiliza Aula - Pruebas para crear uno ficticio: revisa nombre, grado y código interno; el documento del alumno debe seguir en la constancia. No hace falta registrar un cobro real.
+Antes de actualizar, crea y comprueba el respaldo externo. Cierra Aula completamente e instala con la misma cuenta de Windows. Verifica un recibo existente o utiliza Aula - Pruebas para crear uno ficticio: revisa nombre y grado; el código interno ya no se imprime en la presentación actual; el documento del alumno debe seguir en la constancia. No hace falta registrar un cobro real.
 
 Archivos del cambio: `colegio/documents.py`, `static/app.js`, `tests/test_receipt_layout.py`, `tests/browser.cjs`, `README.md`, `CHANGELOG.md`, esta guía, notas de la compilación en `.github/workflows/windows-desktop.yml` y el ZIP de código fuente y su suma. No se alteran las instantáneas históricas, fechas, identificaciones guardadas, saldos ni importes; los PDF ya descargados mantienen su contenido anterior. No hay migración de esquema ni cambios en móvil/PWA, nómina o cifrado.
