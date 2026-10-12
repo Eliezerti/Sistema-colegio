@@ -15,6 +15,8 @@ class RetentionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             path=Path(folder)/'colegio.sqlite3';initialize(path)
             destination=Path(folder)/'second'
+            from tests.crypto_helpers import configure
+            configure(path.parent)
             with closing(connect(path)) as db,db:
                 db.execute("UPDATE settings SET value=? WHERE key='backup_directory'",(str(destination),))
             with patch('colegio.backup_retention.atomic_json',side_effect=OSError('Inventory unavailable')):
@@ -23,7 +25,7 @@ class RetentionTests(unittest.TestCase):
             self.assertFalse(status['secondary_error'])
             self.assertTrue(status['retention_error'])
             self.assertTrue(status['secondary_retention_error'])
-            self.assertTrue((destination/Path(status['local_path']).name).is_file())
+            self.assertTrue(Path(status['secondary_path']).is_file())
 
     def test_future_file_names_and_mtimes_do_not_delete_recent_published_copy(self):
         with tempfile.TemporaryDirectory() as folder:

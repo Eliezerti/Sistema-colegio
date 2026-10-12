@@ -123,30 +123,25 @@ def automatic_backup(database):
     if status.get('secondary_directory')!=secondary:
         status.pop('secondary_at',None);status.pop('secondary_error',None)
         status.pop('secondary_retention_error',None)
+        for key in ('secondary_encrypted','secondary_path','secondary_sha256','secondary_key_id'):status.pop(key,None)
     status['secondary_directory']=secondary
     if secondary and not status.get('local_error'):
-        handle=None; temporary=None
         try:
+            from .backup_export import write_encrypted
             dest=Path(secondary); dest.mkdir(parents=True,exist_ok=True)
-            handle,temporary=tempfile.mkstemp(prefix='.aula-copy-',suffix='.tmp',dir=dest)
-            os.close(handle); handle=None
-            shutil.copyfile(path,temporary)
-            with open(temporary,'r+b') as saved:
-                saved.flush()
-                os.fsync(saved.fileno())
-            os.replace(temporary,dest/path.name)
-            status.update(secondary_at=now,secondary_error='')
+            result=write_encrypted(path,dest/(path.stem+'-'+os.urandom(8).hex()+'.aulabak'),database.parent)
+            status.update(secondary_at=now,secondary_error='',secondary_encrypted=True,
+                          secondary_path=result['path'],secondary_sha256=result['sha256'],secondary_key_id=result['key_id'])
             status['secondary_retention_error'] = ''
             try:
-                retain_backups(dest, dest/path.name, 'aula-auto-????????-??????-??????.sqlite3', 90)
+                retain_backups(dest,Path(result['path']),'aula-auto-*.aulabak',90)
             except OSError:
                 status['secondary_retention_error'] = 'Se copió el respaldo al segundo destino, pero no se pudo comprobar la conservación de copias allí.'
         except Exception as error:
-            status['secondary_error']=f'No se pudo copiar al segundo destino: {type(error).__name__}. Revisa la carpeta o conecta el USB.'
-        finally:
-            if temporary and Path(temporary).exists(): Path(temporary).unlink()
+            from .backup_crypto import CryptoError
+            status['secondary_error']=str(error) if isinstance(error,CryptoError) else f'No se pudo copiar al segundo destino: {type(error).__name__}. Revisa la carpeta o conecta el USB.'
     elif not secondary:
-        for key in ('secondary_at','secondary_error','secondary_retention_error'): status.pop(key,None)
+        for key in ('secondary_at','secondary_error','secondary_retention_error','secondary_encrypted','secondary_path','secondary_sha256','secondary_key_id'): status.pop(key,None)
     target=database.parent/'backup-status.json'; temporary=target.with_suffix('.tmp')
     temporary.write_text(json.dumps(status,ensure_ascii=False),encoding='utf-8')
     os.replace(temporary,target)

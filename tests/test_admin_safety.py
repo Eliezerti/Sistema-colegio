@@ -129,7 +129,7 @@ class AdministrativeSafetyTests(unittest.TestCase):
         def fail_external(source,destination):
             if Path(destination).parent==directory:raise OSError('USB no disponible')
             return consistent_backup(source,destination)
-        with patch('colegio.reset_records.consistent_backup',side_effect=fail_external):
+        with patch('colegio.backup_export.write_encrypted',side_effect=OSError('USB no disponible')):
             self.request('reset-records',self.reset_data(),status=400)
         self.assertEqual(len(self.request('state')['students']),1)
         backup=next((self.path.parent/'backups').glob('antes-vaciar-*'))

@@ -1,4 +1,5 @@
 # Only needed to build/run the Windows desktop distribution.
+-r requirements.txt
 pywebview==5.4
 pystray==0.19.5
 Pillow==11.1.0

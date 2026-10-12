@@ -131,7 +131,8 @@ def archive_action(db, endpoint, data, user, *, demo=False):
         consistent_backup(path, backup)
         secondary = db.execute("SELECT value FROM settings WHERE key='backup_directory'").fetchone()
         if secondary and secondary[0]:
-            consistent_backup(path, Path(secondary[0])/name)
+            from .backup_export import write_encrypted
+            write_encrypted(backup,Path(secondary[0])/(Path(name).stem+'.aulabak'),path.parent)
     except Exception as error:
         raise ValidationError('No se completó el respaldo previo. No se borró la ficha; revisa las carpetas de copias.') from error
     kind, target = preview['kind'], preview['id']

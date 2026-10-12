@@ -23,6 +23,7 @@ from .db import (ValidationError, RateConfirmationRequired, audit, charges, chec
                  required, valid_date, valid_period, valid_rate, local_today, synchronize_monthly_charges)
 from .db import next_record_id
 from .storage import DataLock, consistent_backup, daily_backup, automatic_backup, backup_status
+from .backup_temporary import private_root
 from .backup_health import CLOUD_KEY, cloud_declaration, declare_cloud_destination, describe_backup
 from .protection import ProtectionMonitor
 from .clock_guard import ClockConfirmationRequired, ClockInputError, get_clock
@@ -427,6 +428,8 @@ class SchoolServer(ThreadingHTTPServer):
         self.login_attempts = {}
         self.backup_lock=threading.Lock()
         self.last_backup_error = ''
+        from .backup_setup import Setup
+        self.crypto_setup=Setup(Path(self.db_path).parent)
         self.backup_stop=threading.Event()
         self.backup_thread=threading.Thread(target=self.backup_loop,daemon=True)
         self.backup_thread.start()
@@ -495,6 +498,8 @@ class SchoolServer(ThreadingHTTPServer):
         protection = self.protection.snapshot(status.get('secondary_directory', ''))
         status = describe_backup(self.db_path, status, disk_relation=protection.get('disk_relation'))
         status['protection'] = protection
+        from .backup_keys import status as crypto_status
+        status['crypto']=crypto_status(Path(self.db_path).parent)
         return status
 
     def make_backup(self):
@@ -519,6 +524,7 @@ class SchoolServer(ThreadingHTTPServer):
         self.backup_stop.set()
         if self.backup_thread:
             self.backup_thread.join()
+        self.crypto_setup.close()
         self.protection.close()
         self.clock.close()
         super().server_close()
@@ -595,7 +601,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not self.server.access.allowed_origin(host,self.headers.get('Origin'),self.server.server_port):
                     raise PermissionError('Origen no permitido.')
                 length = int(self.headers.get('Content-Length', '0'))
-                maximum=46_000_000 if endpoint=='probe-backup' else 3_000_000 if endpoint in ('import-roster','transition-year','settings') else 65536
+                maximum=46_000_000 if endpoint in ('probe-backup','export-encrypted-backup') else 3_000_000 if endpoint in ('import-roster','transition-year','settings') else 65536
                 if not 0 < length <= maximum or 'application/json' not in self.headers.get('Content-Type', ''):
                     raise ValidationError('Envía un objeto JSON válido (máximo 64 KB).')
                 data = json.loads(self.rfile.read(length))
@@ -682,8 +688,24 @@ class Handler(BaseHTTPRequestHandler):
             if post:
                 if not secrets.compare_digest(self.headers.get('X-CSRF-Token', ''), user['csrf']):
                     raise PermissionError('Sesión inválida. Recarga la página.')
-                if endpoint=='probe-backup':
+                if endpoint in ('crypto-prepare','crypto-confirm','crypto-unlock'):
+                    if user['role']!='admin' or self.server.demo:raise PermissionError('Solo Administración configura el cifrado de datos reales.')
+                    db.rollback()
+                    with self.server.backup_lock:
+                        if endpoint=='crypto-prepare':result=self.server.crypto_setup.prepare(data,user)
+                        elif endpoint=='crypto-confirm':
+                            result=self.server.crypto_setup.confirm(data,user)
+                            audit(db,user['id'],'backup_encryption_configured',{'key_id':result['key_id'],'recovery_id':result['recovery_id']})
+                            self.server.clock.require();db.commit()
+                        else:
+                            from .backup_keys import unlock
+                            unlock(Path(self.server.db_path).parent,data.get('password'))
+                            result={'ready':True}
+                    if endpoint!='crypto-prepare':self.server.make_backup()
+                    self.respond(200,result);return
+                if endpoint in ('probe-backup','export-encrypted-backup'):
                     if user['role']!='admin': raise PermissionError('Solo Administración puede probar respaldos.')
+                    if endpoint=='export-encrypted-backup' and self.server.demo:raise PermissionError('Pruebas no exporta respaldos reales.')
                     import base64
                     from .backup_inspection import probe_backup
                     content=data.get('content','')
@@ -691,14 +713,23 @@ class Handler(BaseHTTPRequestHandler):
                         raise ValidationError('Selecciona una copia de hasta 32 MB. Para una mayor, usa Probar respaldo en Inicio de Windows.')
                     try: payload=base64.b64decode(content,validate=True)
                     except ValueError: raise ValidationError('No se pudo leer el archivo seleccionado.') from None
-                    if len(payload)>32*1024*1024: raise ValidationError('La copia supera 32 MB; usa Probar respaldo en Inicio de Windows.')
+                    if len(payload)>32*1024*1024+16384+60: raise ValidationError('La copia supera 32 MB; usa Probar respaldo en Inicio de Windows.')
                     db.rollback()
-                    with tempfile.TemporaryDirectory(prefix='aula-archivo-probar-') as temp:
+                    with tempfile.TemporaryDirectory(prefix='aula-archivo-probar-',dir=private_root()) as temp:
                         copy=Path(temp)/'respaldo.sqlite3';copy.write_bytes(payload)
-                        try: result=probe_backup(copy)
+                        try:
+                            if endpoint=='probe-backup':result=probe_backup(copy,data.get('credential'),data.get('credential_kind','password'))
+                            else:
+                                from .backup_inspection import staged_backup
+                                from .backup_export import write_encrypted
+                                with staged_backup(copy,data.get('credential'),data.get('credential_kind','password')) as (plain,_,_):
+                                    output=Path(temp)/'respaldo.aulabak'
+                                    with self.server.backup_lock:write_encrypted(plain,output,Path(self.server.db_path).parent)
+                                    result=output.read_bytes()
                         except (ValueError,sqlite3.Error) as error:
                             raise ValidationError(str(error) if isinstance(error,ValueError) else 'El archivo está dañado o no es un respaldo SQLite de Aula.') from None
-                    self.respond(200,result)
+                    if endpoint=='probe-backup':self.respond(200,result)
+                    else:self.respond(200,result,'application/octet-stream',{'Content-Disposition':'attachment; filename="respaldo-convertido.aulabak"'})
                     return
                 if endpoint == 'demo-exit':
                     if not self.server.demo:
@@ -930,12 +961,15 @@ class Handler(BaseHTTPRequestHandler):
                     raise PermissionError('Los datos de prueba son temporales y no se exportan como respaldos del colegio.')
                 if user['role'] != 'admin':
                     raise PermissionError('Solo administración puede descargar respaldos.')
-                with tempfile.TemporaryDirectory() as temp:
+                with tempfile.TemporaryDirectory(dir=private_root()) as temp:
                     path = Path(temp) / 'colegio.sqlite3'
                     consistent_backup(self.server.db_path, path)
-                    payload = path.read_bytes()
+                    from .backup_export import write_encrypted
+                    output=Path(temp)/'colegio.aulabak'
+                    with self.server.backup_lock:write_encrypted(path,output,Path(self.server.db_path).parent)
+                    payload = output.read_bytes()
                 self.respond(200, payload, 'application/octet-stream',
-                             {'Content-Disposition': f'attachment; filename="colegio-{local_today()}.sqlite3"'})
+                             {'Content-Disposition': f'attachment; filename="colegio-{local_today()}.aulabak"'})
             elif endpoint == 'health':
                 self.respond(200, {'ok': db.execute('PRAGMA quick_check').fetchone()[0] == 'ok'})
             elif endpoint == 'maintenance-review':
@@ -969,6 +1003,8 @@ def open_school(path, port, demo=False, remote_origin=''):
     with DataLock(path.parent):
         from .restore_journal import finish_pending
         finish_pending(path.parent)  # Before connecting, upgrading or generating any charge.
+        from .backup_work import cleanup_work
+        cleanup_work(path.parent)  # Only owned A2 temporaries; never A1 preserved copies.
         if not path.exists() and any((path.parent / 'backups').glob('*.sqlite3')):
             raise SystemExit('No se encuentra la base de datos, pero hay respaldos anteriores. '
                              'Ejecuta Restaurar-respaldo.bat para recuperar tus datos antes de abrir Aula. '

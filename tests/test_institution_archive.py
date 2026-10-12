@@ -64,7 +64,10 @@ class InstitutionArchiveTests(unittest.TestCase):
         result=self.request('delete-unused-record',self.deletion('guardian',target))
         backup=Path(result['backup_path'])
         self.assertTrue(backup.is_file())
-        self.assertTrue((secondary/backup.name).is_file())
+        self.assertTrue((secondary/(backup.stem+'.aulabak')).is_file())
+        from colegio.backup_inspection import probe_backup
+        self.assertEqual(probe_backup(secondary/(backup.stem+'.aulabak'),'FICTICIO-respaldo-seguro-2026')['integrity'],'ok')
+        self.assertFalse(list(secondary.glob('*.sqlite3')))
         with closing(sqlite3.connect(backup)) as db:
             self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
             self.assertEqual(db.execute('SELECT name FROM guardians WHERE id=?',(target,)).fetchone()[0],'Ficha sin alumnos')

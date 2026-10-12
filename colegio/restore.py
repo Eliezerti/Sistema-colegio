@@ -17,6 +17,7 @@ from .restore_journal import (finish_pending, store_pending, sync_file,
                               sync_directory, windows_actor, HISTORY)
 from .restore_reports import compare, loss_csv, loss_pdf, table_label
 from .storage import DataLock, consistent_backup
+from .backup_temporary import private_root
 
 PLAIN='RESTAURAR'
 LOSS='RESTAURAR CON PÉRDIDA DE DATOS'
@@ -49,27 +50,27 @@ def make_review(incoming,source_hash,state,current):
     result={'backup':incoming['summary'],'current':current['summary'] if current else None,
         'current_state':state,'comparison':comparison,'confirmation':phrase,'floors':floors,
         'comparison_note':'No se pudo comparar' if state=='unreadable' else 'No hay base actual' if state=='absent' else 'Comparación completa',
-        'sha256':source_hash,'requires_floor_review':state=='unreadable','unencrypted':True}
+        'sha256':source_hash,'requires_floor_review':state=='unreadable','unencrypted':incoming['summary'].get('unencrypted',True)}
     result['preview_hash']=fingerprint({'result':result,'current_records':current['records'] if current else None})
     return result
 
 
-def preview_restore(backup,directory):
+def preview_restore(backup,directory,*,credential=None,credential_kind='password'):
     directory=Path(directory).resolve()
     if Path(backup).resolve()==directory/'colegio.sqlite3': raise ValueError('Selecciona un respaldo distinto de la base activa.')
-    with staged_backup(backup) as (_,incoming,digest),DataLock(directory):
+    with staged_backup(backup,credential,credential_kind) as (_,incoming,digest),DataLock(directory):
         finish_pending(directory)
-        with tempfile.TemporaryDirectory(prefix='aula-comparar-') as temp:
+        with tempfile.TemporaryDirectory(prefix='aula-comparar-',dir=private_root()) as temp:
             state,current=current_copy(directory,temp)
             return make_review(incoming,digest,state,current)
 
 
-def restore(backup,directory,*,preview_hash=None,confirmation=None,emergency_floors=None):
+def restore(backup,directory,*,preview_hash=None,confirmation=None,emergency_floors=None,credential=None,credential_kind='password'):
     directory=Path(directory).resolve();target=directory/'colegio.sqlite3'
     if Path(backup).resolve()==target: raise ValueError('Selecciona un respaldo distinto de la base activa.')
-    with staged_backup(backup) as (staged,incoming,digest),DataLock(directory):
+    with staged_backup(backup,credential,credential_kind) as (staged,incoming,digest),DataLock(directory):
         finish_pending(directory)
-        with tempfile.TemporaryDirectory(prefix='aula-comparar-') as temp:
+        with tempfile.TemporaryDirectory(prefix='aula-comparar-',dir=private_root()) as temp:
             state,current=current_copy(directory,temp)
             review=make_review(incoming,digest,state,current)
         if confirmation!=review['confirmation'] or preview_hash!=review['preview_hash']:
@@ -110,6 +111,7 @@ def restore(backup,directory,*,preview_hash=None,confirmation=None,emergency_flo
             'current_state':state,'comparison_counts':review['comparison']['counts'],
             'payment_changes':review['comparison']['payment_changes'],'expense_changes':review['comparison']['expense_changes'],
             'floors':floors,'floors_declared':bool(emergency_floors),'confirmation':confirmation}
+        event['source_encrypted']=not review['unencrypted']
         reports={}
         if review['comparison']['has_loss']:
             for extension,payload in [('csv',loss_csv(review['comparison'])),('pdf',loss_pdf(review['comparison'],operation_id))]:
@@ -148,7 +150,7 @@ def review_text(review):
         received=' · '.join(f'{currency} {value/100:.2f}' for currency,value in s['received'].items()) or 'Sin cobros válidos'
         return f"{title}: {s['students']} alumnos; {s['payments']} pagos ({s['voided_payments']} anulados); cobrado USD {s['income_usd']/100:.2f}.\nRecibido por moneda: {received}\nÚltimo pago: {last_label}"
     lines=[summary('Base actual',review['current']),summary('Respaldo',review['backup']),review['backup']['creation_note'],
-        'El respaldo no está cifrado. No se generan mensualidades al revisarlo.']
+        ('Advertencia: respaldo antiguo sin cifrar.' if review['unencrypted'] else 'Cifrado autenticado y comprobado.')+' No se generan mensualidades al revisarlo.']
     lines.extend(f'{table_label(table)}: {count} registros ausentes o diferentes' for table,count in review['comparison']['counts'].items())
     if review['requires_floor_review']:lines.append('No se pudieron comprobar los correlativos actuales. Debes revisar los últimos números utilizados.')
     return '\n\n'.join(lines)
@@ -163,16 +165,22 @@ def main():
             import tkinter as tk
             from tkinter.filedialog import askopenfilename
             root=tk.Tk();root.withdraw()
-            try:args.backup=askopenfilename(title='Selecciona el respaldo de Aula',filetypes=[('Base de Aula','*.sqlite3')])
+            try:args.backup=askopenfilename(title='Selecciona el respaldo de Aula',filetypes=[('Respaldo de Aula','*.sqlite3 *.aulabak')])
             finally:root.destroy()
             if not args.backup:return
-        review=preview_restore(args.backup,args.data_dir);print(review_text(review))
+        credential=None;kind='password'
+        with open(args.backup,'rb') as saved:encrypted=saved.read(8).startswith(b'AULABK')
+        if encrypted:
+            from getpass import getpass
+            kind='recovery' if input('¿Usar clave de recuperación? Escribe SI, o pulsa Enter para contraseña: ').strip().upper()=='SI' else 'password'
+            credential=getpass('Clave de recuperación: ' if kind=='recovery' else 'Contraseña del respaldo: ')
+        review=preview_restore(args.backup,args.data_dir,credential=credential,credential_kind=kind);print(review_text(review))
         floors=None
         if review['requires_floor_review']:
             floors={t:int(input(f'Último número usado de {t} (mínimo {review["floors"][t]}): ')) for t in SEQUENCES}
         answer=input('Escribe '+review['confirmation']+' para continuar: ').strip()
         if answer!=review['confirmation']:print('Restauración cancelada.');return
-        restore(args.backup,args.data_dir,preview_hash=review['preview_hash'],confirmation=answer,emergency_floors=floors)
+        restore(args.backup,args.data_dir,preview_hash=review['preview_hash'],confirmation=answer,emergency_floors=floors,credential=credential,credential_kind=kind)
         result=last_restore(args.data_dir)
         print('Restauración completa. Informes: '+(', '.join(result['reports']) or 'No hubo diferencias que perder.'))
     except (ValueError,RuntimeError,sqlite3.Error,OSError) as error: raise SystemExit(str(error))

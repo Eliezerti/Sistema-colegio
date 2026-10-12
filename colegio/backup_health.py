@@ -72,6 +72,7 @@ def describe_backup(database, status, *, now=None, disk_relation=None):
     if directory is not None and directory != result.get('secondary_directory', ''):
         result.pop('secondary_at', None)
         result.pop('secondary_error', None)
+        for key in ('secondary_encrypted','secondary_path','secondary_sha256','secondary_key_id'):result.pop(key,None)
     result['secondary_directory'] = directory or ''
     declaration = cloud_declaration(settings.get(CLOUD_KEY), directory)
     result['cloud_declared'] = bool(declaration)

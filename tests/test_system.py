@@ -39,6 +39,8 @@ class SystemTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.path = Path(self.temp.name) / 'colegio.sqlite3'
         initialize(self.path)
+        from tests.crypto_helpers import configure
+        configure(self.path.parent)
         self.server = SchoolServer(('127.0.0.1',0),str(self.path))
         self.thread = threading.Thread(target=self.server.serve_forever,daemon=True)
         self.thread.start()
@@ -75,9 +77,66 @@ class SystemTests(unittest.TestCase):
         self.request('directory/students.pdf', status=401)
         self.request('daily-report.pdf', status=401)
 
+    def test_crypto_setup_is_confirmed_once_secrets_stay_out_of_database_and_download_is_encrypted(self):
+        from colegio import backup_keys
+        from colegio.backup_crypto import MAGIC
+        from colegio.backup_inspection import probe_backup
+        path=backup_keys.folder(self.path.parent)/backup_keys.NAME;path.unlink()
+        before=self.request('state');self.request('backup',status=400)
+        self.request('crypto-prepare',{'password':'corta','repeat':'corta'},status=400)
+        password='FICTICIO-frase-cifrada-2026'
+        pending=self.request('crypto-prepare',{'password':password,'repeat':password})
+        self.assertFalse(path.exists(),'Preparation never activates without saved-key confirmation')
+        self.assertIsNotNone(pending['recovery'])
+        self.request('crypto-confirm',{'token':pending['token'],'confirmation':'MAL'},status=400)
+        self.assertFalse(path.exists())
+        self.request('crypto-confirm',{'token':pending['token'],'confirmation':pending['recovery'].replace('-','')[-4:]})
+        self.request('crypto-confirm',{'token':pending['token'],'confirmation':pending['recovery'].replace('-','')[-4:]},status=400)
+        content=self.request('backup');self.assertTrue(content.startswith(MAGIC))
+        copy=self.path.parent/'descarga.aulabak';copy.write_bytes(content)
+        self.assertEqual(probe_backup(copy,pending['recovery'],'recovery')['students'],1)
+        after=self.request('state')
+        for table in ('students','charges','payments','expenses'):self.assertEqual(before[table],after[table])
+        with closing(connect(self.path)) as db:
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],10)
+            dump='\n'.join(db.iterdump())
+            for secret in (password,pending['recovery']):self.assertNotIn(secret,dump);self.assertNotIn(secret.encode(),path.read_bytes())
+
+    def test_crypto_api_roles_csrf_and_pending_confirmation_session_binding(self):
+        password='FICTICIO-cambio-clave-2026'
+        data={'password':password,'repeat':password}
+        self.request('crypto-prepare',data,status=403,csrf=False)
+        pending=self.request('crypto-prepare',data)
+        self.assertIsNone(pending['recovery'],'Changing password cannot redisplay recovery secret')
+        self.request('crypto-confirm',{'token':pending['token'],'confirmation':'CAMBIAR CONTRASEÑA DE RESPALDOS'},status=403,csrf=False)
+        for role in ('cashier','reader'):self.request('users',{'username':role,'name':role,'role':role,'password':'FICTICIO-acceso-seguro'})
+        self.request('logout',{})
+        for role in ('cashier','reader'):
+            self.request('login',{'username':role,'password':'FICTICIO-acceso-seguro'})
+            self.csrf=self.request('session')['user']['csrf'];self.request('confirm-rate',{'rate_date':local_today().isoformat(),'rate':'100'})
+            for endpoint in ('crypto-prepare','crypto-confirm','crypto-unlock','export-encrypted-backup'):
+                self.request(endpoint,{'token':pending['token'],**data},status=403)
+            self.request('logout',{})
+        self.request('login',{'username':'admin','password':'Una-clave-segura'});self.csrf=self.request('session')['user']['csrf']
+        self.request('confirm-rate',{'rate_date':local_today().isoformat(),'rate':'100'})
+        self.request('crypto-confirm',{'token':pending['token'],'confirmation':'CAMBIAR CONTRASEÑA DE RESPALDOS'},status=400)
+
+    def test_convert_and_probe_encrypted_backup_preserve_source_and_check_credentials(self):
+        from colegio.backup_crypto import MAGIC
+        before=self.request('state');cipher=self.request('backup')
+        data={'content':base64.b64encode(cipher).decode(),'credential':'FICTICIO-respaldo-seguro-2026'}
+        self.request('probe-backup',{**data,'credential':'FICTICIO-incorrecta'},status=400)
+        result=self.request('probe-backup',data);self.assertFalse(result['unencrypted'])
+        converted=self.request('export-encrypted-backup',data)
+        self.assertTrue(converted.startswith(MAGIC));self.assertNotEqual(converted,cipher)
+        result=self.request('probe-backup',{'content':base64.b64encode(converted).decode(),'credential':data['credential']})
+        self.assertEqual(result['payments'],len(before['payments']))
+        after=self.request('state')
+        for table in ('students','payments','expenses','charges'):self.assertEqual(before[table],after[table])
+
     def test_probe_backup_is_readonly_validates_schema_and_never_returns_personal_rows(self):
         before=self.request('state')
-        payload={'content':base64.b64encode(self.request('backup')).decode()}
+        payload={'content':base64.b64encode(self.request('backup')).decode(),'credential':'FICTICIO-respaldo-seguro-2026'}
         result=self.request('probe-backup',payload)
         self.assertEqual(result['students'],1)
         self.assertEqual(result['balance_usd'],before['summary']['pending'])
@@ -91,7 +150,7 @@ class SystemTests(unittest.TestCase):
             self.assertEqual(before[table],after[table])
 
     def test_probe_backup_requires_admin_and_csrf(self):
-        payload={'content':base64.b64encode(self.request('backup')).decode()}
+        payload={'content':base64.b64encode(self.request('backup')).decode(),'credential':'FICTICIO-respaldo-seguro-2026'}
         self.request('probe-backup',payload,status=403,csrf=False)
         for role in ('cashier','reader'):
             self.request('users',{'name':role,'username':role,'role':role,'password':'Clave-ficticia-2026'})
@@ -461,19 +520,20 @@ class SystemTests(unittest.TestCase):
         exported=self.request('export?type=expenses').decode('utf-8-sig')
         self.assertIn("'=formula",exported)
         self.request('void-expense',{'id':expense,'reason':'Error de registro'})
-        backup=Path(self.temp.name)/'descargado.sqlite3'
+        backup=Path(self.temp.name)/'descargado.aulabak'
         backup.write_bytes(self.request('backup'))
-        with closing(sqlite3.connect(backup)) as db, db:
+        from colegio.backup_inspection import staged_backup
+        with staged_backup(backup,'FICTICIO-respaldo-seguro-2026') as (plain,_,_), closing(sqlite3.connect(plain)) as db:
             self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
             self.assertEqual(db.execute('SELECT COUNT(*) FROM sessions').fetchone()[0],0)
         other=Path(self.temp.name)/'restauracion'
-        restored=restore(backup,other)
+        restored=restore(backup,other,credential='FICTICIO-respaldo-seguro-2026')
         with closing(sqlite3.connect(restored)) as db, db:
             self.assertEqual(db.execute('SELECT name FROM students').fetchone()[0],'Alumno Uno')
-        restore(backup,other)
+        restore(backup,other,credential='FICTICIO-respaldo-seguro-2026')
         self.assertTrue(list((other/'backups').glob('antes-restauracion-*.sqlite3')))
         with DataLock(other):
-            with self.assertRaises(RuntimeError):restore(backup,other)
+            with self.assertRaises(RuntimeError):restore(backup,other,credential='FICTICIO-respaldo-seguro-2026')
         daily_backup(restored)
         daily_backup(restored)
         self.assertEqual(len(list((other/'backups').glob('colegio-*.sqlite3'))),1)
@@ -670,7 +730,9 @@ class SystemTests(unittest.TestCase):
             self.assertEqual(db.execute('SELECT COUNT(*) FROM payments').fetchone()[0],1)
             self.assertEqual(db.execute('SELECT COUNT(*) FROM sessions').fetchone()[0],0)
             self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
-        self.assertTrue((second/Path(status['local_path']).name).exists())
+        self.assertTrue(Path(status['secondary_path']).exists())
+        self.assertTrue(status['secondary_encrypted'])
+        self.assertFalse(list(second.glob('*.sqlite3')))
         # A second destination failure cannot roll back a successfully committed payment.
         for p in second.iterdir():p.unlink()
         second.rmdir();second.write_text('Not a folder')

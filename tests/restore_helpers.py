@@ -2,7 +2,8 @@
 from colegio.restore import preview_restore, restore
 
 
-def approved_restore(backup,directory):
-    review=preview_restore(backup,directory)
-    return restore(backup,directory,preview_hash=review['preview_hash'],confirmation=review['confirmation'],
+def approved_restore(backup,directory,*,credential=None,credential_kind='password'):
+    arguments={'credential':credential,'credential_kind':credential_kind}
+    review=preview_restore(backup,directory,**arguments)
+    return restore(backup,directory,preview_hash=review['preview_hash'],confirmation=review['confirmation'],**arguments,
                    emergency_floors=review['floors'] if review['requires_floor_review'] else None)

@@ -51,7 +51,8 @@ def reset_records(db, data, user):
         consistent_backup(path, backup)
         secondary = db.execute("SELECT value FROM settings WHERE key='backup_directory'").fetchone()
         if secondary and secondary[0]:
-            consistent_backup(path, Path(secondary[0]) / name)
+            from .backup_export import write_encrypted
+            write_encrypted(backup,Path(secondary[0]) / (Path(name).stem+'.aulabak'),path.parent)
     except Exception as error:
         raise ValidationError('No se pudo completar el respaldo previo. No se ha vaciado la base; revisa el disco y el segundo destino.') from error
     for table in ('payments', 'expenses', 'students'):

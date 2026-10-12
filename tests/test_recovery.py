@@ -99,6 +99,8 @@ class RecoveryTests(unittest.TestCase):
 
     def test_windows_writable_sync_backups_include_committed_wal_and_restore(self):
         source=self.root/'original.sqlite3'
+        from tests.crypto_helpers import configure
+        configure(source.parent)
         with tempfile.TemporaryDirectory() as external, closing(connect(source)) as db:
             with db:
                 db.execute("UPDATE settings SET value=? WHERE key='backup_directory'",(external,))
@@ -107,6 +109,11 @@ class RecoveryTests(unittest.TestCase):
                     'method':'Transferencia','reference':'TR-REC-02','request_key':'wal-fixture'},1)
             original=[tuple(r) for r in db.execute('SELECT * FROM payments ORDER BY id')]
             permissions={};calls=[];real_sync=os.fsync;names={}
+            real_fdopen=os.fdopen;real_mkstemp=tempfile.mkstemp
+            def tracked_mkstemp(*args,**kwargs):
+                handle,name=real_mkstemp(*args,**kwargs);names[handle]=name;return handle,name
+            def tracked_fdopen(handle,*args,**kwargs):
+                saved=real_fdopen(handle,*args,**kwargs);permissions[handle]=saved.writable();return saved
 
             def tracked_open(*args,**kwargs):
                 saved=builtins.open(*args,**kwargs)
@@ -121,20 +128,23 @@ class RecoveryTests(unittest.TestCase):
                 real_sync(descriptor)
 
             # Linux accepts read-only fsync; emulate Windows's stricter _commit.
-            with patch('colegio.storage.open',new=tracked_open,create=True), patch('colegio.clock_guard.open',new=tracked_open,create=True), patch('colegio.restore.open',new=tracked_open,create=True), patch('colegio.restore_journal.open',new=tracked_open,create=True), patch('colegio.clock_guard.sync_directory'), patch('colegio.restore.sync_directory'), patch('colegio.restore_journal.sync_directory'), patch('colegio.storage.os.fsync',new=windows_commit):
+            with patch('colegio.storage.open',new=tracked_open,create=True), patch('colegio.clock_guard.open',new=tracked_open,create=True), patch('colegio.restore.open',new=tracked_open,create=True), patch('colegio.restore_journal.open',new=tracked_open,create=True), patch('colegio.clock_guard.sync_directory'), patch('colegio.restore.sync_directory'), patch('colegio.restore_journal.sync_directory'), patch('colegio.backup_export.sync_directory'), patch('colegio.backup_export.tempfile.mkstemp',new=tracked_mkstemp), patch('colegio.backup_export.os.fdopen',new=tracked_fdopen), patch('colegio.storage.os.fsync',new=windows_commit):
                 status=automatic_backup(source)
                 self.assertFalse(status.get('local_error'));self.assertFalse(status.get('secondary_error'))
-                snapshots=[p for p in calls if Path(p).name.startswith(('.aula-backup-','.aula-copy-'))]
+                snapshots={p for p in calls if Path(p).name.startswith(('.aula-backup-','.aula-cipher-'))}
                 self.assertEqual(len(snapshots),2)
                 self.assertGreaterEqual(len(calls),4)  # Snapshots and persisted retention inventories.
-                local=Path(status['local_path']);remote=Path(external)/local.name
-                for snapshot in (local,remote):
-                    with closing(connect(snapshot)) as copy:
-                        self.assertEqual([tuple(r) for r in copy.execute('SELECT * FROM payments ORDER BY id')],original)
-                        self.assertEqual(copy.execute('PRAGMA integrity_check').fetchone()[0],'ok')
-                        self.assertEqual(copy.execute('SELECT COUNT(*) FROM sessions').fetchone()[0],0)
-                        self.assertEqual(copy.execute('SELECT SUM(amount) FROM allocations').fetchone()[0],7500)
-                restore(remote,self.directory)
+                local=Path(status['local_path']);remote=Path(status['secondary_path'])
+                from colegio.backup_inspection import staged_backup
+                with staged_backup(remote,'FICTICIO-respaldo-seguro-2026') as (plain,_,_):
+                    snapshots=(local,plain)
+                    for snapshot in snapshots:
+                        with closing(connect(snapshot)) as copy:
+                            self.assertEqual([tuple(r) for r in copy.execute('SELECT * FROM payments ORDER BY id')],original)
+                            self.assertEqual(copy.execute('PRAGMA integrity_check').fetchone()[0],'ok')
+                            self.assertEqual(copy.execute('SELECT COUNT(*) FROM sessions').fetchone()[0],0)
+                            self.assertEqual(copy.execute('SELECT SUM(amount) FROM allocations').fetchone()[0],7500)
+                restore(remote,self.directory,credential='FICTICIO-respaldo-seguro-2026')
             with closing(connect(self.target)) as restored:
                 self.assertEqual([tuple(r) for r in restored.execute('SELECT * FROM payments ORDER BY id')],original)
             self.assertEqual(db.execute('SELECT COUNT(*) FROM sessions').fetchone()[0],1)
@@ -190,12 +200,17 @@ class RecoveryTests(unittest.TestCase):
 
     def test_secondary_sync_failure_keeps_local_and_previous_external_backup(self):
         source=self.root/'original.sqlite3'
+        from tests.crypto_helpers import configure
+        configure(source.parent)
         with tempfile.TemporaryDirectory() as external:
             with closing(connect(source)) as db,db:
                 db.execute("UPDATE settings SET value=? WHERE key='backup_directory'",(external,))
             first=automatic_backup(source)
-            prior=Path(external)/Path(first['local_path']).name;original=prior.read_bytes()
+            prior=Path(first['secondary_path']);original=prior.read_bytes()
             real_sync=os.fsync;names={};failed=[]
+            real_fdopen=os.fdopen;real_mkstemp=tempfile.mkstemp
+            def tracked_mkstemp(*args,**kwargs):
+                handle,name=real_mkstemp(*args,**kwargs);names[handle]=name;return handle,name
 
             def tracked_open(*args,**kwargs):
                 saved=builtins.open(*args,**kwargs)
@@ -203,18 +218,19 @@ class RecoveryTests(unittest.TestCase):
                 return saved
 
             def fail_second(descriptor):
-                if Path(names.get(descriptor,'')).name.startswith('.aula-copy-'):
+                if Path(names.get(descriptor,'')).name.startswith('.aula-cipher-'):
                     failed.append(descriptor)
                     raise OSError(errno.EIO,'Simulated USB write failure')
                 real_sync(descriptor)
 
-            with patch('colegio.storage.open',new=tracked_open,create=True), patch('colegio.clock_guard.open',new=tracked_open,create=True), patch('colegio.storage.os.fsync',new=fail_second):status=automatic_backup(source)
+            with patch('colegio.storage.open',new=tracked_open,create=True), patch('colegio.clock_guard.open',new=tracked_open,create=True), patch('colegio.backup_export.tempfile.mkstemp',new=tracked_mkstemp), patch('colegio.storage.os.fsync',new=fail_second):status=automatic_backup(source)
             self.assertEqual(len(failed),1)
             self.assertFalse(status.get('local_error'));self.assertTrue(status['secondary_error'])
             self.assertTrue(Path(status['local_path']).is_file())
             self.assertEqual(prior.read_bytes(),original)
-            self.assertEqual(list(Path(external).glob('*.sqlite3')),[prior])
-            self.assertFalse(list(Path(external).glob('.aula-copy-*')))
+            self.assertEqual(list(Path(external).glob('*.aulabak')),[prior])
+            self.assertFalse(list(Path(external).glob('*.sqlite3')))
+            self.assertFalse(list(Path(external).glob('.aula-cipher-*')))
 
 
 if __name__=='__main__':

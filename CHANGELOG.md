@@ -1,5 +1,14 @@
 # Historial de cambios
 
+## A2 · cifrado de respaldos (sin migración SQL)
+
+- AES-256-GCM, scrypt 128 MiB, envolturas por contraseña y recuperación X25519/HKDF, formato AULABK01 documentado. Nonces reservados antes de cifrar, independientes del reloj/SQLite.
+- Recuperación mostrada una vez con confirmación de últimos cuatro. Windows DPAPI protege solo material derivado/estado local; fuera de Windows se desbloquea RAM al iniciar. No contraseñas ni recuperación secreta en SQLite, logs, informes o exportaciones. Cambio de contraseña conserva recuperación y afecta solo copias nuevas.
+- Cubre cuatro salidas: automática externa, descarga y externas previas a vaciar/borrar. Verifica ambas envolturas, descifra localmente y comprueba huella/integridad/referencias antes de publicación atómica. Temporales externos siempre cifrados; locales privados sin confiar en TMP/USB/nube. Cortes reales y limpieza de trabajos propios en siguiente inicio.
+- A1 acepta cifradas y antiguas con advertencia, conserva comparación, correlativos, informes y recuperación. Conversión voluntaria crea otra copia; no borra originales antiguos ni versiones de Drive. Locales 5 minutos/diarios y especiales mantienen comportamiento; especiales conservadas indefinidamente.
+- Pruebas: vectores NIST/RFC, alteración/truncamiento, contraseña/recuperación, épocas, nonces, esquema 99 cifrado, permisos/CSRF, cinco cortes reales, persistencia/DPAPI y navegador. Linux final: 242 descubiertas en 129.630 s, 239 correctas y tres nativas omitidas; navegador normal, Pruebas e importación correctos. Windows pendiente de ejecución. No se avanza a A3 ni se cambian sesiones, bitácora general, nómina, móvil, ubicación o firma.
+
+
 ## A1 · restauración segura (sin nueva migración)
 
 - Revisión de esquema/integridad/referencias en copia temporal; esquema 99 rechazado. Comparación por identidad/contenido y confirmaciones reforzadas para pérdida o base ilegible.

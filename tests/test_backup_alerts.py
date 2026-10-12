@@ -230,6 +230,8 @@ class BackupAlertAccessTests(unittest.TestCase):
         destination = str(Path(cloud.name)/'copies')
         with closing(sqlite3.connect(self.path)) as db, db:
             db.execute("UPDATE settings SET value=? WHERE key='backup_directory'", (destination,))
+        from tests.crypto_helpers import configure
+        if not (self.path.parent/'.backup-crypto'/'keyring.json').exists():configure(self.path.parent)
         self.server.make_backup()
         self.request('login', {'username': role, 'password': 'Prueba-segura-2026'})
         csrf = self.request('session')['user']['csrf']

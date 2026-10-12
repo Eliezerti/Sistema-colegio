@@ -18,6 +18,10 @@ El recibo de pago muestra nombre y grado del alumno, sin cédula escolar ni cód
 
 Los cobros incluyen **Pago móvil** como método separado en recibos, reportes y cierre de caja. El **efectivo inicial en caja** son billetes y monedas al comenzar el día, no el saldo bancario; pagos móviles y transferencias no se suman al arqueo físico. [Guía de cobros y arqueo](docs/cobros-y-arqueo.md).
 
+## Respaldos cifrados · A2
+
+Configuración → Protección y mantenimiento → Cifrado de respaldos. Contraseña de mínimo 12 caracteres y recuperación mostrada una vez, con confirmación de últimos cuatro. Segundo destino y Descargar copia entregan .aulabak autenticado y verificado; también las copias externas previas a vaciar/borrar. Los locales continúan sin cifrar y dependen de BitLocker/permisos. Cambiar contraseña afecta solo copias nuevas; las anteriores usan su contraseña original o recuperación. A1 abre ambas clases y conserva todas sus protecciones. No hay migración SQL ni cambios de nómina/sesiones. [Guía, rutas, límites y prueba ficticia](docs/cifrado-respaldos.md) · [Formato documentado](docs/formato-respaldo-cifrado.md).
+
 ## Restauración segura · A1
 
 La restauración exige revisar la comparación y confirmar según sus diferencias. Conserva la copia previa, informes PDF/CSV de pérdida y los máximos de los seis correlativos. Rechaza esquemas futuros y resuelve operaciones pendientes antes de abrir la base. **Probar respaldo** revisa una copia temporal sin escribir en el origen, desde Configuración (hasta 32 MB) o Inicio de Windows (sin ese límite). La guía HTML queda instalada junto al manual de mantenimiento. La revisión y el informe identifican Pagos, Cargos y fichas con nombres en español, sin nombres internos de tablas. No añade migraciones ni adelanta A2. Validación Linux: 223 descubiertas (221 correctas y dos nativas omitidas), navegador normal, Pruebas e importación correctos; Windows: 223 correctas sin omisiones y validación del instalador 1.0.34; detalles y límites en la guía. [Guía y prueba manual con datos ficticios](docs/restauracion-segura.md).
@@ -36,7 +40,7 @@ Para una unidad virtual de Drive, si el único aviso es «No se pudo comprobar s
 
 En **Configuración → Protección y mantenimiento** se revisan los permisos de la carpeta de datos (ACL) y BitLocker del disco que contiene esa carpeta. La comprobación funciona en segundo plano, sin cambiar permisos, activar cifrado ni pedir elevación. Un resultado desconocido dice **No se pudo comprobar**: nunca se presenta como protección activa. Windows puede impedir la consulta de BitLocker a una cuenta sin privilegios. [Guía de avisos y revisión de protección](docs/proteccion-respaldos.md).
 
-Este punto no cambia el esquema, los datos, su ubicación, WAL, `synchronous=FULL` ni los respaldos de cinco minutos. Las copias todavía no están cifradas; el cifrado se implementará por separado. El instalador A1 1.0.34 está en borrador: completó 223 pruebas en Windows y la validación de instalación, ventana y conservación de datos, incluido el punto 2 del reloj. Sigue pendiente revisar la protección de la PC del colegio. [Historial de cambios](CHANGELOG.md).
+Este punto no cambia el esquema, los datos, su ubicación, WAL, `synchronous=FULL` ni los respaldos de cinco minutos. En la entrega A1 las copias no estaban cifradas; A2 añade cifrado portable, sin modificar esas copias antiguas. El instalador A1 1.0.34 está en borrador: completó 223 pruebas en Windows y la validación de instalación, ventana y conservación de datos, incluido el punto 2 del reloj. Sigue pendiente revisar la protección de la PC del colegio. [Historial de cambios](CHANGELOG.md).
 
 ## Descargar el sistema
 
@@ -48,7 +52,7 @@ Los directorios de **Alumnos y matrículas**, **Representantes** y **Personal de
 
 Para compartir información diaria sin instalar otra base: **Reportes → Reporte diario PDF → Descargar PDF**. Muestra cobros con fecha de hoy, recibos y referencias, totales reales por moneda y equivalente USD original; las anulaciones quedan fuera de los totales. Incluye la morosidad al momento de generar el reporte, por alumno, grado y representante, con teléfono, deuda vencida y atraso. Envía el PDF manualmente por correo: en el colegio solo lo abren o imprimen. Un reporte no reemplaza el respaldo completo ni permite cobrar sobre la base.
 
-Para llevar la base a otra PC: **Configuración → Descargar copia**, guardar el `.sqlite3` en USB, instalar Aula y usar **Inicio de Windows → Restaurar respaldo** con Aula cerrada. Lleva usuarios y configuración; las dos PC quedan independientes. [Pasos completos y precauciones para evitar perder cambios](docs/mantenimiento.md#llevar-tus-datos-a-otra-pc-para-mostrar-aula).
+Para llevar la base a otra PC: **Configuración → Descargar copia**, guardar el `.aulabak` cifrado en USB, instalar Aula y usar **Inicio de Windows → Restaurar respaldo** con Aula cerrada. Lleva usuarios y configuración; las dos PC quedan independientes. [Pasos completos y precauciones para evitar perder cambios](docs/mantenimiento.md#llevar-tus-datos-a-otra-pc-para-mostrar-aula).
 
 ## Instalar, actualizar y recuperar
 
@@ -76,7 +80,7 @@ El ZIP incluye los archivos del programa y los lanzadores para Windows; no inclu
 
 ## Instalar y abrir desde el ZIP en Windows
 
-1. Instala **Python 3.10 o posterior**, de 64 bits, desde [python.org](https://www.python.org/downloads/windows/). En el instalador activa **Add python.exe to PATH**. No se necesitan paquetes adicionales.
+1. Instala **Python 3.10 o posterior**, de 64 bits, desde [python.org](https://www.python.org/downloads/windows/). En el instalador activa **Add python.exe to PATH**. Si usas el ZIP fuente, instala la dependencia criptográfica: `python -m pip install -r requirements.txt`. El .exe ya la incluye.
 2. Descomprime la carpeta del sistema en una ubicación permanente, por ejemplo `C:\Aula`.
 3. Haz doble clic en **Iniciar-Aula.bat**. Se abrirá la interfaz en tu navegador. Mantén abierta la ventana de comandos durante el uso; ciérrala con **Ctrl+C** cuando termines.
 4. En la primera apertura crea tu usuario administrador con una contraseña de al menos diez caracteres. No existe una contraseña predeterminada.
@@ -132,7 +136,7 @@ Cada nueva apertura empieza vacía. Los datos temporales se eliminan al cerrar n
 
 Actualizar el programa **no borra automáticamente** la base instalada en tu PC. Si quieres eliminar los registros cargados previamente, entra como administrador y abre **Configuración → Administración avanzada · vaciar registros → Revisar vaciado de registros**.
 
-Se muestra la cantidad de registros que desaparecerán. Debes introducir tu contraseña, escribir **VACIAR REGISTROS** y marcar la confirmación. Antes de borrar, Aula genera un respaldo verificado `antes-vaciar-…sqlite3` en la carpeta local de respaldos y en el segundo destino si está configurado. Si falla alguna copia, se conserva la base. Esas copias no entran en la rotación de respaldos automáticos; consérvalas para poder restaurar el estado anterior.
+Se muestra la cantidad de registros que desaparecerán. Debes introducir tu contraseña, escribir **VACIAR REGISTROS** y marcar la confirmación. Antes de borrar, Aula genera un respaldo verificado `antes-vaciar-…sqlite3` sin cifrar en la carpeta local y cifrado .aulabak en el segundo destino si está configurado. Si falla alguna copia, se conserva la base. Esas copias no entran en la rotación de respaldos automáticos; consérvalas para poder restaurar el estado anterior.
 
 Se eliminan alumnos, representantes, grados, empleados y sus cargos, mensualidades, pagos, egresos, cierres, tasas, convenios, seguimientos y documentos guardados. **Se conservan los usuarios, las contraseñas, el logo, los datos fiscales y la configuración.** Se cierran todas las sesiones y debes volver a entrar y confirmar la tasa. Los números de cobros, egresos y alumnos continúan después del último usado. La bitácora conserva el evento de vaciado y la ruta del respaldo; los movimientos anteriores quedan en esa copia.
 

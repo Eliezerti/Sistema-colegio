@@ -102,18 +102,30 @@ def inspect_copy(path):
 
 
 @contextmanager
-def staged_backup(source):
+def staged_backup(source,credential=None,credential_kind='password',*,temporary_root=None):
     source=Path(source).resolve()
     if not source.is_file(): raise ValueError('Selecciona un archivo de respaldo existente.')
     wal=source.with_name(source.name+'-wal')
     if wal.exists() and wal.stat().st_size:
         raise ValueError('El archivo tiene un WAL asociado. Selecciona un respaldo completo creado por Aula, no una base activa.')
-    with tempfile.TemporaryDirectory(prefix='aula-revisar-respaldo-') as temporary:
+    from .backup_temporary import private_root
+    with tempfile.TemporaryDirectory(prefix='aula-revisar-respaldo-',dir=temporary_root or private_root()) as temporary:
         copy=Path(temporary)/'copia.sqlite3'
         shutil.copyfile(source,copy)  # No SQLite handle or sidecar is created at the source.
-        yield copy,inspect_copy(copy),file_hash(copy)
+        source_hash=file_hash(copy)
+        from .backup_crypto import decrypt,MAGIC,MAX_DATABASE,MAX_HEADER
+        with copy.open('rb') as saved:prefix=saved.read(8)
+        encrypted=prefix.startswith(b'AULABK')
+        if encrypted:
+            if copy.stat().st_size>MAX_DATABASE+MAX_HEADER+60:raise ValueError('El respaldo supera 512 MB.')
+            data,header=decrypt(copy.read_bytes(),credential,credential_kind)
+            copy.write_bytes(data)
+        result=inspect_copy(copy)
+        result['summary']['unencrypted']=not encrypted
+        # This is an observed PC timestamp, not a certified cloud creation date.
+        yield copy,result,source_hash
 
 
-def probe_backup(source):
-    with staged_backup(source) as (_,data,digest):
-        return dict(data['summary'],sha256=digest,unencrypted=True)
+def probe_backup(source,credential=None,credential_kind='password'):
+    with staged_backup(source,credential,credential_kind) as (_,data,digest):
+        return dict(data['summary'],sha256=digest)

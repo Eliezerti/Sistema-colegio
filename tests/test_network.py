@@ -169,8 +169,9 @@ class PrivateNetworkSystemTests(unittest.TestCase):
             self.assertEqual(len(state['payments']),2)
             self.assertEqual({p['operator'] for p in state['payments']},{'Caja 1','Caja 2'})
         # Both committed remote payments are included in the regular verified backup.
-        path=self.path.parent/'network-snapshot.sqlite3';path.write_bytes(self.request('backup'))
-        with closing(sqlite3.connect(path)) as db:
+        path=self.path.parent/'network-snapshot.aulabak';path.write_bytes(self.request('backup'))
+        from colegio.backup_inspection import staged_backup
+        with staged_backup(path,'FICTICIO-respaldo-seguro-2026') as (plain,_,_), closing(sqlite3.connect(plain)) as db:
             self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
             self.assertEqual(db.execute('SELECT COUNT(*) FROM payments').fetchone()[0],2)
 
