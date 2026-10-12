@@ -94,7 +94,7 @@ jobs:
 
           Aplicación local para una PC Windows 10/11 de 64 bits. Incluye Python, ventana propia, acceso directo y perfil de pruebas independiente. Una nueva instalación solicita el nombre del colegio y crea una base vacía; las actualizaciones conservan los datos e identidad del colegio existente. Instala con la misma cuenta de Windows y crea un respaldo externo antes de actualizar.
 
-          Novedades de Fase 1, punto 1: aviso permanente de respaldo para Administrador y Caja si falta segunda carpeta, no hay copia externa confirmada, la última tiene más de tres días o falló la copia. Visible al confirmar la tasa y en todas las secciones; permanece con búsquedas y filtros, sin botón de cierre. Configuración muestra la revisión de permisos de la carpeta (ACL) y BitLocker, de solo lectura y en segundo plano. Si no se puede comprobar, lo indica: nunca supone protección activa. No cambia el esquema, datos existentes, ubicación de la base, respaldos de cinco minutos, WAL ni synchronous=FULL. Las copias siguen sin cifrar; protección del reloj y demás puntos pendientes. Conserva importación/exportación Excel/CSV, recibos y reportes anteriores.
+          Novedades de Fase 1, punto 2: protección persistente del reloj. Avances mayores de siete días entre aperturas, retrocesos mayores de dos minutos y saltos inesperados durante el uso detienen cobros, mensualidades y documentos. Solo Administrador confirma con CSRF y registro en bitácora. Puede aparecer una revisión inicial de una base con actividad sin control previo. Conservación de respaldos por secuencia de publicación, independiente de nombres y fechas corregidas. Intentos de acceso con tiempo monotónico. Conserva avisos de respaldo, revisión de ACL/BitLocker, importación/exportación, documentos y datos anteriores. La copia en una carpeta no confirma subida a la nube; hay aviso por mismo disco o ubicación desconocida. No cambia el esquema, ubicación, importes existentes, WAL, synchronous=FULL ni frecuencia de cinco minutos. No incluye cifrado ni SQLCipher.
 
           Emite comprobantes administrativos, no facturas fiscales. Esta versión no certifica cumplimiento de todos los requisitos de SENIAT o Zona Educativa. La tasa BCV se registra manualmente. Cerrar X oculta la aplicación junto al reloj; usa Salir y cerrar Aula para detenerla. WebView2 de Microsoft puede requerir conexión en la primera instalación.
 
@@ -102,7 +102,7 @@ jobs:
           '@
           [System.IO.File]::WriteAllText('dist/notas-version.txt', $Body, [System.Text.UTF8Encoding]::new($false))
           # Keep the artifact as a draft until checks and its release notes have been reviewed.
-          $ReleaseOutput = @(gh release create "desktop-$Version" "dist/Aula-Colegio-Instalador-$Version.exe" "dist/Aula-Colegio-Instalador-$Version.exe.sha256" "descargas/Aula-Windows.zip" "descargas/Aula-Windows.sha256" --target $env:GITHUB_SHA --title "Aula - Avisos de respaldo - Windows $Version - revisión" --notes-file dist/notas-version.txt --draft 2>&1)
+          $ReleaseOutput = @(gh release create "desktop-$Version" "dist/Aula-Colegio-Instalador-$Version.exe" "dist/Aula-Colegio-Instalador-$Version.exe.sha256" "descargas/Aula-Windows.zip" "descargas/Aula-Windows.sha256" --target $env:GITHUB_SHA --title "Aula - Protección del reloj - Windows $Version - revisión" --notes-file dist/notas-version.txt --draft 2>&1)
           $ReleaseExit = $LASTEXITCODE
           $ReleaseOutput | ForEach-Object { Write-Host $_ }
           if ($ReleaseExit -ne 0) {
