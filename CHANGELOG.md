@@ -8,6 +8,7 @@
 - Administración, CSRF, contraseña, motivo, confirmación escrita y revisión vigente se comprueban en servidor. Copias previas únicas verificadas localmente y en el segundo destino configurado; fallo de cualquier copia cancela el borrado.
 - Conserva bitácora, fichas ajenas y correlativos de fichas/constancias eliminadas. No elimina respaldos anteriores ni archivos descargados. Sin migración de esquema o modificación automática de fichas existentes.
 - Validación Linux: 209 pruebas descubiertas, 208 correctas y una exclusiva de Windows omitida; recorridos de navegador normal, Pruebas e importación correctos. Nueve pruebas nuevas de archivo, permisos, historial con saldo cero, documentos con vínculos históricos, copias verificadas/restaurables, fallos y correlativos.
+- Primer intento Windows 1.0.31 detenido antes de generar el instalador: tres conexiones de inspección en las pruebas quedaron abiertas y bloquearon la limpieza de archivos temporales. Se corrige su cierre explícito; no se omiten pruebas ni se altera código de aplicación para resolverlo.
 
 ## Sin publicar · Pago móvil y recibos más claros
 

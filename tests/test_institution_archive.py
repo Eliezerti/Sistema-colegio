@@ -1,4 +1,5 @@
 """Offboarding must preserve paid history and make empty-record deletion reviewable."""
+from contextlib import closing
 import sqlite3
 import tempfile
 import unittest
@@ -64,7 +65,7 @@ class InstitutionArchiveTests(unittest.TestCase):
         backup=Path(result['backup_path'])
         self.assertTrue(backup.is_file())
         self.assertTrue((secondary/backup.name).is_file())
-        with sqlite3.connect(backup) as db:
+        with closing(sqlite3.connect(backup)) as db:
             self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
             self.assertEqual(db.execute('SELECT name FROM guardians WHERE id=?',(target,)).fetchone()[0],'Ficha sin alumnos')
             self.assertEqual(db.execute('SELECT COUNT(*) FROM sessions').fetchone()[0],0)
@@ -97,7 +98,7 @@ class InstitutionArchiveTests(unittest.TestCase):
         self.assertNotEqual(new['student_code'],created['student_code'])
         restored=Path(self.temp.name)/'otra-pc'/'colegio.sqlite3'
         restore(Path(result['backup_path']),restored.parent)
-        with connect(restored) as db:
+        with closing(connect(restored)) as db:
             self.assertIsNotNone(db.execute('SELECT id FROM students WHERE id=?',(created['id'],)).fetchone())
             self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],system.SCHEMA_VERSION)
             self.assertFalse(db.execute('PRAGMA foreign_key_check').fetchone())
@@ -158,7 +159,7 @@ class InstitutionArchiveTests(unittest.TestCase):
         self.assertTrue(self.preview('guardian',target)['can_delete'])
         blocked=Path(self.temp.name)/'archivo-no-carpeta'
         blocked.write_text('no es carpeta')
-        with connect(self.path) as db:
+        with closing(connect(self.path)) as db, db:
             db.execute("UPDATE settings SET value=? WHERE key='backup_directory'",(str(blocked),))
         self.request('delete-unused-record',data,status=400)
         self.assertTrue(self.preview('guardian',target)['can_delete'])

@@ -50,3 +50,5 @@ Nueve pruebas nuevas ejercitan copia local/segundo destino, contraseña/CSRF/per
 Archivos: `colegio/institution_archive.py`, integración en `colegio/server.py`, correlativos en `colegio/db.py` y `colegio/documents.py`, filtro en `colegio/directory_reports.py`, `static/app.js`, `static/style.css`, `tests/test_institution_archive.py`, `tests/browser.cjs`, `AGENTS.md`, README, CHANGELOG y guías de archivo. Las notas de compilación y el paquete fuente se actualizan para la entrega.
 
 Pendientes de esta validación Linux: instalación, ACL/BitLocker y análisis con Microsoft Defender requieren Windows. Se reportan por separado cuando termine la compilación nativa. No se comprueba desde aquí el cifrado, permisos ni antivirus de la PC del usuario.
+
+El [primer intento Windows (1.0.31)](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38265231467) ejecutó 209 pruebas y encontró tres errores de limpieza: las conexiones de inspección de las pruebas seguían abiertas. No se generó el instalador. Se corrige con cierre explícito de esas conexiones, manteniendo las comprobaciones y la aplicación sin cambios; la siguiente ejecución debe validar también esa limpieza.
