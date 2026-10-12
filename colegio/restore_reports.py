@@ -5,6 +5,22 @@ import io
 from .backup_inspection import fingerprint
 from .documents import AdministrativePDF, amount
 
+TABLE_LABELS = {
+    'settings':'Configuración', 'users':'Usuarios', 'students':'Alumnos',
+    'guardians':'Representantes', 'grades':'Grados y secciones', 'charges':'Cargos',
+    'payments':'Pagos', 'expenses':'Egresos', 'allocations':'Aplicaciones de pagos',
+    'employees':'Personal', 'enrollment_documents':'Constancias de matrícula',
+    'exchange_rates':'Tasas BCV', 'monthly_assessments':'Mensualidades generadas',
+    'salary_receipts':'Recibos del personal', 'year_transitions':'Pases de año',
+    'payment_plans':'Convenios', 'collection_notes':'Seguimientos de cobranza',
+    'positions':'Cargos del personal', 'payroll_plans':'Planes del personal',
+    'guardian_documents':'Documentos del representante', 'cash_closures':'Cierres de caja',
+}
+
+
+def table_label(table):
+    return TABLE_LABELS.get(table,'Otros registros')
+
 
 def identity(table,row):
     if 'id' in row: return str(row['id'])
@@ -72,7 +88,7 @@ HEADERS=['Tipo','Acción','Correlativo','Fecha','Alumno / persona','Importe USD'
 def loss_csv(comparison):
     out=io.StringIO(newline='');writer=csv.writer(out,delimiter=';');writer.writerow(HEADERS)
     for d in comparison['details']:
-        values=[d['type'],d['action'],d['number'],d['date'],d['person'],
+        values=[table_label(d['type']),d['action'],d['number'],d['date'],d['person'],
             f"{d['amount_usd']/100:.2f}" if 'amount_usd' in d else '',d.get('currency',''),
             f"{d['received']/100:.2f}" if 'received' in d else '',d.get('method',''),d.get('reference',''),
             d.get('before_state',''),d.get('after_state',''),d['before_hash'],d.get('after_hash') or '']

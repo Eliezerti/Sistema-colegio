@@ -36,3 +36,8 @@ class RestoreWindowsUITests(unittest.TestCase):
                 main()
                 self.assertIn('Integridad y referencias: correctas',shown.call_args.args[1])
                 self.assertIn('R-000001',shown.call_args.args[1])
+            damaged=Path(directory)/'danado.sqlite3';damaged.write_bytes(b'no es una base')
+            with patch('sys.argv',['Aula','--test-backup']),patch('tkinter.filedialog.askopenfilename',return_value=str(damaged)),patch('tkinter.messagebox.showerror') as shown:
+                main()
+                self.assertIn('Puede estar dañado o no ser una copia de Aula',shown.call_args.args[1])
+                self.assertNotIn('file is not a database',shown.call_args.args[1])

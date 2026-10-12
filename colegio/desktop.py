@@ -394,7 +394,12 @@ def main():
         from .restore_journal import RecoveryRequired
         title='Aula · Recuperación pendiente' if isinstance(error,RecoveryRequired) else 'Aula · no se pudo continuar'
         help_text='\n\nCarpeta de datos: '+str(directory) if isinstance(error,RecoveryRequired) else '\n\nRevisa la configuración o el registro en la carpeta de datos.'
-        try:messagebox.showerror(title,str(error)+help_text,parent=root)
+        display_error=str(error)
+        if args.restore or args.test_backup:
+            import sqlite3
+            if isinstance(error,sqlite3.Error):
+                display_error='No se pudo leer o comprobar el respaldo. Puede estar dañado o no ser una copia de Aula. Conserva el archivo y selecciona otra copia verificada.'
+        try:messagebox.showerror(title,display_error+help_text,parent=root)
         finally:root.destroy()
 
 

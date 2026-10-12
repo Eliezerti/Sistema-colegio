@@ -20,7 +20,7 @@ Los cobros incluyen **Pago móvil** como método separado en recibos, reportes y
 
 ## Restauración segura · A1
 
-La restauración exige revisar la comparación y confirmar según sus diferencias. Conserva la copia previa, informes PDF/CSV de pérdida y los máximos de los seis correlativos. Rechaza esquemas futuros y resuelve operaciones pendientes antes de abrir la base. **Probar respaldo** revisa una copia temporal sin escribir en el origen, desde Configuración (hasta 32 MB) o Inicio de Windows (sin ese límite). La guía HTML queda instalada junto al manual de mantenimiento. No añade migraciones ni adelanta A2. Validación Linux: 223 descubiertas (221 correctas y dos nativas omitidas), navegador normal, Pruebas e importación correctos; Windows se valida por separado. [Guía y prueba manual con datos ficticios](docs/restauracion-segura.md).
+La restauración exige revisar la comparación y confirmar según sus diferencias. Conserva la copia previa, informes PDF/CSV de pérdida y los máximos de los seis correlativos. Rechaza esquemas futuros y resuelve operaciones pendientes antes de abrir la base. **Probar respaldo** revisa una copia temporal sin escribir en el origen, desde Configuración (hasta 32 MB) o Inicio de Windows (sin ese límite). La guía HTML queda instalada junto al manual de mantenimiento. La revisión y el informe identifican Pagos, Cargos y fichas con nombres en español, sin nombres internos de tablas. No añade migraciones ni adelanta A2. Validación Linux: 223 descubiertas (221 correctas y dos nativas omitidas), navegador normal, Pruebas e importación correctos; Windows se valida por separado. [Guía y prueba manual con datos ficticios](docs/restauracion-segura.md).
 
 ## Avisos de respaldo y revisión de Windows · Fase 1, punto 1
 

@@ -15,7 +15,7 @@ from .backup_inspection import (SEQUENCES, NewerSchemaError, fingerprint, file_h
 from .db import audit
 from .restore_journal import (finish_pending, store_pending, sync_file,
                               sync_directory, windows_actor, HISTORY)
-from .restore_reports import compare, loss_csv, loss_pdf
+from .restore_reports import compare, loss_csv, loss_pdf, table_label
 from .storage import DataLock, consistent_backup
 
 PLAIN='RESTAURAR'
@@ -149,7 +149,7 @@ def review_text(review):
         return f"{title}: {s['students']} alumnos; {s['payments']} pagos ({s['voided_payments']} anulados); cobrado USD {s['income_usd']/100:.2f}.\nRecibido por moneda: {received}\nÚltimo pago: {last_label}"
     lines=[summary('Base actual',review['current']),summary('Respaldo',review['backup']),review['backup']['creation_note'],
         'El respaldo no está cifrado. No se generan mensualidades al revisarlo.']
-    lines.extend(f'{table}: {count} registros ausentes o diferentes' for table,count in review['comparison']['counts'].items())
+    lines.extend(f'{table_label(table)}: {count} registros ausentes o diferentes' for table,count in review['comparison']['counts'].items())
     if review['requires_floor_review']:lines.append('No se pudieron comprobar los correlativos actuales. Debes revisar los últimos números utilizados.')
     return '\n\n'.join(lines)
 

@@ -75,7 +75,7 @@ La validación de instalación/ventanas del instalador actual se reporta aparte;
 
 ## Validación A1 en Linux · 12 de octubre de 2026
 
-- `python -m unittest discover -s tests -v`: 223 pruebas descubiertas en 74.725 s; 221 correctas y dos exclusivas de Windows omitidas (mutex/ventanas y revisión Tk con comprobador independiente).
+- `python -m unittest discover -s tests -v`: 223 pruebas descubiertas en 74.415 s; 221 correctas y dos exclusivas de Windows omitidas (mutex/ventanas y revisión Tk con comprobador independiente).
 - `python tests/run_browser.py`: correcto; revisión de copia válida/corrupta, autorización/CSRF y comprobación de que probar no modifica cargos ni pagos, además del recorrido habitual.
 - `python tests/run_browser.py --demo`: correcto.
 - `python tests/run_browser.py --roster`: correcto.
@@ -85,3 +85,5 @@ La validación de instalación/ventanas del instalador actual se reporta aparte;
 Windows, instalador, accesos de Inicio, ventanas nativas y Defender se documentarán con los resultados del runner; no se consideran aprobados por las pruebas Linux. No se han ejecutado pruebas en la PC real del usuario.
 
 El instalador conserva Tcl/Tk y la lista de dependencias vigente: no se excluyen módulos del PYZ en A1. Su cambio funcional es el acceso independiente Probar respaldo. El ZIP de código fuente incluye las cuatro bases ficticias SHA256 del manifiesto para que las pruebas históricas también puedan ejecutarse desde esa distribución; no incorpora información real.
+
+La revisión y la columna Tipo del CSV muestran nombres de registros en español. El comprobador de Inicio comunica archivos dañados con un mensaje en español en lugar del error técnico de SQLite; queda cubierto por la prueba nativa de ventanas.

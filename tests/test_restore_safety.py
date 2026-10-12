@@ -17,7 +17,7 @@ from unittest.mock import patch
 
 from colegio.backup_inspection import SEQUENCES, file_hash, probe_backup
 from colegio.db import connect, record_payment, next_record_id
-from colegio.restore import preview_restore, restore, last_restore, LOSS, UNKNOWN, ReviewRequired
+from colegio.restore import preview_restore, restore, last_restore, review_text, LOSS, UNKNOWN, ReviewRequired
 from colegio.restore_journal import PENDING, RecoveryRequired, finish_pending
 from colegio.server import open_school, SchoolServer
 from colegio.storage import consistent_backup, DataLock
@@ -55,6 +55,8 @@ class RestoreSafetyTests(unittest.TestCase):
         self.current();self.second_payment()
         review=preview_restore(self.backup,self.directory)
         self.assertEqual(review['confirmation'],LOSS)
+        self.assertIn('Pagos:',review_text(review))
+        self.assertNotIn('payments:',review_text(review))
         with self.assertRaises(ReviewRequired):restore(self.backup,self.directory)
         with closing(connect(self.target)) as db,db:db.execute("UPDATE students SET name='Nombre modificado' WHERE id=1")
         with self.assertRaises(ReviewRequired):
@@ -103,6 +105,7 @@ class RestoreSafetyTests(unittest.TestCase):
         pdf=next(Path(p) for p in event['reports'] if p.endswith('.pdf')).read_bytes()
         rows=list(csv.DictReader(io.StringIO(csv_file.read_text(encoding='utf-8-sig')),delimiter=';'))
         payment=next(r for r in rows if r['Correlativo']=='R-000002')
+        self.assertEqual(payment['Tipo'],'Pagos')
         self.assertEqual((payment['Alumno / persona'],payment['Importe USD'],payment['Moneda recibida'],payment['Referencia']),
                          ('Alumno de prueba','10.00','USD','REF-later'))
         self.assertTrue(any(r['Correlativo']=='E-000001' for r in rows))
