@@ -46,3 +46,15 @@ Las funciones existentes de usuarios, contraseñas, bitácora, protección de Wi
 Dos pruebas nuevas del servidor verifican que guardar el destino conserva identidad, calendario, alumnos, cargos y pagos, y que mantiene CSRF, validación de ruta y permisos de Caja/Consulta. Pruebas tampoco puede usar esta operación, ni siquiera para vaciar la ruta. Se comprueban bitácora, WAL, synchronous=FULL y copia posterior.
 
 La prueba de navegador comprueba un solo panel visible, navegación con teclado, cambios sin guardar y conservación de un borrador al guardar el otro formulario. El bloqueo del reloj y las transacciones financieras continúan cubiertos por la suite existente. Todas las pruebas utilizan datos ficticios y bases temporales; no se ha accedido a la base real del usuario.
+
+## Instalador 1.0.30
+
+- Código de aplicación: `338ccd07632131f8d611f2eea8e7b9e26607190d`.
+- [Ejecución Windows](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38251125520): 198 pruebas correctas en Python 3.12; instalación, accesos directos, ventanas, bandeja, reinstalación y desinstalación conservando datos correctas.
+- Defender antes y después sin detecciones, motor `1.1.26080.3`, firmas `1.459.684.0`. Este resultado no certifica la PC del usuario ni resuelve las alertas antiguas de 1.0.8/1.0.14.
+- `Aula-Colegio-Instalador-1.0.30.exe`: 20.503.114 bytes; SHA256 `b1a39d03455984ee6e93799d3574c5b6682bc2ddc62ad28d64cf5a5548e6e48a`, verificado contra el archivo descargado, su suma y el registro del runner.
+- [Descarga en borrador](https://github.com/Eliezerti/Sistema-colegio/releases/tag/untagged-e9d0e331378824f38692); requiere iniciar sesión en GitHub con acceso al repositorio. Descarga el ejecutable, no el ZIP de código fuente.
+
+Antes de actualizar, crea y verifica el respaldo externo; cierra Aula desde Salir y cerrar Aula e instala con la misma cuenta de Windows. Comprueba tus alumnos, saldos y destino de Drive. En Configuración visita cada pestaña y prueba escribir un borrador, cambiar de apartado y volver. Usa Aula - Pruebas para ensayar cambios de identidad sin afectar los datos reales. La comprobación efectiva y activación de BitLocker de la PC del usuario se realizan desde Windows; no se han ejecutado remotamente.
+
+Archivos del cambio: AGENTS.md, `colegio/server.py`, `static/app.js`, `static/style.css`, `tests/test_system.py`, `tests/test_backup_alerts.py`, `tests/browser.cjs`, README, CHANGELOG, estas guías Markdown/HTML, notas del workflow y ZIP fuente/suma. No se implementan las fases pendientes de cifrado, sesiones o bitácora protegida; no se modifica nómina, móvil/PWA ni personalización de recibos.

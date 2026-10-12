@@ -8,6 +8,7 @@
 - Ayuda de Windows distingue BitLocker, su recuperación de 48 dígitos y las llaves de acceso de Microsoft. No activa BitLocker ni presenta un resultado desconocido como activo.
 - Preferencias permanentes registradas en AGENTS.md. Sin migración de esquema, cambio de ubicación, modificación de registros existentes, móvil/PWA o nómina.
 - Validación Linux: 198 descubiertas, 197 correctas y una exclusiva de Windows omitida. Navegadores normal, Pruebas e importación correctos; dos pruebas nuevas de servidor y ampliación del recorrido de Configuración.
+- Instalador 1.0.30: 198 pruebas correctas en Windows, instalación, ventanas, reinstalación y desinstalación conservando datos. Defender antes/después sin detecciones, firmas 1.459.684.0; archivo descargado verificado por SHA256. Continúa en borrador por las alertas antiguas pendientes.
 
 ## Sin publicar · carpeta de nube declarada por administración
 
