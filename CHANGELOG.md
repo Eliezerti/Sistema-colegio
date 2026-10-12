@@ -7,6 +7,7 @@
 - Solo Administrador, con CSRF y revisión explícita, puede declarar o quitar la declaración. Se registra el cambio en bitácora. Cambiar la ruta la invalida; una declaración de otra PC no se aplica.
 - Usa una clave opcional de configuración existente, creada solo al confirmar; no hay migración de esquema ni modificación de datos contables. Conserva respaldos de cinco minutos y protección del reloj.
 - Validación Linux: 196 descubiertas, 195 correctas y una exclusiva de Windows omitida. Navegadores normal, Pruebas e importación correctos. Ocho pruebas nuevas de permisos, persistencia, alcance, fallos, otra PC y conservación de esquema/importes.
+- Instalador 1.0.29 en borrador: 196 pruebas correctas en Windows, instalación/ventanas/reinstalación/desinstalación conservando datos y dos análisis de Defender sin detecciones. Archivo descargado y SHA256 verificados; siguen pendientes las alertas antiguas del equipo del usuario.
 
 ## Sin publicar · identificación del alumno en recibos
 
