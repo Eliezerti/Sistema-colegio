@@ -139,3 +139,14 @@ Las compilaciones 1.0.23 y 1.0.24 se cancelaron deliberadamente antes de la publ
 Ambos análisis de Defender finalizaron con salida 0 y `found no threats`: motor `1.1.26080.3`, firmas `1.459.675.0`, actualización `2026-10-11T14:15:07+00:00`. Archivo: `Aula-Colegio-Instalador-1.0.25.exe`, 20,464,772 bytes; SHA256 `7f9144366a6a92d2fba8fd60bef4bc997f783e958323d08e1070b99c8dc1bb0a`. La descarga del borrador coincide con la suma suministrada y los hashes de ambos análisis.
 
 **1.0.25 permanece en borrador.** Falta el detalle del Historial de protección de la PC para las alertas anteriores de 1.0.8/1.0.14. El resultado del runner corresponde al archivo y las firmas indicadas; no resuelve por sí solo esas alertas. No se desactivó Defender ni se añadieron exclusiones.
+
+
+## Avisos de respaldo y revisión de Windows · 1.0.26 en borrador
+
+El punto 1 autorizado añade avisos permanentes para Administrador/Caja y revisión de ACL/BitLocker de solo lectura. No cambia el esquema, ubicación, datos existentes, transacciones ni copias de cinco minutos. El código es `a71fc552664f8db6a8b09d8d2eb7dd357a308828`.
+
+La [compilación Windows 1.0.26](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38197453462) ejecutó 158 pruebas, instalación, ventanas normal/Pruebas, bandeja, reinstalación y desinstalación conservando datos. Linux ejecutó 158 descubiertas (157 correctas y una exclusiva de Windows omitida), y navegadores normal, Pruebas e importación.
+
+Defender no detectó amenazas antes ni después de la ejecución en el runner, motor `1.1.26080.3`, firmas `1.459.678.0`. Instalador de 20.472.557 bytes; SHA-256 `5af7f253eda03dc5bd913780190d32e792832cba5e51bce964e5c20f59a41067`, también verificado tras descargarlo. Estos resultados no explican las alertas antiguas ni garantizan el resultado en otra PC. Se conserva el borrador, sin desactivar Defender ni añadir exclusiones.
+
+[Informe completo y límites](validacion-fase1-punto1.md). La protección real de la PC del colegio sigue pendiente de revisión; «No se pudo comprobar» nunca se presenta como BitLocker activo.
