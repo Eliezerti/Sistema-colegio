@@ -44,3 +44,6 @@ No cambies la fecha del equipo con datos reales para simular tres días: todaví
 La segunda carpeta se compara con el disco de la base: si comparte disco, aparece un aviso propio aunque la copia esté recién escrita. Si no se puede determinar, se indica. En Windows se comparan unidades y particiones; unidades distintas pueden compartir disco físico. En otros sistemas solo se confirma el mismo sistema de archivos; no se supone independencia entre volúmenes. El almacenamiento virtual y las carpetas de nube requieren comprobar su protección real. Aula no verifica la subida a la nube.
 
 BitLocker se consulta con los permisos de la cuenta que abrió Aula; una cuenta estándar puede no tener permiso. «Cómo comprobarlo desde Windows» explica cómo revisarlo con ayuda del administrador de Windows. Una comprobación manual no convierte el resultado automático desconocido en «Activo».
+# Carpeta virtual de nube
+
+Para Drive, OneDrive o Dropbox, el Administrador puede declarar la carpeta después de revisar una copia reciente en la web del servicio. Sustituye únicamente el aviso de disco desconocido por un recordatorio discreto; no certifica subida ni otro disco. No oculta fallos, antigüedad, falta de destino o mismo disco. La declaración exige CSRF y revisión explícita, queda en bitácora y corresponde a esa PC y ruta. [Pasos completos](carpeta-nube.md).

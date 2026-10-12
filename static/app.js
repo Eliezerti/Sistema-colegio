@@ -419,6 +419,8 @@ document.addEventListener('click',async event=>{
     switch(action) {
       case 'clock-check':await openClockGate();break;
       case 'windows-protection-help':windowsProtectionHelp();break;
+      case 'backup-cloud-declare':openCloudDeclaration();break;
+      case 'backup-cloud-revoke':await api('backup-cloud-declare',{directory:state.backup.secondary_directory,declared:false});await refresh();toast('Se quitó la declaración de carpeta de nube.');break;
       case 'nav':page=id;filters={};render();break;
       case 'close':modal.close();break;
       case 'boot':await boot();break;
@@ -454,7 +456,7 @@ document.addEventListener('click',async event=>{
 document.addEventListener('submit',async event=>{
   const form=event.target;if(!form.dataset.endpoint)return;
   event.preventDefault();const endpoint=form.dataset.endpoint, data=Object.fromEntries(new FormData(form));
-  if(endpoint==='clock-confirm')data.reviewed=form.elements.reviewed.checked;
+  if(['clock-confirm','backup-cloud-declare'].includes(endpoint))data.reviewed=form.elements.reviewed.checked;
   if(endpoint==='correct-billing-start'){data.charge_ids=JSON.parse(data.charge_ids);data.confirmed=form.elements.confirmed.checked;}
   if(endpoint==='payment-plans'){data.expected_total=Number(data.expected_total);data.installments=Array.from(form.querySelectorAll('[data-plan-row]')).map(row=>({amount:row.querySelector('[data-plan-amount]').value,due_date:row.querySelector('[data-plan-date]').value}));}
   if(endpoint==='payroll-plans') data.lines=Array.from(form.querySelectorAll('[data-payroll-employee]')).map(input=>({employee_id:input.dataset.payrollEmployee,amount:input.value}));
@@ -462,6 +464,7 @@ document.addEventListener('submit',async event=>{
   try {
     const result=await api(endpoint,data);
     if(endpoint==='clock-confirm'){await openRateGate();toast('Fecha y hora confirmadas. La revisión quedó en la bitácora.');return;}
+    if(endpoint==='backup-cloud-declare'){await refresh();modal.close();toast('Carpeta de nube declarada. Sigue revisando la sincronización en Drive.');return;}
     if(endpoint==='reset-records'){modal.close();await boot();toast('Registros vaciados. Respaldo previo: '+result.backup_path);return;}
     if(['login','setup','demo-login'].includes(endpoint)){await boot();return;}
     if(endpoint==='confirm-rate'){await refresh();return;}
@@ -552,7 +555,8 @@ function backupLabel(){
 }
 function backupProblem(){
   const b=state?.backup||gateBackup||{},role=state?.user.role||gateRole;
-  if(demoMode||!['admin','cashier'].includes(role)||!b.alerts?.length)return '';
+  if(demoMode||!['admin','cashier'].includes(role))return '';
+  if(!b.alerts?.length)return b.cloud_declared?'<p class="hint backup-cloud-status">Carpeta de nube declarada por administración · Aula no comprueba la subida. Revisa la sincronización en Drive u otro servicio.</p>':'';
   const action=role==='admin'&&state?btn('Revisar en Configuración','nav','small','settings'):'<p class="backup-next-step">Pide al administrador que revise las copias de seguridad.</p>';
   return `<section class="notice backup-warning backup-persistent" role="alert" aria-label="Aviso de respaldos">${icon('shield')}<div><b>Revisa la protección de tus respaldos</b><ul>${b.alerts.map(a=>`<li>${esc(a.message)}</li>`).join('')}</ul><p class="hint">Aula confirma la escritura en la carpeta, no la subida a Drive u otra nube. Revisa la sincronización en su aplicación.</p>${action}</div></section>`;
 }
@@ -563,11 +567,17 @@ function updateBackupWarnings(){
 }
 function protectionStatus(){
   if(demoMode)return '<p class="hint">Pruebas usa datos temporales. Esta revisión corresponde a la aplicación real.</p>';
-  const p=state?.backup?.protection||{};
-  return `<h3>Protección de esta PC</h3><p class="hint">Se consulta con los permisos de tu cuenta de Windows. BitLocker puede requerir un administrador para comprobar su estado.</p>${[['bitlocker','BitLocker · disco de los datos'],['acl','Permisos de la carpeta de datos']].map(([key,title])=>{
+  const b=state?.backup||{},p=b.protection||{};
+  const cloud=b.secondary_directory?`<div class="protection-check"><b>Carpeta sincronizada con una nube</b><p>${b.cloud_declared?'Declarada por administración. Aula no comprueba si los archivos llegaron a la nube. Revisa periódicamente su aplicación.':'Si usas Drive, OneDrive o Dropbox, revisa la copia en su web antes de declarar esta carpeta. La declaración solo sustituye el aviso de disco desconocido.'}</p>${b.cloud_declared?btn('Quitar declaración de nube','backup-cloud-revoke','small'):btn('Declarar carpeta de nube','backup-cloud-declare','small')}</div>`:'';
+  return `${cloud}<h3>Protección de esta PC</h3><p class="hint">Se consulta con los permisos de tu cuenta de Windows. BitLocker puede requerir un administrador para comprobar su estado.</p>${[['bitlocker','BitLocker · disco de los datos'],['acl','Permisos de la carpeta de datos']].map(([key,title])=>{
     const check=p[key]||{label:'No se pudo comprobar',detail:'La revisión está pendiente.'};
     return `<div class="protection-check"><b>${title}</b><span class="${['active','restricted'].includes(check.status)?'text-green':'text-red'}">${esc(check.label)}</span><p>${esc(check.detail)}</p></div>`;
   }).join('')}<p class="hint">Revisión de solo lectura cada cinco minutos. Aula no activa BitLocker ni cambia permisos. ${p.checked_at?'Última revisión: '+esc(new Date(p.checked_at).toLocaleString('es-VE',{timeZone:'America/Caracas'}))+'.':''}</p>${btn('Cómo comprobarlo desde Windows','windows-protection-help','small')}`;
+}
+function openCloudDeclaration(){
+  const directory=state?.backup?.secondary_directory;
+  if(!admin()||demoMode||!directory)throw new Error('Configura primero la segunda carpeta con el Administrador.');
+  showModal('Declarar carpeta de nube','Esta revisión es manual; Aula no consulta tu cuenta de Drive.',`<p>Carpeta: <b>${esc(directory)}</b></p><ol><li>Abre Drive, OneDrive o Dropbox y comprueba que la sincronización esté al día.</li><li>Entra en su web y verifica que existe un respaldo reciente de esta carpeta.</li></ol><p class="hint">La declaración sustituye el aviso de disco desconocido por un recordatorio discreto. No indica que Aula verificó la nube. Los fallos de copia, copias antiguas y avisos de mismo disco siguen visibles. Si cambias la ruta, debes revisarla otra vez.</p><form data-endpoint="backup-cloud-declare"><input type="hidden" name="directory" value="${esc(directory)}"><label class="confirm-check"><input type="checkbox" name="reviewed" required> Revisé la subida de una copia reciente y esta carpeta está configurada para sincronizarse con la nube.</label><div class="error" role="alert"></div><div class="form-actions">${btn('Cancelar','close')}<button type="submit" class="btn primary">Confirmar carpeta de nube</button></div></form>`);
 }
 function windowsProtectionHelp(){
   showModal('Comprobar la protección desde Windows','Aula no necesita ejecutarse como administrador.',`<ol class="help-steps"><li>BitLocker: abre Panel de control → Sistema y seguridad → Cifrado de unidad BitLocker. En Windows con Cifrado del dispositivo, busca esa opción en Configuración. Revisa la unidad donde está la carpeta de datos, no solo C:.</li><li>Si Windows pide permisos, solicita ayuda al administrador de Windows. Conserva la clave de recuperación fuera de esta PC. No actives ni suspendas el cifrado para hacer una prueba.</li><li>Permisos: abre la carpeta de datos desde Inicio de Windows → Abrir carpeta de datos. Clic derecho en la carpeta → Propiedades → Seguridad. Pide a un técnico que revise accesos de otras cuentas y permisos de los archivos.</li><li>La comprobación manual no cambia el resultado automático de Aula. Si Aula no puede consultarlo con esta cuenta, seguirá mostrando «No se pudo comprobar».</li></ol><p class="hint">Un disco cifrado no cifra por sí solo las copias en USB. Una copia en Drive se protege fuera de este disco solo cuando su aplicación confirma que terminó de subirla.</p>`);

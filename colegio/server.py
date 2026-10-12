@@ -23,7 +23,7 @@ from .db import (ValidationError, RateConfirmationRequired, audit, charges, chec
                  required, valid_date, valid_period, valid_rate, local_today, synchronize_monthly_charges)
 from .db import next_record_id
 from .storage import DataLock, consistent_backup, daily_backup, automatic_backup, backup_status
-from .backup_health import describe_backup
+from .backup_health import CLOUD_KEY, cloud_declaration, declare_cloud_destination, describe_backup
 from .protection import ProtectionMonitor
 from .clock_guard import ClockConfirmationRequired, ClockInputError, get_clock
 from .administration import (import_roster, import_template, export_roster, cash_summary, close_cash, reopen_cash,
@@ -217,6 +217,13 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
                 if len(directory)>500 or not path.is_absolute() or path.resolve()==live or live in path.resolve().parents:
                     raise ValidationError('El segundo respaldo debe usar una ruta absoluta fuera de la carpeta de datos de Aula.')
             fields['backup_directory']=directory
+            previous = db.execute("SELECT value FROM settings WHERE key='backup_directory'").fetchone()
+            if directory != (previous[0] if previous else ''):
+                declaration = db.execute('SELECT value FROM settings WHERE key=?', (CLOUD_KEY,)).fetchone()
+                if declaration:
+                    audit(db, uid, 'backup_cloud_declaration_cleared',
+                          {'before': cloud_declaration(declaration[0], previous[0] if previous else ''), 'after': None})
+                    db.execute('DELETE FROM settings WHERE key=?', (CLOUD_KEY,))
         db.executemany('UPDATE settings SET value=? WHERE key=?', [(v, k) for k, v in fields.items()])
         audit(db, uid, 'settings', {k:(bool(v) if k=='logo' else v) for k,v in fields.items()})
         return {'saved': True}
@@ -674,6 +681,14 @@ class Handler(BaseHTTPRequestHandler):
                     db.commit()
                     status = self.server.make_backup()
                     self.respond(200,status)
+                    return
+                if endpoint == 'backup-cloud-declare':
+                    if self.server.demo:
+                        raise PermissionError('Las pruebas no configuran respaldos reales.')
+                    result = declare_cloud_destination(db, user, data, self.server.backup_status())
+                    self.server.clock.require()
+                    db.commit()
+                    self.respond(200, result)
                     return
                 if endpoint == 'reset-records':
                     if self.server.demo:

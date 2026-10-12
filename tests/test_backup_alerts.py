@@ -9,7 +9,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from colegio.backup_health import describe_backup
+from colegio.backup_health import CLOUD_KEY, declare_cloud_destination, describe_backup
+from colegio.db import ValidationError
 from colegio.db import hash_password, initialize, local_today
 from colegio.server import SchoolServer
 from colegio.storage import automatic_backup, backup_status
@@ -33,6 +34,74 @@ class BackupHealthTests(unittest.TestCase):
 
     def codes(self, result):
         return [a['code'] for a in result['alerts']]
+
+    def declare_cloud(self):
+        with closing(sqlite3.connect(self.path)) as db, db:
+            db.execute("INSERT OR IGNORE INTO users(id,name,username,password,role) VALUES(1,'Administrador','admin','test-only','admin')")
+            status = describe_backup(self.path, {'secondary_directory': self.destination,
+                                    'secondary_at': self.now.isoformat()}, now=self.now)
+            declare_cloud_destination(db, {'id': 1, 'role': 'admin'},
+                                      {'directory': self.destination, 'reviewed': True}, status)
+
+    def test_cloud_declaration_only_replaces_unknown_disk_warning(self):
+        self.configure(self.destination)
+        self.declare_cloud()
+        status = {'secondary_directory': self.destination, 'secondary_at': self.now.isoformat()}
+        result = describe_backup(self.path, status, now=self.now, disk_relation={'status': 'unknown'})
+        self.assertEqual(result['alerts'], [])
+        self.assertTrue(result['cloud_declared'])
+        self.assertEqual(result['cloud_declaration']['confirmed_by'], 1)
+        # It never turns the actual Windows inspection into a successful disk result.
+        result = describe_backup(self.path, status, now=self.now, disk_relation={'status': 'same'})
+        self.assertEqual(self.codes(result), ['same_disk'])
+
+    def test_cloud_declaration_does_not_hide_failure_or_stale_unconfirmed_copies(self):
+        self.configure(self.destination)
+        self.declare_cloud()
+        for extra, expected in (({'local_error': 'Error local'}, 'local_failed'),
+                                ({'secondary_error': 'Error externo'}, 'secondary_failed'),
+                                ({'retention_error': 'Error de conservación'}, 'retention_failed'),
+                                ({'secondary_at': (self.now-timedelta(days=4)).isoformat()}, 'secondary_stale'),
+                                ({'secondary_at': ''}, 'secondary_unconfirmed')):
+            with self.subTest(expected=expected):
+                status = dict(secondary_directory=self.destination, secondary_at=self.now.isoformat())
+                status.update(extra)
+                result = describe_backup(self.path, status, now=self.now)
+                self.assertIn(expected, self.codes(result))
+                self.assertNotIn('disk_unknown', self.codes(result))
+
+    def test_cloud_declaration_is_scoped_to_destination_and_corrupt_values_do_not_suppress(self):
+        self.configure(self.destination)
+        self.declare_cloud()
+        self.configure(self.destination+'-new')
+        result = describe_backup(self.path, {}, now=self.now)
+        self.assertFalse(result['cloud_declared'])
+        self.assertIn('disk_unknown', self.codes(result))
+        self.configure(self.destination)
+        for value in ('{', 'null', '[]', json.dumps({'directory': self.destination})):
+            with closing(sqlite3.connect(self.path)) as db, db:
+                db.execute('UPDATE settings SET value=? WHERE key=?', (value, CLOUD_KEY))
+            self.assertIn('disk_unknown', self.codes(describe_backup(self.path, {}, now=self.now)))
+
+    def test_cloud_confirmation_requires_review_current_path_and_recent_copy(self):
+        self.configure(self.destination)
+        status = describe_backup(self.path, {}, now=self.now)
+        with closing(sqlite3.connect(self.path)) as db:
+            for data in ({'directory': self.destination, 'reviewed': True},
+                         {'directory': 'other', 'reviewed': True},
+                         {'directory': self.destination, 'reviewed': 'true'}):
+                with self.subTest(data=data), self.assertRaises(ValidationError):
+                    declare_cloud_destination(db, {'id': 1, 'role': 'admin'}, data, status)
+            self.assertIsNone(db.execute('SELECT value FROM settings WHERE key=?', (CLOUD_KEY,)).fetchone())
+
+    def test_declaration_from_another_pc_does_not_hide_unknown_disk(self):
+        self.configure(self.destination)
+        self.declare_cloud()
+        with patch('colegio.backup_health.socket.gethostname', return_value='otra-pc'):
+            result = describe_backup(self.path, {'secondary_directory': self.destination,
+                                     'secondary_at': self.now.isoformat()}, now=self.now)
+        self.assertFalse(result['cloud_declared'])
+        self.assertIn('disk_unknown', self.codes(result))
 
     def test_missing_destination_warns_even_with_recent_local_backup(self):
         self.assertEqual(self.codes(self.describe(local_at=self.now.isoformat())), ['secondary_missing'])
@@ -112,11 +181,12 @@ class BackupAlertAccessTests(unittest.TestCase):
         connection.request('GET' if data is None else 'POST', '/api/'+endpoint,
                            json.dumps(data) if data is not None else None, headers)
         response = connection.getresponse()
-        self.assertEqual(response.status, expected)
+        status = response.status
         if response.getheader('Set-Cookie'):
             self.cookie = response.getheader('Set-Cookie').split(';')[0]
         result = json.loads(response.read())
         connection.close()
+        self.assertEqual(status, expected, result)
         return result
 
     def test_authentication_rate_gate_and_roles_keep_existing_permissions(self):
@@ -153,3 +223,59 @@ class BackupAlertAccessTests(unittest.TestCase):
             self.assertNotIn('alerts', self.server.backup_status())
         finally:
             self.server.demo = False
+
+    def prepare_cloud_confirmation(self, role='admin'):
+        cloud = tempfile.TemporaryDirectory(prefix='aula-cloud-test-')
+        self.addCleanup(cloud.cleanup)
+        destination = str(Path(cloud.name)/'copies')
+        with closing(sqlite3.connect(self.path)) as db, db:
+            db.execute("UPDATE settings SET value=? WHERE key='backup_directory'", (destination,))
+        self.server.make_backup()
+        self.request('login', {'username': role, 'password': 'Prueba-segura-2026'})
+        csrf = self.request('session')['user']['csrf']
+        self.request('confirm-rate', {'rate': '100', 'rate_date': local_today().isoformat()}, csrf=csrf)
+        return destination, csrf
+
+    def test_cloud_declaration_admin_csrf_audit_and_no_schema_or_financial_changes(self):
+        destination, csrf = self.prepare_cloud_confirmation()
+        with closing(sqlite3.connect(self.path)) as db:
+            schema = list(db.execute("SELECT name,sql FROM sqlite_master ORDER BY name"))
+            version = db.execute('PRAGMA user_version').fetchone()[0]
+            payments = list(db.execute('SELECT * FROM payments'))
+        data = {'directory': destination, 'reviewed': True}
+        self.request('backup-cloud-declare', data, csrf='', expected=403)
+        self.request('backup-cloud-declare', data, csrf=csrf)
+        self.assertTrue(self.request('backup-status')['cloud_declared'])
+        with closing(sqlite3.connect(self.path)) as db:
+            self.assertEqual(list(db.execute("SELECT name,sql FROM sqlite_master ORDER BY name")), schema)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], version)
+            self.assertEqual(list(db.execute('SELECT * FROM payments')), payments)
+            entry = db.execute("SELECT user_id,details FROM audit WHERE action='backup_cloud_declaration'").fetchone()
+            self.assertIsNotNone(entry[0])
+            self.assertFalse(json.loads(entry[1])['upload_checked_by_aula'])
+            self.assertEqual(json.loads(entry[1])['before'], {})
+        self.request('backup-cloud-declare', {'directory': destination, 'declared': False}, csrf=csrf)
+        self.assertFalse(self.request('backup-status')['cloud_declared'])
+
+    def test_cashier_reader_and_demo_cannot_declare_cloud(self):
+        for role in ('cashier', 'reader'):
+            destination, csrf = self.prepare_cloud_confirmation(role)
+            self.request('backup-cloud-declare', {'directory': destination, 'reviewed': True}, csrf=csrf, expected=403)
+        destination, csrf = self.prepare_cloud_confirmation()
+        self.server.demo = True
+        try:
+            self.cookie = self.cookie.replace('school_session=', 'school_demo_session=')
+            self.request('backup-cloud-declare', {'directory': destination, 'reviewed': True}, csrf=csrf, expected=403)
+        finally:
+            self.server.demo = False
+
+    def test_changing_destination_clears_manual_declaration_even_if_reused_later(self):
+        destination, csrf = self.prepare_cloud_confirmation()
+        self.request('backup-cloud-declare', {'directory': destination, 'reviewed': True}, csrf=csrf)
+        settings = {'school_name': 'Mi colegio', 'school_year': local_today().year,
+                    'start_month': 9, 'due_day': 10, 'backup_directory': destination+'-new'}
+        self.request('settings', settings, csrf=csrf)
+        self.assertFalse(self.request('backup-status')['cloud_declared'])
+        settings['backup_directory'] = destination
+        self.request('settings', settings, csrf=csrf)
+        self.assertFalse(self.request('backup-status')['cloud_declared'])

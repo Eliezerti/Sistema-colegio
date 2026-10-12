@@ -8,6 +8,7 @@ const fs = require('node:fs');
   const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||(fs.existsSync('/usr/bin/chromium')?'/usr/bin/chromium':undefined),headless:true,args:['--no-sandbox']});
   const context=await browser.newContext({viewport:{width:1440,height:1050}});
   const page=await context.newPage(), errors=[];
+  const cloudFolder=fs.mkdtempSync('/tmp/aula-cloud-browser-');
   page.on('pageerror',error=>errors.push(error.message));
   page.on('console',msg=>{if(msg.type()==='error')errors.push(msg.text());});
   const click=async action=>page.locator(`[data-action="${action}"]`).first().click();
@@ -57,6 +58,38 @@ const fs = require('node:fs');
     await page.getByLabel('Nombre del colegio').fill('Colegio Los Cedros');
     await page.locator('form[data-endpoint="settings"] button[type="submit"]').click();
     await page.getByText('Registro guardado correctamente.').waitFor();
+    // Simulate only the physical-disk diagnostic of a virtual Drive unit.
+    // Declaration, authorization and audit use the real server.
+    await page.route('**/api/state',async route=>{
+      const response=await route.fetch();const data=await response.json();
+      data.backup.protection.disk_relation={status:'unknown'};
+      data.backup.alerts=data.backup.alerts.filter(a=>!['same_disk','disk_unknown'].includes(a.code));
+      if(!data.backup.cloud_declared&&data.backup.secondary_directory){
+        data.backup.alerts.push({code:'disk_unknown',message:'No se pudo comprobar si la segunda carpeta está en otro disco.'});
+      }
+      await route.fulfill({response,json:data});
+    });
+    await page.getByText('Segunda copia de seguridad · USB o carpeta de Drive',{exact:true}).click();
+    await page.getByLabel('Ruta completa de la carpeta de copias').fill(cloudFolder);
+    await page.locator('form[data-endpoint="settings"] button[type="submit"]').click();
+    await page.getByRole('button',{name:'Declarar carpeta de nube',exact:true}).waitFor();
+    assert.match(await page.locator('#backup-alerts').innerText(),/No se pudo comprobar/);
+    await click('backup-cloud-declare');
+    await page.locator('dialog[open] input[name="reviewed"]').check();await submit();
+    assert.equal(await page.locator('#backup-alerts .backup-persistent').count(),0);
+    assert.match(await page.locator('#backup-alerts .backup-cloud-status').innerText(),/Aula no comprueba la subida/);
+    await page.evaluate(()=>checkDay());
+    assert.match(await page.locator('#backup-alerts').innerText(),/mismo disco/);
+    await page.evaluate(()=>refresh());
+    assert.equal(await page.locator('#backup-alerts .backup-persistent').count(),0);
+    await click('backup-cloud-revoke');
+    await page.getByRole('button',{name:'Declarar carpeta de nube',exact:true}).waitFor();
+    assert.match(await page.locator('#backup-alerts').innerText(),/No se pudo comprobar/);
+    await page.getByText('Segunda copia de seguridad · USB o carpeta de Drive',{exact:true}).click();
+    await page.getByLabel('Ruta completa de la carpeta de copias').fill('');
+    await page.locator('form[data-endpoint="settings"] button[type="submit"]').click();
+    await page.waitForFunction(()=>!state.backup.secondary_directory);
+    await page.unroute('**/api/state');
     const current=await page.evaluate(async()=>await(await fetch('/api/state')).json());
     const year=Number(current.settings.school_year), month=String(Number(current.settings.start_month)).padStart(2,'0');
     await nav('grades');await click('grade');await fill('name','Primaria · Sección A');await submit();
@@ -279,5 +312,5 @@ const fs = require('node:fs');
     assert.equal(cleaned.users.length,3);assert.equal(cleaned.settings.rif,'J-12345678-9');
     assert.deepEqual(errors,[]);
     console.log('PASS: fiscal settings, PNG logo, fiscal letterheads and printing, daily rate checkpoint and reopening, guardian search, live discount, automatic student code, enrollment PDF, automatic arrears without manual monthly generation, BCV payment and receipt PDF, arrears, job catalogue, banks, consolidated payroll PDF and VES expense, filtered directory PDFs and printing, daily payments/arrears PDF, reports, family account and solvency PDFs, CSV preview and import, cash close and reopening, backup status, thermal tickets, bulk promotion and archived PDF, payment plan, responsive layout, read-only role.');
-  }finally{await browser.close();}
+  }finally{await browser.close();fs.rmSync(cloudFolder,{recursive:true,force:true});}
 })().catch(error=>{console.error(error);process.exitCode=1;});

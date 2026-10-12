@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## Sin publicar · carpeta de nube declarada por administración
+
+- Declaración manual de una carpeta sincronizada con Drive, OneDrive o Dropbox, después de verificar una copia reciente en su web. Sustituye únicamente el aviso de disco desconocido por un recordatorio discreto.
+- No afirma que Aula verificó la subida ni cambia el diagnóstico de discos, ACL o BitLocker. Los avisos de mismo disco, falta de destino, fallos y copias antiguas siguen visibles.
+- Solo Administrador, con CSRF y revisión explícita, puede declarar o quitar la declaración. Se registra el cambio en bitácora. Cambiar la ruta la invalida; una declaración de otra PC no se aplica.
+- Usa una clave opcional de configuración existente, creada solo al confirmar; no hay migración de esquema ni modificación de datos contables. Conserva respaldos de cinco minutos y protección del reloj.
+- Validación Linux: 196 descubiertas, 195 correctas y una exclusiva de Windows omitida. Navegadores normal, Pruebas e importación correctos. Ocho pruebas nuevas de permisos, persistencia, alcance, fallos, otra PC y conservación de esquema/importes.
+
 ## Sin publicar · identificación del alumno en recibos
 
 - La pantalla de recibo, la impresión y los PDF A4, media carta y térmicos muestran el código interno de Aula, nunca el documento del alumno como reemplazo.
