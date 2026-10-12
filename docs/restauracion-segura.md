@@ -6,7 +6,7 @@ A1 no añade un esquema nuevo: Aula sigue en esquema 10. Al abrir una copia hist
 
 Configuración → Protección y mantenimiento → Probar respaldo → seleccionar .sqlite3 → Comprobar copia. Solo Administrador puede usar el endpoint y exige CSRF. Hasta 32 MB en la ventana; para archivos mayores usa **Inicio de Windows → Aula Colegio → Probar respaldo**, disponible incluso si Aula no puede abrir la base.
 
-Aula copia el archivo a una carpeta temporal y abre SQLite allí en solo lectura. Elimina esa carpeta al terminar, también ante un error. No escribe WAL, SHM ni otros archivos en el USB o carpeta del respaldo. Una base con WAL asociado no se trata como respaldo completo. Muestra integridad, referencias, esquema, alumnos, pagos válidos/anulados, último recibo y saldo registrado. No genera mensualidades, migra o reemplaza ninguna base. Las copias actuales no están cifradas; eso corresponde a A2.
+Aula copia el archivo a una carpeta temporal y abre SQLite allí en solo lectura. Elimina esa carpeta al terminar, también ante un error. No escribe WAL, SHM ni otros archivos en el USB o carpeta del respaldo. El acceso de Inicio rechaza un archivo con WAL asociado. En el navegador selecciona una copia generada por Aula: el navegador no permite revisar otros archivos de la carpeta de origen. Muestra integridad, referencias, esquema, alumnos, pagos válidos/anulados, último recibo y saldo registrado. No genera mensualidades, migra o reemplaza ninguna base. Las copias actuales no están cifradas; eso corresponde a A2.
 
 No deduce la fecha de creación a partir del nombre o la fecha del archivo. Para copias sin metadatos fiables muestra **No se conoce una fecha fiable de creación de este respaldo**. La fecha del pago es distinta de la fecha en que se registró.
 
@@ -72,3 +72,14 @@ Generadas con el código real de tags publicados:
 tests/generate_restore_fixtures.py reproduce las bases en Linux usando git archive; no ejecuta instaladores antiguos. Datos y credenciales ficticios. tests/fixtures/restore/manifest.json guarda origen y SHA256. Las pruebas restauran, abren con Aula actual, verifican integridad/referencias y conservan un pago de USD 50 y saldo USD 50. No se inventa una versión cambiando solo user_version.
 
 La validación de instalación/ventanas del instalador actual se reporta aparte; esta prueba no afirma haber instalado ni actualizado binarios de esas cuatro versiones.
+
+## Validación A1 en Linux · 12 de octubre de 2026
+
+- `python -m unittest discover -s tests -v`: 223 pruebas descubiertas en 74.725 s; 221 correctas y dos exclusivas de Windows omitidas (mutex/ventanas y revisión Tk con comprobador independiente).
+- `python tests/run_browser.py`: correcto; revisión de copia válida/corrupta, autorización/CSRF y comprobación de que probar no modifica cargos ni pagos, además del recorrido habitual.
+- `python tests/run_browser.py --demo`: correcto.
+- `python tests/run_browser.py --roster`: correcto.
+- Los cortes utilizan terminación real de un subproceso antes de retirar WAL/SHM, después de retirarlos, después de reemplazar y después de registrar la operación. El siguiente inicio completa la intención confirmada antes de inicializar/generar y conserva la copia anterior con los dos cobros.
+- Esquema 99 rechazado tanto al restaurar como al iniciar una base futura, sin migración ni sustitución. Registro pendiente truncado impide abrir y generar.
+
+Windows, instalador, accesos de Inicio, ventanas nativas y Defender se documentarán con los resultados del runner; no se consideran aprobados por las pruebas Linux. No se han ejecutado pruebas en la PC real del usuario.

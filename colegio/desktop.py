@@ -150,6 +150,45 @@ class DesktopHost:
     def __exit__(self,*_):self.close()
 
 
+def probe_dialog():
+    import tkinter as tk
+    from tkinter import filedialog, messagebox
+    from .backup_inspection import probe_backup
+    root=tk.Tk();root.withdraw()
+    try:
+        file=filedialog.askopenfilename(parent=root,title='Probar respaldo sin restaurar',filetypes=[('Respaldo de Aula','*.sqlite3')])
+        if not file:return
+        s=probe_backup(file);last=s['last_payment']
+        messagebox.showinfo('Respaldo comprobado','Integridad y referencias: correctas.\nEsquema: '+str(s['schema'])+'\nAlumnos: '+str(s['students'])+'\nPagos: '+str(s['payments'])+'\nÚltimo recibo: '+(last['receipt']+' · '+last['paid_on'] if last else 'Sin pagos')+'\nSaldo pendiente USD: '+f"{s['balance_usd']/100:.2f}"+'\n\n'+s['creation_note']+'\nEl respaldo no está cifrado. No se modificó ni se restauró ninguna base.',parent=root)
+    finally:root.destroy()
+
+
+def restoration_review_dialog(root,review):
+    import tkinter as tk
+    from tkinter import ttk
+    from tkinter.scrolledtext import ScrolledText
+    from .restore import review_text
+    from .documents import amount
+    dialog=tk.Toplevel(root);dialog.title('Revisar restauración');dialog.resizable(True,True)
+    dialog.geometry(f"820x{min(640,int(dialog.winfo_screenheight()*.8))}")
+    body=ttk.Frame(dialog,padding=20);body.pack(fill='both',expand=True)
+    ttk.Label(body,text='Revisa la base actual y el respaldo',font=('Segoe UI',14,'bold')).pack(anchor='w',pady=(0,12))
+    text=ScrolledText(body,wrap='word',font=('Segoe UI',10));text.pack(fill='both',expand=True)
+    value=review_text(review)
+    for d in review['comparison']['details']:
+        values=[d['number'],d['date'],d['person'],d['action']]
+        if 'amount_usd' in d:values.extend([amount(d['amount_usd']),amount(d['received'],d['currency']),d['method'],d['reference']])
+        value+='\n\n'+' · '.join(filter(None,values))
+    text.insert('1.0',value);text.configure(state='disabled')
+    result=[]
+    buttons=ttk.Frame(body);buttons.pack(fill='x',pady=(12,0))
+    ttk.Button(buttons,text='Cancelar',command=dialog.destroy).pack(side='left')
+    def proceed():result.append(True);dialog.destroy()
+    ttk.Button(buttons,text='Continuar a la confirmación',command=proceed).pack(side='right')
+    dialog.grab_set();root.wait_window(dialog)
+    return bool(result)
+
+
 def recovery(directory,action):
     import tkinter as tk
     from tkinter import filedialog, simpledialog, messagebox
@@ -162,7 +201,7 @@ def recovery(directory,action):
             file=filedialog.askopenfilename(parent=root,title='Selecciona un respaldo de Aula',filetypes=[('Respaldo de Aula','*.sqlite3')])
             if not file:return
             review=preview_restore(file,directory)
-            if not messagebox.askokcancel('Revisar restauración',review_text(review),parent=root):return
+            if not restoration_review_dialog(root,review):return
             floors=None
             if review['requires_floor_review']:
                 labels={'payments':'recibos R','expenses':'egresos E','students':'alumnos AL','guardians':'representantes','employees':'personal','enrollment_documents':'constancias M'}
@@ -176,7 +215,7 @@ def recovery(directory,action):
             restore(file,directory,preview_hash=review['preview_hash'],confirmation=answer,emergency_floors=floors)
             result=last_restore(directory)
             paths='\n'.join(result['reports']) or 'No hubo diferencias que perder.'
-            messagebox.showinfo('Restauración completa','Puedes abrir Aula. Los correlativos se conservaron.\n\nInformes: '+paths+'\n\nCopia previa: '+(result['previous_backup'] or result['original_files']),parent=root)
+            messagebox.showinfo('Restauración completa','Puedes abrir Aula. Se aplicaron los correlativos revisados.\n\nInformes: '+paths+'\n\nCopia previa: '+(result['previous_backup'] or result['original_files']),parent=root)
         else:
             users=list_administrators(directory)
             if not users: raise ValueError('No hay administradores registrados en esta base.')
@@ -313,13 +352,15 @@ def choose_phone_address():
 def main():
     parser=argparse.ArgumentParser(description='Aplicación de escritorio del colegio.')
     actions=parser.add_mutually_exclusive_group()
-    for name in ('demo','demo-phone','configure','restore','reset-password','data-folder','self-test','self-test-demo','self-test-phone'):
+    for name in ('demo','demo-phone','configure','restore','reset-password','data-folder','test-backup','self-test','self-test-demo','self-test-phone'):
         actions.add_argument('--'+name,action='store_true')
     args=parser.parse_args()
     directory=None
     try:
         if args.self_test or args.self_test_demo or args.self_test_phone:
             self_test(demo=args.self_test_demo,phone=args.self_test_phone);return
+        if args.test_backup:
+            probe_dialog();return
         directory=data_directory();setup_logging(directory)
         if args.data_folder:directory.mkdir(parents=True,exist_ok=True);os.startfile(directory);return
         if args.restore or args.reset_password:

@@ -20,7 +20,7 @@ Los cobros incluyen **Pago móvil** como método separado en recibos, reportes y
 
 ## Restauración segura · A1
 
-La restauración exige revisar la comparación y confirmar según sus diferencias. Conserva la copia previa, informes PDF/CSV de pérdida y los máximos de los seis correlativos. Rechaza esquemas futuros y resuelve operaciones pendientes antes de abrir la base. **Probar respaldo** revisa una copia temporal sin escribir en el origen, desde Configuración o Inicio de Windows. No añade migraciones ni adelanta A2. [Guía y prueba manual con datos ficticios](docs/restauracion-segura.md).
+La restauración exige revisar la comparación y confirmar según sus diferencias. Conserva la copia previa, informes PDF/CSV de pérdida y los máximos de los seis correlativos. Rechaza esquemas futuros y resuelve operaciones pendientes antes de abrir la base. **Probar respaldo** revisa una copia temporal sin escribir en el origen, desde Configuración (hasta 32 MB) o Inicio de Windows (sin ese límite). La guía HTML queda instalada junto al manual de mantenimiento. No añade migraciones ni adelanta A2. Validación Linux: 223 descubiertas (221 correctas y dos nativas omitidas), navegador normal, Pruebas e importación correctos; Windows se valida por separado. [Guía y prueba manual con datos ficticios](docs/restauracion-segura.md).
 
 ## Avisos de respaldo y revisión de Windows · Fase 1, punto 1
 
@@ -58,7 +58,7 @@ La ventana funciona sin consola. **X** oculta la aplicación junto al reloj; par
 
 Antes de actualizar, crea y descarga un respaldo desde Configuración. Cierra Aula completamente y ejecuta el instalador nuevo con la misma cuenta de Windows. Los datos continúan en `%LOCALAPPDATA%\AulaColegio`; el instalador no los elimina ni los cambia de cuenta. No uses Vaciar registros para actualizar.
 
-El menú Inicio incluye **Recuperar clave del administrador**, **Restaurar respaldo**, **Abrir carpeta de datos**, **Guía para importar alumnos** y **Manual de mantenimiento**. La recuperación local muestra los nombres de usuario de administradores y permite cambiar su contraseña con respaldo previo; requiere cerrar Aula.
+El menú Inicio incluye **Recuperar clave del administrador**, **Restaurar respaldo**, **Probar respaldo**, **Abrir carpeta de datos**, **Guía para importar alumnos** y **Manual de mantenimiento**. La recuperación local muestra los nombres de usuario de administradores y permite cambiar su contraseña con respaldo previo; requiere cerrar Aula.
 
 - [Guía completa de Excel, columna por columna](docs/guia-importacion.md).
 - [Instalación, mantenimiento, respaldos y recuperación](docs/mantenimiento.md).

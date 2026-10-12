@@ -75,6 +75,34 @@ class SystemTests(unittest.TestCase):
         self.request('directory/students.pdf', status=401)
         self.request('daily-report.pdf', status=401)
 
+    def test_probe_backup_is_readonly_validates_schema_and_never_returns_personal_rows(self):
+        before=self.request('state')
+        payload={'content':base64.b64encode(self.request('backup')).decode()}
+        result=self.request('probe-backup',payload)
+        self.assertEqual(result['students'],1)
+        self.assertEqual(result['balance_usd'],before['summary']['pending'])
+        self.assertEqual(result['integrity'],'ok')
+        self.assertNotIn('records',result)
+        self.assertNotIn('Representante Uno',json.dumps(result))
+        self.request('probe-backup',{'content':base64.b64encode(b'broken').decode()},status=400)
+        self.request('probe-backup',{'content':'invalid base64!'},status=400)
+        after=self.request('state')
+        for table in ('students','guardians','payments','charges','expenses','enrollments'):
+            self.assertEqual(before[table],after[table])
+
+    def test_probe_backup_requires_admin_and_csrf(self):
+        payload={'content':base64.b64encode(self.request('backup')).decode()}
+        self.request('probe-backup',payload,status=403,csrf=False)
+        for role in ('cashier','reader'):
+            self.request('users',{'name':role,'username':role,'role':role,'password':'Clave-ficticia-2026'})
+        self.request('logout',{})
+        for role in ('cashier','reader'):
+            self.request('login',{'username':role,'password':'Clave-ficticia-2026'})
+            self.csrf=self.request('session')['user']['csrf']
+            self.request('confirm-rate',{'rate_date':local_today().isoformat(),'rate':'100'})
+            self.request('probe-backup',payload,status=403)
+            self.request('logout',{})
+
     def test_daily_payments_keep_receipt_identity_and_voided_rows_leave_totals(self):
         payment = self.request('payments', self.payment(amount='10', paid_on=local_today().isoformat()))['id']
         self.request('grades', {'id': self.grade, 'name': 'Grado cambiado', 'capacity': 2})

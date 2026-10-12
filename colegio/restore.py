@@ -145,7 +145,8 @@ def review_text(review):
     def summary(title,s):
         if s is None:return title+': '+review['comparison_note']
         last=s['last_payment'];last_label=f"{last['receipt']} · pago {last['paid_on']} · registrado {last['created_at']}" if last else 'Sin pagos'
-        return f"{title}: {s['students']} alumnos; {s['payments']} pagos ({s['voided_payments']} anulados); cobrado USD {s['income_usd']/100:.2f}.\nÚltimo pago: {last_label}"
+        received=' · '.join(f'{currency} {value/100:.2f}' for currency,value in s['received'].items()) or 'Sin cobros válidos'
+        return f"{title}: {s['students']} alumnos; {s['payments']} pagos ({s['voided_payments']} anulados); cobrado USD {s['income_usd']/100:.2f}.\nRecibido por moneda: {received}\nÚltimo pago: {last_label}"
     lines=[summary('Base actual',review['current']),summary('Respaldo',review['backup']),review['backup']['creation_note'],
         'El respaldo no está cifrado. No se generan mensualidades al revisarlo.']
     lines.extend(f'{table}: {count} registros ausentes o diferentes' for table,count in review['comparison']['counts'].items())

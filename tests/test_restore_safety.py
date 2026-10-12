@@ -43,6 +43,13 @@ class RestoreSafetyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'esquema 99'):preview_restore(self.backup,self.directory)
         self.assertEqual(before,self.target.read_bytes())
         self.assertFalse((self.directory/PENDING).exists())
+        with closing(connect(self.target)) as db,db:db.execute('PRAGMA user_version=99')
+        future_bytes=self.target.read_bytes()
+        with patch('colegio.server.initialize') as init:
+            with self.assertRaisesRegex(ValueError,'esquema 99'):
+                with open_school(self.target,0):pass
+            init.assert_not_called()
+        self.assertEqual(self.target.read_bytes(),future_bytes)
 
     def test_no_review_no_restore_and_review_becomes_stale(self):
         self.current();self.second_payment()
@@ -118,7 +125,14 @@ class RestoreSafetyTests(unittest.TestCase):
         paths=[Path(url2pathname(urlsplit(p).path)) for p in opened]
         self.assertTrue(all(not p.exists() for p in paths))
         with closing(connect(self.backup)) as db,db:db.execute('PRAGMA user_version=99')
-        with self.assertRaises(ValueError):probe_backup(self.backup)
+        import tempfile
+        real_temporary=tempfile.TemporaryDirectory;temporaries=[]
+        def tracked_temporary(*args,**kwargs):
+            result=real_temporary(*args,**kwargs);temporaries.append(Path(result.name));return result
+        with patch('colegio.backup_inspection.tempfile.TemporaryDirectory',side_effect=tracked_temporary):
+            with self.assertRaises(ValueError):probe_backup(self.backup)
+        self.assertTrue(temporaries)
+        self.assertTrue(all(not p.exists() for p in temporaries))
         self.assertEqual(set(self.root.iterdir()),files)
 
     def test_corrupt_backup_invalid_references_and_corrupt_current_do_not_invent_zero(self):

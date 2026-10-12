@@ -595,7 +595,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not self.server.access.allowed_origin(host,self.headers.get('Origin'),self.server.server_port):
                     raise PermissionError('Origen no permitido.')
                 length = int(self.headers.get('Content-Length', '0'))
-                maximum=3_000_000 if endpoint in ('import-roster','transition-year','settings') else 65536
+                maximum=46_000_000 if endpoint=='probe-backup' else 3_000_000 if endpoint in ('import-roster','transition-year','settings') else 65536
                 if not 0 < length <= maximum or 'application/json' not in self.headers.get('Content-Type', ''):
                     raise ValidationError('Envía un objeto JSON válido (máximo 64 KB).')
                 data = json.loads(self.rfile.read(length))
@@ -682,6 +682,24 @@ class Handler(BaseHTTPRequestHandler):
             if post:
                 if not secrets.compare_digest(self.headers.get('X-CSRF-Token', ''), user['csrf']):
                     raise PermissionError('Sesión inválida. Recarga la página.')
+                if endpoint=='probe-backup':
+                    if user['role']!='admin': raise PermissionError('Solo Administración puede probar respaldos.')
+                    import base64
+                    from .backup_inspection import probe_backup
+                    content=data.get('content','')
+                    if not isinstance(content,str) or len(content)>45_000_000:
+                        raise ValidationError('Selecciona una copia de hasta 32 MB. Para una mayor, usa Probar respaldo en Inicio de Windows.')
+                    try: payload=base64.b64decode(content,validate=True)
+                    except ValueError: raise ValidationError('No se pudo leer el archivo seleccionado.') from None
+                    if len(payload)>32*1024*1024: raise ValidationError('La copia supera 32 MB; usa Probar respaldo en Inicio de Windows.')
+                    db.rollback()
+                    with tempfile.TemporaryDirectory(prefix='aula-archivo-probar-') as temp:
+                        copy=Path(temp)/'respaldo.sqlite3';copy.write_bytes(payload)
+                        try: result=probe_backup(copy)
+                        except (ValueError,sqlite3.Error) as error:
+                            raise ValidationError(str(error) if isinstance(error,ValueError) else 'El archivo está dañado o no es un respaldo SQLite de Aula.') from None
+                    self.respond(200,result)
+                    return
                 if endpoint == 'demo-exit':
                     if not self.server.demo:
                         raise PermissionError('Solo puedes borrar una sesión de prueba.')
@@ -957,7 +975,10 @@ def open_school(path, port, demo=False, remote_origin=''):
                              'No se ha creado una base vacía.')
         if path.exists():
             with closing(connect(path)) as existing:
-                needs_upgrade = existing.execute('PRAGMA user_version').fetchone()[0] < SCHEMA_VERSION
+                version=existing.execute('PRAGMA user_version').fetchone()[0]
+                if version>SCHEMA_VERSION:
+                    raise ValueError(f'La base usa el esquema {version}; esta versión de Aula admite hasta {SCHEMA_VERSION}. Actualiza Aula. No se modificó ni migró la base.')
+                needs_upgrade = version < SCHEMA_VERSION
             if needs_upgrade:
                 consistent_backup(path, path.parent / 'backups' / f'antes-actualizacion-{datetime.now():%Y%m%d-%H%M%S}.sqlite3')
         initialize(path)
