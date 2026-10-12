@@ -1,5 +1,12 @@
 # Historial de cambios
 
+## Fase 1, punto 2 · controlador del reloj
+
+- Control persistente separado de los datos contables, con publicación atómica y sincronización.
+- Política aprobada: siete días entre aperturas y tolerancia de dos minutos para ajustes; comparación monotónica durante el uso.
+- Confirmación exclusiva de Administrador, registro previo en bitácora y bloqueo ante control ausente con historial, ilegible o no publicable.
+- Pruebas de persistencia, permisos, confirmación, ajustes y fallos; sin cambio de esquema ni importes existentes.
+
 ## Sin publicar · Fase 1, punto 1 · 11 de octubre de 2026
 
 - Aviso persistente para Administrador y Caja cuando falta el segundo destino, no hay copia externa confirmada, la copia externa tiene más de tres días o el último respaldo falló. Visible también antes de confirmar la tasa; permanece al buscar y filtrar, sin botón de cierre.

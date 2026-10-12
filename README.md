@@ -8,6 +8,8 @@ Cada alumno tiene un **Primer mes a cobrar**, independiente del período académ
 
 ## Avisos de respaldo y revisión de Windows · Fase 1, punto 1
 
+El [control persistente del reloj](docs/reloj-core.md) utiliza un archivo de seguridad separado de SQLite, sin migración de esquema. La política aprobada es siete días entre aperturas y dos minutos de tolerancia para ajustes; no modifica documentos históricos.
+
 Administrador y Caja ven un aviso permanente si falta la segunda carpeta de copias, no hay copia externa confirmada, la última tiene más de tres días o falló el último respaldo local/externo. Aparece también al confirmar la tasa; permanece al navegar, buscar o filtrar y no tiene botón de cierre. Se revisa cada 30 segundos mientras la pantalla está visible. Solo desaparece cuando se resuelve el problema. Caja solicita ayuda al administrador; no obtiene permisos de configuración. Consulta y Pruebas no muestran este aviso.
 
 En **Configuración → Protección y mantenimiento** se revisan los permisos de la carpeta de datos (ACL) y BitLocker del disco que contiene esa carpeta. La comprobación funciona en segundo plano, sin cambiar permisos, activar cifrado ni pedir elevación. Un resultado desconocido dice **No se pudo comprobar**: nunca se presenta como protección activa. Windows puede impedir la consulta de BitLocker a una cuenta sin privilegios. [Guía de avisos y revisión de protección](docs/proteccion-respaldos.md).
