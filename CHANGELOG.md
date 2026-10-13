@@ -1,3 +1,10 @@
+## En validación · A3 · Sesiones y recuperación de acceso
+
+- Cierre de 15 minutos configurable entre 5 y 60, tiempos monotónicos y máximo absoluto de doce horas. Las consultas automáticas no renuevan; cookies conservan HttpOnly/SameSite/Secure y CSRF. Tokens SHA-256 en SQLite; reiniciar exige ingreso nuevo.
+- Espera por cuenta y origen/cuenta desde cinco fallos, progresión 5/10/20/40/60 segundos, sin prohibición global de 127.0.0.1.
+- Recuperación local con respaldo previo, invalidación de todas las sesiones y aviso persistente por administrador; evento sin contraseñas. Sin migración de esquema ni cambios financieros.
+- Primer recorrido Python: 255 pruebas en 129.290 s, 252 correctas y tres exclusivas de Windows omitidas. Evidencia final y recorridos de interfaz pendientes de completar en docs/sesiones-acceso.md.
+
 # Historial de cambios
 
 ## A2 · cifrado de respaldos (sin migración SQL)

@@ -89,7 +89,7 @@ class ClockEndpointTests(unittest.TestCase):
 
     def test_login_limit_uses_monotonic_time_despite_wall_clock_changes(self):
         with patch('colegio.server.time.time',return_value=1):
-            for _ in range(10):self.fixture.request('login',{'username':'admin','password':'incorrecta'},status=401)
+            for _ in range(5):self.fixture.request('login',{'username':'admin','password':'incorrecta'},status=401)
         with patch('colegio.server.time.time',return_value=9999999999):
             self.fixture.request('login',{'username':'admin','password':'incorrecta'},status=429)
 

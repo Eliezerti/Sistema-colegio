@@ -260,7 +260,7 @@ Al pasar un alumno a otro año escolar, actualiza su matrícula y fechas. Sus ca
 
 **Consulta:** lectura de los módulos y reportes, sin operaciones de escritura. Los usuarios de consulta tienen acceso a expedientes y salarios; asigna este perfil solo a personas autorizadas para ver esa información.
 
-Las contraseñas se almacenan con PBKDF2-SHA256 y sal aleatoria. Las sesiones vencen a las doce horas y se invalidan al cambiar la contraseña. La bitácora conserva las operaciones registradas; la interfaz muestra las últimas 300. La base no está cifrada: protege la cuenta de Windows y los archivos de respaldo. En modo compartido, autoriza solo los equipos y las personas del colegio en Tailscale y asigna a cada usuario los permisos necesarios en Aula. El servidor admite únicamente la dirección local y el enlace HTTPS configurado; conserva la protección CSRF y usa cookies Secure en las sesiones HTTPS.
+Las contraseñas se almacenan con PBKDF2-SHA256 y sal aleatoria. Las sesiones cierran tras 15 minutos sin actividad (Administración puede elegir entre 5 y 60), con aviso un minuto antes y borrador temporal para el mismo usuario. Se usa tiempo monotónico y se conserva el máximo absoluto de doce horas. Solo se guarda la huella SHA-256 del token. La recuperación local de contraseña cierra todas las sesiones y avisa a cada administrador; el cambio habitual invalida las de la cuenta modificada. Los intentos fallidos aplican espera progresiva por cuenta, sin bloquear otras por compartir la IP local. [Guía de sesiones y recuperación](docs/sesiones-acceso.md). La bitácora conserva las operaciones registradas; la interfaz muestra las últimas 300. La base no está cifrada: protege la cuenta de Windows y los archivos de respaldo. En modo compartido, autoriza solo los equipos y las personas del colegio en Tailscale y asigna a cada usuario los permisos necesarios en Aula. El servidor admite únicamente la dirección local y el enlace HTTPS configurado; conserva la protección CSRF y usa cookies Secure en las sesiones HTTPS.
 
 ### Descargar y restaurar
 
@@ -358,7 +358,7 @@ Los avisos de cobranza incluyen **Abrir WhatsApp con el aviso** para teléfonos 
 
 ### Recuperar la contraseña del administrador
 
-Cierra Aula y ejecuta **Recuperar-clave-admin.bat**, indica el usuario administrador y escribe una contraseña nueva dos veces (no se muestra al escribir). Se guarda un respaldo previo, se invalidan sus sesiones y se registra la recuperación en bitácora. No cambia otros datos ni crea una cuenta nueva. Requiere acceso local al equipo y a la carpeta de datos; no hay restablecimiento por correo. Si usas una ruta de datos personalizada, ejecuta `py -3 -m colegio.reset_password --data-dir "RUTA"`.
+Cierra Aula y ejecuta **Recuperar-clave-admin.bat**, indica el usuario administrador y escribe una contraseña nueva dos veces (no se muestra al escribir). Se guarda un respaldo previo, se invalidan todas las sesiones, se registra la recuperación en bitácora y cada administrador recibe un aviso al ingresar. No cambia otros datos ni crea una cuenta nueva. Requiere acceso local al equipo y a la carpeta de datos; no hay restablecimiento por correo. Si usas una ruta de datos personalizada, ejecuta `py -3 -m colegio.reset_password --data-dir "RUTA"`.
 
 ### Instalación y protección del equipo
 

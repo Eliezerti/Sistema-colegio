@@ -39,6 +39,8 @@ from .demo import DemoWorkspace
 from .salary import details as salary_details, issue_salary_receipt, load_salary_receipt
 from .reset_records import reset_preview, reset_records
 from .network import PrivateAccess, load_config
+from .sessions import Sessions, token_hash, idle_minutes, IDLE_KEY
+from .login_limiter import LoginLimiter
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -425,7 +427,12 @@ class SchoolServer(ThreadingHTTPServer):
         self.db_path = db_path
         self.clock = get_clock(db_path, history=True)
         self.protection = ProtectionMonitor(Path(db_path).parent)
-        self.login_attempts = {}
+        self.sessions = Sessions()
+        self.login_limiter = LoginLimiter()
+        # Tokens from older versions or another process have no trusted monotonic
+        # lifetime. Authentication state is disposable; financial records are untouched.
+        with closing(connect(db_path)) as auth_db, auth_db:
+            auth_db.execute('DELETE FROM sessions')
         self.backup_lock=threading.Lock()
         self.last_backup_error = ''
         from .backup_setup import Setup
@@ -518,6 +525,7 @@ class SchoolServer(ThreadingHTTPServer):
         while not self.backup_stop.wait(300): self.make_backup()
 
     def server_close(self):
+        self.sessions.clear()
         self.demo_stop.set()
         if self.demo_thread:
             self.demo_thread.join(timeout=5)
@@ -538,6 +546,13 @@ class Handler(BaseHTTPRequestHandler):
         print(f'{self.log_date_time_string()} {self.command} {urlsplit(self.path).path} {args[1] if len(args)>1 else ""}')
 
     def respond(self, status, body, content_type='application/json; charset=utf-8', extra=None):
+        metadata = getattr(self, 'session_metadata', None)
+        if metadata:
+            digest, minutes = metadata
+            current = self.server.sessions.status(digest, minutes)
+            if current:
+                extra = dict(extra or {}, **{'X-Aula-Idle-Remaining': str(max(0, current['remaining_seconds'])),
+                                            'X-Aula-Idle-Minutes': str(minutes)})
         if isinstance(body, (dict, list)):
             body = json.dumps(body, ensure_ascii=False).encode()
         if isinstance(body, str):
@@ -560,8 +575,13 @@ class Handler(BaseHTTPRequestHandler):
         for part in self.headers.get('Cookie', '').split(';'):
             if part.strip().startswith(self.server.cookie_name+'='):
                 token = part.strip().split('=', 1)[1]
+        digest = token_hash(token)
         result = db.execute('''SELECT u.id,u.name,u.username,u.role,s.csrf,s.token,s.rate_confirmed_on FROM sessions s
-          JOIN users u ON u.id=s.user_id WHERE token=? AND expires>?''', (token, int(time.time()))).fetchone()
+          JOIN users u ON u.id=s.user_id WHERE token=?''', (digest,)).fetchone() if digest else None
+        minutes = idle_minutes(db)
+        if result and not self.server.sessions.status(digest, minutes):
+            result = None
+        self.session_metadata = (digest, minutes) if result else None
         return dict(result) if result else None
 
     def do_GET(self):
@@ -572,6 +592,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def handle_request(self, post):
         db = None
+        self.session_metadata = None
         try:
             host = self.headers.get('Host', '')
             if not self.server.access.allowed_host(host,self.server.server_port):
@@ -580,7 +601,7 @@ class Handler(BaseHTTPRequestHandler):
             url = urlsplit(self.path)
             endpoint = url.path.removeprefix('/api/')
             if not post and not url.path.startswith('/api/'):
-                assets = {'/': 'index.html', '/app.js': 'app.js', '/style.css': 'style.css', '/favicon.svg': 'favicon.svg',
+                assets = {'/': 'index.html', '/app.js': 'app.js', '/session.js': 'session.js', '/style.css': 'style.css', '/favicon.svg': 'favicon.svg',
                           '/'+LOGO_FILE: LOGO_FILE, '/mobile.js': 'mobile.js',
                           '/manifest.webmanifest': 'manifest.webmanifest', '/service-worker.js': 'service-worker.js',
                           '/offline.html': 'offline.html', '/icon-mobile-192.png': 'icon-mobile-192.png',
@@ -639,30 +660,75 @@ class Handler(BaseHTTPRequestHandler):
                         db.execute("UPDATE settings SET value=? WHERE key='school_name'",(required(data,'school_name'),))
                     audit(db, user_id, 'setup', {'user_id': user_id})
                 else:
-                    now = time.monotonic()
-                    attempts = [t for t in self.server.login_attempts.get(self.client_address[0], []) if now - t < 60]
-                    if len(attempts) >= 10:
-                        self.respond(429, {'error': 'Demasiados intentos. Espera un minuto.'})
+                    username = required(data, 'username', 80).strip().lower()
+                    origin = self.client_address[0]
+                    wait = self.server.login_limiter.wait(origin, username)
+                    if wait:
+                        self.respond(429, {'error': f'Demasiados intentos para esta cuenta. Espera {wait} segundos.',
+                                           'retry_after': wait}, extra={'Retry-After': str(wait)})
                         return
-                    attempts.append(now)
-                    self.server.login_attempts[self.client_address[0]] = attempts
-                    found = db.execute('SELECT * FROM users WHERE username=?', (required(data, 'username', 80).lower(),)).fetchone()
+                    if not self.server.login_limiter.checks.acquire(blocking=False):
+                        self.respond(429, {'error': 'Se están comprobando otros accesos. Intenta nuevamente en un segundo.',
+                                           'retry_after': 1}, extra={'Retry-After': '1'})
+                        return
+                    found = db.execute('SELECT * FROM users WHERE username=?', (username,)).fetchone()
                     password = data.get('password', '')
-                    if not isinstance(password, str) or len(password) > 256 or not found or not check_password(password, found['password']):
+                    try:
+                        valid = isinstance(password, str) and len(password) <= 256 and found and check_password(password, found['password'])
+                    finally:
+                        self.server.login_limiter.checks.release()
+                    if not valid:
+                        self.server.login_limiter.failure(origin, username)
                         self.respond(401, {'error': 'Usuario o contraseña incorrectos.'})
                         return
                     user_id = found['id']
-                    self.server.login_attempts[self.client_address[0]] = []
+                    self.server.login_limiter.success(origin, username)
                 token, csrf = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
-                db.execute('DELETE FROM sessions WHERE expires<=?', (int(time.time()),))
-                db.execute('INSERT INTO sessions(token,user_id,csrf,expires) VALUES(?,?,?,?)', (token, user_id, csrf, int(time.time()) + 12*3600))
+                minutes = idle_minutes(db)
+                for row in db.execute('SELECT token FROM sessions').fetchall():
+                    if not self.server.sessions.status(row[0], minutes):
+                        db.execute('DELETE FROM sessions WHERE token=?', (row[0],))
+                digest = token_hash(token)
+                db.execute('INSERT INTO sessions(token,user_id,csrf,expires) VALUES(?,?,?,?)', (digest, user_id, csrf, int(time.time()) + 12*3600))
                 db.commit()
+                self.server.sessions.issue(digest)
+                self.session_metadata = (digest, minutes)
                 secure='; Secure' if self.server.access.secure_cookie(host,self.headers.get('Origin'),self.headers.get('X-Forwarded-Proto')) else ''
                 self.respond(200, {'ok': True}, extra={'Set-Cookie': f'{self.server.cookie_name}={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200{secure}'})
                 return
             if not user:
-                self.respond(401, {'error': 'Inicia sesión para continuar.'})
+                self.respond(401, {'error': 'Tu sesión terminó. Inicia sesión para continuar.', 'session_expired': True})
                 return
+            if endpoint in ('session-status', 'session-activity', 'session-preferences', 'recovery-notice-ack'):
+                if post and not secrets.compare_digest(self.headers.get('X-CSRF-Token', ''), user['csrf']):
+                    raise PermissionError('Sesión inválida. Recarga la página.')
+                from .security_notices import pending_notice, acknowledge_notice
+                minutes = idle_minutes(db)
+                if endpoint == 'session-status' and not post:
+                    self.respond(200, dict(self.server.sessions.status(user['token'], minutes) or {},
+                                           recovery_notice=pending_notice(db, user)))
+                    return
+                if endpoint == 'session-activity' and post:
+                    result = self.server.sessions.touch(user['token'], minutes)
+                    if not result:
+                        self.respond(401, {'error': 'Tu sesión terminó. Inicia sesión nuevamente.', 'session_expired': True})
+                    else:
+                        self.respond(200, result)
+                    return
+                if endpoint == 'recovery-notice-ack' and post:
+                    acknowledge_notice(db, user, data)
+                    db.commit();self.respond(200, {'ok': True});return
+                if endpoint == 'session-preferences' and post:
+                    if user['role'] != 'admin': raise PermissionError('Solo Administración puede configurar el cierre por inactividad.')
+                    self.server.clock.require()
+                    old = minutes
+                    minutes = integer(data.get('idle_minutes'), 5, 60)
+                    db.execute('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', (IDLE_KEY, str(minutes)))
+                    audit(db, user['id'], 'session_idle_changed', {'previous_minutes': old, 'new_minutes': minutes})
+                    self.server.clock.require();db.commit()
+                    self.session_metadata = (user['token'], minutes)
+                    self.respond(200, {'idle_minutes': minutes});return
+                self.respond(405, {'error': 'Método no permitido.'});return
             if endpoint == 'clock-status' and not post:
                 self.respond(200, dict(self.server.clock.snapshot(), role=user['role']))
                 return
@@ -779,6 +845,7 @@ class Handler(BaseHTTPRequestHandler):
                     result = {'ok': True}
                 elif endpoint == 'logout':
                     db.execute('DELETE FROM sessions WHERE token=?', (user['token'],))
+                    self.server.sessions.revoke(user['token'])
                     result = {'ok': True}
                 else:
                     if (endpoint in DIRECTORY_ACTIONS or endpoint in ('archive-employee','restore-employee') or endpoint=='correct-billing-start' or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True)) and user['role']=='admin':

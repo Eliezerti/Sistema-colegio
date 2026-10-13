@@ -28,13 +28,15 @@ def reset_password(directory,username,password):
         from .restore_journal import finish_pending
         finish_pending(directory)
         with closing(connect(database)) as db:
-            user=db.execute("SELECT id FROM users WHERE username=? AND role='admin'",(username.strip().lower(),)).fetchone()
+            user=db.execute("SELECT id,username FROM users WHERE username=? AND role='admin'",(username.strip().lower(),)).fetchone()
             if not user: raise ValidationError('No existe un administrador con ese usuario.')
             consistent_backup(database,directory/'backups'/f'recuperacion-clave-{datetime.now():%Y%m%d-%H%M%S-%f}.sqlite3')
             with db:
                 db.execute('UPDATE users SET password=? WHERE id=?',(hashed,user['id']))
-                db.execute('DELETE FROM sessions WHERE user_id=?',(user['id'],))
-                audit(db,None,'local-admin-password-reset',{'user_id':user['id']})
+                db.execute('DELETE FROM sessions')
+                from .security_notices import record_recovery
+                notice = record_recovery(db, user)
+                audit(db,None,'local-admin-password-reset',{'user_id':user['id'], 'notice_id':notice['id'], 'all_sessions_closed':True})
 
 
 def main():
