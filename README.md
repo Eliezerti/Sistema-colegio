@@ -18,6 +18,10 @@ El recibo de pago muestra nombre y grado del alumno, sin cédula escolar ni cód
 
 Los cobros incluyen **Pago móvil** como método separado en recibos, reportes y cierre de caja. El **efectivo inicial en caja** son billetes y monedas al comenzar el día, no el saldo bancario; pagos móviles y transferencias no se suman al arqueo físico. [Guía de cobros y arqueo](docs/cobros-y-arqueo.md).
 
+## Limpieza y reducción · B2
+
+Se retiran las funciones exclusivas de teléfono por decisión del usuario, conservando el diseño adaptable y el acceso privado desde otras PC. Se inventaría el PYZ de la versión publicada antes de excluir módulos y se conserva Tcl/Tk. [Alcance y validación](docs/limpieza-b2.md).
+
 ## Calidad financiera e instalación · B1
 
 Verificar datos comprueba totales válidos, cargos duplicados y saltos por encima de correlativos reservados, sin reparar ni recalcular. Se añaden cortes reales de respaldo local/borrado, cinco cuentas de Caja simultáneas y matriz HTTP de permisos. La validación Windows prueba instalación sin datos, actualización desde la versión publicada 1.0.13 y otra cuenta estándar real; sus resultados finales y las incidencias de los verificadores están en la guía. El pipeline conserva evidencia y reconstruye el ZIP desde la fuente probada. [Guía y límites](docs/calidad-b1.md).
@@ -112,8 +116,8 @@ Todos consultan y modifican **la misma base**, guardada en la PC principal del c
 
 ### Preparar la PC principal del colegio
 
-1. Elige la computadora que guardará los datos y usa siempre la misma cuenta de Windows. Instala Aula con los pasos anteriores. Si los registros ya están en otra PC, descarga allí un respaldo y restáuralo en la PC principal con **Restaurar-respaldo.bat** antes de comenzar a trabajar. Desde ese momento, registra los movimientos únicamente en esta base central.
-2. Abre **Iniciar-Aula.bat**. Crea el primer administrador localmente si aún no existe y, en **Configuración → Usuarios y permisos**, crea un usuario por empleado. Usa **Caja** para registrar cobros y **Consulta** para ver información; reserva **Administrador** para quien corresponda. Cierra Aula con **Ctrl+C** al terminar la configuración.
+1. Elige la computadora que guardará los datos y usa siempre la misma cuenta de Windows. Instala Aula con los pasos anteriores. Si los registros ya están en otra PC, descarga allí un respaldo y restáuralo en la PC principal con **Inicio → Aula Colegio → Restaurar respaldo** (o **Restaurar-respaldo.bat** en el ZIP) antes de comenzar a trabajar. Desde ese momento, registra los movimientos únicamente en esta base central.
+2. Abre **Aula - Administración escolar** (o **Iniciar-Aula.bat** si usas el ZIP). Crea el primer administrador localmente si aún no existe y, en **Configuración → Usuarios y acceso**, crea un usuario por empleado. Usa **Caja** para registrar cobros y **Consulta** para ver información; reserva **Administrador** para quien corresponda. Cierra Aula con **Colegio → Salir y cerrar Aula**; con el ZIP, usa **Ctrl+C**.
 3. Instala [Tailscale para Windows](https://tailscale.com/download) e inicia sesión en tu red privada. Desde la administración de Tailscale autoriza las cuentas y los equipos que tendrán acceso. Instálalo también en tu laptop de casa y en las laptops de los empleados, conectándolos a la misma red privada autorizada.
 4. En **PowerShell de la PC principal**, ejecuta:
 
@@ -124,7 +128,7 @@ Todos consultan y modifican **la misma base**, guardada en la PC principal del c
    Si instalaste Tailscale en otra ubicación, usa la ruta de su `tailscale.exe`. Sigue el enlace de autorización que muestre el comando si solicita habilitar HTTPS. Copia el enlace privado que te indique, con formato `https://nombre-equipo.nombre-red.ts.net`. Usa **Tailscale Serve**, que comparte el acceso dentro de tu red privada. No actives **Funnel** ni abras el puerto 8765 en el router. [Documentación de Tailscale Serve](https://tailscale.com/kb/1242/tailscale-serve).
 
 5. Con el instalador de escritorio, abre **Configurar Aula**, selecciona **PC principal** y pega ese enlace HTTPS. Si usas el ZIP de código fuente, ejecuta **Configurar-Red.bat**. El enlace se guarda en `%LOCALAPPDATA%\AulaColegio\red.json`; no cambia los usuarios ni la base existente.
-6. Con el instalador, abre el icono **Colegio Alejandro Von Humboldt**; el modo compartido se activa automáticamente con la configuración guardada. Si usas el ZIP, abre **Iniciar-Red.bat**. Mantén Aula y Tailscale activos. **Configuración → Acceso compartido del colegio** muestra el enlace. No abras otra copia del servidor con un .bat mientras la aplicación de escritorio esté activa.
+6. Con el instalador, abre el icono **Aula - Administración escolar**; el modo compartido se activa automáticamente con la configuración guardada. Si usas el ZIP, abre **Iniciar-Red.bat**. Mantén Aula y Tailscale activos. **Configuración → Acceso compartido del colegio** muestra el enlace. No abras otra copia del servidor con un .bat mientras la aplicación de escritorio esté activa.
 
 ### Entrar desde las laptops y desde casa
 
@@ -132,7 +136,7 @@ Conecta Tailscale. Puedes instalar el mismo .exe, elegir **Conectarme al colegio
 
 La PC principal y el router deben estar encendidos, con internet y sin suspensión mientras se necesite acceso desde casa. Un UPS ayuda a mantenerlos disponibles durante los cortes. Si se apaga la PC principal, el sistema compartido deja de estar disponible; los datos permanecen en esa PC y sus respaldos. El modo local sigue disponible con **Iniciar-Aula.bat** cuando no hay conexión.
 
-Los respaldos, la restauración y la recuperación local de contraseñas se administran en la PC principal. Una carpeta de Drive o un USB sirve para copiar **respaldos**, nunca para compartir la base activa. Si cambias la PC principal o su nombre en Tailscale, vuelve a ejecutar Configurar-Red.bat con el nuevo enlace y comunica ese enlace a los usuarios. El archivo red.json es configuración del equipo, y no forma parte del respaldo SQLite.
+Los respaldos, la restauración y la recuperación local de contraseñas se administran en la PC principal. Una carpeta de Drive o un USB sirve para copiar **respaldos**, nunca para compartir la base activa. Si cambias la PC principal o su nombre en Tailscale, vuelve a abrir Configurar Aula (o Configurar-Red.bat en el ZIP) con el nuevo enlace y comunica ese enlace a los usuarios. El archivo red.json es configuración del equipo, y no forma parte del respaldo SQLite.
 
 El **modo de prueba es local y separado**: usa el acceso **Aula - Pruebas**, o Iniciar-Pruebas.bat si usas el ZIP, en la computadora donde quieras experimentar. No comparte ni abre la base real del colegio.
 
@@ -140,7 +144,7 @@ Esta versión valida el acceso a través de un intermediario HTTPS privado, perm
 
 ## Probar sin mezclar datos del colegio
 
-Haz doble clic en **Iniciar-Pruebas.bat** y pulsa **Entrar como administrador de prueba**. Tendrás permisos de administrador y una base **vacía y separada**, creada para esa sesión. Confirma una tasa de prueba y registra los alumnos, empleados, cobros y pagos que quieras. La franja **Modo prueba** permanece visible. Los recibos y PDF se identifican con **PRUEBA SIN VALIDEZ**.
+Abre **Aula - Pruebas** (o **Iniciar-Pruebas.bat** si usas el ZIP) y pulsa **Entrar como administrador de prueba**. Tendrás permisos de administrador y una base **vacía y separada**, creada para esa sesión. Confirma una tasa de prueba y registra los alumnos, empleados, cobros y pagos que quieras. La franja **Modo prueba** permanece visible. Los recibos y PDF se identifican con **PRUEBA SIN VALIDEZ**.
 
 Para terminar, pulsa **Cerrar y borrar pruebas**. También se cierra al salir de la última pestaña de prueba: espera unos cinco segundos. Recargar la página conserva los registros mientras siga abierta la sesión. Se pueden mantener varias pestañas; cerrar una no borra datos si queda otra. Si el navegador deja de responder sin avisar al servidor, la falta de señales de sus pestañas se detecta después de diez minutos. Puedes cerrar la ventana del programa con **Ctrl+C** para terminar antes.
 
@@ -150,11 +154,11 @@ Cada nueva apertura empieza vacía. Los datos temporales se eliminan al cerrar n
 
 ## Vaciar registros existentes del colegio
 
-Actualizar el programa **no borra automáticamente** la base instalada en tu PC. Si quieres eliminar los registros cargados previamente, entra como administrador y abre **Configuración → Administración avanzada · vaciar registros → Revisar vaciado de registros**.
+Actualizar el programa **no borra automáticamente** la base instalada en tu PC. Si quieres eliminar los registros cargados previamente, entra como administrador y abre **Configuración → Protección y mantenimiento → Administración avanzada · vaciar registros → Revisar vaciado de registros**.
 
 Se muestra la cantidad de registros que desaparecerán. Debes introducir tu contraseña, escribir **VACIAR REGISTROS** y marcar la confirmación. Antes de borrar, Aula genera un respaldo verificado `antes-vaciar-…sqlite3` sin cifrar en la carpeta local y cifrado .aulabak en el segundo destino si está configurado. Si falla alguna copia, se conserva la base. Esas copias no entran en la rotación de respaldos automáticos; consérvalas para poder restaurar el estado anterior.
 
-Se eliminan alumnos, representantes, grados, empleados y sus cargos, mensualidades, pagos, egresos, cierres, tasas, convenios, seguimientos y documentos guardados. **Se conservan los usuarios, las contraseñas, el logo, los datos fiscales y la configuración.** Se cierran todas las sesiones y debes volver a entrar y confirmar la tasa. Los números de cobros, egresos y alumnos continúan después del último usado. La bitácora conserva el evento de vaciado y la ruta del respaldo; los movimientos anteriores quedan en esa copia.
+Se eliminan alumnos, representantes, grados, empleados y sus cargos, mensualidades, pagos, egresos, cierres, tasas, convenios, seguimientos y documentos guardados. **Se conservan los usuarios, las contraseñas, el logo, los datos fiscales y la configuración.** Se cierran todas las sesiones y debes volver a entrar y confirmar la tasa. Los números de cobros, egresos y alumnos continúan después del último usado. La bitácora completa se conserva en la base, incluido el evento de vaciado y la ruta del respaldo; no se borra su historial.
 
 Esta opción sirve para un reinicio deliberado. Para experimentar o repetir pruebas, usa **Iniciar-Pruebas.bat**, que se limpia solo. Para recuperar un vaciado, cierra el programa y usa **Restaurar-respaldo.bat** con el archivo `antes-vaciar-…sqlite3`.
 
@@ -163,7 +167,7 @@ Esta opción sirve para un reinicio deliberado. Para experimentar o repetir prue
 1. En Aula, descarga un respaldo de tu base y cierra el programa con **Ctrl+C**.
 2. Descarga el ZIP actualizado y usa **Extraer todo** en una carpeta nueva, por ejemplo `C:\Aula-actualizado`. También puedes reemplazar los archivos del programa anterior con Aula cerrado.
 3. Abre **Iniciar-Aula.bat** desde la carpeta nueva, con la **misma cuenta de Windows**. Usa tu usuario habitual: los alumnos, representantes, cobros y egresos permanecen en `%LOCALAPPDATA%\AulaColegio`.
-4. La primera apertura crea un respaldo `antes-actualizacion-*.sqlite3` y amplía la base automáticamente. Esta versión incorpora una sola vez el logo y los datos fiscales suministrados del colegio. Conserva el nombre comercial configurado, el año escolar, los contactos, alumnos, cobros y documentos anteriores. Los alumnos de versiones antiguas reciben un código único y los cargos del personal se incorporan al catálogo. Completa sus datos bancarios en **Personal**.
+4. La primera apertura crea un respaldo `antes-actualizacion-*.sqlite3` y amplía la base automáticamente. La identidad se conserva; una instalación nueva comienza con datos genéricos. Conserva el nombre comercial configurado, el año escolar, los contactos, alumnos, cobros y documentos anteriores. Los alumnos de versiones antiguas reciben un código único y los cargos del personal se incorporan al catálogo. Completa sus datos bancarios en **Personal**.
 
 Si usabas otro directorio de datos con un comando personalizado, conserva ese `--data-dir`; el lanzador estándar solo abre `%LOCALAPPDATA%\AulaColegio`.
 
@@ -374,7 +378,7 @@ Los avisos de cobranza incluyen **Abrir WhatsApp con el aviso** para teléfonos 
 
 ### Recuperar la contraseña del administrador
 
-Cierra Aula y ejecuta **Recuperar-clave-admin.bat**, indica el usuario administrador y escribe una contraseña nueva dos veces (no se muestra al escribir). Se guarda un respaldo previo, se invalidan todas las sesiones, se registra la recuperación en bitácora y cada administrador recibe un aviso al ingresar. No cambia otros datos ni crea una cuenta nueva. Requiere acceso local al equipo y a la carpeta de datos; no hay restablecimiento por correo. Si usas una ruta de datos personalizada, ejecuta `py -3 -m colegio.reset_password --data-dir "RUTA"`.
+Cierra Aula y abre **Inicio → Aula Colegio → Recuperar clave del administrador** (o **Recuperar-clave-admin.bat** en el ZIP), indica el usuario administrador y escribe una contraseña nueva dos veces (no se muestra al escribir). Se guarda un respaldo previo, se invalidan todas las sesiones, se registra la recuperación en bitácora y cada administrador recibe un aviso al ingresar. No cambia otros datos ni crea una cuenta nueva. Requiere acceso local al equipo y a la carpeta de datos; no hay restablecimiento por correo. Si usas una ruta de datos personalizada, ejecuta `py -3 -m colegio.reset_password --data-dir "RUTA"`.
 
 ### Instalación y protección del equipo
 
@@ -386,7 +390,7 @@ Para soporte remoto puedes instalar Chrome Remote Desktop o AnyDesk en esa PC y 
 
 ## Desarrollo y validación
 
-Python 3.10+ y un navegador moderno (Edge, Chrome o Firefox). El programa no necesita paquetes Python adicionales ni pasos de compilación. El uso local no necesita servicios remotos; el acceso compartido requiere instalar y configurar Tailscale en los equipos reales. Las fuentes Liberation Sans de los PDF se distribuyen sin modificaciones bajo SIL Open Font License 1.1; su licencia está incluida en `colegio/fonts/LICENSE.txt`.
+Python 3.10+ y un navegador moderno (Edge, Chrome o Firefox). El ZIP requiere instalar `requirements.txt` para el cifrado; el instalador Windows incluye las dependencias. El uso local no necesita servicios remotos; el acceso compartido requiere instalar y configurar Tailscale en los equipos reales. Las fuentes Liberation Sans de los PDF se distribuyen sin modificaciones bajo SIL Open Font License 1.1; su licencia está incluida en `colegio/fonts/LICENSE.txt`.
 
 ```bash
 python -m colegio.server
@@ -409,8 +413,7 @@ Validación opcional de interfaz, con Node, Playwright y Chromium disponibles:
 python tests/run_browser.py
 python tests/run_browser.py --demo
 python tests/run_browser.py --roster
-python tests/run_browser.py --mobile
-python tests/run_browser.py --phone
+python tests/run_browser.py --responsive
 ```
 
 Estos comandos crean datos ficticios en carpetas temporales e inician sus propios servidores. El primero valida matrícula, mensualidades, cobro en Bs, recibos de alumnos y empleados, morosidad, egresos, reportes, diseño adaptable, permisos y vaciado protegido. El segundo comprueba el administrador de prueba, PDF identificado como prueba, recarga y varias pestañas, cierre de la última pestaña y eliminación física de los datos temporales. Las pruebas integradas también comprueban reinicio tras proceso matado, rechazo de un directorio real en modo prueba, respaldo antes de vaciar, fallo del segundo destino y conservación de numeraciones. Para usar otro Chromium, define `CHROMIUM_PATH`. Las pruebas opcionales no son una dependencia del programa.

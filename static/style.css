@@ -158,10 +158,9 @@ body>#app>.demo-banner{margin:15px 24px 0}.demo-banner+.rate-screen{min-height:c
 
 .school-info .institution-type{font-size:9px;font-weight:600;letter-spacing:.05em;margin:0 0 4px;color:#476174}
 
-/* Phone navigation preserves every section and the sign-out control. */
+/* Narrow windows preserve every section and the sign-out control. */
 .mobile-header,.mobile-menu-close,.menu-backdrop{display:none}
 #connection-status{position:sticky;bottom:0;z-index:20;padding:12px 18px;background:#fff4dc;color:#725219;font-size:13px;border-top:1px solid #ebd8ac}
-#phone-install{position:fixed;bottom:max(18px,env(safe-area-inset-bottom));right:18px;z-index:15;box-shadow:0 6px 20px #142b2930}
 @media screen and (max-width:700px){
   body{font-size:15px}.mobile-menu-open{overflow:hidden}
   .mobile-header{display:flex;align-items:center;gap:12px;padding:12px 15px;padding-top:max(12px,env(safe-area-inset-top));background:#142b29;color:white;position:sticky;top:0;z-index:5}

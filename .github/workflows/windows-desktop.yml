@@ -30,6 +30,11 @@ jobs:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: requirements-desktop.txt
+      - name: B2 inventariar versión anterior antes de excluir módulos
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./packaging/inventory_previous.ps1
       - name: Compilar y validar el sistema
         shell: pwsh
         env:
@@ -76,6 +81,15 @@ jobs:
             ${{ runner.temp }}/aula-b1-*.json
             ${{ runner.temp }}/aula-b1-diagnostic/
             ${{ runner.temp }}/defender-b1-historical/
+          if-no-files-found: warn
+      - name: Conservar inventario B2
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Inventario-B2
+          path: |
+            ${{ runner.temp }}/aula-b2-*.json
+            ${{ runner.temp }}/defender-b2-previous/
           if-no-files-found: warn
       - name: Guardar diagnóstico de la ventana si falla
         if: failure()

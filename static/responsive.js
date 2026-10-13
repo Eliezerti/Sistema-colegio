@@ -1,10 +1,6 @@
 'use strict';
 (() => {
   const narrow = matchMedia('(max-width:700px)');
-  const standalone = () => matchMedia('(display-mode:standalone)').matches || navigator.standalone === true;
-  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const install = document.querySelector('#phone-install');
-  let installPrompt;
 
   function menu(open, restoreFocus = false) {
     const layout = document.querySelector('.layout'), sidebar = document.querySelector('.sidebar');
@@ -20,7 +16,7 @@
     if (visible) document.querySelector('.mobile-menu-close').focus();
     else if (restoreFocus) document.querySelector('[data-action="mobile-menu"]').focus();
   }
-  window.AulaMobile = {render() {
+  window.AulaResponsive = {render() {
     menu(false);
     document.querySelectorAll('.table-wrap').forEach(table => {
       table.tabIndex = 0;
@@ -53,24 +49,17 @@
   window.addEventListener('offline', connection);
   window.addEventListener('online', connection);
   connection();
-  const showInstall = () => { install.hidden = standalone() || !narrow.matches || (!installPrompt && !ios) || !window.isSecureContext; };
-  narrow.addEventListener('change', showInstall);
-  window.addEventListener('beforeinstallprompt', event => {
-    event.preventDefault(); installPrompt = event; showInstall();
-  });
-  window.addEventListener('appinstalled', () => { installPrompt = undefined; install.hidden = true; });
-  install.addEventListener('click', async () => {
-    if (installPrompt) {
-      const prompt = installPrompt; installPrompt = undefined;
-      await prompt.prompt(); await prompt.userChoice; showInstall();
-    } else if (ios) {
-      window.alert('En Safari, abre Compartir y elige «Añadir a pantalla de inicio». Activa «Abrir como app» si aparece. Usa el enlace privado del colegio con la conexión privada activa.');
-    }
-  });
-  showInstall();
-  // Native Windows and trial instances do not need a service worker.
-  if ('serviceWorker' in navigator && location.protocol === 'https:') {
-    navigator.serviceWorker.register('/service-worker.js', {updateViaCache:'none'})
-      .catch(() => { /* Browser access still works when installation is unavailable. */ });
+  // Retire only Aula's former worker/cache; do not touch other applications.
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => Promise.all(
+      registrations.filter(registration => {
+        const worker = registration.active || registration.waiting || registration.installing;
+        return worker && worker.scriptURL === new URL('/service-worker.js', location.origin).href;
+      }).map(registration => registration.unregister())
+    )).catch(() => {});
+  }
+  if ('caches' in window) {
+    caches.keys().then(names => Promise.all(names.filter(name => name.startsWith('aula-mobile-public-'))
+      .map(name => caches.delete(name)))).catch(() => {});
   }
 })();

@@ -609,17 +609,12 @@ class Handler(BaseHTTPRequestHandler):
             endpoint = url.path.removeprefix('/api/')
             if not post and not url.path.startswith('/api/'):
                 assets = {'/': 'index.html', '/app.js': 'app.js', '/session.js': 'session.js', '/style.css': 'style.css', '/favicon.svg': 'favicon.svg',
-                          '/'+LOGO_FILE: LOGO_FILE, '/mobile.js': 'mobile.js',
-                          '/manifest.webmanifest': 'manifest.webmanifest', '/service-worker.js': 'service-worker.js',
-                          '/offline.html': 'offline.html', '/icon-mobile-192.png': 'icon-mobile-192.png',
-                          '/icon-mobile-512.png': 'icon-mobile-512.png'}
+                          '/'+LOGO_FILE: LOGO_FILE, '/responsive.js': 'responsive.js'}
                 if url.path not in assets:
                     self.respond(404, {'error': 'Página inexistente.'})
                     return
                 file = ROOT / 'static' / assets[url.path]
                 content_type = mimetypes.guess_type(file.name)[0] or 'application/octet-stream'
-                if file.suffix == '.webmanifest':
-                    content_type = 'application/manifest+json'
                 if content_type.startswith('text/') or content_type in ('application/javascript','image/svg+xml'):
                     content_type += '; charset=utf-8'
                 self.respond(200, file.read_bytes(), content_type)
@@ -1100,7 +1095,7 @@ def open_school(path, port, demo=False, remote_origin=''):
         cleanup_work(path.parent)  # Only owned A2 temporaries; never A1 preserved copies.
         if not path.exists() and any((path.parent / 'backups').glob('*.sqlite3')):
             raise SystemExit('No se encuentra la base de datos, pero hay respaldos anteriores. '
-                             'Ejecuta Restaurar-respaldo.bat para recuperar tus datos antes de abrir Aula. '
+                             'Usa Inicio → Aula Colegio → Restaurar respaldo antes de abrir Aula (Restaurar-respaldo.bat si usas el ZIP). '
                              'No se ha creado una base vacía.')
         if path.exists():
             with closing(connect(path)) as existing:
@@ -1118,7 +1113,7 @@ def open_school(path, port, demo=False, remote_origin=''):
             except (ClockConfirmationRequired, AuditUnavailable):
                 db.rollback()  # Do not commit a partially generated month/year.
             if remote_origin and not db.execute("SELECT 1 FROM users WHERE role='admin' LIMIT 1").fetchone():
-                raise SystemExit('Crea primero tu administrador en esta PC con Iniciar-Aula.bat y luego abre Iniciar-Red.bat. No se ha habilitado el acceso remoto.')
+                raise SystemExit('Crea primero tu administrador en esta PC. Con el instalador usa Configurar Aula; con el ZIP, Iniciar-Aula.bat y luego Iniciar-Red.bat. No se ha habilitado el acceso remoto.')
             if demo:
                 demo_admin = db.execute('INSERT INTO users(username,name,password,role) VALUES(?,?,?,?)',
                     ('__prueba__', 'Administrador de prueba', hash_password(secrets.token_urlsafe(32)), 'admin')).lastrowid

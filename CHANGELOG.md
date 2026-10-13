@@ -1,5 +1,12 @@
 # Historial de cambios
 
+## B2 · Limpieza y reducción · en validación
+
+- Opción 2 aprobada: se retiran PWA/pasarela Wi-Fi y recursos exclusivos, sin retirar el menú adaptable ni el acceso privado del escritorio. Pago móvil y teléfonos de contacto permanecen.
+- Interfaz adaptable independiente; desregistro de trabajador anterior y limpieza solo de cachés públicos de Aula. Rutas retiradas responden 404.
+- Mensajes y README distinguen accesos del instalador y lanzadores del ZIP; se corrigen nombres anteriores y textos operativos desactualizados.
+- Inventario previo real del PYZ/archivos del instalador publicado 1.0.49, con huella y Defender. Todavía no se aplican exclusiones ni se afirman resultados B2. Tcl/Tk permanece.
+
 ## B1 · Consistencia y pruebas reales · 1.0.49 verificada
 
 - Verificar datos: totales de cobros válidos/aplicaciones, duplicados y saltos por encima de reservas; ninguna reparación ni cambio de esquema/datos/cálculos.

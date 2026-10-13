@@ -53,7 +53,6 @@ try {
     if ($Probe.TargetPath -ne $Executable -or $Probe.Arguments -ne '--test-backup') { throw 'Probar respaldo no abre la función independiente.' }
     Execute-Checked $Executable @('--self-test')
     Execute-Checked $Executable @('--self-test-demo')
-    Execute-Checked $Executable @('--self-test-phone')
     # Reinstall/update and uninstall must leave data and backups untouched.
     Execute-Checked $Installer $Arguments
     Execute-Checked (Join-Path $InstallDir 'unins000.exe') @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
