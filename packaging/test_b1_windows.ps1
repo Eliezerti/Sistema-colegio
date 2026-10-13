@@ -21,6 +21,12 @@ Copy-Item tests/windows_upgrade.py,tests/windows_other_account.py $Shared
 @'
 param([string]$Python,[string]$Root,[string]$Sid)
 $ErrorActionPreference='Stop'
+# Credential processes can initially inherit the caller's temporary directory.
+# Compile the bridge in the explicitly permitted, fictional test area only.
+$BootstrapTemp=Join-Path $Root 'compile-temp'
+New-Item -ItemType Directory -Force $BootstrapTemp | Out-Null
+$env:TEMP=$BootstrapTemp
+$env:TMP=$BootstrapTemp
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
@@ -34,13 +40,17 @@ $Identity=[Security.Principal.WindowsIdentity]::GetCurrent()
 if (-not [B1UserEnvironment]::CreateEnvironmentBlock([ref]$Block,$Identity.Token,$false)) { throw 'Windows no creó el entorno del usuario real.' }
 try {
  $Offset=0
+ $UserEnvironment=@{}
  while ($true) {
   $Entry=[Runtime.InteropServices.Marshal]::PtrToStringUni([IntPtr]::Add($Block,$Offset))
   if (-not $Entry) { break }
   $Offset+=($Entry.Length+1)*2
   $Split=$Entry.IndexOf('=')
-  if ($Split -gt 0) { [Environment]::SetEnvironmentVariable($Entry.Substring(0,$Split),$Entry.Substring($Split+1),'Process') }
+  if ($Split -gt 0) { $UserEnvironment[$Entry.Substring(0,$Split)]=$Entry.Substring($Split+1) }
  }
+ # Replace the inherited environment with the actual Windows token/profile block.
+ foreach ($Key in @([Environment]::GetEnvironmentVariables('Process').Keys)) { [Environment]::SetEnvironmentVariable($Key,$null,'Process') }
+ foreach ($Key in $UserEnvironment.Keys) { [Environment]::SetEnvironmentVariable($Key,$UserEnvironment[$Key],'Process') }
 } finally { [B1UserEnvironment]::DestroyEnvironmentBlock($Block) | Out-Null; $Identity.Dispose() }
 & $Python "$Root/windows_other_account.py" --root $Root --expected-sid $Sid
 exit $LASTEXITCODE
