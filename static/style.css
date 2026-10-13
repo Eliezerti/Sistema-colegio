@@ -245,3 +245,12 @@ table:has(.row-actions) th:last-child{text-align:right}
 @media print{.daily-report-totals{grid-template-columns:repeat(4,minmax(0,1fr));break-inside:avoid;print-color-adjust:exact}.daily-report section>h3{break-after:avoid}}
 .archive-controls{padding:22px 24px 4px}
 .archive-controls .actions{justify-content:flex-start;flex-wrap:wrap}
+
+/* Authentication notices are separate from financial forms. */
+#session-warning{max-width:480px;width:calc(100% - 36px);padding:0;border:1px solid #dce5df;border-radius:16px;color:#203c35}
+#session-warning::backdrop{background:rgba(20,43,41,.4)}
+.session-warning-body{padding:28px}
+.session-warning-body h2{margin-top:0}
+.session-lock-note,.recovery-session-notice{margin:16px;padding:18px;border-radius:12px}
+.recovery-session-notice p{margin:8px 0 12px}
+@media print{#session-warning,.session-lock-note,.recovery-session-notice{display:none!important}}

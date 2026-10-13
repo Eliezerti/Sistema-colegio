@@ -9,10 +9,12 @@ const fs = require('node:fs');
   const context=await browser.newContext({viewport:{width:1440,height:1050}});
   const page=await context.newPage(), errors=[];
   let expectedProbeError=false,probeErrors=0;
+  const expectedSessionError={active:false};
   const cloudFolder=fs.mkdtempSync('/tmp/aula-cloud-browser-');
   page.on('pageerror',error=>errors.push(error.message));
   page.on('console',msg=>{if(msg.type()==='error'){
-    if(expectedProbeError&&msg.location().url.endsWith('/api/probe-backup')&&msg.text().includes('400 (Bad Request)'))probeErrors++;
+    if(expectedSessionError.active&&msg.location().url.endsWith('/api/session-status')&&msg.text().includes('401 (Unauthorized)')){}
+    else if(expectedProbeError&&msg.location().url.endsWith('/api/probe-backup')&&msg.text().includes('400 (Bad Request)'))probeErrors++;
     else errors.push(msg.text());
   }});
   const click=async action=>page.locator(`[data-action="${action}"]`).first().click();
@@ -382,6 +384,7 @@ const fs = require('node:fs');
     assert.equal(await page.locator('[data-action="payment"]').count(),0);
     await click('logout');await page.locator('.auth-form').getByLabel('Usuario',{exact:true}).fill('admin');await page.locator('.auth-form').getByLabel(/^Contraseña/).fill('Prueba-segura-2026');
     await page.getByRole('button',{name:'Iniciar sesión'}).click();await page.getByRole('button',{name:'Confirmar tasa y entrar'}).click();await page.locator('.layout').waitFor();
+    await require('./session_browser.cjs')(page,expectedSessionError);
     await nav('settings');await settingsTab('Protección y mantenimiento');await page.locator('.reset-settings summary').click();await click('reset-review');
     await page.locator('form[data-endpoint="reset-records"]').waitFor();await fill('password','Prueba-segura-2026');await fill('confirmation','VACIAR REGISTROS');
     await page.locator('dialog[open] input[type="checkbox"]').check();await page.locator('dialog[open] button[type="submit"]').click();

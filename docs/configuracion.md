@@ -58,3 +58,7 @@ La prueba de navegador comprueba un solo panel visible, navegación con teclado,
 Antes de actualizar, crea y verifica el respaldo externo; cierra Aula desde Salir y cerrar Aula e instala con la misma cuenta de Windows. Comprueba tus alumnos, saldos y destino de Drive. En Configuración visita cada pestaña y prueba escribir un borrador, cambiar de apartado y volver. Usa Aula - Pruebas para ensayar cambios de identidad sin afectar los datos reales. La comprobación efectiva y activación de BitLocker de la PC del usuario se realizan desde Windows; no se han ejecutado remotamente.
 
 Archivos del cambio: AGENTS.md, `colegio/server.py`, `static/app.js`, `static/style.css`, `tests/test_system.py`, `tests/test_backup_alerts.py`, `tests/browser.cjs`, README, CHANGELOG, estas guías Markdown/HTML, notas del workflow y ZIP fuente/suma. No se implementan las fases pendientes de cifrado, sesiones o bitácora protegida; no se modifica nómina, móvil/PWA ni personalización de recibos.
+
+## Cierre por inactividad (A3)
+
+Usuarios y acceso permite guardar el tiempo de cierre (15 minutos por defecto, entre 5 y 60). Este formulario guarda solo ese tiempo, registra el valor anterior y nuevo y conserva su borrador al cambiar de pestaña. Las consultas automáticas no renuevan la sesión. [Guía de sesiones y recuperación](sesiones-acceso.md).

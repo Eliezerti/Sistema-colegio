@@ -112,7 +112,7 @@ Si nadie puede entrar:
 2. En Inicio de Windows abre **Recuperar clave del administrador**.
 3. La herramienta muestra los nombres y usuarios de administradores existentes. Escribe el usuario que deseas recuperar.
 4. Escribe dos veces una contraseña nueva de al menos diez caracteres.
-5. Se crea un respaldo previo, se cambia la clave y se invalidan las sesiones de esa cuenta; abre Aula otra vez.
+5. Se crea un respaldo previo, se cambia la clave y se invalidan todas las sesiones y cada administrador recibe un aviso al ingresar; abre Aula otra vez.
 
 La herramienta funciona localmente, necesita acceso a esta cuenta de Windows y no revela las claves existentes. No crea una base vacía si falta la base. No permite recuperar desde internet. Para recuperar Caja o Consulta, recupera primero un administrador y cambia sus claves desde él.
 
@@ -148,3 +148,7 @@ El CSV antiguo de nueve columnas no contiene la información necesaria: vuelve a
 La segunda carpeta se compara con el disco de la base: si comparte disco, aparece un aviso propio aunque la copia esté recién escrita. Si no se puede determinar, se indica. En Windows se comparan unidades y particiones; unidades distintas pueden compartir disco físico. En otros sistemas solo se confirma el mismo sistema de archivos; no se supone independencia entre volúmenes. El almacenamiento virtual y las carpetas de nube requieren comprobar su protección real. Aula no verifica la subida a la nube.
 
 BitLocker se consulta con los permisos de la cuenta que abrió Aula; una cuenta estándar puede no tener permiso. «Cómo comprobarlo desde Windows» explica cómo revisarlo con ayuda del administrador de Windows. Una comprobación manual no convierte el resultado automático desconocido en «Activo».
+
+## Sesiones y recuperación de acceso (A3)
+
+Cierre tras 15 minutos sin actividad, configurable entre 5 y 60 en Usuarios y acceso. Un minuto antes aparece el aviso para seguir trabajando. Recuperación local de clave cierra todas las sesiones y avisa a cada administrador. El borrador de un formulario habitual permanece solo en memoria para el mismo usuario; recargar o cerrar la ventana lo pierde. [Guía completa de A3](sesiones-acceso.md).
