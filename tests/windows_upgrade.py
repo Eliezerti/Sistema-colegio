@@ -134,6 +134,19 @@ def main():
         with closing(sqlite3.connect(database)) as db:
             assert db.execute('PRAGMA user_version').fetchone()[0]==11
         assert list((data/'backups').glob('antes-bitacora-*.sqlite3'))
+        # Also update from the actual last published bundle, so unused files from
+        # a previous installation cannot hide in a directory after reinstalling.
+        previous = Path(os.environ['RUNNER_TEMP'])/'Aula-B2-Publicado'/'Aula-Colegio-Instalador-1.0.49.exe'
+        assert hashlib.sha256(previous.read_bytes()).hexdigest() == '3d4846ab01e76a96c3e3dc738a1945dfde1aa0d3fb845173e7fc18cf3e0ead2b'
+        execute(previous, *arguments)
+        start_and_check(program, False)
+        assert financial_snapshot(database, original['columns']) == original
+        execute(current, *arguments)
+        start_and_check(program, False)
+        assert financial_snapshot(database, original['columns']) == original
+        subprocess.run([sys.executable, str(ROOT/'packaging/bundle_inventory.py'), str(directory),
+                        '--output', str(Path(os.environ['RUNNER_TEMP'])/'aula-b2-upgraded.json'), '--verify'], check=True)
+        print('PASS B2: actualización real 1.0.49 → '+args.version+' conserva datos y retira recursos anteriores.', flush=True)
         execute(registered_uninstaller(directory),'/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
         assert financial_snapshot(database, original['columns']) == original
         assert hashlib.sha256(old_backup.read_bytes()).hexdigest() == backup_hash

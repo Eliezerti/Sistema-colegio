@@ -20,7 +20,7 @@ Los cobros incluyen **Pago móvil** como método separado en recibos, reportes y
 
 ## Limpieza y reducción · B2
 
-Se retiran las funciones exclusivas de teléfono por decisión del usuario, conservando el diseño adaptable y el acceso privado desde otras PC. Se inventaría el PYZ de la versión publicada antes de excluir módulos y se conserva Tcl/Tk. [Alcance y validación](docs/limpieza-b2.md). El verificador usa un tercer canal oficial firmado si Windows Update/MMPC fallan, conservando los análisis obligatorios.
+Se retiran las funciones exclusivas de teléfono por decisión del usuario, conservando el diseño adaptable y el acceso privado desde otras PC. Se inventaría el PYZ de la versión publicada antes de excluir módulos y se conserva Tcl/Tk. Al actualizar se retiran solo recursos de programa obsoletos identificados, con rutas exactas; los datos y respaldos permanecen. [Alcance y validación](docs/limpieza-b2.md). El verificador usa un tercer canal oficial firmado si Windows Update/MMPC fallan, conservando los análisis obligatorios.
 
 ## Calidad financiera e instalación · B1
 

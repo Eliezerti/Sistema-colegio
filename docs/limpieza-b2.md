@@ -37,3 +37,7 @@ El intento previo 1.0.50 completó el inventario anterior, 295 pruebas Windows c
 Ante los fallos reales de Windows Update/MMPC se agrega el paquete de inteligencia oficial x64 de Microsoft como tercer canal. Antes de ejecutarlo se exige Authenticode válido de Microsoft; se comprueban código de salida, Defender activo, versión sin retroceso y actualización reciente. Se registra la huella del paquete y las versiones. Si no se puede verificar, el pipeline se detiene. El análisis posterior y su bloqueo de publicación se mantienen; no se añaden exclusiones. Los archivos de actualización se eliminan de su temporal propio.
 
 La actualización alternativa se incorpora al verificador del pipeline; no cambia la configuración de Defender de la PC del usuario.
+
+## Actualizar sin dejar recursos anteriores
+
+El instalador retira únicamente los archivos obsoletos de programa identificados en el inventario de 1.0.49 (114 recursos y seis archivos exclusivos PWA), con rutas exactas bajo {app}/_internal. No vacía carpetas completas ni usa comodines sobre datos. La base y respaldos en LOCALAPPDATA/AulaColegio quedan fuera de esa lista. Se verifica también la actualización real desde 1.0.49, además de la actualización histórica de B1, leyendo el PYZ y recursos de la instalación actualizada.

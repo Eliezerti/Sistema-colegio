@@ -41,6 +41,7 @@ Source: "..\build\MicrosoftEdgeWebview2Setup.exe"; DestDir: "{tmp}"; Flags: dele
 Source: "..\docs\*.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 
 [InstallDelete]
+#include "retired-files.iss"
 ; Remove product shortcuts created by 1.0.14; keep school data and backups untouched.
 Type: files; Name: "{userdesktop}\Aula Colegio.lnk"
 Type: files; Name: "{userdesktop}\Aula Colegio - Pruebas.lnk"
