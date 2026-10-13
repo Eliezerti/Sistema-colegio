@@ -1,6 +1,6 @@
 # Historial de cambios
 
-## B1 · Consistencia y pruebas reales · en validación
+## B1 · Consistencia y pruebas reales · 1.0.49 verificada
 
 - Verificar datos: totales de cobros válidos/aplicaciones, duplicados y saltos por encima de reservas; ninguna reparación ni cambio de esquema/datos/cálculos.
 - Cortes reales en respaldo local y borrado; prueba HTTP simultánea de cinco cuentas de Caja, calendario y seis decimales. Matriz automática de rutas con contrato independiente y evidencia por perfiles/CSRF.
@@ -11,7 +11,11 @@
 - Se ajusta la identidad numérica a la sintaxis de icacls (*SID) únicamente en la carpeta ficticia compartida; la ejecución 1.0.47 se cancela antes de terminar para verificar el script corregido, sin presentarla como pasada.
 - La revisión 1.0.48 completó instalación nueva, actualización desde 1.0.13 y desinstalación con base/respaldo conservados; la segunda cuenta se creó, pero el puente del verificador heredó TEMP de la principal y recibió acceso denegado antes de cargar su entorno. Se compila el puente solo en el área ficticia autorizada y luego se sustituye el entorno por el bloque real generado para su token. No se publicó instalador ni se afirmó la segunda cuenta como aprobada.
 - Pruebas Windows integradas en el pipeline: se guardan evidencias de permisos, actualización histórica y segunda cuenta; el ZIP se construye desde el commit probado. No se modifica el empaquetado de módulos ni se adelanta B2.
-- Preparada validación nativa de instalación sin datos, actualización desde 1.0.13 publicada (SHA256/Defender antes de abrir), segunda identidad estándar real y conservación al desinstalar. Linux final: 298 pruebas en 170.610 s, 295 correctas y tres nativas omitidas; los tres recorridos de navegador correctos. Windows pendiente de ejecutar; no se afirma éxito todavía. [Guía](docs/calidad-b1.md).
+- Preparada validación nativa de instalación sin datos, actualización desde 1.0.13 publicada (SHA256/Defender antes de abrir), segunda identidad estándar real y conservación al desinstalar. Linux final: 298 pruebas en 170.610 s, 295 correctas y tres nativas omitidas; los tres recorridos de navegador correctos. Windows final: 298 correctas sin omisiones en 425.470 s; instalación sin datos, actualización publicada 1.0.13 → 1.0.49 y segunda cuenta estándar real correctas, con conservación al desinstalar. [Guía](docs/calidad-b1.md).
+
+- 1.0.49: primer intento detenido por actualización de firmas; segundo con un error Windows 10053 en una prueba existente. Tercer intento completo correcto sin modificar móvil/PWA ni relajar pruebas. Runner 38441960072, intento 3, fuente c3152ed.
+- [Instalador final en borrador](https://github.com/Eliezerti/Sistema-colegio/releases/tag/untagged-271c812f1502ae021e92), 23272158 bytes; SHA256 descargado `3d4846ab01e76a96c3e3dc738a1945dfde1aa0d3fb845173e7fc18cf3e0ead2b` coincide con sidecar y ambos análisis. Defender motor 1.1.26080.3, firmas 1.459.691.0, sin detecciones antes/después. ZIP descargado verificado, 166 archivos y fuente probada (finales de línea normalizados).
+- Matriz completa Linux en docs/permisos-b1.md/csv. El artefacto Windows fue subido por el runner; su descarga local dio HTTP 403 y no se afirma haber leído los JSON. Resultados nativos comprobados en registros completos. Windows Server 2022 con herramientas de desarrollo; hardware, BitLocker, Windows 10/11 del usuario y pruebas sin internet pendientes. Se detiene B1 antes de B2.
 
 ## A5 · Datos bancarios por perfil · 1.0.42 verificada
 
