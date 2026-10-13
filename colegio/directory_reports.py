@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 
 from .db import ValidationError, integer
 from .documents import AdministrativePDF, amount, school_month, student_status
+from .staff_access import banking_allowed
 
 
 TITLES = {'students': 'Alumnos y matrículas', 'guardians': 'Representantes',
@@ -30,6 +31,7 @@ def directory_report(state, kind, query):
                and (not search or any(search.lower() in str(r.get(k) or '').lower()
                     for k in ('name', 'document', 'student_code', 'guardian_name', 'phone', 'position')))]
     lines = []
+    show_banking = banking_allowed(state['user'])
     for n, r in enumerate(records, 1):
         status = 'Archivado' if r.get('archived') else ('Activo' if r.get('status') == 'active' else 'Inactivo')
         if kind == 'students':
@@ -45,9 +47,10 @@ def directory_report(state, kind, query):
                 '\n'.join(s['name']+' · '+s['grade_name']+' ('+student_status(s)+')'
                           for s in children) or 'Sin alumnos vinculados'])
         else:
-            lines.append([str(n), r['name']+'\n'+r['document'], r['position'], r['phone'] or '—',
-                '\n'.join(filter(None, [r['bank'], r['bank_account']])) or 'Sin datos bancarios',
-                amount(r['salary']), status])
+            line = [str(n), r['name']+'\n'+r['document'], r['position'], r['phone'] or '—']
+            if show_banking:
+                line.append('\n'.join(filter(None, [r['bank'], r['bank_account']])) or 'Sin datos bancarios')
+            lines.append(line + [amount(r['salary']), status])
     headings, widths = {
         'students': (['N.º', 'Alumno / código', 'Grado / año', 'Representante', 'Mensualidad',
                       'Cobrar desde', 'Estado', 'Saldo USD'], [26, 150, 108, 157, 85, 83, 65, 84]),
@@ -56,6 +59,9 @@ def directory_report(state, kind, query):
         'employees': (['N.º', 'Empleado / cédula', 'Cargo', 'Teléfono', 'Banco / cuenta', 'Salario USD', 'Estado'],
                       [26, 180, 125, 100, 168, 89, 70]),
     }[kind]
+    if kind == 'employees' and not show_banking:
+        headings = ['N.º', 'Empleado / cédula', 'Cargo', 'Teléfono', 'Salario USD', 'Estado']
+        widths = [26, 230, 160, 140, 112, 90]
     filters = ['Búsqueda: '+search] if search else []
     if grade_name:
         filters.append('Grado: '+grade_name)

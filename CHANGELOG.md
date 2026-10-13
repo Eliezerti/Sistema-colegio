@@ -1,5 +1,12 @@
 # Historial de cambios
 
+## A5 · Datos bancarios por perfil · en validación
+
+- Proyección de empleados y resumen de nóminas en el servidor: Caja/Consulta no reciben banco, cuenta, tipo ni datos del titular. Documentos JSON/PDF de nómina y sueldo exclusivos de Administración, incluidos los históricos.
+- Directorio/PDF del personal sin columnas bancarias para perfiles restringidos; acciones adaptadas sin sustituir el control del servidor. Caja conserva el registro de egresos/sueldo y Administración abre el recibo.
+- Sin migración, cambios de datos existentes o cálculos. Se conservan A1–A4 y los respaldos de cinco minutos.
+- Seis pruebas HTTP por perfiles y recorrido de navegador ampliado. Primera revisión dirigida: 13 de 14 correctas; una aserción nueva de estructura de arqueo corregida sin tocar el cálculo. Linux final: 287 pruebas en 156.063 s, 284 correctas y tres nativas de Windows omitidas; navegador normal, Pruebas y roster correctos. Windows pendiente de ejecutar y verificar. [Guía](docs/privilegios-personal.md).
+
 ## A4 · Bitácora protegida · 1.0.41 verificada
 
 - Esquema 11: tablas acompañantes de huellas y guardas SQLite; filas originales conservadas. Copia previa verificada, reversión y cortes reales del proceso probados con bases ficticias.

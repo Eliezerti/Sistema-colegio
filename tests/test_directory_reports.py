@@ -8,7 +8,7 @@ from colegio.directory_reports import directory_pdf, directory_report, daily_rep
 def directory_state():
     return {'settings': {'school_name': 'Colegio de prueba', 'legal_name': 'Colegio de Prueba, C.A.',
                          'rif': 'J-12345678-9', 'fiscal_address': 'Calle de prueba'},
-            'today': '2026-10-10', 'user': {'name': 'Administración'},
+            'today': '2026-10-10', 'user': {'name': 'Administración', 'role': 'admin'},
             'grades': [{'id': 1, 'name': 'Primero A'}, {'id': 2, 'name': 'Segundo A'}],
             'students': [dict(id=i, name=name, document=f'V-{i}', student_code=f'AL-{i:06d}',
                 guardian_name='Ana Pérez', guardian_id=1, grade_id=grade, grade_name='Primero A',

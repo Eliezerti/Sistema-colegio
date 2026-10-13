@@ -66,3 +66,7 @@ Usuarios y acceso permite guardar el tiempo de cierre (15 minutos por defecto, e
 ## Bitácora · A4
 
 El apartado Bitácora permite al Administrador filtrar y exportar PDF/CSV, revisar valores anteriores/nuevos y comprobar su cadena. Se conserva al vaciar registros. Si falla la verificación, Aula permite consultar y respaldar, pero bloquea cambios. [Guía y prueba manual](bitacora.md).
+
+## Acceso a datos bancarios del personal · A5
+
+En Usuarios y acceso, Caja y Consulta conservan fichas y salarios autorizados, pero no reciben datos bancarios ni abren documentos de nómina o sueldo. Administración conserva ese acceso. No hace falta activar un interruptor. El listado PDF del personal respeta el perfil. [Guía y prueba manual](privilegios-personal.md).

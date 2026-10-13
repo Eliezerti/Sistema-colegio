@@ -43,6 +43,7 @@ from .reset_records import reset_preview, reset_records
 from .network import PrivateAccess, load_config
 from .sessions import Sessions, token_hash, idle_minutes, IDLE_KEY
 from .login_limiter import LoginLimiter
+from .staff_access import banking_allowed, employee_columns, payroll_columns
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -100,10 +101,11 @@ def snapshot(db, user):
     return {'audit_status': integrity, 'settings': settings, 'today': today, 'user': user, 'students': students,
             'guardians': rows(db, 'SELECT * FROM guardians ORDER BY name'),
             'grades': rows(db, 'SELECT * FROM grades ORDER BY name'),
-            'employees': rows(db, 'SELECT * FROM employees ORDER BY name'),
+            'employees': rows(db, f'SELECT {employee_columns(user)} FROM employees ORDER BY name'),
             'positions': rows(db, 'SELECT * FROM positions ORDER BY name'),
             'enrollments': rows(db, 'SELECT id,student_id,created_at FROM enrollment_documents ORDER BY id DESC'),
-            'payroll_plans': [dict(json.loads(r['snapshot_json']), id=r['id']) for r in db.execute('SELECT * FROM payroll_plans ORDER BY id DESC LIMIT 30')],
+            'payroll_plans': ([dict(json.loads(r['snapshot_json']), id=r['id']) for r in db.execute('SELECT * FROM payroll_plans ORDER BY id DESC LIMIT 30')]
+                             if banking_allowed(user) else rows(db, f'SELECT {payroll_columns(user)} FROM payroll_plans ORDER BY id DESC LIMIT 30')),
             'charges': charge_list, 'payments': payments, 'expenses': expenses,
             'cash_closures': rows(db,'SELECT id,closed_on,created_at,reopened_at,reopen_reason FROM cash_closures ORDER BY id DESC LIMIT 100'),
             'payment_plans': [plan_status(db,r) for r in db.execute('SELECT * FROM payment_plans ORDER BY id DESC LIMIT 100')],
@@ -159,7 +161,7 @@ def prepare_backup_directory(db, value, uid):
 def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, import_archived=False, demo=False):
     uid = user['id']
     db.audit_user = uid
-    admin_paths = {'settings','backup-directory','grades','guardians','students','employees','users','password','void-payment','void-expense','cancel-charge','positions','payroll-plans','import-roster','reopen-cash','transition-year','cancel-plan','correct-billing-start'} | DIRECTORY_ACTIONS | ARCHIVE_ACTIONS
+    admin_paths = {'settings','backup-directory','grades','guardians','students','employees','users','password','void-payment','void-expense','cancel-charge','positions','payroll-plans','salary-receipts','import-roster','reopen-cash','transition-year','cancel-plan','correct-billing-start'} | DIRECTORY_ACTIONS | ARCHIVE_ACTIONS
     if user['role'] == 'reader' or (endpoint in admin_paths and user['role'] != 'admin'):
         raise PermissionError('Tu perfil no permite esta operación.')
     if endpoint == 'backup-directory':
@@ -964,6 +966,8 @@ class Handler(BaseHTTPRequestHandler):
                 else: self.respond(200,document)
             elif endpoint.startswith(('enrollment/', 'payroll-plan/', 'salary-receipt/')):
                 kind, raw = endpoint.split('/')
+                if kind in ('payroll-plan', 'salary-receipt') and not banking_allowed(user):
+                    raise PermissionError('Solo Administración puede abrir documentos con datos bancarios del personal.')
                 pdf = raw.endswith('.pdf')
                 target = integer(raw.removesuffix('.pdf'), 1, 2147483647)
                 document = load_salary_receipt(db, target) if kind == 'salary-receipt' else load_document(db, kind, target)
