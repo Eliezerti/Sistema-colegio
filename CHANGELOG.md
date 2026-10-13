@@ -6,8 +6,10 @@
 - Verificación de clave libera sus recursos incluso si falla la consulta o el comprobador; prueba de fallos consecutivos sin bloqueo persistente.
 - Espera por cuenta y origen/cuenta desde cinco fallos, progresión 5/10/20/40/60 segundos, sin prohibición global de 127.0.0.1.
 - Recuperación local con respaldo previo, invalidación de todas las sesiones y aviso persistente por administrador; evento sin contraseñas. Sin migración de esquema ni cambios financieros.
+- Cierre oculta datos incluso si falla conservar el borrador; evita depender de structuredClone en WebView2 anteriores y prueba ambos casos en navegador.
+- Primera compilación Windows 1.0.36: 259 pruebas correctas en 288.365 s sin omisiones, instalación y dos análisis Defender sin detecciones (motor 1.1.26080.3, firmas 1.459.691.0). Se reemplaza por la revisión final de captura segura, pendiente de validación nativa. SHA256 1.0.36: `237be299404d54c1efade6770bdd7eba43c4c93bd134320315c74b23f5719666`.
 - Aviso un minuto antes, borrador solo en RAM para el mismo usuario/perfil, sin contraseñas ni archivos. Oculta datos al vencer, descarta borradores al cambiar de usuario y no los guarda automáticamente. Preferencia independiente en Usuarios y acceso.
-- Linux final: 259 pruebas en 134.089 s, 256 correctas y tres exclusivas de Windows omitidas. Recorridos normal (incluye A3), Pruebas e importación correctos. 17 métodos nuevos; cambio de umbral en prueba del reloj. Windows pendiente de ejecución.
+- Linux final: 259 pruebas en 135.019 s, 256 correctas y tres exclusivas de Windows omitidas. Recorridos normal (incluye A3), Pruebas e importación correctos. 17 métodos nuevos; cambio de umbral en prueba del reloj. Windows pendiente de ejecución.
 - Primer recorrido Python: 255 pruebas en 129.290 s, 252 correctas y tres exclusivas de Windows omitidas. Evidencia final y recorridos de interfaz pendientes de completar en docs/sesiones-acceso.md.
 
 

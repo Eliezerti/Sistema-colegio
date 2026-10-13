@@ -84,5 +84,18 @@ module.exports=async function checkSessions(page,expected){
   assert.match(await page.locator('.recovery-session-notice').innerText(),/Se cerraron todas las sesiones/);
   await click('recovery-notice-ack');await page.waitForFunction(()=>!document.querySelector('.recovery-session-notice'));
   await page.unroute('**/api/session-status');await page.unroute('**/api/recovery-notice-ack');
+  await page.locator('.nav-button[data-id="guardians"]').click();await click('guardian');
+  await page.locator('#modal [name="name"]').fill('Privado aunque falle el borrador');
+  // Also work in older WebView2 without structuredClone. Draft data consists of JSON strings.
+  await page.evaluate(()=>{window.structuredClone=undefined;});
+  await expire();await login('admin','Prueba-segura-2026');await page.locator('#modal[open]').waitFor();
+  assert.equal(await page.locator('#modal [name="name"]').inputValue(),'Privado aunque falle el borrador');
+  await page.evaluate(()=>{window.originalCaptureForTest=captureSessionDraft;captureSessionDraft=()=>{throw new Error('Fallo ficticio del borrador');};});
+  await expire();
+  assert.equal(await page.locator('#modal-content').innerText(),'');assert.equal(await page.locator('.layout').count(),0);
+  assert.match(await page.locator('.session-lock-note').innerText(),/No se pudo conservar/);
+  assert.equal(await page.evaluate(()=>sessionDraft),null);
+  await page.evaluate(()=>{captureSessionDraft=window.originalCaptureForTest;delete window.originalCaptureForTest;});
+  await login('admin','Prueba-segura-2026');
   console.log('PASS: A3 warning, activity without background renewal, configurable timeout, RAM-only drafts, same-user recovery, different-user discard, password clearing, administrative notice.');
 };

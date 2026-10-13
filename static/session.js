@@ -93,19 +93,23 @@ function captureSessionDraft(){
     markup=copy.innerHTML;
   }
   sessionDraft={id:session.id,role:session.role,username:session.username,page,
-                section:settingsSection,drafts:structuredClone(settingsDrafts),markup};
+                section:settingsSection,drafts:JSON.parse(JSON.stringify(settingsDrafts)),markup};
 }
 
 function lockSession(){
-  if(session){captureSessionDraft();publicSchool=state?.settings||publicSchool;}
+  let captureFailed=false;
+  if(session){
+    try{captureSessionDraft();}catch{sessionDraft=null;captureFailed=true;}
+    publicSchool=state?.settings||publicSchool;
+  }
   sessionGeneration++;sessionDeadline=0;sessionWarning?.close();recoveryNotice=null;
   yearCohort=yearPreview=yearRequest=rosterFile=rosterPreview=cashPreview=undefined;
   gateBackup=gateRole=undefined;filters={};
   session=undefined;state=undefined;settingsDrafts={};modal.close();
-  $('#modal-content').replaceChildren();$('#print-area').replaceChildren();auth(false);
+  $('#modal-content').replaceChildren();$('#print-area').replaceChildren();app.replaceChildren();auth(false);
   const message=document.createElement('p');message.className='notice warning session-lock-note';
   message.textContent='Tu sesión terminó. Entra nuevamente para continuar.'+
-    (sessionDraft?' Tu borrador está guardado solo en esta ventana. Al entrar con el mismo usuario podrás retomarlo; todavía no se ha guardado en la base.':'');
+    (captureFailed?' No se pudo conservar el borrador. Revisa los registros antes de volver a llenarlo.':sessionDraft?' Tu borrador está guardado solo en esta ventana. Al entrar con el mismo usuario podrás retomarlo; todavía no se ha guardado en la base.':'');
   app.prepend(message);
   const username=app.querySelector('[name="username"]');if(username&&sessionDraft)username.value=sessionDraft.username;
 }

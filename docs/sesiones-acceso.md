@@ -20,6 +20,7 @@ Si vence la sesión, se ocultan los datos y los documentos de la ventana. Los fo
 - Las contraseñas se vacían. El formulario de configuración de cifrado, la clave de recuperación mostrada, los archivos seleccionados, las pantallas de documentos y las revisiones de operaciones masivas o destructivas no se conservan. Deben revisarse otra vez.
 - Entrar con otro usuario o con un perfil distinto descarta el borrador anterior.
 - Cerrar sesión voluntariamente, recargar/cerrar la ventana o cerrar Aula pierde el borrador. No se guarda en localStorage, sessionStorage, archivos ni la base.
+- Si falla la conservación del borrador, el cierre oculta igualmente la información y avisa que no se pudo conservar; no presenta una recuperación falsa. La captura no depende de la función structuredClone de WebView2.
 - Si no hay conexión, el cierre oculta la información igualmente. No intentes repetir un cobro sin revisar si quedó registrado; las claves de solicitud e idempotencia originales siguen vigentes.
 - Una ventana cerrada, una falla de Windows o la pérdida de energía no permiten recuperar lo que todavía no se había guardado.
 
@@ -57,7 +58,7 @@ Esto no impide que alguien con acceso a tu cuenta de Windows examine memoria, mo
 
 ## Validación y entrega
 
-Validación Linux: **259 pruebas descubiertas en 134.089 s, 256 correctas y tres exclusivas de Windows omitidas** (mutex/ventana nativa/DPAPI). Los tres recorridos de navegador pasaron con el código final: normal (incluye A3), Pruebas e importación. La versión del instalador y Windows quedan pendientes de verificar. Antes de la entrega se ejecutan las cuatro suites exigidas. También se prueba rollback de recuperación si falla el aviso, reconocimiento antiguo rechazado, aviso ilegible explícito y liberación del control de acceso al fallar la verificación. La prueba de navegador acelera solo el aviso visual y revoca la sesión en el servidor real; las pruebas Python avanzan el reloj monotónico para verificar el vencimiento efectivo sin esperar quince minutos.
+Validación Linux: **259 pruebas descubiertas en 135.019 s, 256 correctas y tres exclusivas de Windows omitidas** (mutex/ventana nativa/DPAPI). Los tres recorridos de navegador pasaron con el código final: normal (incluye A3 y fallos del borrador), Pruebas e importación. La primera compilación 1.0.36 pasó las 259 pruebas nativas (288.365 s, sin omisiones), instalación/ventanas/actualización/desinstalación y ambos análisis de Defender. Se reemplaza en la entrega por la revisión final que garantiza ocultar datos incluso al fallar la captura del borrador; su validación nativa queda pendiente. Antes de la entrega se ejecutan las cuatro suites exigidas. También se prueba rollback de recuperación si falla el aviso, reconocimiento antiguo rechazado, aviso ilegible explícito y liberación del control de acceso al fallar la verificación. La prueba de navegador acelera solo el aviso visual y revoca la sesión en el servidor real; las pruebas Python avanzan el reloj monotónico para verificar el vencimiento efectivo sin esperar quince minutos.
 
 La bitácora con cadena de hashes, restricciones de datos bancarios y otras tandas siguen pendientes de aprobación; A3 no las implementa.
 
