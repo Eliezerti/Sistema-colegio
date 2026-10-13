@@ -1,11 +1,13 @@
 # Historial de cambios
 
-## A5 · Datos bancarios por perfil · en validación
+## A5 · Datos bancarios por perfil · 1.0.42 verificada
 
 - Proyección de empleados y resumen de nóminas en el servidor: Caja/Consulta no reciben banco, cuenta, tipo ni datos del titular. Documentos JSON/PDF de nómina y sueldo exclusivos de Administración, incluidos los históricos.
 - Directorio/PDF del personal sin columnas bancarias para perfiles restringidos; acciones adaptadas sin sustituir el control del servidor. Caja conserva el registro de egresos/sueldo y Administración abre el recibo.
 - Sin migración, cambios de datos existentes o cálculos. Se conservan A1–A4 y los respaldos de cinco minutos.
-- Seis pruebas HTTP por perfiles y recorrido de navegador ampliado. Primera revisión dirigida: 13 de 14 correctas; una aserción nueva de estructura de arqueo corregida sin tocar el cálculo. Linux final: 287 pruebas en 156.063 s, 284 correctas y tres nativas de Windows omitidas; navegador normal, Pruebas y roster correctos. Windows pendiente de ejecutar y verificar. [Guía](docs/privilegios-personal.md).
+- Seis pruebas HTTP por perfiles y recorrido de navegador ampliado. Primera revisión dirigida: 13 de 14 correctas; una aserción nueva de estructura de arqueo corregida sin tocar el cálculo. Linux final: 287 pruebas en 156.063 s, 284 correctas y tres nativas de Windows omitidas; navegador normal, Pruebas y roster correctos. Windows final: 287 correctas en 384.343 s, sin omisiones; instalación/accesos/ventanas/bandeja/reinstalación/desinstalación conservando datos. [Guía](docs/privilegios-personal.md).
+- [Instalador 1.0.42 en borrador](https://github.com/Eliezerti/Sistema-colegio/releases/tag/untagged-b75722b7d277df4695d2), 23270319 bytes; SHA256 `44789c21c1d0c9fb731bda632d657640eace1700e184b5159a7010f67c2bf534` comprobado tras descargar contra sidecar y ambos análisis. Defender motor 1.1.26080.3, firmas 1.459.691.0, sin detecciones antes/después. Runner 38344052502 sobre commit 5dd2e0f. No se afirma prueba en tu PC, otra cuenta de Windows ni actualización desde un EXE histórico.
+- Fuente A5 en 5dd2e0f; documentación final y ZIP de código actualizado para la entrega. Se detiene la tanda A sin avanzar a la B ni a SQLCipher.
 
 ## A4 · Bitácora protegida · 1.0.41 verificada
 
