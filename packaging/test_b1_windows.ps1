@@ -61,7 +61,7 @@ try {
     $Account = New-LocalUser -Name $Name -Password $Password -Description 'Cuenta estándar desechable para B1'
     Add-LocalGroupMember -Group (Get-LocalGroup -SID 'S-1-5-32-545') -Member $Name
     $Sid = $Account.SID.Value
-    icacls $Shared /grant "${Sid}:(OI)(CI)M" | Out-Null
+    icacls $Shared /grant "*${Sid}:(OI)(CI)M" | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo preparar únicamente el área ficticia compartida.' }
     $Command = "& '$Shared/launch-other-account.ps1' -Python '$Python' -Root '$Shared' -Sid '$Sid'; exit `$LASTEXITCODE"
     $Encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($Command))
