@@ -20,7 +20,40 @@ try {
 } catch {
     # Use the supported Microsoft update source when Windows Update fails.
     Write-Host 'Windows Update no actualizó las firmas; se intenta el canal oficial MMPC.'
-    Update-MpSignature -UpdateSource MMPC -ErrorAction Stop
+    try {
+        Update-MpSignature -UpdateSource MMPC -ErrorAction Stop
+    } catch {
+        Write-Host 'MMPC no actualizó las firmas; se comprueba el paquete oficial firmado de Microsoft.'
+        $DefinitionsDir = Join-Path $ReportRoot ('Aula-Definiciones-' + [guid]::NewGuid().ToString('N'))
+        New-Item $DefinitionsDir -ItemType Directory | Out-Null
+        try {
+            $Definitions = Join-Path $DefinitionsDir 'mpam-fe.exe'
+            Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?LinkID=121721&arch=x64' -OutFile $Definitions -TimeoutSec 180
+            $DefinitionSignature = Get-AuthenticodeSignature $Definitions
+            if ($DefinitionSignature.Status -ne 'Valid' -or $DefinitionSignature.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation') {
+                throw 'El paquete de firmas no tiene una firma válida de Microsoft.'
+            }
+            $OldVersion = (Get-MpComputerStatus).AntivirusSignatureVersion
+            $Process = Start-Process $Definitions -PassThru
+            if (-not $Process.WaitForExit(120000)) { $Process.Kill(); throw 'La actualización oficial no terminó.' }
+            if ($Process.ExitCode -ne 0) { throw "La actualización oficial devolvió $($Process.ExitCode)." }
+            $Updated = Get-MpComputerStatus
+            $Now = Get-Date
+            if ([version]$Updated.AntivirusSignatureVersion -lt [version]$OldVersion -or
+                $Updated.AntivirusSignatureLastUpdated -lt $Now.AddHours(-48) -or
+                $Updated.AntivirusSignatureLastUpdated -gt $Now.AddMinutes(5) -or
+                -not $Updated.AntivirusEnabled -or -not $Updated.AMServiceEnabled) {
+                throw 'No se pudo confirmar una actualización reciente y válida de Defender.'
+            }
+            [PSCustomObject]@{source='Microsoft, paquete oficial x64';signature=$DefinitionSignature.Status.ToString();
+                sha256=(Get-FileHash $Definitions -Algorithm SHA256).Hash.ToLowerInvariant();
+                previous=$OldVersion;current=$Updated.AntivirusSignatureVersion} |
+                ConvertTo-Json | Set-Content (Join-Path $ReportDir 'actualizacion-oficial.json') -Encoding utf8
+            Write-Host "Actualización oficial comprobada: $OldVersion -> $($Updated.AntivirusSignatureVersion)."
+        } finally {
+            Remove-Item $DefinitionsDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
 }
 $Status = Get-MpComputerStatus
 $Status | Select-Object AMProductVersion,AMEngineVersion,AntivirusSignatureVersion,AntivirusSignatureLastUpdated |
