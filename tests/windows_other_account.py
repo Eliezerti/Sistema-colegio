@@ -6,7 +6,7 @@ import subprocess
 import urllib.request
 from pathlib import Path
 
-from windows_upgrade import start_and_check, execute
+from windows_upgrade import start_and_check, execute, registered_uninstaller
 
 
 def main():
@@ -29,7 +29,7 @@ def main():
     assert (data/'colegio.sqlite3').exists()
     import hashlib
     digest=hashlib.sha256((data/'colegio.sqlite3').read_bytes()).hexdigest()
-    execute(directory/'unins000.exe','/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
+    execute(registered_uninstaller(directory),'/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
     assert hashlib.sha256((data/'colegio.sqlite3').read_bytes()).hexdigest()==digest
     (root/'other-account-result.json').write_text(json.dumps(dict(sid=sid,localappdata=str(data.parent),
         data_path=str(data),installed_as_standard_user=True,first_start=True,uninstall_preserved_data=True),indent=2))

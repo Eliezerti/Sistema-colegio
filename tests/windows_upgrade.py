@@ -19,6 +19,23 @@ def execute(program, *arguments):
     subprocess.run([str(program), *arguments], check=True, timeout=150)
 
 
+def registered_uninstaller(directory):
+    """Inno may allocate a different uninsNNN name when upgrading across versions."""
+    import winreg
+    key = r'Software\Microsoft\Windows\CurrentVersion\Uninstall\{55F5F949-F16B-47B4-964A-D75AF4DF8DE2}_is1'
+    for view in (winreg.KEY_WOW64_64KEY, winreg.KEY_WOW64_32KEY):
+        try:
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key, 0, winreg.KEY_READ | view) as opened:
+                command = winreg.QueryValueEx(opened, 'UninstallString')[0]
+            path = Path(command.strip().strip('"'))
+            if path.parent.resolve()!=directory.resolve() or not path.is_file():
+                raise RuntimeError('El desinstalador registrado no corresponde a esta instalación de prueba.')
+            return path
+        except FileNotFoundError:
+            continue
+    raise RuntimeError('Windows no registró el desinstalador de la aplicación de prueba.')
+
+
 def start_and_check(program, needs_setup):
     # Both real releases use the default port; no invented legacy CLI options.
     process = subprocess.Popen([str(program)])
@@ -81,7 +98,7 @@ def main():
         assert session['school']['school_name'] == 'Mi colegio'
         database = data/'colegio.sqlite3'
         before = hashlib.sha256(database.read_bytes()).hexdigest()
-        execute(directory/'unins000.exe','/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
+        execute(registered_uninstaller(directory),'/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
         assert hashlib.sha256(database.read_bytes()).hexdigest() == before
         print('PASS B1: instalación sin datos previos, inicio real y desinstalación conserva la base.', flush=True)
         shutil.rmtree(data)
@@ -114,7 +131,7 @@ def main():
         with closing(sqlite3.connect(database)) as db:
             assert db.execute('PRAGMA user_version').fetchone()[0]==11
         assert list((data/'backups').glob('antes-bitacora-*.sqlite3'))
-        execute(directory/'unins000.exe','/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
+        execute(registered_uninstaller(directory),'/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
         assert financial_snapshot(database, original['columns']) == original
         assert hashlib.sha256(old_backup.read_bytes()).hexdigest() == backup_hash
         result = dict(historical='1.0.13', target=args.version, historical_sha256=digest,
