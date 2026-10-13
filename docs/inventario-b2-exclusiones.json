@@ -173,6 +173,8 @@
     "setuptools.warnings",
     "setuptools.wheel",
     "setuptools.windows_support",
+    "webview.__pyinstaller",
+    "webview.__pyinstaller.hook-webview",
     "webview.platforms.android",
     "webview.platforms.cef",
     "webview.platforms.cocoa",
@@ -622,8 +624,40 @@
       "bytes": 4948
     },
     {
+      "path": "_internal/static/icon-mobile-192.png",
+      "bytes": 41089
+    },
+    {
+      "path": "_internal/static/icon-mobile-512.png",
+      "bytes": 227559
+    },
+    {
+      "path": "_internal/static/manifest.webmanifest",
+      "bytes": 552
+    },
+    {
+      "path": "_internal/static/mobile.js",
+      "bytes": 4076
+    },
+    {
+      "path": "_internal/static/offline.html",
+      "bytes": 1158
+    },
+    {
+      "path": "_internal/static/service-worker.js",
+      "bytes": 1302
+    },
+    {
       "path": "_internal/tcl8/8.5/tcltest-2.5.8.tm",
       "bytes": 105163
+    },
+    {
+      "path": "_internal/webview/__pyinstaller/__init__.py",
+      "bytes": 70
+    },
+    {
+      "path": "_internal/webview/__pyinstaller/hook-webview.py",
+      "bytes": 294
     },
     {
       "path": "_internal/webview/lib/pywebview-android.jar",
@@ -636,6 +670,30 @@
     {
       "path": "_internal/webview/lib/WebBrowserInterop.x86.dll",
       "bytes": 7168
+    },
+    {
+      "path": "_internal/webview/platforms/android.py",
+      "bytes": 12617
+    },
+    {
+      "path": "_internal/webview/platforms/cef.py",
+      "bytes": 10836
+    },
+    {
+      "path": "_internal/webview/platforms/cocoa.py",
+      "bytes": 53518
+    },
+    {
+      "path": "_internal/webview/platforms/gtk.py",
+      "bytes": 30976
+    },
+    {
+      "path": "_internal/webview/platforms/mshtml.py",
+      "bytes": 8827
+    },
+    {
+      "path": "_internal/webview/platforms/qt.py",
+      "bytes": 36744
     }
   ]
 }

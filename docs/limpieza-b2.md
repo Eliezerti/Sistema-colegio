@@ -8,7 +8,7 @@ Se corrigen instrucciones para el instalado y para el ZIP; este último conserva
 
 ## Inventario previo
 
-Antes de excluir módulos se instala en un runner desechable el EXE publicado 1.0.49, con su SHA-256 fijado y análisis de Defender, sin abrir datos reales. Se lee el PYZ y se enumeran todos los archivos y tamaños. Nunca se consideran probados módulos de un archivo por inferencia de requirements. El tamaño del instalador anterior descargado es 23.272.158 bytes. La selección concreta de exclusiones y los resultados se documentarán después de leer ese inventario.
+Antes de excluir módulos se instala en un runner desechable el EXE anterior entregado 1.0.49 (en borrador), con su SHA-256 fijado y análisis de Defender, sin abrir datos reales. Se lee el PYZ y se enumeran todos los archivos y tamaños. Nunca se consideran probados módulos de un archivo por inferencia de requirements. El tamaño del instalador anterior descargado es 23.272.158 bytes. La selección concreta de exclusiones y los resultados se documentarán después de leer ese inventario.
 
 ## Validación pendiente
 
@@ -26,9 +26,9 @@ Se añaden los rechazos de los argumentos de teléfono antes de acceder a la car
 
 ## Selección basada en el inventario real
 
-El inventario de 1.0.49 confirmó 733 módulos PYZ, 1.113 archivos y 58.445.044 bytes instalados: 23 módulos PyInstaller, 145 setuptools, uno pefile y cuatro altgraph. También contiene los seis motores webview Android, CEF, Cocoa, GTK, MSHTML y Qt, que no usa el inicio forzado edgechromium. Se excluyen esas familias: 179 módulos presentes en el inventario anterior. El nuevo spec desactiva UPX explícitamente y verifica el PYZ final antes de generar el instalador.
+El inventario de 1.0.49 confirmó 733 módulos PYZ, 1.113 archivos y 58.445.044 bytes instalados: 23 módulos PyInstaller, 145 setuptools, uno pefile y cuatro altgraph. También contiene los seis motores webview Android, CEF, Cocoa, GTK, MSHTML y Qt, que no usa el inicio forzado edgechromium. Se excluyen esas familias: 181 módulos presentes en el inventario anterior. El nuevo spec desactiva UPX explícitamente y verifica el PYZ final antes de generar el instalador.
 
-Se seleccionan 114 recursos innecesarios (308.828 bytes): catálogos Tcl/Tk ajenos a inglés/español, tcltest y librerías exclusivas Android/MSHTML. Se conservan el español venezolano es_ve, todos los encodings, tzdata, clock/msgcat, ttk, Tcl/Tk completos y WebView2. Se conservan también los tres directorios WebView2Loader: pywebview 5.4 comprueba su existencia al iniciar en x64; quitarlos sin cambiar esa dependencia rompería el arranque. Las exclusiones afectan al paquete, no desinstalan herramientas de la computadora que lo compila.
+Se seleccionan 128 recursos innecesarios (738.446): catálogos Tcl/Tk ajenos a inglés/español, tcltest y librerías exclusivas Android/MSHTML. Se conservan el español venezolano es_ve, todos los encodings, tzdata, clock/msgcat, ttk, motor Tcl/Tk y sus componentes de ejecución y WebView2. Se conservan también los tres directorios WebView2Loader: pywebview 5.4 comprueba su existencia al iniciar en x64; quitarlos sin cambiar esa dependencia rompería el arranque. Las exclusiones afectan al paquete, no desinstalan herramientas de la computadora que lo compila.
 
 El intento previo 1.0.50 completó el inventario anterior, 295 pruebas Windows correctas en 430.012 s y comprobaciones de ventanas/instalación. Fallaron ambos canales de actualización de firmas en el análisis posterior; no se publicó instalador ni se afirma aprobada la ejecución completa. No contenía las exclusiones ni las nuevas comprobaciones nativas: se usa como evidencia del inventario, no de la entrega final.
 
@@ -40,4 +40,18 @@ La actualización alternativa se incorpora al verificador del pipeline; no cambi
 
 ## Actualizar sin dejar recursos anteriores
 
-El instalador retira únicamente los archivos obsoletos de programa identificados en el inventario de 1.0.49 (114 recursos y seis archivos exclusivos PWA), con rutas exactas bajo {app}/_internal. No vacía carpetas completas ni usa comodines sobre datos. La base y respaldos en LOCALAPPDATA/AulaColegio quedan fuera de esa lista. Se verifica también la actualización real desde 1.0.49, además de la actualización histórica de B1, leyendo el PYZ y recursos de la instalación actualizada.
+El instalador retira únicamente los archivos obsoletos de programa identificados en el inventario de 1.0.49 (128 recursos y seis archivos exclusivos PWA), con rutas exactas bajo {app}/_internal. No vacía carpetas completas ni usa comodines sobre datos. La base y respaldos en LOCALAPPDATA/AulaColegio quedan fuera de esa lista. Se verifica también la actualización real desde 1.0.49, además de la actualización histórica de B1, leyendo el PYZ y recursos de la instalación actualizada.
+
+## Prueba manual guiada
+
+1. Guarda una copia externa y cierra Aula con Colegio → Salir y cerrar Aula antes de instalar la actualización, usando la misma cuenta Windows.
+2. Abre Aula - Pruebas. Comprueba el menú al reducir la ventana, crea fichas ficticias y registra un cobro ficticio. Descarga su PDF y abre Imprimir.
+3. Imprime en tu impresora habitual y revisa nombre, grado, importe y legibilidad. No registres pagos reales para probar.
+4. Cierra Pruebas y usa Inicio → Aula Colegio → Probar respaldo para comprobar que abre el selector y un archivo de copia con su contraseña/recuperación. Probar respaldo no restaura ni cambia datos.
+5. En Aula real revisa nombres, saldos y último recibo. Conserva el respaldo previo. La instalación PWA y prueba Wi-Fi ya no están disponibles; el acceso privado de otras PC sigue disponible.
+
+## Archivos del cambio
+
+colegio/desktop.py, desktop_checks.py y server.py; static/app.js, responsive.js, index.html y style.css; pruebas de recursos, argumentos, navegador adaptable y actualización Windows; packaging/Aula.spec, bundle_rules.py, bundle_inventory.py, inventory_previous.ps1, retired-files.iss, Aula.iss, build_windows.ps1, scan_windows.ps1 y test_installer.ps1; workflow, .gitignore, README, CHANGELOG, estas guías/inventarios y ZIP/suma. Se retiraron phone_demo.py, el lanzador de teléfono, recursos PWA, guía/paquetes móviles y las pruebas exclusivas de la pasarela. No hay migración de esquema.
+
+Se retiran también las copias .py de las seis plataformas excluidas y el proveedor de hooks de construcción de pywebview, presentes en el inventario original. Se conservan las fuentes Windows que utiliza el programa.
