@@ -70,3 +70,7 @@ El apartado Bitácora permite al Administrador filtrar y exportar PDF/CSV, revis
 ## Acceso a datos bancarios del personal · A5
 
 En Usuarios y acceso, Caja y Consulta conservan fichas y salarios autorizados, pero no reciben datos bancarios ni abren documentos de nómina o sueldo. Administración conserva ese acceso. No hace falta activar un interruptor. El listado PDF del personal respeta el perfil. [Guía y prueba manual](privilegios-personal.md).
+
+## Verificar datos y cobros · B1
+
+En Protección y mantenimiento se añaden totales de cobros válidos/aplicaciones, cargos duplicados y revisión de saltos por encima de números reservados. La operación no repara ni cambia tus registros. [Guía y comprobaciones de B1](calidad-b1.md).

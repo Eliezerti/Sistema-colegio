@@ -18,6 +18,10 @@ El recibo de pago muestra nombre y grado del alumno, sin cédula escolar ni cód
 
 Los cobros incluyen **Pago móvil** como método separado en recibos, reportes y cierre de caja. El **efectivo inicial en caja** son billetes y monedas al comenzar el día, no el saldo bancario; pagos móviles y transferencias no se suman al arqueo físico. [Guía de cobros y arqueo](docs/cobros-y-arqueo.md).
 
+## Calidad financiera e instalación · B1
+
+Verificar datos amplía totales válidos, cargos duplicados y correlativos por encima de sus reservas, sin reparar ni recalcular. Se conservan los controles existentes y se añaden cortes reales de respaldo local/borrado, cinco cuentas de Caja simultáneas y matriz HTTP de permisos generada. La validación Windows incluye instalación sin datos, actualización desde el instalador realmente publicado 1.0.13 y otra cuenta estándar real; los resultados se documentan al terminar, sin presentarlos como ya ejecutados. [Guía, resultados y límites](docs/calidad-b1.md).
+
 ## Datos bancarios del personal · A5
 
 Solo Administración recibe los campos bancarios del personal y puede abrir relaciones de nómina y recibos de sueldo, también los históricos. Caja y Consulta conservan fichas, salarios, resúmenes y listados PDF sin cuentas; la restricción se comprueba en el servidor. Caja sigue registrando pagos de sueldo, con el recibo disponible para Administración. Sin migración ni cambios de cálculos o datos. [Guía y prueba por perfiles](docs/privilegios-personal.md) · [Guía instalada](docs/privilegios-personal.html).
