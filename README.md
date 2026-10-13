@@ -52,7 +52,7 @@ Este punto no cambia el esquema, los datos, su ubicación, WAL, `synchronous=FUL
 
 ## Descargar el sistema
 
-**Sesiones seguras A3 · [1.0.37 en borrador](https://github.com/Eliezerti/Sistema-colegio/releases/tag/untagged-f612cb9336e27ef27bd0):** entrega actual. Windows: 259 pruebas correctas sin omisiones, instalación/ventanas/reinstalación/desinstalación conservando datos y Defender antes/después sin detecciones (motor 1.1.26080.3, firmas 1.459.691.0). EXE descargado y SHA-256 comprobado contra sidecar y ambos análisis. Conserva A1/A2, datos y usuarios. [Resultados, archivos y prueba manual](docs/sesiones-acceso.md).
+**Bitácora protegida A4 · [1.0.41 en borrador](https://github.com/Eliezerti/Sistema-colegio/releases/tag/untagged-a74c40a40fbb6b05fd60):** entrega actual. Windows: 281 pruebas correctas sin omisiones, instalación/ventanas/bandeja/reinstalación/desinstalación conservando datos y Defender antes/después sin detecciones (motor 1.1.26080.3, firmas 1.459.691.0). Linux: 281 descubiertas, 278 correctas y tres exclusivas de Windows omitidas; los tres recorridos de navegador correctos. EXE descargado y SHA-256 comprobado contra sidecar y ambos análisis: `7ca76e87faa003708666c7ee05aadda8206f7918e25f1729cd5ef9e1f120b8a5`. Conserva A1/A2/A3, datos y usuarios. [Resultados, archivos y prueba manual](docs/bitacora.md).
 
 El **instalador de escritorio para Windows 10/11 de 64 bits** se publica en [Versiones e instaladores](https://github.com/Eliezerti/Sistema-colegio/releases). Descarga el archivo **Aula-Colegio-Instalador-…exe**, no el ZIP de código fuente. Incluye Python y la aplicación; no necesitas instalar Python por separado. La compilación Windows y la prueba de la ventana deben terminar correctamente para que aparezca el instalador.
 

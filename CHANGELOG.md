@@ -1,6 +1,6 @@
 # Historial de cambios
 
-## A4 · Bitácora protegida · en validación
+## A4 · Bitácora protegida · 1.0.41 verificada
 
 - Esquema 11: tablas acompañantes de huellas y guardas SQLite; filas originales conservadas. Copia previa verificada, reversión y cortes reales del proceso probados con bases ficticias.
 - Cadena SHA-256 y control separado con publicación recuperable; inserción oficial, actualización/borrado de bitácora rechazados.
@@ -10,7 +10,10 @@
 - La primera ejecución Windows ejecutó 278 pruebas en 428.856 s y detectó una carrera de publicación; no generó instalador. Se corrige con coordinación por base y pruebas concurrentes y de SAVEPOINT.
 - Guías HTML de A4, mantenimiento y configuración con enlaces a archivos incluidos en el instalador; comprobación de existencia de destinos locales.
 - Exportación con rótulos de filtros en español y lectura tolerante de detalles históricos del operador, sin cambiar sus filas originales.
-- Validación completa y Windows pendientes de finalizar; no se presentan resultados parciales como entrega verificada.
+- Linux final: 281 pruebas en 147.706 s, 278 correctas y tres exclusivas de Windows omitidas; los tres comandos de navegador correctos. 22 métodos nuevos en test_audit_chain.py y test_audit_api.py; recorrido de navegador ampliado.
+- Windows final: 281 correctas en 320.496 s, sin omisiones; instalación/accesos/ventanas/bandeja/reinstalación/desinstalación conservando datos. Runner 38342112487 sobre f9cb708. La revisión 1.0.39 pasó 280 pruebas; 1.0.40 se canceló antes de completar para incluir la corrección final, sin afirmar éxito.
+- [Instalador 1.0.41 en borrador](https://github.com/Eliezerti/Sistema-colegio/releases/tag/untagged-a74c40a40fbb6b05fd60), 23264641 bytes; SHA256 `7ca76e87faa003708666c7ee05aadda8206f7918e25f1729cd5ef9e1f120b8a5` verificado tras descargar contra sidecar y ambos análisis Defender. Motor 1.1.26080.3, firmas 1.459.691.0, sin detecciones antes/después. No se afirma prueba de tu PC ni actualización desde el EXE 1.0.37.
+- Commits de implementación: 7e46253 (migración/cadena), 0f26c3e (visor/exportaciones), 71deefc (concurrencia/reversión), de5a556 (enlaces instalados) y f9cb708 (detalles históricos/textos). No se avanza a A5.
 
 ## A3 · Sesiones y recuperación de acceso · 1.0.37 verificada
 
