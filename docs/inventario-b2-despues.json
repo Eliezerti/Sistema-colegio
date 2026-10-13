@@ -1,0 +1,4345 @@
+{
+  "pyz_modules": [
+    "PIL",
+    "PIL.BlpImagePlugin",
+    "PIL.BmpImagePlugin",
+    "PIL.BufrStubImagePlugin",
+    "PIL.CurImagePlugin",
+    "PIL.DcxImagePlugin",
+    "PIL.DdsImagePlugin",
+    "PIL.EpsImagePlugin",
+    "PIL.ExifTags",
+    "PIL.FitsImagePlugin",
+    "PIL.FliImagePlugin",
+    "PIL.FpxImagePlugin",
+    "PIL.FtexImagePlugin",
+    "PIL.GbrImagePlugin",
+    "PIL.GifImagePlugin",
+    "PIL.GimpGradientFile",
+    "PIL.GimpPaletteFile",
+    "PIL.GribStubImagePlugin",
+    "PIL.Hdf5StubImagePlugin",
+    "PIL.IcnsImagePlugin",
+    "PIL.IcoImagePlugin",
+    "PIL.ImImagePlugin",
+    "PIL.Image",
+    "PIL.ImageChops",
+    "PIL.ImageCms",
+    "PIL.ImageColor",
+    "PIL.ImageFile",
+    "PIL.ImageFilter",
+    "PIL.ImageMath",
+    "PIL.ImageMode",
+    "PIL.ImageOps",
+    "PIL.ImagePalette",
+    "PIL.ImageQt",
+    "PIL.ImageSequence",
+    "PIL.ImageShow",
+    "PIL.ImageTk",
+    "PIL.ImageWin",
+    "PIL.ImtImagePlugin",
+    "PIL.IptcImagePlugin",
+    "PIL.Jpeg2KImagePlugin",
+    "PIL.JpegImagePlugin",
+    "PIL.JpegPresets",
+    "PIL.McIdasImagePlugin",
+    "PIL.MicImagePlugin",
+    "PIL.MpegImagePlugin",
+    "PIL.MpoImagePlugin",
+    "PIL.MspImagePlugin",
+    "PIL.PaletteFile",
+    "PIL.PalmImagePlugin",
+    "PIL.PcdImagePlugin",
+    "PIL.PcxImagePlugin",
+    "PIL.PdfImagePlugin",
+    "PIL.PdfParser",
+    "PIL.PixarImagePlugin",
+    "PIL.PngImagePlugin",
+    "PIL.PpmImagePlugin",
+    "PIL.PsdImagePlugin",
+    "PIL.QoiImagePlugin",
+    "PIL.SgiImagePlugin",
+    "PIL.SpiderImagePlugin",
+    "PIL.SunImagePlugin",
+    "PIL.TgaImagePlugin",
+    "PIL.TiffImagePlugin",
+    "PIL.TiffTags",
+    "PIL.WebPImagePlugin",
+    "PIL.WmfImagePlugin",
+    "PIL.XVThumbImagePlugin",
+    "PIL.XbmImagePlugin",
+    "PIL.XpmImagePlugin",
+    "PIL._binary",
+    "PIL._deprecate",
+    "PIL._typing",
+    "PIL._util",
+    "PIL._version",
+    "PIL.features",
+    "__future__",
+    "_aix_support",
+    "_compat_pickle",
+    "_compression",
+    "_py_abc",
+    "_pydatetime",
+    "_pydecimal",
+    "_strptime",
+    "_threading_local",
+    "argparse",
+    "ast",
+    "asyncio",
+    "asyncio.base_events",
+    "asyncio.base_futures",
+    "asyncio.base_subprocess",
+    "asyncio.base_tasks",
+    "asyncio.constants",
+    "asyncio.coroutines",
+    "asyncio.events",
+    "asyncio.exceptions",
+    "asyncio.format_helpers",
+    "asyncio.futures",
+    "asyncio.locks",
+    "asyncio.log",
+    "asyncio.mixins",
+    "asyncio.proactor_events",
+    "asyncio.protocols",
+    "asyncio.queues",
+    "asyncio.runners",
+    "asyncio.selector_events",
+    "asyncio.sslproto",
+    "asyncio.staggered",
+    "asyncio.streams",
+    "asyncio.subprocess",
+    "asyncio.taskgroups",
+    "asyncio.tasks",
+    "asyncio.threads",
+    "asyncio.timeouts",
+    "asyncio.transports",
+    "asyncio.trsock",
+    "asyncio.unix_events",
+    "asyncio.windows_events",
+    "asyncio.windows_utils",
+    "base64",
+    "bisect",
+    "bottle",
+    "bz2",
+    "calendar",
+    "cffi",
+    "cffi._imp_emulation",
+    "cffi._shimmed_dist_utils",
+    "cffi.api",
+    "cffi.cffi_opcode",
+    "cffi.commontypes",
+    "cffi.cparser",
+    "cffi.error",
+    "cffi.ffiplatform",
+    "cffi.lock",
+    "cffi.model",
+    "cffi.pkgconfig",
+    "cffi.recompiler",
+    "cffi.vengine_cpy",
+    "cffi.vengine_gen",
+    "cffi.verifier",
+    "clr",
+    "clr_loader",
+    "clr_loader.ffi",
+    "clr_loader.ffi.hostfxr",
+    "clr_loader.ffi.mono",
+    "clr_loader.ffi.netfx",
+    "clr_loader.hostfxr",
+    "clr_loader.mono",
+    "clr_loader.netfx",
+    "clr_loader.types",
+    "clr_loader.util",
+    "clr_loader.util.clr_error",
+    "clr_loader.util.coreclr_errors",
+    "clr_loader.util.find",
+    "clr_loader.util.hostfxr_errors",
+    "clr_loader.util.runtime_spec",
+    "code",
+    "codeop",
+    "colegio",
+    "colegio.administration",
+    "colegio.audit_chain",
+    "colegio.audit_reports",
+    "colegio.backup_crypto",
+    "colegio.backup_export",
+    "colegio.backup_health",
+    "colegio.backup_inspection",
+    "colegio.backup_keys",
+    "colegio.backup_retention",
+    "colegio.backup_setup",
+    "colegio.backup_temporary",
+    "colegio.backup_work",
+    "colegio.branding",
+    "colegio.clock_guard",
+    "colegio.db",
+    "colegio.demo",
+    "colegio.desktop",
+    "colegio.desktop_checks",
+    "colegio.directory_reports",
+    "colegio.documents",
+    "colegio.import_guide",
+    "colegio.institution_archive",
+    "colegio.lifecycle",
+    "colegio.login_limiter",
+    "colegio.maintenance",
+    "colegio.network",
+    "colegio.pdf_fonts",
+    "colegio.protection",
+    "colegio.reset_password",
+    "colegio.reset_records",
+    "colegio.restore",
+    "colegio.restore_journal",
+    "colegio.restore_reports",
+    "colegio.salary",
+    "colegio.security_notices",
+    "colegio.server",
+    "colegio.sessions",
+    "colegio.staff_access",
+    "colegio.storage",
+    "colegio.student_admin",
+    "colorsys",
+    "concurrent",
+    "concurrent.futures",
+    "concurrent.futures._base",
+    "concurrent.futures.process",
+    "concurrent.futures.thread",
+    "configparser",
+    "contextlib",
+    "contextvars",
+    "copy",
+    "cryptography",
+    "cryptography.__about__",
+    "cryptography.exceptions",
+    "cryptography.hazmat",
+    "cryptography.hazmat._oid",
+    "cryptography.hazmat.backends",
+    "cryptography.hazmat.backends.openssl",
+    "cryptography.hazmat.backends.openssl.backend",
+    "cryptography.hazmat.bindings",
+    "cryptography.hazmat.bindings.openssl",
+    "cryptography.hazmat.bindings.openssl._conditional",
+    "cryptography.hazmat.bindings.openssl.binding",
+    "cryptography.hazmat.decrepit",
+    "cryptography.hazmat.decrepit.ciphers",
+    "cryptography.hazmat.decrepit.ciphers.algorithms",
+    "cryptography.hazmat.decrepit.ciphers.modes",
+    "cryptography.hazmat.primitives",
+    "cryptography.hazmat.primitives._asymmetric",
+    "cryptography.hazmat.primitives._cipheralgorithm",
+    "cryptography.hazmat.primitives._modes",
+    "cryptography.hazmat.primitives._serialization",
+    "cryptography.hazmat.primitives.asymmetric",
+    "cryptography.hazmat.primitives.asymmetric.dh",
+    "cryptography.hazmat.primitives.asymmetric.dsa",
+    "cryptography.hazmat.primitives.asymmetric.ec",
+    "cryptography.hazmat.primitives.asymmetric.ed25519",
+    "cryptography.hazmat.primitives.asymmetric.ed448",
+    "cryptography.hazmat.primitives.asymmetric.mldsa",
+    "cryptography.hazmat.primitives.asymmetric.mlkem",
+    "cryptography.hazmat.primitives.asymmetric.padding",
+    "cryptography.hazmat.primitives.asymmetric.rsa",
+    "cryptography.hazmat.primitives.asymmetric.types",
+    "cryptography.hazmat.primitives.asymmetric.utils",
+    "cryptography.hazmat.primitives.asymmetric.x25519",
+    "cryptography.hazmat.primitives.asymmetric.x448",
+    "cryptography.hazmat.primitives.ciphers",
+    "cryptography.hazmat.primitives.ciphers.aead",
+    "cryptography.hazmat.primitives.ciphers.algorithms",
+    "cryptography.hazmat.primitives.ciphers.base",
+    "cryptography.hazmat.primitives.ciphers.modes",
+    "cryptography.hazmat.primitives.constant_time",
+    "cryptography.hazmat.primitives.hashes",
+    "cryptography.hazmat.primitives.kdf",
+    "cryptography.hazmat.primitives.kdf.hkdf",
+    "cryptography.hazmat.primitives.serialization",
+    "cryptography.hazmat.primitives.serialization.base",
+    "cryptography.hazmat.primitives.serialization.ssh",
+    "cryptography.utils",
+    "cryptography.x509",
+    "cryptography.x509.base",
+    "cryptography.x509.certificate_transparency",
+    "cryptography.x509.extensions",
+    "cryptography.x509.general_name",
+    "cryptography.x509.name",
+    "cryptography.x509.oid",
+    "cryptography.x509.verification",
+    "csv",
+    "ctypes",
+    "ctypes._aix",
+    "ctypes._endian",
+    "ctypes.macholib",
+    "ctypes.macholib.dyld",
+    "ctypes.macholib.dylib",
+    "ctypes.macholib.framework",
+    "ctypes.util",
+    "ctypes.wintypes",
+    "dataclasses",
+    "datetime",
+    "decimal",
+    "dis",
+    "email",
+    "email._encoded_words",
+    "email._header_value_parser",
+    "email._parseaddr",
+    "email._policybase",
+    "email.base64mime",
+    "email.charset",
+    "email.contentmanager",
+    "email.encoders",
+    "email.errors",
+    "email.feedparser",
+    "email.generator",
+    "email.header",
+    "email.headerregistry",
+    "email.iterators",
+    "email.message",
+    "email.parser",
+    "email.policy",
+    "email.quoprimime",
+    "email.utils",
+    "fnmatch",
+    "fractions",
+    "ftplib",
+    "getopt",
+    "getpass",
+    "gettext",
+    "glob",
+    "gzip",
+    "hashlib",
+    "hmac",
+    "html",
+    "html.entities",
+    "http",
+    "http.client",
+    "http.cookiejar",
+    "http.cookies",
+    "http.server",
+    "importlib",
+    "importlib._abc",
+    "importlib._bootstrap",
+    "importlib._bootstrap_external",
+    "importlib.abc",
+    "importlib.machinery",
+    "importlib.metadata",
+    "importlib.metadata._adapters",
+    "importlib.metadata._collections",
+    "importlib.metadata._functools",
+    "importlib.metadata._itertools",
+    "importlib.metadata._meta",
+    "importlib.metadata._text",
+    "importlib.readers",
+    "importlib.resources",
+    "importlib.resources._adapters",
+    "importlib.resources._common",
+    "importlib.resources._itertools",
+    "importlib.resources._legacy",
+    "importlib.resources.abc",
+    "importlib.resources.readers",
+    "importlib.util",
+    "inspect",
+    "ipaddress",
+    "json",
+    "json.decoder",
+    "json.encoder",
+    "json.scanner",
+    "logging",
+    "lzma",
+    "mimetypes",
+    "multiprocessing",
+    "multiprocessing.connection",
+    "multiprocessing.context",
+    "multiprocessing.dummy",
+    "multiprocessing.dummy.connection",
+    "multiprocessing.forkserver",
+    "multiprocessing.heap",
+    "multiprocessing.managers",
+    "multiprocessing.pool",
+    "multiprocessing.popen_fork",
+    "multiprocessing.popen_forkserver",
+    "multiprocessing.popen_spawn_posix",
+    "multiprocessing.popen_spawn_win32",
+    "multiprocessing.process",
+    "multiprocessing.queues",
+    "multiprocessing.reduction",
+    "multiprocessing.resource_sharer",
+    "multiprocessing.resource_tracker",
+    "multiprocessing.shared_memory",
+    "multiprocessing.sharedctypes",
+    "multiprocessing.spawn",
+    "multiprocessing.synchronize",
+    "multiprocessing.util",
+    "netrc",
+    "nturl2path",
+    "numbers",
+    "opcode",
+    "pathlib",
+    "pickle",
+    "pkgutil",
+    "platform",
+    "pprint",
+    "proxy_tools",
+    "py_compile",
+    "pycparser",
+    "pycparser.ast_transforms",
+    "pycparser.c_ast",
+    "pycparser.c_lexer",
+    "pycparser.c_parser",
+    "pystray",
+    "pystray._appindicator",
+    "pystray._base",
+    "pystray._darwin",
+    "pystray._dummy",
+    "pystray._gtk",
+    "pystray._info",
+    "pystray._util",
+    "pystray._util.gtk",
+    "pystray._util.notify_dbus",
+    "pystray._util.win32",
+    "pystray._win32",
+    "pystray._xorg",
+    "pythonnet",
+    "queue",
+    "quopri",
+    "random",
+    "runpy",
+    "secrets",
+    "selectors",
+    "shlex",
+    "shutil",
+    "signal",
+    "six",
+    "socket",
+    "socketserver",
+    "sqlite3",
+    "sqlite3.__main__",
+    "sqlite3.dbapi2",
+    "sqlite3.dump",
+    "ssl",
+    "statistics",
+    "string",
+    "stringprep",
+    "subprocess",
+    "sysconfig",
+    "tarfile",
+    "tempfile",
+    "textwrap",
+    "threading",
+    "tkinter",
+    "tkinter.commondialog",
+    "tkinter.constants",
+    "tkinter.dialog",
+    "tkinter.filedialog",
+    "tkinter.messagebox",
+    "tkinter.scrolledtext",
+    "tkinter.simpledialog",
+    "tkinter.ttk",
+    "token",
+    "tokenize",
+    "tracemalloc",
+    "typing",
+    "typing_extensions",
+    "urllib",
+    "urllib.error",
+    "urllib.parse",
+    "urllib.request",
+    "urllib.response",
+    "uuid",
+    "webbrowser",
+    "webview",
+    "webview._version",
+    "webview.dom",
+    "webview.dom.classlist",
+    "webview.dom.dom",
+    "webview.dom.element",
+    "webview.dom.event",
+    "webview.dom.propsdict",
+    "webview.errors",
+    "webview.event",
+    "webview.guilib",
+    "webview.http",
+    "webview.localization",
+    "webview.menu",
+    "webview.platforms",
+    "webview.platforms.edgechromium",
+    "webview.platforms.winforms",
+    "webview.screen",
+    "webview.util",
+    "webview.window",
+    "wsgiref",
+    "wsgiref.handlers",
+    "wsgiref.headers",
+    "wsgiref.simple_server",
+    "wsgiref.types",
+    "wsgiref.util",
+    "xml",
+    "xml.etree",
+    "xml.etree.ElementInclude",
+    "xml.etree.ElementPath",
+    "xml.etree.ElementTree",
+    "xml.etree.cElementTree",
+    "xml.parsers",
+    "xml.parsers.expat",
+    "xml.sax",
+    "xml.sax._exceptions",
+    "xml.sax.expatreader",
+    "xml.sax.handler",
+    "xml.sax.saxutils",
+    "xml.sax.xmlreader",
+    "xmlrpc",
+    "xmlrpc.client",
+    "zipfile",
+    "zipfile._path",
+    "zipfile._path.glob",
+    "zipimport"
+  ],
+  "files": [
+    {
+      "path": "_internal/_asyncio.pyd",
+      "bytes": 74096
+    },
+    {
+      "path": "_internal/_bz2.pyd",
+      "bytes": 86896
+    },
+    {
+      "path": "_internal/_cffi_backend.cp312-win_amd64.pyd",
+      "bytes": 181248
+    },
+    {
+      "path": "_internal/_ctypes.pyd",
+      "bytes": 127480
+    },
+    {
+      "path": "_internal/_decimal.pyd",
+      "bytes": 262000
+    },
+    {
+      "path": "_internal/_elementtree.pyd",
+      "bytes": 135160
+    },
+    {
+      "path": "_internal/_hashlib.pyd",
+      "bytes": 68976
+    },
+    {
+      "path": "_internal/_lzma.pyd",
+      "bytes": 161136
+    },
+    {
+      "path": "_internal/_multiprocessing.pyd",
+      "bytes": 37368
+    },
+    {
+      "path": "_internal/_overlapped.pyd",
+      "bytes": 57336
+    },
+    {
+      "path": "_internal/_queue.pyd",
+      "bytes": 33784
+    },
+    {
+      "path": "_internal/_socket.pyd",
+      "bytes": 85496
+    },
+    {
+      "path": "_internal/_sqlite3.pyd",
+      "bytes": 126184
+    },
+    {
+      "path": "_internal/_ssl.pyd",
+      "bytes": 179432
+    },
+    {
+      "path": "_internal/_tcl_data/auto.tcl",
+      "bytes": 21578
+    },
+    {
+      "path": "_internal/_tcl_data/clock.tcl",
+      "bytes": 133009
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/ascii.enc",
+      "bytes": 1110
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/big5.enc",
+      "bytes": 94389
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cns11643.enc",
+      "bytes": 98634
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp1250.enc",
+      "bytes": 1111
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp1251.enc",
+      "bytes": 1111
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp1252.enc",
+      "bytes": 1111
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp1253.enc",
+      "bytes": 1111
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp1254.enc",
+      "bytes": 1111
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp1255.enc",
+      "bytes": 1111
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp1256.enc",
+      "bytes": 1111
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp1257.enc",
+      "bytes": 1111
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp1258.enc",
+      "bytes": 1111
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp437.enc",
+      "bytes": 1110
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp737.enc",
+      "bytes": 1110
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp775.enc",
+      "bytes": 1110
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp850.enc",
+      "bytes": 1110
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp852.enc",
+      "bytes": 1110
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp855.enc",
+      "bytes": 1110
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp857.enc",
+      "bytes": 1110
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp860.enc",
+      "bytes": 1110
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp861.enc",
+      "bytes": 1110
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp862.enc",
+      "bytes": 1110
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp863.enc",
+      "bytes": 1110
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp864.enc",
+      "bytes": 1110
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp865.enc",
+      "bytes": 1110
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp866.enc",
+      "bytes": 1110
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp869.enc",
+      "bytes": 1110
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp874.enc",
+      "bytes": 1110
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp932.enc",
+      "bytes": 49008
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp936.enc",
+      "bytes": 134671
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp949.enc",
+      "bytes": 132551
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/cp950.enc",
+      "bytes": 93330
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/dingbats.enc",
+      "bytes": 1113
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/ebcdic.enc",
+      "bytes": 1073
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/euc-cn.enc",
+      "bytes": 86971
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/euc-jp.enc",
+      "bytes": 83890
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/euc-kr.enc",
+      "bytes": 95451
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/gb12345.enc",
+      "bytes": 88033
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/gb1988.enc",
+      "bytes": 1111
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/gb2312-raw.enc",
+      "bytes": 85912
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/gb2312.enc",
+      "bytes": 86971
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/iso2022-jp.enc",
+      "bytes": 204
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/iso2022-kr.enc",
+      "bytes": 122
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/iso2022.enc",
+      "bytes": 240
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/iso8859-1.enc",
+      "bytes": 1114
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/iso8859-10.enc",
+      "bytes": 1115
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/iso8859-11.enc",
+      "bytes": 1115
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/iso8859-13.enc",
+      "bytes": 1115
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/iso8859-14.enc",
+      "bytes": 1115
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/iso8859-15.enc",
+      "bytes": 1115
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/iso8859-16.enc",
+      "bytes": 1115
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/iso8859-2.enc",
+      "bytes": 1114
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/iso8859-3.enc",
+      "bytes": 1114
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/iso8859-4.enc",
+      "bytes": 1114
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/iso8859-5.enc",
+      "bytes": 1114
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/iso8859-6.enc",
+      "bytes": 1114
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/iso8859-7.enc",
+      "bytes": 1114
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/iso8859-8.enc",
+      "bytes": 1114
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/iso8859-9.enc",
+      "bytes": 1114
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/jis0201.enc",
+      "bytes": 1112
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/jis0208.enc",
+      "bytes": 81772
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/jis0212.enc",
+      "bytes": 72133
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/koi8-r.enc",
+      "bytes": 1111
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/koi8-ru.enc",
+      "bytes": 1092
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/koi8-t.enc",
+      "bytes": 1091
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/koi8-u.enc",
+      "bytes": 1111
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/ksc5601.enc",
+      "bytes": 94393
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/macCentEuro.enc",
+      "bytes": 1116
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/macCroatian.enc",
+      "bytes": 1116
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/macCyrillic.enc",
+      "bytes": 1116
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/macDingbats.enc",
+      "bytes": 1116
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/macGreek.enc",
+      "bytes": 1113
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/macIceland.enc",
+      "bytes": 1115
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/macJapan.enc",
+      "bytes": 48813
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/macRoman.enc",
+      "bytes": 1113
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/macRomania.enc",
+      "bytes": 1115
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/macThai.enc",
+      "bytes": 1112
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/macTurkish.enc",
+      "bytes": 1115
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/macUkraine.enc",
+      "bytes": 1115
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/shiftjis.enc",
+      "bytes": 42552
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/symbol.enc",
+      "bytes": 1111
+    },
+    {
+      "path": "_internal/_tcl_data/encoding/tis-620.enc",
+      "bytes": 1112
+    },
+    {
+      "path": "_internal/_tcl_data/history.tcl",
+      "bytes": 8236
+    },
+    {
+      "path": "_internal/_tcl_data/http1.0/http.tcl",
+      "bytes": 10052
+    },
+    {
+      "path": "_internal/_tcl_data/http1.0/pkgIndex.tcl",
+      "bytes": 746
+    },
+    {
+      "path": "_internal/_tcl_data/init.tcl",
+      "bytes": 25722
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/en_au.msg",
+      "bytes": 307
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/en_be.msg",
+      "bytes": 312
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/en_bw.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/en_ca.msg",
+      "bytes": 295
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/en_gb.msg",
+      "bytes": 286
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/en_hk.msg",
+      "bytes": 329
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/en_ie.msg",
+      "bytes": 286
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/en_in.msg",
+      "bytes": 318
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/en_nz.msg",
+      "bytes": 307
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/en_ph.msg",
+      "bytes": 329
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/en_sg.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/en_za.msg",
+      "bytes": 251
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/en_zw.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/es.msg",
+      "bytes": 1232
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/es_ar.msg",
+      "bytes": 248
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/es_bo.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/es_cl.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/es_co.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/es_cr.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/es_do.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/es_ec.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/es_gt.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/es_hn.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/es_mx.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/es_ni.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/es_pa.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/es_pe.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/es_pr.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/es_py.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/es_sv.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/es_uy.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/es_ve.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/opt0.4/optparse.tcl",
+      "bytes": 33781
+    },
+    {
+      "path": "_internal/_tcl_data/opt0.4/pkgIndex.tcl",
+      "bytes": 636
+    },
+    {
+      "path": "_internal/_tcl_data/package.tcl",
+      "bytes": 23983
+    },
+    {
+      "path": "_internal/_tcl_data/parray.tcl",
+      "bytes": 844
+    },
+    {
+      "path": "_internal/_tcl_data/safe.tcl",
+      "bytes": 42328
+    },
+    {
+      "path": "_internal/_tcl_data/tclIndex",
+      "bytes": 7432
+    },
+    {
+      "path": "_internal/_tcl_data/tm.tcl",
+      "bytes": 12236
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Abidjan",
+      "bytes": 147
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Accra",
+      "bytes": 183
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Addis_Ababa",
+      "bytes": 189
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Algiers",
+      "bytes": 1080
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Asmara",
+      "bytes": 184
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Asmera",
+      "bytes": 184
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Bamako",
+      "bytes": 184
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Bangui",
+      "bytes": 178
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Banjul",
+      "bytes": 184
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Bissau",
+      "bytes": 175
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Blantyre",
+      "bytes": 183
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Brazzaville",
+      "bytes": 183
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Bujumbura",
+      "bytes": 184
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Cairo",
+      "bytes": 8472
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Casablanca",
+      "bytes": 5335
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Ceuta",
+      "bytes": 7536
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Conakry",
+      "bytes": 185
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Dakar",
+      "bytes": 183
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Dar_es_Salaam",
+      "bytes": 191
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Djibouti",
+      "bytes": 186
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Douala",
+      "bytes": 178
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/El_Aaiun",
+      "bytes": 5049
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Freetown",
+      "bytes": 186
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Gaborone",
+      "bytes": 183
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Harare",
+      "bytes": 181
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Johannesburg",
+      "bytes": 309
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Juba",
+      "bytes": 1127
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Kampala",
+      "bytes": 185
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Khartoum",
+      "bytes": 1131
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Kigali",
+      "bytes": 181
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Kinshasa",
+      "bytes": 180
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Lagos",
+      "bytes": 232
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Libreville",
+      "bytes": 182
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Lome",
+      "bytes": 182
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Luanda",
+      "bytes": 178
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Lubumbashi",
+      "bytes": 185
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Lusaka",
+      "bytes": 181
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Malabo",
+      "bytes": 178
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Maputo",
+      "bytes": 149
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Maseru",
+      "bytes": 199
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Mbabane",
+      "bytes": 200
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Mogadishu",
+      "bytes": 187
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Monrovia",
+      "bytes": 208
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Nairobi",
+      "bytes": 268
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Ndjamena",
+      "bytes": 208
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Niamey",
+      "bytes": 178
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Nouakchott",
+      "bytes": 188
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Ouagadougou",
+      "bytes": 189
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Porto-Novo",
+      "bytes": 182
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Sao_Tome",
+      "bytes": 234
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Timbuktu",
+      "bytes": 186
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Tripoli",
+      "bytes": 954
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Tunis",
+      "bytes": 1111
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Africa/Windhoek",
+      "bytes": 1646
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Adak",
+      "bytes": 8447
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Anchorage",
+      "bytes": 8685
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Anguilla",
+      "bytes": 202
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Antigua",
+      "bytes": 201
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Araguaina",
+      "bytes": 1727
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Argentina/Buenos_Aires",
+      "bytes": 1987
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Argentina/Catamarca",
+      "bytes": 2015
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Argentina/ComodRivadavia",
+      "bytes": 242
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Argentina/Cordoba",
+      "bytes": 1982
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Argentina/Jujuy",
+      "bytes": 1980
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Argentina/La_Rioja",
+      "bytes": 2043
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Argentina/Mendoza",
+      "bytes": 2015
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Argentina/Rio_Gallegos",
+      "bytes": 2018
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Argentina/Salta",
+      "bytes": 1951
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Argentina/San_Juan",
+      "bytes": 2043
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Argentina/San_Luis",
+      "bytes": 2019
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Argentina/Tucuman",
+      "bytes": 2042
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Argentina/Ushuaia",
+      "bytes": 2013
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Aruba",
+      "bytes": 199
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Asuncion",
+      "bytes": 7691
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Atikokan",
+      "bytes": 187
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Atka",
+      "bytes": 177
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Bahia",
+      "bytes": 1949
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Bahia_Banderas",
+      "bytes": 2042
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Barbados",
+      "bytes": 648
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Belem",
+      "bytes": 1001
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Belize",
+      "bytes": 3284
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Blanc-Sablon",
+      "bytes": 206
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Boa_Vista",
+      "bytes": 1164
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Bogota",
+      "bytes": 243
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Boise",
+      "bytes": 8605
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Buenos_Aires",
+      "bytes": 239
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Cambridge_Bay",
+      "bytes": 8154
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Campo_Grande",
+      "bytes": 2827
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Cancun",
+      "bytes": 1442
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Caracas",
+      "bytes": 276
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Catamarca",
+      "bytes": 227
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Cayenne",
+      "bytes": 183
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Cayman",
+      "bytes": 185
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Chicago",
+      "bytes": 11372
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Chihuahua",
+      "bytes": 2040
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Ciudad_Juarez",
+      "bytes": 6657
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Coral_Harbour",
+      "bytes": 192
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Cordoba",
+      "bytes": 219
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Costa_Rica",
+      "bytes": 431
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Creston",
+      "bytes": 189
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Cuiaba",
+      "bytes": 2821
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Curacao",
+      "bytes": 201
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Danmarkshavn",
+      "bytes": 1095
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Dawson",
+      "bytes": 3028
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Dawson_Creek",
+      "bytes": 1940
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Denver",
+      "bytes": 8920
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Detroit",
+      "bytes": 8430
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Dominica",
+      "bytes": 202
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Edmonton",
+      "bytes": 8600
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Eirunepe",
+      "bytes": 1194
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/El_Salvador",
+      "bytes": 279
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Ensenada",
+      "bytes": 190
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Fort_Nelson",
+      "bytes": 4578
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Fort_Wayne",
+      "bytes": 231
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Fortaleza",
+      "bytes": 1380
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Glace_Bay",
+      "bytes": 8372
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Godthab",
+      "bytes": 180
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Goose_Bay",
+      "bytes": 10353
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Grand_Turk",
+      "bytes": 7522
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Grenada",
+      "bytes": 201
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Guadeloupe",
+      "bytes": 204
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Guatemala",
+      "bytes": 399
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Guayaquil",
+      "bytes": 246
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Guyana",
+      "bytes": 242
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Halifax",
+      "bytes": 11124
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Havana",
+      "bytes": 8729
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Hermosillo",
+      "bytes": 589
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Indiana/Indianapolis",
+      "bytes": 7230
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Indiana/Knox",
+      "bytes": 8755
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Indiana/Marengo",
+      "bytes": 7273
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Indiana/Petersburg",
+      "bytes": 7611
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Indiana/Tell_City",
+      "bytes": 7100
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Indiana/Vevay",
+      "bytes": 6563
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Indiana/Vincennes",
+      "bytes": 7226
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Indiana/Winamac",
+      "bytes": 7410
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Indianapolis",
+      "bytes": 233
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Inuvik",
+      "bytes": 8053
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Iqaluit",
+      "bytes": 8086
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Jamaica",
+      "bytes": 847
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Jujuy",
+      "bytes": 211
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Juneau",
+      "bytes": 8682
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Kentucky/Louisville",
+      "bytes": 9553
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Kentucky/Monticello",
+      "bytes": 8558
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Knox_IN",
+      "bytes": 204
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Kralendijk",
+      "bytes": 204
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/La_Paz",
+      "bytes": 217
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Lima",
+      "bytes": 450
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Los_Angeles",
+      "bytes": 9726
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Louisville",
+      "bytes": 228
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Lower_Princes",
+      "bytes": 207
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Maceio",
+      "bytes": 1492
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Managua",
+      "bytes": 611
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Manaus",
+      "bytes": 1132
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Marigot",
+      "bytes": 201
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Martinique",
+      "bytes": 251
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Matamoros",
+      "bytes": 6745
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Mazatlan",
+      "bytes": 2036
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Mendoza",
+      "bytes": 219
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Menominee",
+      "bytes": 8410
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Merida",
+      "bytes": 1877
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Metlakatla",
+      "bytes": 6705
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Mexico_City",
+      "bytes": 2261
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Miquelon",
+      "bytes": 6852
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Moncton",
+      "bytes": 10507
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Monterrey",
+      "bytes": 2100
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Montevideo",
+      "bytes": 2800
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Montreal",
+      "bytes": 190
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Montserrat",
+      "bytes": 204
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Nassau",
+      "bytes": 188
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/New_York",
+      "bytes": 11373
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Nipigon",
+      "bytes": 189
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Nome",
+      "bytes": 8680
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Noronha",
+      "bytes": 1354
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/North_Dakota/Beulah",
+      "bytes": 8557
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/North_Dakota/Center",
+      "bytes": 8557
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/North_Dakota/New_Salem",
+      "bytes": 8560
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Nuuk",
+      "bytes": 7111
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Ojinaga",
+      "bytes": 6874
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Panama",
+      "bytes": 186
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Pangnirtung",
+      "bytes": 193
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Paramaribo",
+      "bytes": 249
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Phoenix",
+      "bytes": 496
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Port-au-Prince",
+      "bytes": 6613
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Port_of_Spain",
+      "bytes": 207
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Porto_Acre",
+      "bytes": 201
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Porto_Velho",
+      "bytes": 1021
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Puerto_Rico",
+      "bytes": 283
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Punta_Arenas",
+      "bytes": 3614
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Rainy_River",
+      "bytes": 196
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Rankin_Inlet",
+      "bytes": 8029
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Recife",
+      "bytes": 1377
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Regina",
+      "bytes": 1781
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Resolute",
+      "bytes": 8025
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Rio_Branco",
+      "bytes": 1080
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Rosario",
+      "bytes": 219
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Santa_Isabel",
+      "bytes": 194
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Santarem",
+      "bytes": 1048
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Santiago",
+      "bytes": 8590
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Santo_Domingo",
+      "bytes": 616
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Sao_Paulo",
+      "bytes": 2808
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Scoresbysund",
+      "bytes": 6902
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Shiprock",
+      "bytes": 187
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Sitka",
+      "bytes": 8651
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/St_Barthelemy",
+      "bytes": 207
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/St_Johns",
+      "bytes": 11289
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/St_Kitts",
+      "bytes": 202
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/St_Lucia",
+      "bytes": 202
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/St_Thomas",
+      "bytes": 203
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/St_Vincent",
+      "bytes": 204
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Swift_Current",
+      "bytes": 874
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Tegucigalpa",
+      "bytes": 341
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Thule",
+      "bytes": 6890
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Thunder_Bay",
+      "bytes": 193
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Tijuana",
+      "bytes": 8941
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Toronto",
+      "bytes": 11248
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Tortola",
+      "bytes": 201
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Vancouver",
+      "bytes": 9815
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Virgin",
+      "bytes": 200
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Whitehorse",
+      "bytes": 3033
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Winnipeg",
+      "bytes": 9695
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Yakutat",
+      "bytes": 8683
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/America/Yellowknife",
+      "bytes": 196
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Antarctica/Casey",
+      "bytes": 611
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Antarctica/Davis",
+      "bytes": 318
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Antarctica/DumontDUrville",
+      "bytes": 214
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Antarctica/Macquarie",
+      "bytes": 8447
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Antarctica/Mawson",
+      "bytes": 178
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Antarctica/McMurdo",
+      "bytes": 195
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Antarctica/Palmer",
+      "bytes": 2531
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Antarctica/Rothera",
+      "bytes": 150
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Antarctica/South_Pole",
+      "bytes": 198
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Antarctica/Syowa",
+      "bytes": 178
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Antarctica/Troll",
+      "bytes": 5370
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Antarctica/Vostok",
+      "bytes": 231
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Arctic/Longyearbyen",
+      "bytes": 187
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Aden",
+      "bytes": 171
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Almaty",
+      "bytes": 1614
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Amman",
+      "bytes": 2681
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Anadyr",
+      "bytes": 2019
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Aqtau",
+      "bytes": 1612
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Aqtobe",
+      "bytes": 1613
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Ashgabat",
+      "bytes": 852
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Ashkhabad",
+      "bytes": 182
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Atyrau",
+      "bytes": 1613
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Baghdad",
+      "bytes": 1649
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Bahrain",
+      "bytes": 171
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Baku",
+      "bytes": 2080
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Bangkok",
+      "bytes": 180
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Barnaul",
+      "bytes": 2049
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Beirut",
+      "bytes": 8024
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Bishkek",
+      "bytes": 1616
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Brunei",
+      "bytes": 176
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Calcutta",
+      "bytes": 178
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Chita",
+      "bytes": 2019
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Choibalsan",
+      "bytes": 192
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Chongqing",
+      "bytes": 182
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Chungking",
+      "bytes": 182
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Colombo",
+      "bytes": 352
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Dacca",
+      "bytes": 169
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Damascus",
+      "bytes": 3691
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Dhaka",
+      "bytes": 351
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Dili",
+      "bytes": 231
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Dubai",
+      "bytes": 147
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Dushanbe",
+      "bytes": 796
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Famagusta",
+      "bytes": 7596
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Gaza",
+      "bytes": 10227
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Harbin",
+      "bytes": 179
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Hebron",
+      "bytes": 10202
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Ho_Chi_Minh",
+      "bytes": 387
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Hong_Kong",
+      "bytes": 2226
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Hovd",
+      "bytes": 1533
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Irkutsk",
+      "bytes": 2023
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Istanbul",
+      "bytes": 187
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Jakarta",
+      "bytes": 356
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Jayapura",
+      "bytes": 209
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Jerusalem",
+      "bytes": 8135
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Kabul",
+      "bytes": 176
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Kamchatka",
+      "bytes": 1994
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Karachi",
+      "bytes": 447
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Kashgar",
+      "bytes": 174
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Kathmandu",
+      "bytes": 179
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Katmandu",
+      "bytes": 184
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Khandyga",
+      "bytes": 2051
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Kolkata",
+      "bytes": 330
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Krasnoyarsk",
+      "bytes": 1996
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Kuala_Lumpur",
+      "bytes": 188
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Kuching",
+      "bytes": 649
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Kuwait",
+      "bytes": 173
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Macao",
+      "bytes": 169
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Macau",
+      "bytes": 2212
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Magadan",
+      "bytes": 2021
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Makassar",
+      "bytes": 241
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Manila",
+      "bytes": 421
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Muscat",
+      "bytes": 170
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Nicosia",
+      "bytes": 7625
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Novokuznetsk",
+      "bytes": 1997
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Novosibirsk",
+      "bytes": 2053
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Omsk",
+      "bytes": 1989
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Oral",
+      "bytes": 1611
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Phnom_Penh",
+      "bytes": 180
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Pontianak",
+      "bytes": 358
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Pyongyang",
+      "bytes": 273
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Qatar",
+      "bytes": 174
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Qostanay",
+      "bytes": 1644
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Qyzylorda",
+      "bytes": 1617
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Rangoon",
+      "bytes": 174
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Riyadh",
+      "bytes": 147
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Saigon",
+      "bytes": 188
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Sakhalin",
+      "bytes": 2049
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Samarkand",
+      "bytes": 853
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Seoul",
+      "bytes": 985
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Shanghai",
+      "bytes": 981
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Singapore",
+      "bytes": 357
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Srednekolymsk",
+      "bytes": 1998
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Taipei",
+      "bytes": 1344
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Tashkent",
+      "bytes": 852
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Tbilisi",
+      "bytes": 1675
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Tehran",
+      "bytes": 2150
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Tel_Aviv",
+      "bytes": 184
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Thimbu",
+      "bytes": 176
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Thimphu",
+      "bytes": 176
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Tokyo",
+      "bytes": 388
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Tomsk",
+      "bytes": 2048
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Ujung_Pandang",
+      "bytes": 186
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Ulaanbaatar",
+      "bytes": 1540
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Ulan_Bator",
+      "bytes": 192
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Urumqi",
+      "bytes": 148
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Ust-Nera",
+      "bytes": 1992
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Vientiane",
+      "bytes": 179
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Vladivostok",
+      "bytes": 1996
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Yakutsk",
+      "bytes": 1992
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Yangon",
+      "bytes": 237
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Yekaterinburg",
+      "bytes": 2029
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Asia/Yerevan",
+      "bytes": 1964
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Atlantic/Azores",
+      "bytes": 9517
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Atlantic/Bermuda",
+      "bytes": 8784
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Atlantic/Canary",
+      "bytes": 6855
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Atlantic/Cape_Verde",
+      "bytes": 242
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Atlantic/Faeroe",
+      "bytes": 186
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Atlantic/Faroe",
+      "bytes": 6796
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Atlantic/Jan_Mayen",
+      "bytes": 186
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Atlantic/Madeira",
+      "bytes": 9510
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Atlantic/Reykjavik",
+      "bytes": 189
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Atlantic/South_Georgia",
+      "bytes": 159
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Atlantic/St_Helena",
+      "bytes": 189
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Atlantic/Stanley",
+      "bytes": 2187
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/ACT",
+      "bytes": 190
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/Adelaide",
+      "bytes": 8372
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/Brisbane",
+      "bytes": 674
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/Broken_Hill",
+      "bytes": 8437
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/Canberra",
+      "bytes": 195
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/Currie",
+      "bytes": 193
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/Darwin",
+      "bytes": 437
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/Eucla",
+      "bytes": 699
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/Hobart",
+      "bytes": 8734
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/LHI",
+      "bytes": 199
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/Lindeman",
+      "bytes": 824
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/Lord_Howe",
+      "bytes": 7047
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/Melbourne",
+      "bytes": 8341
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/North",
+      "bytes": 192
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/NSW",
+      "bytes": 190
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/Perth",
+      "bytes": 739
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/Queensland",
+      "bytes": 203
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/South",
+      "bytes": 198
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/Sydney",
+      "bytes": 8338
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/Tasmania",
+      "bytes": 195
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/Victoria",
+      "bytes": 204
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/West",
+      "bytes": 188
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Australia/Yancowinna",
+      "bytes": 212
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Brazil/Acre",
+      "bytes": 194
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Brazil/DeNoronha",
+      "bytes": 190
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Brazil/East",
+      "bytes": 191
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Brazil/West",
+      "bytes": 182
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Canada/Atlantic",
+      "bytes": 189
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Canada/Central",
+      "bytes": 191
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Canada/Eastern",
+      "bytes": 188
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Canada/Mountain",
+      "bytes": 192
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Canada/Newfoundland",
+      "bytes": 196
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Canada/Pacific",
+      "bytes": 194
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Canada/Saskatchewan",
+      "bytes": 190
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Canada/Yukon",
+      "bytes": 195
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/CET",
+      "bytes": 177
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Chile/Continental",
+      "bytes": 194
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Chile/EasterIsland",
+      "bytes": 189
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/CST6CDT",
+      "bytes": 181
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Cuba",
+      "bytes": 175
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/EET",
+      "bytes": 171
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Egypt",
+      "bytes": 170
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Eire",
+      "bytes": 172
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/EST",
+      "bytes": 174
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/EST5EDT",
+      "bytes": 184
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT",
+      "bytes": 110
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT+0",
+      "bytes": 159
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT+1",
+      "bytes": 115
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT+10",
+      "bytes": 117
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT+11",
+      "bytes": 117
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT+12",
+      "bytes": 117
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT+2",
+      "bytes": 115
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT+3",
+      "bytes": 116
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT+4",
+      "bytes": 116
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT+5",
+      "bytes": 116
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT+6",
+      "bytes": 116
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT+7",
+      "bytes": 116
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT+8",
+      "bytes": 116
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT+9",
+      "bytes": 116
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT-0",
+      "bytes": 159
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT-1",
+      "bytes": 114
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT-10",
+      "bytes": 116
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT-11",
+      "bytes": 116
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT-12",
+      "bytes": 116
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT-13",
+      "bytes": 116
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT-14",
+      "bytes": 116
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT-2",
+      "bytes": 114
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT-3",
+      "bytes": 115
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT-4",
+      "bytes": 115
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT-5",
+      "bytes": 115
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT-6",
+      "bytes": 115
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT-7",
+      "bytes": 115
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT-8",
+      "bytes": 115
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT-9",
+      "bytes": 115
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/GMT0",
+      "bytes": 158
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/Greenwich",
+      "bytes": 163
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/UCT",
+      "bytes": 157
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/Universal",
+      "bytes": 163
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/UTC",
+      "bytes": 110
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Etc/Zulu",
+      "bytes": 158
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Amsterdam",
+      "bytes": 190
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Andorra",
+      "bytes": 6927
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Astrakhan",
+      "bytes": 1997
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Athens",
+      "bytes": 7954
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Belfast",
+      "bytes": 182
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Belgrade",
+      "bytes": 7309
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Berlin",
+      "bytes": 8020
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Bratislava",
+      "bytes": 185
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Brussels",
+      "bytes": 9223
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Bucharest",
+      "bytes": 7974
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Budapest",
+      "bytes": 8287
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Busingen",
+      "bytes": 183
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Chisinau",
+      "bytes": 8096
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Copenhagen",
+      "bytes": 185
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Dublin",
+      "bytes": 9810
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Gibraltar",
+      "bytes": 9509
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Guernsey",
+      "bytes": 183
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Helsinki",
+      "bytes": 7368
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Isle_of_Man",
+      "bytes": 186
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Istanbul",
+      "bytes": 3678
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Jersey",
+      "bytes": 181
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Kaliningrad",
+      "bytes": 2511
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Kiev",
+      "bytes": 173
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Kirov",
+      "bytes": 2010
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Kyiv",
+      "bytes": 7455
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Lisbon",
+      "bytes": 9958
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Ljubljana",
+      "bytes": 190
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/London",
+      "bytes": 10211
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Luxembourg",
+      "bytes": 191
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Madrid",
+      "bytes": 8517
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Malta",
+      "bytes": 8724
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Mariehamn",
+      "bytes": 190
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Minsk",
+      "bytes": 2176
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Monaco",
+      "bytes": 178
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Moscow",
+      "bytes": 2430
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Nicosia",
+      "bytes": 179
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Oslo",
+      "bytes": 179
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Paris",
+      "bytes": 9152
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Podgorica",
+      "bytes": 190
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Prague",
+      "bytes": 8038
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Riga",
+      "bytes": 7658
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Rome",
+      "bytes": 8813
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Samara",
+      "bytes": 2050
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/San_Marino",
+      "bytes": 179
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Sarajevo",
+      "bytes": 189
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Saratov",
+      "bytes": 1995
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Simferopol",
+      "bytes": 2389
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Skopje",
+      "bytes": 187
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Sofia",
+      "bytes": 7654
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Stockholm",
+      "bytes": 184
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Tallinn",
+      "bytes": 7549
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Tirane",
+      "bytes": 7675
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Tiraspol",
+      "bytes": 189
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Ulyanovsk",
+      "bytes": 2051
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Uzhgorod",
+      "bytes": 177
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Vaduz",
+      "bytes": 180
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Vatican",
+      "bytes": 176
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Vienna",
+      "bytes": 7930
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Vilnius",
+      "bytes": 7485
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Volgograd",
+      "bytes": 2104
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Warsaw",
+      "bytes": 8662
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Zagreb",
+      "bytes": 187
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Zaporozhye",
+      "bytes": 179
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Europe/Zurich",
+      "bytes": 7305
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/GB",
+      "bytes": 170
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/GB-Eire",
+      "bytes": 175
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/GMT",
+      "bytes": 153
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/GMT+0",
+      "bytes": 155
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/GMT-0",
+      "bytes": 155
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/GMT0",
+      "bytes": 154
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Greenwich",
+      "bytes": 159
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Hongkong",
+      "bytes": 179
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/HST",
+      "bytes": 180
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Iceland",
+      "bytes": 178
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Indian/Antananarivo",
+      "bytes": 190
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Indian/Chagos",
+      "bytes": 178
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Indian/Christmas",
+      "bytes": 181
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Indian/Cocos",
+      "bytes": 174
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Indian/Comoro",
+      "bytes": 184
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Indian/Kerguelen",
+      "bytes": 190
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Indian/Mahe",
+      "bytes": 170
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Indian/Maldives",
+      "bytes": 182
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Indian/Mauritius",
+      "bytes": 267
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Indian/Mayotte",
+      "bytes": 185
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Indian/Reunion",
+      "bytes": 173
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Iran",
+      "bytes": 166
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Israel",
+      "bytes": 177
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Jamaica",
+      "bytes": 181
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Japan",
+      "bytes": 164
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Kwajalein",
+      "bytes": 189
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Libya",
+      "bytes": 176
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/MET",
+      "bytes": 177
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Mexico/BajaNorte",
+      "bytes": 190
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Mexico/BajaSur",
+      "bytes": 191
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Mexico/General",
+      "bytes": 200
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/MST",
+      "bytes": 177
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/MST7MDT",
+      "bytes": 178
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Navajo",
+      "bytes": 177
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/NZ",
+      "bytes": 179
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/NZ-CHAT",
+      "bytes": 181
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Apia",
+      "bytes": 882
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Auckland",
+      "bytes": 8772
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Bougainville",
+      "bytes": 276
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Chatham",
+      "bytes": 7406
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Chuuk",
+      "bytes": 202
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Easter",
+      "bytes": 7941
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Efate",
+      "bytes": 766
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Enderbury",
+      "bytes": 188
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Fakaofo",
+      "bytes": 183
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Fiji",
+      "bytes": 957
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Funafuti",
+      "bytes": 187
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Galapagos",
+      "bytes": 243
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Gambier",
+      "bytes": 154
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Guadalcanal",
+      "bytes": 156
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Guam",
+      "bytes": 732
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Honolulu",
+      "bytes": 344
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Johnston",
+      "bytes": 193
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Kanton",
+      "bytes": 205
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Kiritimati",
+      "bytes": 214
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Kosrae",
+      "bytes": 386
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Kwajalein",
+      "bytes": 298
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Majuro",
+      "bytes": 185
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Marquesas",
+      "bytes": 156
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Midway",
+      "bytes": 194
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Nauru",
+      "bytes": 236
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Niue",
+      "bytes": 180
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Norfolk",
+      "bytes": 4964
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Noumea",
+      "bytes": 319
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Pago_Pago",
+      "bytes": 188
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Palau",
+      "bytes": 182
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Pitcairn",
+      "bytes": 184
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Pohnpei",
+      "bytes": 201
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Ponape",
+      "bytes": 200
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Port_Moresby",
+      "bytes": 189
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Rarotonga",
+      "bytes": 940
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Saipan",
+      "bytes": 179
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Samoa",
+      "bytes": 193
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Tahiti",
+      "bytes": 153
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Tarawa",
+      "bytes": 151
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Tongatapu",
+      "bytes": 438
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Truk",
+      "bytes": 201
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Wake",
+      "bytes": 183
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Wallis",
+      "bytes": 185
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Pacific/Yap",
+      "bytes": 200
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Poland",
+      "bytes": 174
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Portugal",
+      "bytes": 176
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/PRC",
+      "bytes": 171
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/PST8PDT",
+      "bytes": 193
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/ROC",
+      "bytes": 165
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/ROK",
+      "bytes": 162
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Singapore",
+      "bytes": 180
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/SystemV/AST4",
+      "bytes": 201
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/SystemV/AST4ADT",
+      "bytes": 192
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/SystemV/CST6",
+      "bytes": 186
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/SystemV/CST6CDT",
+      "bytes": 192
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/SystemV/EST5",
+      "bytes": 204
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/SystemV/EST5EDT",
+      "bytes": 195
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/SystemV/HST10",
+      "bytes": 193
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/SystemV/MST7",
+      "bytes": 189
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/SystemV/MST7MDT",
+      "bytes": 189
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/SystemV/PST8",
+      "bytes": 192
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/SystemV/PST8PDT",
+      "bytes": 204
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/SystemV/YST9",
+      "bytes": 189
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/SystemV/YST9YDT",
+      "bytes": 198
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Turkey",
+      "bytes": 180
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/UCT",
+      "bytes": 153
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Universal",
+      "bytes": 159
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/US/Alaska",
+      "bytes": 189
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/US/Aleutian",
+      "bytes": 176
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/US/Arizona",
+      "bytes": 184
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/US/Central",
+      "bytes": 184
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/US/East-Indiana",
+      "bytes": 228
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/US/Eastern",
+      "bytes": 187
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/US/Hawaii",
+      "bytes": 186
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/US/Indiana-Starke",
+      "bytes": 206
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/US/Michigan",
+      "bytes": 185
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/US/Mountain",
+      "bytes": 182
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/US/Pacific",
+      "bytes": 196
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/US/Samoa",
+      "bytes": 188
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/UTC",
+      "bytes": 153
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/W-SU",
+      "bytes": 172
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/WET",
+      "bytes": 171
+    },
+    {
+      "path": "_internal/_tcl_data/tzdata/Zulu",
+      "bytes": 154
+    },
+    {
+      "path": "_internal/_tcl_data/word.tcl",
+      "bytes": 5051
+    },
+    {
+      "path": "_internal/_tk_data/bgerror.tcl",
+      "bytes": 8806
+    },
+    {
+      "path": "_internal/_tk_data/button.tcl",
+      "bytes": 21612
+    },
+    {
+      "path": "_internal/_tk_data/choosedir.tcl",
+      "bytes": 10009
+    },
+    {
+      "path": "_internal/_tk_data/clrpick.tcl",
+      "bytes": 22039
+    },
+    {
+      "path": "_internal/_tk_data/comdlg.tcl",
+      "bytes": 8690
+    },
+    {
+      "path": "_internal/_tk_data/console.tcl",
+      "bytes": 33364
+    },
+    {
+      "path": "_internal/_tk_data/dialog.tcl",
+      "bytes": 5988
+    },
+    {
+      "path": "_internal/_tk_data/entry.tcl",
+      "bytes": 18942
+    },
+    {
+      "path": "_internal/_tk_data/focus.tcl",
+      "bytes": 5035
+    },
+    {
+      "path": "_internal/_tk_data/fontchooser.tcl",
+      "bytes": 18292
+    },
+    {
+      "path": "_internal/_tk_data/iconlist.tcl",
+      "bytes": 17456
+    },
+    {
+      "path": "_internal/_tk_data/icons.tcl",
+      "bytes": 11037
+    },
+    {
+      "path": "_internal/_tk_data/images/logo.eps",
+      "bytes": 34991
+    },
+    {
+      "path": "_internal/_tk_data/images/logo100.gif",
+      "bytes": 2341
+    },
+    {
+      "path": "_internal/_tk_data/images/logo64.gif",
+      "bytes": 1670
+    },
+    {
+      "path": "_internal/_tk_data/images/logoLarge.gif",
+      "bytes": 11000
+    },
+    {
+      "path": "_internal/_tk_data/images/logoMed.gif",
+      "bytes": 3889
+    },
+    {
+      "path": "_internal/_tk_data/images/pwrdLogo.eps",
+      "bytes": 29706
+    },
+    {
+      "path": "_internal/_tk_data/images/pwrdLogo100.gif",
+      "bytes": 1615
+    },
+    {
+      "path": "_internal/_tk_data/images/pwrdLogo150.gif",
+      "bytes": 2489
+    },
+    {
+      "path": "_internal/_tk_data/images/pwrdLogo175.gif",
+      "bytes": 2981
+    },
+    {
+      "path": "_internal/_tk_data/images/pwrdLogo200.gif",
+      "bytes": 3491
+    },
+    {
+      "path": "_internal/_tk_data/images/pwrdLogo75.gif",
+      "bytes": 1171
+    },
+    {
+      "path": "_internal/_tk_data/images/README",
+      "bytes": 329
+    },
+    {
+      "path": "_internal/_tk_data/images/tai-ku.gif",
+      "bytes": 5473
+    },
+    {
+      "path": "_internal/_tk_data/license.terms",
+      "bytes": 2307
+    },
+    {
+      "path": "_internal/_tk_data/listbox.tcl",
+      "bytes": 15255
+    },
+    {
+      "path": "_internal/_tk_data/megawidget.tcl",
+      "bytes": 9862
+    },
+    {
+      "path": "_internal/_tk_data/menu.tcl",
+      "bytes": 40215
+    },
+    {
+      "path": "_internal/_tk_data/mkpsenc.tcl",
+      "bytes": 30840
+    },
+    {
+      "path": "_internal/_tk_data/msgbox.tcl",
+      "bytes": 16786
+    },
+    {
+      "path": "_internal/_tk_data/msgs/en.msg",
+      "bytes": 3377
+    },
+    {
+      "path": "_internal/_tk_data/msgs/en_gb.msg",
+      "bytes": 66
+    },
+    {
+      "path": "_internal/_tk_data/msgs/es.msg",
+      "bytes": 4024
+    },
+    {
+      "path": "_internal/_tk_data/obsolete.tcl",
+      "bytes": 5772
+    },
+    {
+      "path": "_internal/_tk_data/optMenu.tcl",
+      "bytes": 1629
+    },
+    {
+      "path": "_internal/_tk_data/palette.tcl",
+      "bytes": 8418
+    },
+    {
+      "path": "_internal/_tk_data/panedwindow.tcl",
+      "bytes": 5370
+    },
+    {
+      "path": "_internal/_tk_data/pkgIndex.tcl",
+      "bytes": 376
+    },
+    {
+      "path": "_internal/_tk_data/safetk.tcl",
+      "bytes": 7632
+    },
+    {
+      "path": "_internal/_tk_data/scale.tcl",
+      "bytes": 8693
+    },
+    {
+      "path": "_internal/_tk_data/scrlbar.tcl",
+      "bytes": 13188
+    },
+    {
+      "path": "_internal/_tk_data/spinbox.tcl",
+      "bytes": 16543
+    },
+    {
+      "path": "_internal/_tk_data/tclIndex",
+      "bytes": 24443
+    },
+    {
+      "path": "_internal/_tk_data/tearoff.tcl",
+      "bytes": 4625
+    },
+    {
+      "path": "_internal/_tk_data/text.tcl",
+      "bytes": 35183
+    },
+    {
+      "path": "_internal/_tk_data/tk.tcl",
+      "bytes": 24322
+    },
+    {
+      "path": "_internal/_tk_data/tkfbox.tcl",
+      "bytes": 39606
+    },
+    {
+      "path": "_internal/_tk_data/ttk/altTheme.tcl",
+      "bytes": 4901
+    },
+    {
+      "path": "_internal/_tk_data/ttk/aquaTheme.tcl",
+      "bytes": 3809
+    },
+    {
+      "path": "_internal/_tk_data/ttk/button.tcl",
+      "bytes": 3014
+    },
+    {
+      "path": "_internal/_tk_data/ttk/clamTheme.tcl",
+      "bytes": 5858
+    },
+    {
+      "path": "_internal/_tk_data/ttk/classicTheme.tcl",
+      "bytes": 4354
+    },
+    {
+      "path": "_internal/_tk_data/ttk/combobox.tcl",
+      "bytes": 12708
+    },
+    {
+      "path": "_internal/_tk_data/ttk/cursors.tcl",
+      "bytes": 4674
+    },
+    {
+      "path": "_internal/_tk_data/ttk/defaults.tcl",
+      "bytes": 5004
+    },
+    {
+      "path": "_internal/_tk_data/ttk/entry.tcl",
+      "bytes": 18006
+    },
+    {
+      "path": "_internal/_tk_data/ttk/fonts.tcl",
+      "bytes": 5639
+    },
+    {
+      "path": "_internal/_tk_data/ttk/menubutton.tcl",
+      "bytes": 6408
+    },
+    {
+      "path": "_internal/_tk_data/ttk/notebook.tcl",
+      "bytes": 5863
+    },
+    {
+      "path": "_internal/_tk_data/ttk/panedwindow.tcl",
+      "bytes": 2161
+    },
+    {
+      "path": "_internal/_tk_data/ttk/progress.tcl",
+      "bytes": 1138
+    },
+    {
+      "path": "_internal/_tk_data/ttk/scale.tcl",
+      "bytes": 2787
+    },
+    {
+      "path": "_internal/_tk_data/ttk/scrollbar.tcl",
+      "bytes": 3284
+    },
+    {
+      "path": "_internal/_tk_data/ttk/sizegrip.tcl",
+      "bytes": 2502
+    },
+    {
+      "path": "_internal/_tk_data/ttk/spinbox.tcl",
+      "bytes": 5003
+    },
+    {
+      "path": "_internal/_tk_data/ttk/treeview.tcl",
+      "bytes": 10180
+    },
+    {
+      "path": "_internal/_tk_data/ttk/ttk.tcl",
+      "bytes": 5509
+    },
+    {
+      "path": "_internal/_tk_data/ttk/utils.tcl",
+      "bytes": 8621
+    },
+    {
+      "path": "_internal/_tk_data/ttk/vistaTheme.tcl",
+      "bytes": 10692
+    },
+    {
+      "path": "_internal/_tk_data/ttk/winTheme.tcl",
+      "bytes": 3848
+    },
+    {
+      "path": "_internal/_tk_data/ttk/xpTheme.tcl",
+      "bytes": 3090
+    },
+    {
+      "path": "_internal/_tk_data/unsupported.tcl",
+      "bytes": 10521
+    },
+    {
+      "path": "_internal/_tk_data/xmfbox.tcl",
+      "bytes": 26991
+    },
+    {
+      "path": "_internal/_tkinter.pyd",
+      "bytes": 68600
+    },
+    {
+      "path": "_internal/_uuid.pyd",
+      "bytes": 27128
+    },
+    {
+      "path": "_internal/_wmi.pyd",
+      "bytes": 40304
+    },
+    {
+      "path": "_internal/api-ms-win-core-console-l1-1-0.dll",
+      "bytes": 22072
+    },
+    {
+      "path": "_internal/api-ms-win-core-datetime-l1-1-0.dll",
+      "bytes": 22056
+    },
+    {
+      "path": "_internal/api-ms-win-core-debug-l1-1-0.dll",
+      "bytes": 21944
+    },
+    {
+      "path": "_internal/api-ms-win-core-errorhandling-l1-1-0.dll",
+      "bytes": 22096
+    },
+    {
+      "path": "_internal/api-ms-win-core-fibers-l1-1-0.dll",
+      "bytes": 22072
+    },
+    {
+      "path": "_internal/api-ms-win-core-fibers-l1-1-1.dll",
+      "bytes": 22072
+    },
+    {
+      "path": "_internal/api-ms-win-core-file-l1-1-0.dll",
+      "bytes": 26152
+    },
+    {
+      "path": "_internal/api-ms-win-core-file-l1-2-0.dll",
+      "bytes": 22056
+    },
+    {
+      "path": "_internal/api-ms-win-core-file-l2-1-0.dll",
+      "bytes": 21960
+    },
+    {
+      "path": "_internal/api-ms-win-core-handle-l1-1-0.dll",
+      "bytes": 21944
+    },
+    {
+      "path": "_internal/api-ms-win-core-heap-l1-1-0.dll",
+      "bytes": 22072
+    },
+    {
+      "path": "_internal/api-ms-win-core-interlocked-l1-1-0.dll",
+      "bytes": 22072
+    },
+    {
+      "path": "_internal/api-ms-win-core-kernel32-legacy-l1-1-1.dll",
+      "bytes": 22080
+    },
+    {
+      "path": "_internal/api-ms-win-core-libraryloader-l1-1-0.dll",
+      "bytes": 22056
+    },
+    {
+      "path": "_internal/api-ms-win-core-localization-l1-2-0.dll",
+      "bytes": 22080
+    },
+    {
+      "path": "_internal/api-ms-win-core-memory-l1-1-0.dll",
+      "bytes": 22056
+    },
+    {
+      "path": "_internal/api-ms-win-core-namedpipe-l1-1-0.dll",
+      "bytes": 22096
+    },
+    {
+      "path": "_internal/api-ms-win-core-processenvironment-l1-1-0.dll",
+      "bytes": 21968
+    },
+    {
+      "path": "_internal/api-ms-win-core-processthreads-l1-1-0.dll",
+      "bytes": 22096
+    },
+    {
+      "path": "_internal/api-ms-win-core-processthreads-l1-1-1.dll",
+      "bytes": 22072
+    },
+    {
+      "path": "_internal/api-ms-win-core-profile-l1-1-0.dll",
+      "bytes": 22080
+    },
+    {
+      "path": "_internal/api-ms-win-core-rtlsupport-l1-1-0.dll",
+      "bytes": 21960
+    },
+    {
+      "path": "_internal/api-ms-win-core-string-l1-1-0.dll",
+      "bytes": 22056
+    },
+    {
+      "path": "_internal/api-ms-win-core-synch-l1-1-0.dll",
+      "bytes": 22056
+    },
+    {
+      "path": "_internal/api-ms-win-core-synch-l1-2-0.dll",
+      "bytes": 22080
+    },
+    {
+      "path": "_internal/api-ms-win-core-sysinfo-l1-1-0.dll",
+      "bytes": 22072
+    },
+    {
+      "path": "_internal/api-ms-win-core-sysinfo-l1-2-0.dll",
+      "bytes": 22080
+    },
+    {
+      "path": "_internal/api-ms-win-core-timezone-l1-1-0.dll",
+      "bytes": 22056
+    },
+    {
+      "path": "_internal/api-ms-win-core-util-l1-1-0.dll",
+      "bytes": 21944
+    },
+    {
+      "path": "_internal/api-ms-win-crt-conio-l1-1-0.dll",
+      "bytes": 22056
+    },
+    {
+      "path": "_internal/api-ms-win-crt-convert-l1-1-0.dll",
+      "bytes": 26056
+    },
+    {
+      "path": "_internal/api-ms-win-crt-environment-l1-1-0.dll",
+      "bytes": 22080
+    },
+    {
+      "path": "_internal/api-ms-win-crt-filesystem-l1-1-0.dll",
+      "bytes": 22056
+    },
+    {
+      "path": "_internal/api-ms-win-crt-heap-l1-1-0.dll",
+      "bytes": 22096
+    },
+    {
+      "path": "_internal/api-ms-win-crt-locale-l1-1-0.dll",
+      "bytes": 22080
+    },
+    {
+      "path": "_internal/api-ms-win-crt-math-l1-1-0.dll",
+      "bytes": 30248
+    },
+    {
+      "path": "_internal/api-ms-win-crt-process-l1-1-0.dll",
+      "bytes": 22096
+    },
+    {
+      "path": "_internal/api-ms-win-crt-runtime-l1-1-0.dll",
+      "bytes": 26152
+    },
+    {
+      "path": "_internal/api-ms-win-crt-stdio-l1-1-0.dll",
+      "bytes": 26168
+    },
+    {
+      "path": "_internal/api-ms-win-crt-string-l1-1-0.dll",
+      "bytes": 26176
+    },
+    {
+      "path": "_internal/api-ms-win-crt-time-l1-1-0.dll",
+      "bytes": 22096
+    },
+    {
+      "path": "_internal/api-ms-win-crt-utility-l1-1-0.dll",
+      "bytes": 21952
+    },
+    {
+      "path": "_internal/base_library.zip",
+      "bytes": 1333717
+    },
+    {
+      "path": "_internal/clr_loader/ffi/dlls/amd64/ClrLoader.dll",
+      "bytes": 10240
+    },
+    {
+      "path": "_internal/clr_loader/ffi/dlls/x86/ClrLoader.dll",
+      "bytes": 10240
+    },
+    {
+      "path": "_internal/colegio/fonts/LiberationSans-Bold.ttf",
+      "bytes": 414568
+    },
+    {
+      "path": "_internal/colegio/fonts/LiberationSans-Regular.ttf",
+      "bytes": 410820
+    },
+    {
+      "path": "_internal/colegio/fonts/LICENSE.txt",
+      "bytes": 4833
+    },
+    {
+      "path": "_internal/colegio/fonts/metrics.json",
+      "bytes": 2114
+    },
+    {
+      "path": "_internal/cryptography/hazmat/bindings/_rust.pyd",
+      "bytes": 9935360
+    },
+    {
+      "path": "_internal/cryptography-50.0.0.dist-info/INSTALLER",
+      "bytes": 4
+    },
+    {
+      "path": "_internal/cryptography-50.0.0.dist-info/licenses/LICENSE",
+      "bytes": 197
+    },
+    {
+      "path": "_internal/cryptography-50.0.0.dist-info/licenses/LICENSE.APACHE",
+      "bytes": 11360
+    },
+    {
+      "path": "_internal/cryptography-50.0.0.dist-info/licenses/LICENSE.BSD",
+      "bytes": 1532
+    },
+    {
+      "path": "_internal/cryptography-50.0.0.dist-info/METADATA",
+      "bytes": 4343
+    },
+    {
+      "path": "_internal/cryptography-50.0.0.dist-info/RECORD",
+      "bytes": 17959
+    },
+    {
+      "path": "_internal/cryptography-50.0.0.dist-info/REQUESTED",
+      "bytes": 0
+    },
+    {
+      "path": "_internal/cryptography-50.0.0.dist-info/sboms/cryptography-rust.cyclonedx.json",
+      "bytes": 45629
+    },
+    {
+      "path": "_internal/cryptography-50.0.0.dist-info/sboms/sbom.json",
+      "bytes": 1223
+    },
+    {
+      "path": "_internal/cryptography-50.0.0.dist-info/WHEEL",
+      "bytes": 96
+    },
+    {
+      "path": "_internal/libcrypto-3.dll",
+      "bytes": 5231472
+    },
+    {
+      "path": "_internal/libffi-8.dll",
+      "bytes": 39696
+    },
+    {
+      "path": "_internal/libssl-3.dll",
+      "bytes": 794992
+    },
+    {
+      "path": "_internal/PIL/_imaging.cp312-win_amd64.pyd",
+      "bytes": 2459136
+    },
+    {
+      "path": "_internal/PIL/_imagingcms.cp312-win_amd64.pyd",
+      "bytes": 263168
+    },
+    {
+      "path": "_internal/PIL/_imagingmath.cp312-win_amd64.pyd",
+      "bytes": 25600
+    },
+    {
+      "path": "_internal/PIL/_imagingtk.cp312-win_amd64.pyd",
+      "bytes": 15360
+    },
+    {
+      "path": "_internal/PIL/_webp.cp312-win_amd64.pyd",
+      "bytes": 409600
+    },
+    {
+      "path": "_internal/pyexpat.pyd",
+      "bytes": 205304
+    },
+    {
+      "path": "_internal/python3.dll",
+      "bytes": 70376
+    },
+    {
+      "path": "_internal/python312.dll",
+      "bytes": 6945272
+    },
+    {
+      "path": "_internal/pythonnet/runtime/Python.Runtime.dll",
+      "bytes": 450048
+    },
+    {
+      "path": "_internal/pywebview-5.4.dist-info/entry_points.txt",
+      "bytes": 64
+    },
+    {
+      "path": "_internal/pywebview-5.4.dist-info/INSTALLER",
+      "bytes": 4
+    },
+    {
+      "path": "_internal/pywebview-5.4.dist-info/LICENSE",
+      "bytes": 1518
+    },
+    {
+      "path": "_internal/pywebview-5.4.dist-info/METADATA",
+      "bytes": 4522
+    },
+    {
+      "path": "_internal/pywebview-5.4.dist-info/RECORD",
+      "bytes": 5673
+    },
+    {
+      "path": "_internal/pywebview-5.4.dist-info/REQUESTED",
+      "bytes": 0
+    },
+    {
+      "path": "_internal/pywebview-5.4.dist-info/top_level.txt",
+      "bytes": 8
+    },
+    {
+      "path": "_internal/pywebview-5.4.dist-info/WHEEL",
+      "bytes": 91
+    },
+    {
+      "path": "_internal/select.pyd",
+      "bytes": 33136
+    },
+    {
+      "path": "_internal/sqlite3.dll",
+      "bytes": 1583608
+    },
+    {
+      "path": "_internal/static/app.js",
+      "bytes": 176092
+    },
+    {
+      "path": "_internal/static/aula-app.png",
+      "bytes": 2587
+    },
+    {
+      "path": "_internal/static/favicon.svg",
+      "bytes": 263
+    },
+    {
+      "path": "_internal/static/index.html",
+      "bytes": 969
+    },
+    {
+      "path": "_internal/static/logo-colegio-v1.png",
+      "bytes": 1615509
+    },
+    {
+      "path": "_internal/static/responsive.js",
+      "bytes": 3265
+    },
+    {
+      "path": "_internal/static/session.js",
+      "bytes": 9049
+    },
+    {
+      "path": "_internal/static/style.css",
+      "bytes": 52685
+    },
+    {
+      "path": "_internal/tcl8/8.4/platform/shell-1.1.4.tm",
+      "bytes": 6242
+    },
+    {
+      "path": "_internal/tcl8/8.4/platform-1.0.19.tm",
+      "bytes": 11708
+    },
+    {
+      "path": "_internal/tcl8/8.5/msgcat-1.6.1.tm",
+      "bytes": 35120
+    },
+    {
+      "path": "_internal/tcl8/8.6/http-2.9.8.tm",
+      "bytes": 118283
+    },
+    {
+      "path": "_internal/tcl86t.dll",
+      "bytes": 1841896
+    },
+    {
+      "path": "_internal/tk86t.dll",
+      "bytes": 1590776
+    },
+    {
+      "path": "_internal/ucrtbase.dll",
+      "bytes": 1361448
+    },
+    {
+      "path": "_internal/unicodedata.pyd",
+      "bytes": 1140592
+    },
+    {
+      "path": "_internal/VCRUNTIME140.dll",
+      "bytes": 120400
+    },
+    {
+      "path": "_internal/VCRUNTIME140_1.dll",
+      "bytes": 49776
+    },
+    {
+      "path": "_internal/webview/__init__.py",
+      "bytes": 14289
+    },
+    {
+      "path": "_internal/webview/_version.py",
+      "bytes": 406
+    },
+    {
+      "path": "_internal/webview/dom/__init__.py",
+      "bytes": 1162
+    },
+    {
+      "path": "_internal/webview/dom/classlist.py",
+      "bytes": 1377
+    },
+    {
+      "path": "_internal/webview/dom/dom.py",
+      "bytes": 2485
+    },
+    {
+      "path": "_internal/webview/dom/element.py",
+      "bytes": 14983
+    },
+    {
+      "path": "_internal/webview/dom/event.py",
+      "bytes": 1128
+    },
+    {
+      "path": "_internal/webview/dom/propsdict.py",
+      "bytes": 5983
+    },
+    {
+      "path": "_internal/webview/errors.py",
+      "bytes": 93
+    },
+    {
+      "path": "_internal/webview/event.py",
+      "bytes": 2461
+    },
+    {
+      "path": "_internal/webview/guilib.py",
+      "bytes": 3828
+    },
+    {
+      "path": "_internal/webview/http.py",
+      "bytes": 7974
+    },
+    {
+      "path": "_internal/webview/js/api.js",
+      "bytes": 8599
+    },
+    {
+      "path": "_internal/webview/js/customize.js",
+      "bytes": 3692
+    },
+    {
+      "path": "_internal/webview/js/finish.js",
+      "bytes": 359
+    },
+    {
+      "path": "_internal/webview/js/lib/dom_json.js",
+      "bytes": 26096
+    },
+    {
+      "path": "_internal/webview/js/lib/polyfill.js",
+      "bytes": 26187
+    },
+    {
+      "path": "_internal/webview/lib/Microsoft.Web.WebView2.Core.dll",
+      "bytes": 603712
+    },
+    {
+      "path": "_internal/webview/lib/Microsoft.Web.WebView2.WinForms.dll",
+      "bytes": 38976
+    },
+    {
+      "path": "_internal/webview/lib/runtimes/win-arm64/native/WebView2Loader.dll",
+      "bytes": 139840
+    },
+    {
+      "path": "_internal/webview/lib/runtimes/win-x64/native/WebView2Loader.dll",
+      "bytes": 165960
+    },
+    {
+      "path": "_internal/webview/lib/runtimes/win-x86/native/WebView2Loader.dll",
+      "bytes": 116312
+    },
+    {
+      "path": "_internal/webview/localization.py",
+      "bytes": 760
+    },
+    {
+      "path": "_internal/webview/menu.py",
+      "bytes": 733
+    },
+    {
+      "path": "_internal/webview/platforms/__init__.py",
+      "bytes": 0
+    },
+    {
+      "path": "_internal/webview/platforms/edgechromium.py",
+      "bytes": 11706
+    },
+    {
+      "path": "_internal/webview/platforms/winforms.py",
+      "bytes": 31782
+    },
+    {
+      "path": "_internal/webview/py.typed",
+      "bytes": 0
+    },
+    {
+      "path": "_internal/webview/screen.py",
+      "bytes": 405
+    },
+    {
+      "path": "_internal/webview/util.py",
+      "bytes": 16305
+    },
+    {
+      "path": "_internal/webview/window.py",
+      "bytes": 18653
+    },
+    {
+      "path": "_internal/zlib1.dll",
+      "bytes": 148336
+    },
+    {
+      "path": "Aula.exe",
+      "bytes": 4374758
+    }
+  ],
+  "total_bytes": 51210228,
+  "source": "Registro real de Windows, ejecución 38454601433, fuente 1938dfb",
+  "installer_sha256": "7bdf71a73abc03e72bb13d53d1dcf9fc999630e947d0806fbfbdd8b8466afb85"
+}

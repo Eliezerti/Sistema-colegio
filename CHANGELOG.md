@@ -1,15 +1,19 @@
 # Historial de cambios
 
-## B2 · Limpieza y reducción · en validación
+## B2 · Limpieza y reducción · 1.0.53 verificada
 
 - Opción 2 aprobada: se retiran PWA/pasarela Wi-Fi y recursos exclusivos, sin retirar el menú adaptable ni el acceso privado del escritorio. Pago móvil y teléfonos de contacto permanecen.
 - Interfaz adaptable independiente; desregistro de trabajador anterior y limpieza solo de cachés públicos de Aula. Rutas retiradas responden 404.
 - Mensajes y README distinguen accesos del instalador y lanzadores del ZIP; se corrigen nombres anteriores y textos operativos desactualizados.
 - Pruebas nativas ampliadas para Tcl/Tk, calendario, selectores y PDF/impresión WebView2, siempre con datos temporales; la impresión física queda para el usuario. Se retiran tres pruebas exclusivas de la pasarela eliminada y se añade rechazo de sus argumentos antes de abrir datos.
-- Inventario previo real del PYZ/archivos del instalador publicado 1.0.49, con huella y Defender. Inventario confirmado: 733 módulos, 1.113 archivos y 58.445.044 bytes instalados. Se excluyen 181 módulos presentes de las familias aprobadas y 128 recursos (738.446); Tcl/Tk, es_ve, encodings, tzdata y directorios requeridos por WebView2 permanecen. Spec sin UPX y comprobación del PYZ antes de publicar.
+- Inventario previo real del PYZ/archivos del instalador anterior entregado 1.0.49 (borrador), con huella y Defender. Inventario confirmado: 733 módulos, 1.113 archivos y 58.445.044 bytes instalados. Se excluyen 181 módulos presentes de las familias aprobadas y 128 recursos (738.446 bytes); Tcl/Tk, es_ve, encodings, tzdata y directorios requeridos por WebView2 permanecen. Spec sin UPX y comprobación del PYZ antes de publicar.
 - Actualización: retiro de 128 archivos de programa obsoletos con rutas exactas del inventario, sin borrar carpetas completas ni tocar base/respaldos. Se comprueba también actualización real desde 1.0.49 e inventario de la instalación actualizada.
 - Verificador de Defender: el tercer canal oficial requiere paquete Microsoft con Authenticode válido y registra su huella antes de aceptar la actualización.
 - 1.0.50: inventario real y 295 pruebas Windows correctas, pero actualización posterior de firmas fallida; sin publicación. Se añade como tercer canal el paquete oficial x64 de Microsoft, con firma válida, versión/frescura y Defender activo obligatorios; los análisis y bloqueo permanecen.
+- Resultados reales Linux: 296 en 172.376 s, 293 correctas y tres nativas omitidas; los tres recorridos solicitados correctos y prueba adaptable adicional con desregistro real del trabajador antiguo y conservación de otro. Windows final: 296 correctas sin omisiones en 442.306 s; controles nativos y actualizaciones/otra cuenta/conservación completos. Runner 38454601433, fuente 1938dfb.
+- 1.0.51 cancelada para incorporar retiro seguro al actualizar. 1.0.52 correcta en pruebas/ventanas/actualizaciones, pero con fuentes de plataformas sobrantes en datos: filtro corregido y validación completa repetida en 1.0.53. Canal oficial de firmas ejercitado en 1.0.52, sin detecciones; no se afirma impresión física ni Windows 10/11 local.
+- [Instalador final en borrador](https://github.com/Eliezerti/Sistema-colegio/releases/tag/untagged-a7c54162b1e7e546f55f): 21.236.040 bytes frente a 23.272.158, reducción 8,75%. Runtime comparable 53.658.392 → 51.210.228 bytes, reducción 4,56%; PYZ 733 → 492 módulos. Fuente ZIP descargada coincide tras normalizar finales de línea.
+- SHA256 EXE descargado `7bdf71a73abc03e72bb13d53d1dcf9fc999630e947d0806fbfbdd8b8466afb85`, coincidente con sidecar y ambos análisis. Defender motor 1.1.26080.3, firmas 1.459.691.0, sin detecciones. Inventarios antes/después/actualización conservados y guía manual; se detiene B2 antes de B3.
 
 ## B1 · Consistencia y pruebas reales · 1.0.49 verificada
 
