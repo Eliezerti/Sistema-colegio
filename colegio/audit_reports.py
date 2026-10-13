@@ -26,7 +26,9 @@ def clean_entries(entries):
         try:
             details = sanitize(json.loads(entry['details']))
             if isinstance(details,dict):
-                entry['operator'] = details.get('responsable',{}).get('nombre') or details.get('actor',{}).get('name') or entry['operator']
+                responsible,actor = details.get('responsable'),details.get('actor')
+                entry['operator'] = ((responsible.get('nombre') if isinstance(responsible,dict) else None)
+                                     or (actor.get('name') if isinstance(actor,dict) else None) or entry['operator'])
             entry['details'] = json.dumps(details, ensure_ascii=False, sort_keys=True)
         except (ValueError, TypeError): entry['details'] = 'Detalle antiguo no estructurado; conserva el respaldo original para revisión técnica.'
         entry['operation'] = LABELS.get(entry['action'], 'Operación registrada')+' · '+entry['action']
@@ -53,7 +55,7 @@ def report(db, query, user):
         FROM audit a LEFT JOIN users u ON u.id=a.user_id '''+('WHERE '+' AND '.join(where) if where else '')+' ORDER BY a.id DESC', values)
     entries = clean_entries(source)
     return {'entries': entries, 'status': local_status(db), 'school': dict(db.execute('SELECT key,value FROM settings')),
-            'operator': user['name'], 'filters': ' · '.join(f'{k}: {v[0]}' for k,v in query.items() if k in ('from','to','search')) or 'Toda la bitácora'}
+            'operator': user['name'], 'filters': ' · '.join(f"{ {'from':'Desde','to':'Hasta','search':'Búsqueda'}[k]}: {v[0]}" for k,v in query.items() if k in ('from','to','search')) or 'Toda la bitácora'}
 
 
 def csv_bytes(data):

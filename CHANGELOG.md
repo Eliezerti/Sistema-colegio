@@ -9,6 +9,7 @@
 - Visor con detalles desplegables, conservación de borradores de otros apartados y exportaciones protegidas frente a fórmulas de Excel; pruebas de permisos y navegador añadidas.
 - La primera ejecución Windows ejecutó 278 pruebas en 428.856 s y detectó una carrera de publicación; no generó instalador. Se corrige con coordinación por base y pruebas concurrentes y de SAVEPOINT.
 - Guías HTML de A4, mantenimiento y configuración con enlaces a archivos incluidos en el instalador; comprobación de existencia de destinos locales.
+- Exportación con rótulos de filtros en español y lectura tolerante de detalles históricos del operador, sin cambiar sus filas originales.
 - Validación completa y Windows pendientes de finalizar; no se presentan resultados parciales como entrega verificada.
 
 ## A3 · Sesiones y recuperación de acceso · 1.0.37 verificada

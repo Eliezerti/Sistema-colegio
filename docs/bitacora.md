@@ -16,7 +16,7 @@ Cada fila tiene una huella SHA-256 que incorpora su contenido, la cadena, el lí
 
 **Verificar datos y cobros**, en Protección y mantenimiento, comprueba también la cadena y ese control. Un respaldo se comprueba en una copia temporal con su cadena interna. El archivo cifrado conserva además la autenticación de A2; el control separado de la PC no forma parte del archivo portable.
 
-Las huellas **detectan alteraciones; no impiden que quien controle Windows cambie la base y todos los controles**. No son una firma independiente ni prueba de lo ocurrido antes de instalar A4. Los registros anteriores a la migración se conservan y se marcan como protegidos desde esa revisión. Un respaldo anterior a A4 se identifica como bitácora antigua sin cadena.
+Las huellas **detectan alteraciones; no impiden que quien controle Windows cambie la base y todos los controles**. No son una firma independiente ni prueba de lo ocurrido antes de instalar A4. Los detalles históricos pueden tener otro formato de operador; se muestran con tolerancia, sin impedir la consulta ni reescribirlos. Los registros anteriores a la migración se conservan y se marcan como protegidos desde esa revisión. Un respaldo anterior a A4 se identifica como bitácora antigua sin cadena.
 
 Si falla la comprobación, Aula muestra **Solo consulta: revisa la bitácora**. Se impiden nuevas modificaciones, cobros y generación automática o manual de mensualidades, incluso al iniciar o consultar reportes. Se mantienen ingreso, consulta, verificación, exportación de bitácora y creación de una copia local para preservar la información. Una copia externa no se da por comprobada si su cadena falla. Conserva la carpeta completa y pide revisión técnica; no borres ni recrees controles para ocultar el aviso.
 
@@ -49,9 +49,9 @@ En otra PC sigue bastando el archivo y su contraseña o clave de recuperación. 
 
 ## Evidencia de esta entrega
 
-Validación final Linux: `python -m unittest discover -s tests -v`: **278 pruebas en 146.233 s**, 275 correctas y tres exclusivas de Windows omitidas. `python tests/run_browser.py`, `python tests/run_browser.py --demo` y `python tests/run_browser.py --roster`: correctos. El recorrido normal verifica filtros, descargas PDF/CSV y conservación al vaciar, además de A3 y los controles financieros anteriores.
+Validación final Linux tras corregir concurrencia: `python -m unittest discover -s tests -v`: **280 pruebas en 144.404 s**, 277 correctas y tres exclusivas de Windows omitidas. `python tests/run_browser.py`, `python tests/run_browser.py --demo` y `python tests/run_browser.py --roster`: correctos. El recorrido normal verifica filtros, descargas PDF/CSV y conservación al vaciar, además de A3 y los controles financieros anteriores.
 
-Se añadieron **19 métodos**: 16 de cadena/migración/conservación y tres de permisos, exportación y consulta segura. Incluyen procesos reales terminados en tres etapas de publicación del control y tres etapas de migración, reversión con igualdad de todas las filas originales, manipulación de contenido/final/disparadores/control separado y rechazo de cambios. Las pruebas existentes de A1 siguen ejecutándose, incluidos los cuatro cortes reales de restauración y las cuatro versiones publicadas.
+Se añadieron **21 métodos**: 18 de cadena/migración/conservación/concurrencia y tres de permisos, exportación y consulta segura. Incluyen procesos reales terminados en tres etapas de publicación del control y tres etapas de migración, reversión con igualdad de todas las filas originales, manipulación de contenido/final/disparadores/control separado y rechazo de cambios. Las pruebas existentes de A1 siguen ejecutándose, incluidos los cuatro cortes reales de restauración y las cuatro versiones publicadas.
 
 Medición orientativa en Linux: comprobar 10.000 operaciones ficticias tomó 0,053 s; no es una garantía de rendimiento en otros equipos. La verificación nativa Windows y el instalador están en curso; su resultado se incorpora al finalizar. Linux no verifica DPAPI nativo, privilegios/BitLocker de tu PC ni tus archivos reales. Ninguna prueba se ejecutó sobre tu base del colegio.
 

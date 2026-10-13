@@ -70,3 +70,12 @@ class AuditAPITests(unittest.TestCase):
         self.assertIn(b"'=HYPERLINK",content)
         self.assertNotIn(b'no-exportar',content)
         self.assertNotIn(b'0123456789',content)
+
+    def test_old_mixed_actor_details_do_not_prevent_admin_state_and_exports(self):
+        with closing(connect(self.f.path)) as db,db:
+            audit(db,None,'detalle-antiguo',{'actor':'Cuenta antigua','responsable':None,'dato':'conservar'})
+        self.assertTrue(self.f.request('state')['audit_status']['ok'])
+        result=self.f.request('audit?search=detalle-antiguo')
+        self.assertEqual(len(result['entries']),1)
+        self.assertIn('conservar',result['entries'][0]['details'])
+        self.assertTrue(self.f.request('audit.pdf?search=detalle-antiguo').startswith(b'%PDF'))
