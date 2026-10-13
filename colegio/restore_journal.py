@@ -64,7 +64,7 @@ def read_pending(directory):
             probe_backup(previous)
         raw=checked_path(directory,op['raw'])
         for name,digest in op['raw_hashes'].items():
-            if name not in ('colegio.sqlite3','colegio.sqlite3-wal','colegio.sqlite3-shm','colegio.sqlite3-journal'): raise ValueError()
+            if name not in ('colegio.sqlite3','colegio.sqlite3-wal','colegio.sqlite3-shm','colegio.sqlite3-journal','colegio.sqlite3.audit-head.json','colegio.sqlite3.audit-pending.json'): raise ValueError()
             if file_hash(raw/name)!=digest: raise ValueError()
         for relative,digest in op['reports'].items():
             if file_hash(checked_path(directory,relative))!=digest: raise ValueError()
@@ -110,6 +110,8 @@ def finish_pending(directory):
         op['phase']='published';store_pending(directory,op)
     if file_hash(target)!=op['candidate_hash']: raise fail_closed()
     probe_backup(target)
+    from .audit_chain import adopt_restored
+    adopt_restored(target)
     record_external(directory,op['event'])
     op['phase']='completed';store_pending(directory,op)
     checkpoint('after_commit')

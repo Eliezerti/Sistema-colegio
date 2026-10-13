@@ -1,3 +1,4 @@
+from tests.audit_helpers import publish_fixture
 """A1 exercises actual SQLite, real killed processes and production startup ordering."""
 import base64
 import csv
@@ -30,7 +31,7 @@ class RestoreSafetyTests(unittest.TestCase):
     tearDown=fixtures.RecoveryTests.tearDown
 
     def current(self):
-        consistent_backup(self.backup,self.target)
+        consistent_backup(self.backup,self.target);publish_fixture(self.target)
 
     def second_payment(self,key='later',paid_on='2025-09-19'):
         with closing(connect(self.target)) as db,db:
@@ -75,7 +76,7 @@ class RestoreSafetyTests(unittest.TestCase):
         self.assertTrue(any(d['action']=='Anulación se revierte' for d in review['comparison']['details']))
         approved_restore(self.backup,self.directory)
         with closing(connect(self.target)) as db:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],10)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],11)
             for i,table in enumerate(SEQUENCES):self.assertEqual(next_record_id(db,table),11+i)
             event=json.loads(db.execute("SELECT details FROM audit WHERE action='restore-backup'").fetchone()[0])
             self.assertEqual(event['payment_changes'],2)
@@ -143,7 +144,10 @@ class RestoreSafetyTests(unittest.TestCase):
         bad=self.root/'bad.sqlite3';bad.write_bytes(b'bad')
         with self.assertRaises(sqlite3.Error):preview_restore(bad,self.directory)
         self.assertEqual(self.target.read_bytes(),before)
-        with closing(sqlite3.connect(self.backup)) as db,db:db.execute('UPDATE students SET guardian_id=999')
+        publish_fixture(self.backup)
+        with closing(connect(self.backup)) as db,db:
+            db.execute('PRAGMA foreign_keys=OFF')
+            db.execute('UPDATE students SET guardian_id=999')
         with self.assertRaisesRegex(ValueError,'referencias'):probe_backup(self.backup)
         # Restore a valid source for the separate damaged-current case.
         consistent_backup(self.root/'original.sqlite3',self.backup)
@@ -175,7 +179,7 @@ class RestoreSafetyTests(unittest.TestCase):
         for stage in ('before_sidecars','after_sidecars','after_replace','after_commit'):
             with self.subTest(stage=stage):
                 directory=self.root/stage;directory.mkdir();target=directory/'colegio.sqlite3'
-                consistent_backup(self.backup,target)
+                consistent_backup(self.backup,target);publish_fixture(target)
                 # A process exits without SQLite cleanup, leaving a committed WAL payment.
                 writer="""import os,sys
 from colegio.db import connect,record_payment

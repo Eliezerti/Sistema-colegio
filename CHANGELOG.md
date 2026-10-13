@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## A4 · Bitácora protegida · en validación
+
+- Esquema 11: tablas acompañantes de huellas y guardas SQLite; filas originales conservadas. Copia previa verificada, reversión y cortes reales del proceso probados con bases ficticias.
+- Cadena SHA-256 y control separado con publicación recuperable; inserción oficial, actualización/borrado de bitácora rechazados.
+- Valores anteriores/nuevos calculados desde SQLite, sin contraseñas/tokens ni cuentas bancarias completas. Vaciar conserva toda la historia. Restaurar enlaza ramas y el detalle de movimientos excluidos sin debilitar A1.
+- Consulta conservada si falla la verificación; se impiden cambios y generación automática. Visor Administrador con filtros y exportaciones PDF/CSV. [Guía](docs/bitacora.md).
+- Validación completa y Windows pendientes de finalizar; no se presentan resultados parciales como entrega verificada.
+
 ## A3 · Sesiones y recuperación de acceso · 1.0.37 verificada
 
 - Cierre de 15 minutos configurable entre 5 y 60, tiempos monotónicos y máximo absoluto de doce horas. Las consultas automáticas no renuevan; cookies conservan HttpOnly/SameSite/Secure y CSRF. Tokens SHA-256 en SQLite; reiniciar exige ingreso nuevo.

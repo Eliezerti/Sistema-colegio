@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from colegio.clock_guard import ClockGuard, ClockConfirmationRequired, ClockInputError
-from colegio.db import connect, initialize, local_today, synchronize_monthly_charges
+from colegio.db import audit, connect, initialize, local_today, synchronize_monthly_charges
 
 
 class ClockGuardTests(unittest.TestCase):
@@ -123,7 +123,7 @@ class ClockGuardTests(unittest.TestCase):
     def test_history_without_control_needs_admin_review_even_if_date_looks_normal(self):
         self.guard.path.unlink()
         with closing(connect(self.path)) as db,db:
-            db.execute("INSERT INTO audit(action,details,created_at) VALUES('fixture','{}',?)",(self.current.isoformat(),))
+            audit(db,None,'fixture',{})
         reopened=ClockGuard(self.path,now=lambda:self.current,history=True)
         self.assertEqual(reopened.snapshot()['pending']['reason'],'initial_review')
 

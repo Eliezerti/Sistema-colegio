@@ -152,3 +152,7 @@ BitLocker se consulta con los permisos de la cuenta que abrió Aula; una cuenta 
 ## Sesiones y recuperación de acceso (A3)
 
 Cierre tras 15 minutos sin actividad, configurable entre 5 y 60 en Usuarios y acceso. Un minuto antes aparece el aviso para seguir trabajando. Recuperación local de clave cierra todas las sesiones y avisa a cada administrador. El borrador de un formulario habitual permanece solo en memoria para el mismo usuario; recargar o cerrar la ventana lo pierde. [Guía completa de A3](sesiones-acceso.md).
+
+## Control de la bitácora · A4
+
+Verificar datos y cobros comprueba ahora la cadena de la bitácora y su control separado. Vaciar registros no borra esta historia. Se conservan sin borrado automático las copias antes-bitacora y antes-restauracion, sus originales y los informes. Dependen de BitLocker y permisos locales. [Migración, reversión y límites](bitacora.md).

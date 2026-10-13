@@ -4,7 +4,9 @@ from .db import local_today
 
 def review_database(db):
     if not db.in_transaction: db.execute('BEGIN')
-    errors = []
+    from .audit_chain import local_status
+    audit = local_status(db)
+    errors = [] if audit['ok'] else [audit['message']]
     integrity = [r[0] for r in db.execute('PRAGMA integrity_check')]
     if integrity != ['ok']: errors.append('La integridad SQLite requiere revisión técnica.')
     if db.execute('PRAGMA foreign_key_check').fetchone():
@@ -23,7 +25,7 @@ def review_database(db):
     )
     for message,sql in checks:
         if db.execute(sql).fetchone(): errors.append(message)
-    return {'ok':not errors,'checked_on':local_today().isoformat(),'errors':errors,
+    return {'audit':audit, 'ok':not errors,'checked_on':local_today().isoformat(),'errors':errors,
         'journal_mode':db.execute('PRAGMA journal_mode').fetchone()[0],
         'synchronous':db.execute('PRAGMA synchronous').fetchone()[0],
         'counts':{t:db.execute(f'SELECT COUNT(*) FROM {t}').fetchone()[0]

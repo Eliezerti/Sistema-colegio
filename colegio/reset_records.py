@@ -11,7 +11,7 @@ from .storage import consistent_backup
 TABLES = ('salary_receipts', 'allocations', 'collection_notes', 'payment_plans',
           'guardian_documents', 'year_transitions', 'enrollment_documents', 'payroll_plans',
           'cash_closures', 'monthly_assessments', 'payments', 'expenses', 'charges', 'students',
-          'employees', 'positions', 'grades', 'guardians', 'exchange_rates', 'audit', 'sessions')
+          'employees', 'positions', 'grades', 'guardians', 'exchange_rates', 'sessions')
 CONFIRMATION = 'VACIAR REGISTROS'
 
 
@@ -63,5 +63,5 @@ def reset_records(db, data, user):
         db.execute(f'DELETE FROM {table}')
     if db.execute('PRAGMA foreign_key_check').fetchone():
         raise ValidationError('No se pudo validar el vaciado. No se guardaron los cambios.')
-    audit(db, user['id'], 'reset_records', {'counts': preview['counts'], 'backup': str(backup)})
+    audit(db, user['id'], 'reset_records', {'counts': preview['counts'], 'backup': str(backup), 'audit_preserved': db.execute('SELECT COUNT(*) FROM audit').fetchone()[0]})
     return {'ok': True, 'backup_path': str(backup), 'counts': preview['counts']}

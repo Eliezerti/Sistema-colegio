@@ -37,7 +37,7 @@ def compare(current,incoming):
     employees={r['id']:r['name'] for r in current['records'].get('employees',[])}
     # Audit history is retained in the verified previous snapshot; sessions are ephemeral.
     for table,rows in current['records'].items():
-        if table in ('audit','sessions'): continue
+        if table in ('audit','audit_links','audit_meta','sessions'): continue
         incoming_map={identity(table,r):r for r in incoming['records'].get(table,[])}
         for row in rows:
             if table=='settings' and row['key'].startswith('id_floor_'): continue

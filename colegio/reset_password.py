@@ -30,13 +30,16 @@ def reset_password(directory,username,password):
         with closing(connect(database)) as db:
             user=db.execute("SELECT id,username FROM users WHERE username=? AND role='admin'",(username.strip().lower(),)).fetchone()
             if not user: raise ValidationError('No existe un administrador con ese usuario.')
-            consistent_backup(database,directory/'backups'/f'recuperacion-clave-{datetime.now():%Y%m%d-%H%M%S-%f}.sqlite3')
+            backup=directory/'backups'/f'recuperacion-clave-{datetime.now():%Y%m%d-%H%M%S-%f}.sqlite3'
+            consistent_backup(database,backup)
             with db:
                 db.execute('UPDATE users SET password=? WHERE id=?',(hashed,user['id']))
                 db.execute('DELETE FROM sessions')
                 from .security_notices import record_recovery
                 notice = record_recovery(db, user)
-                audit(db,None,'local-admin-password-reset',{'user_id':user['id'], 'notice_id':notice['id'], 'all_sessions_closed':True})
+                audit(db,None,'local-admin-password-reset',{'user_id':user['id'], 'notice_id':notice['id'], 'all_sessions_closed':True,
+                    'actor':{'kind':'cuenta de Windows / sistema operativo','name':getpass.getuser()},
+                    'backup':str(backup), 'password_changed':True})
 
 
 def main():

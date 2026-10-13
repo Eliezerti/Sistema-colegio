@@ -115,7 +115,9 @@ def check_password(password, stored):
 
 
 def connect(path):
-    db = sqlite3.connect(path, timeout=30)
+    from .audit_chain import AuditConnection
+    db = sqlite3.connect(path, timeout=30, factory=AuditConnection)
+    db.prepare_audit()
     db.row_factory = sqlite3.Row
     db.execute('PRAGMA foreign_keys=ON')
     db.execute('PRAGMA synchronous=FULL')
@@ -132,7 +134,16 @@ def next_record_id(db, table):
 
 
 def initialize(path):
+    new_database = not Path(path).exists()
     Path(path).parent.mkdir(parents=True, exist_ok=True)
+    from .audit_chain import migrate, VERSION
+    with closing(connect(path)) as current:
+        existing_version = current.execute('PRAGMA user_version').fetchone()[0]
+        if existing_version > VERSION: raise ValueError('Esta base requiere una versión más reciente de Aula.')
+        if existing_version >= 10:
+            current.execute('PRAGMA journal_mode=WAL')
+            migrate(path)
+            return
     with closing(connect(path)) as db, db:
         db.execute('PRAGMA journal_mode=WAL')
         existing_school = bool(db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='settings'").fetchone())
@@ -254,13 +265,14 @@ def initialize(path):
             db.execute("UPDATE settings SET value=? WHERE key='school_name' AND value IN (?,?,?,?)",
                        (SCHOOL_NAME,'U.E.C. Alejandro Von Humboldt','Alejandro Von Humboldt','ALEJANDRO VON HUMBOLDT','Mi colegio'))
             audit(db,None,'institution-identity',{'institution_type':INSTITUTION_TYPE})
-        db.execute(f'PRAGMA user_version={SCHEMA_VERSION}')
+        db.execute('PRAGMA user_version=10')
+    migrate(path, new=new_database)
 
 
 
 def audit(db, user_id, action, details):
-    db.execute('INSERT INTO audit(user_id,action,details,created_at) VALUES(?,?,?,?)',
-               (user_id, action, json.dumps(details, ensure_ascii=False), datetime.now(timezone.utc).isoformat()))
+    from .audit_chain import append
+    append(db, user_id, action, details)
 
 
 BALANCES = '''SELECT c.*,COALESCE((SELECT SUM(a.amount) FROM allocations a JOIN payments p ON p.id=a.payment_id
@@ -308,6 +320,8 @@ def assess_month(db, student, first, due_day):
 
 def synchronize_monthly_charges(db, today=None):
     """Bring active enrollments through this month; caller owns the transaction."""
+    from .audit_chain import require
+    require(db)
     from .clock_guard import require_database_clock
     require_database_clock(db)
     today = today or local_today()
@@ -334,6 +348,8 @@ def synchronize_monthly_charges(db, today=None):
 
 
 def generate_month(db, data, user_id):
+    from .audit_chain import require
+    require(db)
     from .clock_guard import require_database_clock
     require_database_clock(db)
     period = required(data, 'period', 7)
@@ -362,6 +378,8 @@ def generate_month(db, data, user_id):
 
 
 def record_payment(db, data, user_id):
+    from .audit_chain import require
+    require(db)
     from .clock_guard import require_database_clock
     require_database_clock(db)
     student_id = integer(data.get('student_id'), 1, 2147483647)

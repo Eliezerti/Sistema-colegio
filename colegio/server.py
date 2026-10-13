@@ -22,6 +22,7 @@ from .db import (ValidationError, RateConfirmationRequired, audit, charges, chec
                  generate_month, hash_password, initialize, integer, money, record_payment,
                  required, valid_date, valid_period, valid_rate, local_today, synchronize_monthly_charges)
 from .db import next_record_id
+from .audit_chain import AuditUnavailable, local_status as audit_status, require as require_audit
 from .storage import DataLock, consistent_backup, daily_backup, automatic_backup, backup_status
 from .backup_temporary import private_root
 from .backup_health import CLOUD_KEY, cloud_declaration, declare_cloud_destination, describe_backup
@@ -53,7 +54,9 @@ def snapshot(db, user):
     owns_transaction = not db.in_transaction
     if owns_transaction:
         db.execute('BEGIN IMMEDIATE')
-    synchronize_monthly_charges(db)
+    integrity = audit_status(db)
+    if integrity['ok']:
+        synchronize_monthly_charges(db)
     if owns_transaction:
         db.commit()
     settings = dict(db.execute('SELECT key,value FROM settings'))
@@ -93,7 +96,7 @@ def snapshot(db, user):
         if c['overdue']:
             d = c['days_overdue']
             aging[0 if d <= 30 else 1 if d <= 60 else 2 if d <= 90 else 3] += c['balance']
-    return {'settings': settings, 'today': today, 'user': user, 'students': students,
+    return {'audit_status': integrity, 'settings': settings, 'today': today, 'user': user, 'students': students,
             'guardians': rows(db, 'SELECT * FROM guardians ORDER BY name'),
             'grades': rows(db, 'SELECT * FROM grades ORDER BY name'),
             'employees': rows(db, 'SELECT * FROM employees ORDER BY name'),
@@ -154,6 +157,7 @@ def prepare_backup_directory(db, value, uid):
 
 def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, import_archived=False, demo=False):
     uid = user['id']
+    db.audit_user = uid
     admin_paths = {'settings','backup-directory','grades','guardians','students','employees','users','password','void-payment','void-expense','cancel-charge','positions','payroll-plans','import-roster','reopen-cash','transition-year','cancel-plan','correct-billing-start'} | DIRECTORY_ACTIONS | ARCHIVE_ACTIONS
     if user['role'] == 'reader' or (endpoint in admin_paths and user['role'] != 'admin'):
         raise PermissionError('Tu perfil no permite esta operación.')
@@ -699,6 +703,10 @@ class Handler(BaseHTTPRequestHandler):
             if not user:
                 self.respond(401, {'error': 'Tu sesión terminó. Inicia sesión para continuar.', 'session_expired': True})
                 return
+            db.audit_user = user['id']
+            integrity = audit_status(db)
+            if post and endpoint not in ('logout','session-activity','demo-exit','probe-backup','export-encrypted-backup','backup-now'):
+                require_audit(db)
             if endpoint in ('session-status', 'session-activity', 'session-preferences', 'recovery-notice-ack'):
                 if post and not secrets.compare_digest(self.headers.get('X-CSRF-Token', ''), user['csrf']):
                     raise PermissionError('Sesión inválida. Recarga la página.')
@@ -738,7 +746,7 @@ class Handler(BaseHTTPRequestHandler):
                 result = self.server.clock.confirm(db, user, data)
                 self.respond(200, result)
                 return
-            if endpoint not in ('rate-gate','backup','backup-now','backup-status','health','logout','demo-exit'):
+            if endpoint not in ('audit','audit.csv','audit.pdf','rate-gate','backup','backup-now','backup-status','health','logout','demo-exit'):
                 self.server.clock.require()
             if not post and endpoint == 'rate-gate':
                 on = local_today().isoformat()
@@ -746,9 +754,10 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(200, {'today': on, 'rate': rate['rate'] if rate else '', 'role': user['role'],
                                    'backup': self.server.backup_status(),
                                    'clock': self.server.clock.snapshot(),
+                                   'audit_status': integrity,
                                    'school': {k:v for k,v in db.execute('SELECT key,value FROM settings') if k in ('school_name','institution_type','logo')}})
                 return
-            if endpoint not in ('confirm-rate','rate-gate','logout','backup','health','demo-exit') and user['rate_confirmed_on'] != local_today().isoformat():
+            if endpoint not in ('confirm-rate','rate-gate','logout','backup','health','demo-exit') and integrity['ok'] and endpoint not in ('audit','audit.csv','audit.pdf','probe-backup','backup-now','backup-status','maintenance-review') and user['rate_confirmed_on'] != local_today().isoformat():
                 self.respond(428, {'error': 'Confirma la tasa BCV de hoy antes de continuar.'})
                 return
             if post:
@@ -1049,6 +1058,8 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(403, {'error': str(error)})
         except ClockConfirmationRequired as error:
             self.respond(428, {'error':str(error), 'requires_clock_confirmation':True, 'clock':error.status})
+        except AuditUnavailable as error:
+            self.respond(409, {'error':str(error), 'audit_blocked':True})
         except RateConfirmationRequired as error:
             self.respond(409,{'error':str(error),'requires_rate_confirmation':True,'old_rate':error.old,'new_rate':error.new})
         except (ValidationError, json.JSONDecodeError, ValueError, TypeError, KeyError) as error:
@@ -1089,7 +1100,7 @@ def open_school(path, port, demo=False, remote_origin=''):
         with closing(connect(path)) as db, db:
             try:
                 synchronize_monthly_charges(db)
-            except ClockConfirmationRequired:
+            except (ClockConfirmationRequired, AuditUnavailable):
                 db.rollback()  # Do not commit a partially generated month/year.
             if remote_origin and not db.execute("SELECT 1 FROM users WHERE role='admin' LIMIT 1").fetchone():
                 raise SystemExit('Crea primero tu administrador en esta PC con Iniciar-Aula.bat y luego abre Iniciar-Red.bat. No se ha habilitado el acceso remoto.')

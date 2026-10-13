@@ -91,7 +91,10 @@ def inspect_copy(path):
         for a in records['allocations']:
             if a['payment_id'] in valid_ids: applied[a['charge_id']]=applied.get(a['charge_id'],0)+a['amount']
         balance=sum(c['amount']-applied.get(c['id'],0) for c in records['charges'] if not c['cancelled'])
-        summary={'schema':version,'integrity':'ok','references':'ok','students':len(records['students']),
+        from .audit_chain import portable_status
+        audit_status=portable_status(db)
+        if not audit_status['ok']:raise ValueError(audit_status['message'])
+        summary={'audit':audit_status,'schema':version,'integrity':'ok','references':'ok','students':len(records['students']),
             'payments':len(payments),'valid_payments':len(valid),'voided_payments':len(payments)-len(valid),
             'income_usd':sum(p['amount'] for p in valid),'received':paid,'balance_usd':balance,
             'last_payment':({'id':last['id'],'receipt':f"R-{last['id']:06d}",'paid_on':last['paid_on'],

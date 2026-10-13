@@ -1,3 +1,4 @@
+from tests.audit_helpers import legacy_fixture
 import base64
 import csv
 import io
@@ -95,6 +96,7 @@ class ProductionReviewTests(unittest.TestCase):
         with self.db:
             mutate(self.db,'settings',{'school_name':'Colegio personalizado','school_year':2020,'start_month':9,'due_day':10,
                 'legal_name':'Colegio personalizado, C.A.','logo':png()},self.user)
+            legacy_fixture(self.db)
             self.db.execute('PRAGMA user_version=7')
         initialize(self.path)
         after=dict(self.db.execute('SELECT key,value FROM settings'))
@@ -112,6 +114,7 @@ class ProductionReviewTests(unittest.TestCase):
         with self.db:
             self.db.execute("UPDATE settings SET value='Otro colegio' WHERE key='school_name'")
             self.db.execute("UPDATE settings SET value='J-12345678-9' WHERE key='rif'")
+            legacy_fixture(self.db)
             self.db.execute('PRAGMA user_version=3')
         initialize(self.path)
         profile=dict(self.db.execute('SELECT key,value FROM settings'))

@@ -26,7 +26,7 @@ class HistoricalRestoreTests(unittest.TestCase):
                 self.assertEqual(probe_backup(target)['schema'],metadata['schema'],'Restoring does not migrate')
                 with open_school(target,0):pass # Reuse the existing historical migrations unchanged.
                 with closing(connect(target)) as db:
-                    self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],10)
+                    self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],11)
                     self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
                     self.assertFalse(db.execute('PRAGMA foreign_key_check').fetchone())
                     self.assertEqual(db.execute('SELECT COUNT(*) FROM payments').fetchone()[0],1)

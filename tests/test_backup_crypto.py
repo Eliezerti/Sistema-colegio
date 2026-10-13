@@ -1,3 +1,4 @@
+from tests.audit_helpers import publish_fixture
 import hashlib
 import json
 import os
@@ -83,7 +84,7 @@ class BackupCryptoTests(unittest.TestCase):
         self.assertEqual(probe_backup(converted,PASSWORD)['payments'],1)
 
     def test_encrypted_restore_retains_loss_report_correlatives_and_a1_confirmations(self):
-        consistent_backup(self.backup,self.target)
+        consistent_backup(self.backup,self.target);publish_fixture(self.target)
         with closing(connect(self.target)) as db,db:
             record_payment(db,{'student_id':1,'amount':'10','currency':'USD','paid_on':'2025-09-21','request_key':'later','method':'Efectivo'},1)
         review=preview_restore(self.cipher,self.directory,credential=PASSWORD)
@@ -118,7 +119,7 @@ class BackupCryptoTests(unittest.TestCase):
         self.assertFalse((self.root/'no-tocar').exists())
 
     def test_local_backups_continue_when_cifrado_is_not_configured_or_keyring_is_broken(self):
-        consistent_backup(self.backup,self.target);external=self.root/'usb'
+        consistent_backup(self.backup,self.target);publish_fixture(self.target);external=self.root/'usb'
         with closing(connect(self.target)) as db,db:db.execute("UPDATE settings SET value=? WHERE key='backup_directory'",(str(external),))
         first=automatic_backup(self.target);self.assertTrue(first['secondary_encrypted'])
         previous=Path(first['secondary_path']);original=previous.read_bytes()
@@ -143,7 +144,7 @@ class BackupCryptoTests(unittest.TestCase):
             keys.unlock(self.directory,PASSWORD);self.assertTrue(keys.status(self.directory)['ready'])
 
     def test_real_kills_during_cipher_write_verification_and_publication_preserve_previous(self):
-        consistent_backup(self.backup,self.target);external=self.root/'usb'
+        consistent_backup(self.backup,self.target);publish_fixture(self.target);external=self.root/'usb'
         with closing(connect(self.target)) as db,db:db.execute("UPDATE settings SET value=? WHERE key='backup_directory'",(str(external),))
         first=automatic_backup(self.target);prior=Path(first['secondary_path']);original=prior.read_bytes()
         original_data=self.target.read_bytes();nonces=set()

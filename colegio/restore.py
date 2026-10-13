@@ -12,7 +12,7 @@ from pathlib import Path
 
 from .backup_inspection import (SEQUENCES, NewerSchemaError, fingerprint, file_hash,
                                 inspect_copy, staged_backup, probe_backup)
-from .db import audit
+from .db import audit, connect
 from .restore_journal import (finish_pending, store_pending, sync_file,
                               sync_directory, windows_actor, HISTORY)
 from .restore_reports import compare, loss_csv, loss_pdf, table_label
@@ -87,7 +87,7 @@ def restore(backup,directory,*,preview_hash=None,confirmation=None,emergency_flo
         operation_id=uuid.uuid4().hex
         folder=directory/'backups';folder.mkdir(exist_ok=True)
         raw=folder/f'originales-antes-restauracion-{operation_id}';raw.mkdir()
-        originals=[target.with_name(target.name+s) for s in ('','-wal','-shm','-journal')]
+        originals=[target.with_name(target.name+s) for s in ('','-wal','-shm','-journal','.audit-head.json','.audit-pending.json')]
         raw_hashes={}
         for original in originals:
             if original.exists():
@@ -112,6 +112,7 @@ def restore(backup,directory,*,preview_hash=None,confirmation=None,emergency_flo
             'payment_changes':review['comparison']['payment_changes'],'expense_changes':review['comparison']['expense_changes'],
             'floors':floors,'floors_declared':bool(emergency_floors),'confirmation':confirmation}
         event['source_encrypted']=not review['unencrypted']
+        event['excluded_movements']=[d for d in review['comparison']['details'] if d['type'] in ('payments','expenses')]
         reports={}
         if review['comparison']['has_loss']:
             for extension,payload in [('csv',loss_csv(review['comparison'])),('pdf',loss_pdf(review['comparison'],operation_id))]:
@@ -122,12 +123,20 @@ def restore(backup,directory,*,preview_hash=None,confirmation=None,emergency_flo
         event['reports']=[str(directory/r) for r in reports]
         event['previous_backup']=str(previous) if previous else None
         event['original_files']=str(raw)
-        with closing(sqlite3.connect(candidate)) as db,db:
+        event['previous_audit_head']=current['summary'].get('audit',{}).get('head') if current else None
+        event['source_audit_head']=incoming['summary'].get('audit',{}).get('head')
+        event['previous_sha256']=file_hash(previous) if previous else None
+        from .audit_chain import adopt_restored
+        adopt_restored(candidate)
+        with closing(connect(candidate)) as db,db:
             db.execute('PRAGMA synchronous=FULL')
             for table,floor in floors.items():
                 db.execute('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
                            ('id_floor_'+table,str(floor)))
             audit(db,None,'restore-backup',event)
+        with closing(sqlite3.connect(candidate)) as compact:
+            compact.execute('PRAGMA wal_checkpoint(TRUNCATE)')
+            compact.execute('PRAGMA journal_mode=DELETE')
         sync_file(candidate);probe_backup(candidate)
         operation={'id':operation_id,'phase':'prepared','candidate':candidate.relative_to(directory).as_posix(),
             'candidate_hash':file_hash(candidate),'previous':previous.relative_to(directory).as_posix() if previous else None,
@@ -149,7 +158,7 @@ def review_text(review):
         last=s['last_payment'];last_label=f"{last['receipt']} · pago {last['paid_on']} · registrado {last['created_at']}" if last else 'Sin pagos'
         received=' · '.join(f'{currency} {value/100:.2f}' for currency,value in s['received'].items()) or 'Sin cobros válidos'
         return f"{title}: {s['students']} alumnos; {s['payments']} pagos ({s['voided_payments']} anulados); cobrado USD {s['income_usd']/100:.2f}.\nRecibido por moneda: {received}\nÚltimo pago: {last_label}"
-    lines=[summary('Base actual',review['current']),summary('Respaldo',review['backup']),review['backup']['creation_note'],
+    lines=[summary('Base actual',review['current']),summary('Respaldo',review['backup']),review['backup']['creation_note'],review['backup'].get('audit',{}).get('message','Bitácora antigua sin cadena de huellas.'),
         ('Advertencia: respaldo antiguo sin cifrar.' if review['unencrypted'] else 'Cifrado autenticado y comprobado.')+' No se generan mensualidades al revisarlo.']
     lines.extend(f'{table_label(table)}: {count} registros ausentes o diferentes' for table,count in review['comparison']['counts'].items())
     if review['requires_floor_review']:lines.append('No se pudieron comprobar los correlativos actuales. Debes revisar los últimos números utilizados.')

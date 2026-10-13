@@ -18,6 +18,10 @@ El recibo de pago muestra nombre y grado del alumno, sin cédula escolar ni cód
 
 Los cobros incluyen **Pago móvil** como método separado en recibos, reportes y cierre de caja. El **efectivo inicial en caja** son billetes y monedas al comenzar el día, no el saldo bancario; pagos móviles y transferencias no se suman al arqueo físico. [Guía de cobros y arqueo](docs/cobros-y-arqueo.md).
 
+## Bitácora protegida · A4
+
+Cadena SHA-256, escritura protegida y control separado de la última operación. Ediciones con valores anteriores/nuevos sin contraseñas ni datos bancarios completos; Vaciar registros conserva la historia. Visor Administrador con filtros y PDF/CSV. Migración 10 → 11 con copia verificada y reversión probada; una alteración deja Aula en consulta, con respaldo y recuperación disponibles. Las huellas detectan cambios, no impiden alteraciones de quien controle Windows. [Guía y prueba manual de A4](docs/bitacora.md).
+
 ## Sesiones y acceso · A3
 
 Cierre tras 15 minutos sin actividad, configurable entre 5 y 60 en Usuarios y acceso, con aviso un minuto antes. Borrador temporal para el mismo usuario, sin contraseñas ni guardado automático; si falla conservarlo, la pantalla se oculta igualmente. Tokens SHA-256, reloj monotónico y recuperación local que cierra todas las sesiones y avisa a cada administrador. No necesitas una contraseña nueva para actualizar. [Guía de A3 y prueba manual](docs/sesiones-acceso.md).

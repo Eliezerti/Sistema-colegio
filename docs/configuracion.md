@@ -62,3 +62,7 @@ Archivos del cambio: AGENTS.md, `colegio/server.py`, `static/app.js`, `static/st
 ## Cierre por inactividad (A3)
 
 Usuarios y acceso permite guardar el tiempo de cierre (15 minutos por defecto, entre 5 y 60). Este formulario guarda solo ese tiempo, registra el valor anterior y nuevo y conserva su borrador al cambiar de pestaña. Las consultas automáticas no renuevan la sesión. [Guía de sesiones y recuperación](sesiones-acceso.md).
+
+## Bitácora · A4
+
+El apartado Bitácora permite al Administrador filtrar y exportar PDF/CSV, revisar valores anteriores/nuevos y comprobar su cadena. Se conserva al vaciar registros. Si falla la verificación, Aula permite consultar y respaldar, pero bloquea cambios. [Guía y prueba manual](bitacora.md).

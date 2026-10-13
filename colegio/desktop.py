@@ -183,7 +183,7 @@ def probe_dialog():
         if credentials is False:return
         s=probe_backup(file,*credentials);last=s['last_payment']
         protection='Advertencia: respaldo antiguo sin cifrar.' if s['unencrypted'] else 'Cifrado autenticado y comprobado.'
-        messagebox.showinfo('Respaldo comprobado','Integridad y referencias: correctas.\nEsquema: '+str(s['schema'])+'\nAlumnos: '+str(s['students'])+'\nPagos: '+str(s['payments'])+'\nÚltimo recibo: '+(last['receipt']+' · '+last['paid_on'] if last else 'Sin pagos')+'\nSaldo pendiente USD: '+f"{s['balance_usd']/100:.2f}"+'\n\n'+s['creation_note']+'\n'+protection+' No se modificó ni se restauró ninguna base.',parent=root)
+        messagebox.showinfo('Respaldo comprobado','Integridad y referencias: correctas.\nEsquema: '+str(s['schema'])+'\nAlumnos: '+str(s['students'])+'\nPagos: '+str(s['payments'])+'\nÚltimo recibo: '+(last['receipt']+' · '+last['paid_on'] if last else 'Sin pagos')+'\nSaldo pendiente USD: '+f"{s['balance_usd']/100:.2f}"+'\n\n'+s['creation_note']+'\n'+s.get('audit',{}).get('message','Bitácora antigua sin cadena de huellas.')+'\n'+protection+' No se modificó ni se restauró ninguna base.',parent=root)
     finally:root.destroy()
 
 

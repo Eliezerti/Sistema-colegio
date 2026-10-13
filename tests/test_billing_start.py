@@ -1,3 +1,4 @@
+from tests.audit_helpers import legacy_fixture
 """First billed month is independent of academic dates and preserves recorded money."""
 import base64
 import csv
@@ -94,6 +95,7 @@ class BillingStartTests(unittest.TestCase):
         self.student(billing_start='2026-09')
         ledger = charges(self.db)
         with self.db:
+            legacy_fixture(self.db)
             self.db.execute('ALTER TABLE students DROP COLUMN billing_start')
             self.db.execute('PRAGMA user_version=8')
         initialize(self.path)

@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from colegio.clock_guard import ClockGuard, ClockConfirmationRequired
-from colegio.db import connect, initialize, local_today, synchronize_monthly_charges
+from colegio.db import audit, connect, initialize, local_today, synchronize_monthly_charges
 from colegio.server import open_school
 from tests import test_system as fixtures
 
@@ -39,7 +39,7 @@ class ClockStartupTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             path=Path(folder)/'colegio.sqlite3';initialize(path)
             with closing(connect(path)) as db,db:
-                db.execute("INSERT INTO audit(action,details,created_at) VALUES('fixture','{}','2026-10-01T12:00:00+00:00')")
+                audit(db,None,'fixture',{})
                 tables=db.execute('SELECT name,sql FROM sqlite_master ORDER BY name').fetchall()
                 version=db.execute('PRAGMA user_version').fetchone()[0]
             guard=ClockGuard(path,now=lambda:datetime(2027,1,1,tzinfo=timezone.utc),history=True)

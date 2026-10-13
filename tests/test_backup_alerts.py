@@ -1,3 +1,4 @@
+from colegio.db import connect
 import http.client
 import json
 import sqlite3
@@ -26,7 +27,7 @@ class BackupHealthTests(unittest.TestCase):
         self.destination = str(Path(self.temp.name) / 'second')
 
     def configure(self, destination):
-        with closing(sqlite3.connect(self.path)) as db, db:
+        with closing(connect(self.path)) as db, db:
             db.execute("INSERT OR REPLACE INTO settings VALUES('backup_directory', ?)", (destination,))
 
     def describe(self, **status):
@@ -36,7 +37,7 @@ class BackupHealthTests(unittest.TestCase):
         return [a['code'] for a in result['alerts']]
 
     def declare_cloud(self):
-        with closing(sqlite3.connect(self.path)) as db, db:
+        with closing(connect(self.path)) as db, db:
             db.execute("INSERT OR IGNORE INTO users(id,name,username,password,role) VALUES(1,'Administrador','admin','test-only','admin')")
             status = describe_backup(self.path, {'secondary_directory': self.destination,
                                     'secondary_at': self.now.isoformat()}, now=self.now)
@@ -79,14 +80,14 @@ class BackupHealthTests(unittest.TestCase):
         self.assertIn('disk_unknown', self.codes(result))
         self.configure(self.destination)
         for value in ('{', 'null', '[]', json.dumps({'directory': self.destination})):
-            with closing(sqlite3.connect(self.path)) as db, db:
+            with closing(connect(self.path)) as db, db:
                 db.execute('UPDATE settings SET value=? WHERE key=?', (value, CLOUD_KEY))
             self.assertIn('disk_unknown', self.codes(describe_backup(self.path, {}, now=self.now)))
 
     def test_cloud_confirmation_requires_review_current_path_and_recent_copy(self):
         self.configure(self.destination)
         status = describe_backup(self.path, {}, now=self.now)
-        with closing(sqlite3.connect(self.path)) as db:
+        with closing(connect(self.path)) as db:
             for data in ({'directory': self.destination, 'reviewed': True},
                          {'directory': 'other', 'reviewed': True},
                          {'directory': self.destination, 'reviewed': 'true'}):
@@ -158,7 +159,7 @@ class BackupAlertAccessTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.path = Path(self.temp.name)/'colegio.sqlite3'
         initialize(self.path)
-        with closing(sqlite3.connect(self.path)) as db, db:
+        with closing(connect(self.path)) as db, db:
             for role in ('admin', 'cashier', 'reader'):
                 db.execute('INSERT INTO users(name,username,password,role) VALUES(?,?,?,?)',
                            (role, role, hash_password('Prueba-segura-2026'), role))
@@ -228,7 +229,7 @@ class BackupAlertAccessTests(unittest.TestCase):
         cloud = tempfile.TemporaryDirectory(prefix='aula-cloud-test-')
         self.addCleanup(cloud.cleanup)
         destination = str(Path(cloud.name)/'copies')
-        with closing(sqlite3.connect(self.path)) as db, db:
+        with closing(connect(self.path)) as db, db:
             db.execute("UPDATE settings SET value=? WHERE key='backup_directory'", (destination,))
         from tests.crypto_helpers import configure
         if not (self.path.parent/'.backup-crypto'/'keyring.json').exists():configure(self.path.parent)
@@ -240,7 +241,7 @@ class BackupAlertAccessTests(unittest.TestCase):
 
     def test_cloud_declaration_admin_csrf_audit_and_no_schema_or_financial_changes(self):
         destination, csrf = self.prepare_cloud_confirmation()
-        with closing(sqlite3.connect(self.path)) as db:
+        with closing(connect(self.path)) as db:
             schema = list(db.execute("SELECT name,sql FROM sqlite_master ORDER BY name"))
             version = db.execute('PRAGMA user_version').fetchone()[0]
             payments = list(db.execute('SELECT * FROM payments'))
@@ -248,7 +249,7 @@ class BackupAlertAccessTests(unittest.TestCase):
         self.request('backup-cloud-declare', data, csrf='', expected=403)
         self.request('backup-cloud-declare', data, csrf=csrf)
         self.assertTrue(self.request('backup-status')['cloud_declared'])
-        with closing(sqlite3.connect(self.path)) as db:
+        with closing(connect(self.path)) as db:
             self.assertEqual(list(db.execute("SELECT name,sql FROM sqlite_master ORDER BY name")), schema)
             self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], version)
             self.assertEqual(list(db.execute('SELECT * FROM payments')), payments)

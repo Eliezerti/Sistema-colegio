@@ -1,3 +1,4 @@
+from tests.audit_helpers import legacy_fixture
 """Exercise real corrections and directory removal against isolated financial data."""
 import base64
 import csv
@@ -195,6 +196,7 @@ class StudentAdminTests(unittest.TestCase):
         self.student(billing_start='2026-09')
         before=charges(self.db)
         with self.db:
+            legacy_fixture(self.db)
             self.db.execute('ALTER TABLE students DROP COLUMN archived')
             self.db.execute('ALTER TABLE guardians DROP COLUMN archived')
             self.db.execute('PRAGMA user_version=9')

@@ -1,3 +1,4 @@
+from tests.audit_helpers import legacy_fixture
 import http.client
 import json
 import os
@@ -101,6 +102,7 @@ class DesktopTests(unittest.TestCase):
                 db.executemany('UPDATE settings SET value=? WHERE key=?',[(v,k) for k,v in SCHOOL_PROFILE.items()])
                 db.execute("UPDATE settings SET value='ALEJANDRO VON HUMBOLDT' WHERE key='school_name'")
                 db.execute("DELETE FROM settings WHERE key='institution_type'")
+                legacy_fixture(db)
                 db.execute('PRAGMA user_version=6')
             initialize(path)
             with closing(connect(path)) as db,db:

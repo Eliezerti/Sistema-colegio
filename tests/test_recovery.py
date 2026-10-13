@@ -1,7 +1,10 @@
+from tests.audit_helpers import legacy_fixture
+from tests.audit_helpers import publish_fixture
 """Recovery must work when the current database is unreadable."""
 import sqlite3
 import builtins
 import errno
+import stat
 import os
 import http.client
 import threading
@@ -85,7 +88,7 @@ class RecoveryTests(unittest.TestCase):
         self.assertFalse(self.target.exists())
 
     def test_invalid_incoming_backup_does_not_replace_current_data(self):
-        consistent_backup(self.backup,self.target)
+        consistent_backup(self.backup,self.target);publish_fixture(self.target)
         original=self.target.read_bytes()
         invalid=self.root/'invalido.sqlite3';invalid.write_bytes(b'no es una base')
         with self.assertRaises(sqlite3.DatabaseError):restore(invalid,self.directory)
@@ -161,8 +164,9 @@ class RecoveryTests(unittest.TestCase):
 
     def test_upgrade_startup_under_windows_sync_rules_preserves_saved_payment(self):
         from colegio.server import main, SchoolServer
-        consistent_backup(self.backup,self.target)
+        consistent_backup(self.backup,self.target);publish_fixture(self.target)
         with closing(connect(self.target)) as db:
+            legacy_fixture(db)
             db.execute('PRAGMA user_version=4')
         permissions={};real_sync=os.fsync;real_serve=SchoolServer.serve_forever
 
@@ -172,7 +176,7 @@ class RecoveryTests(unittest.TestCase):
             return saved
 
         def windows_commit(descriptor):
-            if not permissions.get(descriptor):raise OSError(errno.EBADF,'Bad file descriptor')
+            if not stat.S_ISDIR(os.fstat(descriptor).st_mode) and not permissions.get(descriptor):raise OSError(errno.EBADF,'Bad file descriptor')
             real_sync(descriptor)
 
         def serve_once(server):
@@ -187,6 +191,8 @@ class RecoveryTests(unittest.TestCase):
         with patch('sys.argv',['aula','--data-dir',str(self.directory),'--port','0']), \
              patch('colegio.storage.open',new=tracked_open,create=True), \
              patch('colegio.storage.os.fsync',new=windows_commit), \
+             patch('colegio.audit_chain.open',new=tracked_open,create=True), \
+             patch('colegio.clock_guard.open',new=tracked_open,create=True), \
              patch.object(SchoolServer,'serve_forever',new=serve_once):
             main()
         previous=list((self.directory/'backups').glob('antes-actualizacion-*.sqlite3'))

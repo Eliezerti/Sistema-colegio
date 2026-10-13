@@ -1,3 +1,4 @@
+from tests.audit_helpers import legacy_fixture
 from contextlib import closing
 import http.client
 import json
@@ -98,7 +99,7 @@ class SystemTests(unittest.TestCase):
         after=self.request('state')
         for table in ('students','charges','payments','expenses'):self.assertEqual(before[table],after[table])
         with closing(connect(self.path)) as db:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],10)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],11)
             dump='\n'.join(db.iterdump())
             for secret in (password,pending['recovery']):self.assertNotIn(secret,dump);self.assertNotIn(secret.encode(),path.read_bytes())
 
@@ -335,7 +336,7 @@ class SystemTests(unittest.TestCase):
         self.request('confirm-rate', {'rate_date':local_today().isoformat(),'rate':'123','rate_change_confirmed':True},csrf=False,status=403)
         self.request('confirm-rate', {'rate_date':local_today().isoformat(),'rate':'123','rate_change_confirmed':True})
         self.assertTrue(self.request('state')['students'])
-        with closing(sqlite3.connect(self.path)) as db, db:
+        with closing(connect(self.path)) as db, db:
             db.execute("UPDATE sessions SET rate_confirmed_on='2000-01-01'")
         self.request('state',status=428)
         self.request('expenses', {'concept':'Bloqueado'},status=428)
@@ -378,8 +379,9 @@ class SystemTests(unittest.TestCase):
         self.request('employees',{'name':'Empleado anterior','document':'V-ant','position':'Secretaría','salary':'155.50'})
         self.generate()
         receipt=self.request('payments',self.payment())['id']
-        with closing(sqlite3.connect(self.path)) as db, db:
+        with closing(connect(self.path)) as db, db:
             before=db.execute('SELECT COUNT(*),SUM(amount) FROM payments').fetchone()
+            legacy_fixture(db)
             db.execute('DROP TABLE enrollment_documents')
             db.execute('DROP TABLE payroll_plans')
             db.execute('DROP TABLE monthly_assessments')
@@ -392,7 +394,7 @@ class SystemTests(unittest.TestCase):
             db.execute('PRAGMA user_version=0')
         initialize(self.path)
         initialize(self.path)
-        with closing(sqlite3.connect(self.path)) as db, db:
+        with closing(connect(self.path)) as db, db:
             self.assertEqual(db.execute('SELECT COUNT(*),SUM(amount) FROM payments').fetchone(),before)
             self.assertEqual(db.execute('SELECT student_code FROM students').fetchone()[0],'AL-000001')
             self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
@@ -414,7 +416,7 @@ class SystemTests(unittest.TestCase):
         self.assertEqual(state['students'][0]['balance'],54000)
         self.assertEqual(state['students'][0]['overdue'],54000)
         receipt=self.request('payments',self.payment())['id']
-        with closing(sqlite3.connect(self.path)) as db, db:
+        with closing(connect(self.path)) as db, db:
             db.execute('DELETE FROM monthly_assessments')
             db.execute('DELETE FROM charges WHERE period=?',(f'{self.year+1}-01',))
             db.execute('UPDATE charges SET amount=4000 WHERE period=?',(f'{self.year}-12',))
@@ -451,19 +453,20 @@ class SystemTests(unittest.TestCase):
 
     def test_v3_branding_upgrade_preserves_finances_and_issued_receipts(self):
         receipt = self.request('payments', self.payment())['id']
-        with closing(sqlite3.connect(self.path)) as db, db:
+        with closing(connect(self.path)) as db, db:
             historical = json.loads(db.execute('SELECT receipt_snapshot FROM payments WHERE id=?',(receipt,)).fetchone()[0])
             historical['school'] = {'school_name':'Colegio antes de actualizar','rif':'RIF anterior','address':'Dirección anterior'}
             frozen = json.dumps(historical,ensure_ascii=False)
             db.execute('UPDATE payments SET receipt_snapshot=? WHERE id=?',(frozen,receipt))
             db.execute("DELETE FROM settings WHERE key IN ('legal_name','fiscal_address','logo')")
             db.execute("UPDATE settings SET value='04120001234' WHERE key='phone'")
+            legacy_fixture(db)
             db.execute('PRAGMA user_version=3')
             tables = ('students','guardians','charges','payments','allocations','monthly_assessments','employees','expenses')
             before = {t:db.execute(f'SELECT * FROM {t}').fetchall() for t in tables}
         initialize(self.path)
         initialize(self.path)
-        with closing(sqlite3.connect(self.path)) as db, db:
+        with closing(connect(self.path)) as db, db:
             after = {t:db.execute(f'SELECT * FROM {t}').fetchall() for t in tables}
             self.assertEqual(after, before)
             settings = dict(db.execute('SELECT key,value FROM settings'))
@@ -502,7 +505,7 @@ class SystemTests(unittest.TestCase):
 
     def test_missing_past_month_uses_old_tariff_before_student_edit(self):
         on=f'{self.year+1}-06'
-        with closing(sqlite3.connect(self.path)) as db, db:
+        with closing(connect(self.path)) as db, db:
             db.execute('DELETE FROM monthly_assessments WHERE period=?',(on,))
             db.execute('DELETE FROM charges WHERE period=?',(on,))
         self.request('students',self.student_data(id=self.student,monthly_fee='100',discount=0,status='inactive'))
@@ -528,7 +531,7 @@ class SystemTests(unittest.TestCase):
             self.assertEqual(db.execute('SELECT COUNT(*) FROM sessions').fetchone()[0],0)
         other=Path(self.temp.name)/'restauracion'
         restored=restore(backup,other,credential='FICTICIO-respaldo-seguro-2026')
-        with closing(sqlite3.connect(restored)) as db, db:
+        with closing(connect(restored)) as db, db:
             self.assertEqual(db.execute('SELECT name FROM students').fetchone()[0],'Alumno Uno')
         restore(backup,other,credential='FICTICIO-respaldo-seguro-2026')
         self.assertTrue(list((other/'backups').glob('antes-restauracion-*.sqlite3')))
@@ -547,13 +550,13 @@ class SystemTests(unittest.TestCase):
         self.assertEqual(self.request(f'receipt/{first}')['payment']['grade_name'],'Primaria A')
         for paper in ('a4','half-letter'):
             self.assertIn(b'Primaria A',self.request(f'receipt/{first}.pdf?paper={paper}'))
-        with closing(sqlite3.connect(self.path)) as db, db:
+        with closing(connect(self.path)) as db, db:
             frozen=json.loads(db.execute('SELECT receipt_snapshot FROM payments WHERE id=?',(first,)).fetchone()[0])
             frozen['person'].pop('grade_name');frozen['person'].pop('student_school_year')
             old=json.dumps(frozen)
             db.execute('UPDATE payments SET receipt_snapshot=? WHERE id=?',(old,first))
         self.assertEqual(self.request(f'receipt/{first}')['payment']['grade_name'],'Primaria A')
-        with closing(sqlite3.connect(self.path)) as db, db:
+        with closing(connect(self.path)) as db, db:
             self.assertEqual(db.execute('SELECT receipt_snapshot FROM payments WHERE id=?',(first,)).fetchone()[0],old)
             db.execute('DELETE FROM enrollment_documents WHERE student_id=?',(self.student,))
         self.assertEqual(self.request(f'receipt/{first}')['payment']['grade_name'],'')
@@ -758,7 +761,8 @@ class SystemTests(unittest.TestCase):
         self.assertTrue(status['secondary_at'])
         with closing(connect(self.path)) as db:
             entry = json.loads(db.execute("SELECT details FROM audit WHERE action='backup_directory' ORDER BY id DESC").fetchone()[0])
-            self.assertEqual(entry, {'before': before['settings']['backup_directory'], 'after': destination})
+            self.assertEqual(entry, {'before': before['settings']['backup_directory'], 'after': destination,
+                'responsable':{'id':1,'nombre':'Directora','perfil':'admin','usuario':'admin'}})
             self.assertEqual(db.execute('PRAGMA journal_mode').fetchone()[0], 'wal')
             self.assertEqual(db.execute('PRAGMA synchronous').fetchone()[0], 2)
 
@@ -784,13 +788,15 @@ class SystemTests(unittest.TestCase):
 import json,sqlite3,sys
 from colegio.db import record_payment
 phase=sys.argv[2]
-class Connection(sqlite3.Connection):
+from colegio.audit_chain import AuditConnection
+class Connection(AuditConnection):
     def execute(self,sql,*args):
         result=super().execute(sql,*args)
         if phase=='during' and sql.startswith('INSERT INTO allocations'):
             print('checkpoint',flush=True);input()
         return result
 with sqlite3.connect(sys.argv[1],factory=Connection) as db:
+    db.prepare_audit()
     db.row_factory=sqlite3.Row
     db.execute('PRAGMA foreign_keys=ON');db.execute('PRAGMA synchronous=FULL');db.execute('BEGIN IMMEDIATE')
     record_payment(db,json.loads(sys.argv[3]),1)
@@ -854,10 +860,10 @@ with sqlite3.connect(sys.argv[1],factory=Connection) as db:
         self.assertEqual(by_id[repeat]['grade_id'],self.grade);self.assertEqual(by_id[repeat]['school_year'],self.year+1)
         self.assertEqual(by_id[withdraw]['school_year'],self.year);self.assertEqual(by_id[withdraw]['status'],'inactive')
         self.assertEqual(state['payments'],before['payments'])
-        with closing(sqlite3.connect(self.path)) as db, db:
+        with closing(connect(self.path)) as db, db:
             for charge in before['charges']:
                 row=db.execute('SELECT amount,period FROM charges WHERE id=?',(charge['id'],)).fetchone()
-                self.assertEqual(row,(charge['amount'],charge['period']))
+                self.assertEqual(tuple(row),(charge['amount'],charge['period']))
         self.assertEqual(self.request(f'receipt/{receipt}')['payment']['grade_name'],'Primaria A')
         doc=self.request(f"year-transition/{result['id']}")
         self.assertEqual(doc['lines'][0]['source']['school_year'],self.year)
@@ -910,7 +916,7 @@ with sqlite3.connect(sys.argv[1],factory=Connection) as db:
         with DataLock(self.path.parent):
             with self.assertRaises(RuntimeError):reset_password(self.path.parent,'admin','Nueva-clave-segura')
         reset_password(self.path.parent,'admin','Nueva-clave-segura')
-        with closing(sqlite3.connect(self.path)) as db, db:
+        with closing(connect(self.path)) as db, db:
             self.assertTrue(check_password('Nueva-clave-segura',db.execute("SELECT password FROM users WHERE username='admin'").fetchone()[0]))
             self.assertEqual(db.execute('SELECT COUNT(*) FROM sessions').fetchone()[0],0)
             self.assertEqual(db.execute('SELECT COUNT(*) FROM students').fetchone()[0],1)
