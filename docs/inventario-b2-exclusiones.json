@@ -1,0 +1,641 @@
+{
+  "modules": [
+    "PyInstaller",
+    "PyInstaller._shared_with_waf",
+    "PyInstaller.building",
+    "PyInstaller.building.utils",
+    "PyInstaller.compat",
+    "PyInstaller.config",
+    "PyInstaller.depend",
+    "PyInstaller.depend.imphookapi",
+    "PyInstaller.exceptions",
+    "PyInstaller.isolated",
+    "PyInstaller.isolated._parent",
+    "PyInstaller.lib",
+    "PyInstaller.lib.modulegraph",
+    "PyInstaller.lib.modulegraph.modulegraph",
+    "PyInstaller.lib.modulegraph.util",
+    "PyInstaller.log",
+    "PyInstaller.utils",
+    "PyInstaller.utils.hooks",
+    "PyInstaller.utils.hooks.conda",
+    "PyInstaller.utils.misc",
+    "PyInstaller.utils.osx",
+    "PyInstaller.utils.win32",
+    "PyInstaller.utils.win32.versioninfo",
+    "altgraph",
+    "altgraph.Graph",
+    "altgraph.GraphUtil",
+    "altgraph.ObjectGraph",
+    "pefile",
+    "setuptools",
+    "setuptools._core_metadata",
+    "setuptools._discovery",
+    "setuptools._distutils",
+    "setuptools._distutils._dataclass",
+    "setuptools._distutils._log",
+    "setuptools._distutils._modified",
+    "setuptools._distutils._msvccompiler",
+    "setuptools._distutils.archive_util",
+    "setuptools._distutils.ccompiler",
+    "setuptools._distutils.cmd",
+    "setuptools._distutils.command",
+    "setuptools._distutils.command.bdist",
+    "setuptools._distutils.command.build",
+    "setuptools._distutils.command.build_ext",
+    "setuptools._distutils.command.sdist",
+    "setuptools._distutils.compat",
+    "setuptools._distutils.compat.numpy",
+    "setuptools._distutils.compat.py310",
+    "setuptools._distutils.compilers",
+    "setuptools._distutils.compilers.C",
+    "setuptools._distutils.compilers.C.base",
+    "setuptools._distutils.compilers.C.cygwin",
+    "setuptools._distutils.compilers.C.errors",
+    "setuptools._distutils.compilers.C.msvc",
+    "setuptools._distutils.compilers.C.unix",
+    "setuptools._distutils.compilers.C.zos",
+    "setuptools._distutils.compilers._modified",
+    "setuptools._distutils.compilers._util",
+    "setuptools._distutils.compilers.errors",
+    "setuptools._distutils.compilers.logging",
+    "setuptools._distutils.compilers.platform",
+    "setuptools._distutils.compilers.platform.detect",
+    "setuptools._distutils.compilers.platform.macos",
+    "setuptools._distutils.core",
+    "setuptools._distutils.debug",
+    "setuptools._distutils.dir_util",
+    "setuptools._distutils.dist",
+    "setuptools._distutils.errors",
+    "setuptools._distutils.extension",
+    "setuptools._distutils.fancy_getopt",
+    "setuptools._distutils.file_util",
+    "setuptools._distutils.filelist",
+    "setuptools._distutils.log",
+    "setuptools._distutils.spawn",
+    "setuptools._distutils.sysconfig",
+    "setuptools._distutils.text_file",
+    "setuptools._distutils.util",
+    "setuptools._distutils.version",
+    "setuptools._distutils.versionpredicate",
+    "setuptools._entry_points",
+    "setuptools._imp",
+    "setuptools._importlib",
+    "setuptools._itertools",
+    "setuptools._normalization",
+    "setuptools._path",
+    "setuptools._reqs",
+    "setuptools._shutil",
+    "setuptools._static",
+    "setuptools._vendor",
+    "setuptools._vendor.importlib_metadata",
+    "setuptools._vendor.importlib_metadata._adapters",
+    "setuptools._vendor.importlib_metadata._collections",
+    "setuptools._vendor.importlib_metadata._compat",
+    "setuptools._vendor.importlib_metadata._functools",
+    "setuptools._vendor.importlib_metadata._itertools",
+    "setuptools._vendor.importlib_metadata._meta",
+    "setuptools._vendor.importlib_metadata._text",
+    "setuptools._vendor.importlib_metadata._typing",
+    "setuptools._vendor.importlib_metadata.compat",
+    "setuptools._vendor.importlib_metadata.compat.py311",
+    "setuptools._vendor.importlib_metadata.compat.py39",
+    "setuptools._vendor.jaraco",
+    "setuptools._vendor.jaraco.context",
+    "setuptools._vendor.jaraco.functools",
+    "setuptools._vendor.jaraco.text",
+    "setuptools._vendor.more_itertools",
+    "setuptools._vendor.more_itertools.more",
+    "setuptools._vendor.more_itertools.recipes",
+    "setuptools._vendor.packaging",
+    "setuptools._vendor.packaging._elffile",
+    "setuptools._vendor.packaging._manylinux",
+    "setuptools._vendor.packaging._musllinux",
+    "setuptools._vendor.packaging._parser",
+    "setuptools._vendor.packaging._structures",
+    "setuptools._vendor.packaging._tokenizer",
+    "setuptools._vendor.packaging.markers",
+    "setuptools._vendor.packaging.requirements",
+    "setuptools._vendor.packaging.specifiers",
+    "setuptools._vendor.packaging.tags",
+    "setuptools._vendor.packaging.utils",
+    "setuptools._vendor.packaging.version",
+    "setuptools._vendor.tomli",
+    "setuptools._vendor.tomli._parser",
+    "setuptools._vendor.tomli._re",
+    "setuptools._vendor.tomli._types",
+    "setuptools._vendor.wheel",
+    "setuptools._vendor.wheel.macosx_libfile",
+    "setuptools._vendor.wheel.wheelfile",
+    "setuptools._vendor.zipp",
+    "setuptools._vendor.zipp._functools",
+    "setuptools._vendor.zipp.compat",
+    "setuptools._vendor.zipp.compat.overlay",
+    "setuptools._vendor.zipp.compat.py310",
+    "setuptools._vendor.zipp.compat.py313",
+    "setuptools._vendor.zipp.glob",
+    "setuptools.archive_util",
+    "setuptools.command",
+    "setuptools.command._requirestxt",
+    "setuptools.command.bdist_egg",
+    "setuptools.command.bdist_wheel",
+    "setuptools.command.build",
+    "setuptools.command.egg_info",
+    "setuptools.command.sdist",
+    "setuptools.command.setopt",
+    "setuptools.compat",
+    "setuptools.compat.py310",
+    "setuptools.compat.py311",
+    "setuptools.compat.py39",
+    "setuptools.config",
+    "setuptools.config._apply_pyprojecttoml",
+    "setuptools.config._validate_pyproject",
+    "setuptools.config._validate_pyproject.error_reporting",
+    "setuptools.config._validate_pyproject.extra_validations",
+    "setuptools.config._validate_pyproject.fastjsonschema_exceptions",
+    "setuptools.config._validate_pyproject.fastjsonschema_validations",
+    "setuptools.config._validate_pyproject.formats",
+    "setuptools.config.expand",
+    "setuptools.config.pyprojecttoml",
+    "setuptools.config.setupcfg",
+    "setuptools.depends",
+    "setuptools.discovery",
+    "setuptools.dist",
+    "setuptools.errors",
+    "setuptools.extension",
+    "setuptools.glob",
+    "setuptools.installer",
+    "setuptools.logging",
+    "setuptools.monkey",
+    "setuptools.msvc",
+    "setuptools.unicode_utils",
+    "setuptools.version",
+    "setuptools.warnings",
+    "setuptools.wheel",
+    "setuptools.windows_support",
+    "webview.platforms.android",
+    "webview.platforms.cef",
+    "webview.platforms.cocoa",
+    "webview.platforms.gtk",
+    "webview.platforms.mshtml",
+    "webview.platforms.qt"
+  ],
+  "files": [
+    {
+      "path": "_internal/_tcl_data/msgs/af.msg",
+      "bytes": 1038
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/af_za.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/ar.msg",
+      "bytes": 2018
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/ar_in.msg",
+      "bytes": 265
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/ar_jo.msg",
+      "bytes": 1851
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/ar_lb.msg",
+      "bytes": 1851
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/ar_sy.msg",
+      "bytes": 1851
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/be.msg",
+      "bytes": 2157
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/bg.msg",
+      "bytes": 1871
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/bn.msg",
+      "bytes": 2335
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/bn_in.msg",
+      "bytes": 265
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/ca.msg",
+      "bytes": 1152
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/cs.msg",
+      "bytes": 1354
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/da.msg",
+      "bytes": 1208
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/de.msg",
+      "bytes": 1276
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/de_at.msg",
+      "bytes": 847
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/de_be.msg",
+      "bytes": 1276
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/el.msg",
+      "bytes": 2304
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/eo.msg",
+      "bytes": 1285
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/et.msg",
+      "bytes": 1258
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/eu.msg",
+      "bytes": 1032
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/eu_es.msg",
+      "bytes": 294
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/fa.msg",
+      "bytes": 1711
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/fa_in.msg",
+      "bytes": 2009
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/fa_ir.msg",
+      "bytes": 426
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/fi.msg",
+      "bytes": 1195
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/fo.msg",
+      "bytes": 1033
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/fo_fo.msg",
+      "bytes": 286
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/fr.msg",
+      "bytes": 1257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/fr_be.msg",
+      "bytes": 286
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/fr_ca.msg",
+      "bytes": 286
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/fr_ch.msg",
+      "bytes": 288
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/ga.msg",
+      "bytes": 1188
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/ga_ie.msg",
+      "bytes": 286
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/gl.msg",
+      "bytes": 997
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/gl_es.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/gv.msg",
+      "bytes": 1084
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/gv_gb.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/he.msg",
+      "bytes": 1990
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/hi.msg",
+      "bytes": 1777
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/hi_in.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/hr.msg",
+      "bytes": 1171
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/hu.msg",
+      "bytes": 1381
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/id.msg",
+      "bytes": 961
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/id_id.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/is.msg",
+      "bytes": 1305
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/it.msg",
+      "bytes": 1294
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/it_ch.msg",
+      "bytes": 250
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/ja.msg",
+      "bytes": 1689
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/kl.msg",
+      "bytes": 1025
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/kl_gl.msg",
+      "bytes": 286
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/ko.msg",
+      "bytes": 1621
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/ko_kr.msg",
+      "bytes": 354
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/kok.msg",
+      "bytes": 1997
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/kok_in.msg",
+      "bytes": 260
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/kw.msg",
+      "bytes": 1013
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/kw_gb.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/lt.msg",
+      "bytes": 1307
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/lv.msg",
+      "bytes": 1271
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/mk.msg",
+      "bytes": 2157
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/mr.msg",
+      "bytes": 1846
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/mr_in.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/ms.msg",
+      "bytes": 957
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/ms_my.msg",
+      "bytes": 265
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/mt.msg",
+      "bytes": 717
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/nb.msg",
+      "bytes": 1209
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/nl.msg",
+      "bytes": 1129
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/nl_be.msg",
+      "bytes": 286
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/nn.msg",
+      "bytes": 1200
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/pl.msg",
+      "bytes": 1263
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/pt.msg",
+      "bytes": 1177
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/pt_br.msg",
+      "bytes": 286
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/ro.msg",
+      "bytes": 1224
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/ru.msg",
+      "bytes": 2091
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/ru_ua.msg",
+      "bytes": 248
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/sh.msg",
+      "bytes": 1212
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/sk.msg",
+      "bytes": 1255
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/sl.msg",
+      "bytes": 1216
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/sq.msg",
+      "bytes": 1321
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/sr.msg",
+      "bytes": 2087
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/sv.msg",
+      "bytes": 1219
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/sw.msg",
+      "bytes": 1040
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/ta.msg",
+      "bytes": 1874
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/ta_in.msg",
+      "bytes": 257
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/te.msg",
+      "bytes": 2149
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/te_in.msg",
+      "bytes": 419
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/th.msg",
+      "bytes": 2359
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/tr.msg",
+      "bytes": 1183
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/uk.msg",
+      "bytes": 2165
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/vi.msg",
+      "bytes": 1471
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/zh.msg",
+      "bytes": 3385
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/zh_cn.msg",
+      "bytes": 319
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/zh_hk.msg",
+      "bytes": 780
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/zh_sg.msg",
+      "bytes": 347
+    },
+    {
+      "path": "_internal/_tcl_data/msgs/zh_tw.msg",
+      "bytes": 354
+    },
+    {
+      "path": "_internal/_tk_data/msgs/cs.msg",
+      "bytes": 4235
+    },
+    {
+      "path": "_internal/_tk_data/msgs/da.msg",
+      "bytes": 3987
+    },
+    {
+      "path": "_internal/_tk_data/msgs/de.msg",
+      "bytes": 4914
+    },
+    {
+      "path": "_internal/_tk_data/msgs/el.msg",
+      "bytes": 8784
+    },
+    {
+      "path": "_internal/_tk_data/msgs/eo.msg",
+      "bytes": 4035
+    },
+    {
+      "path": "_internal/_tk_data/msgs/fi.msg",
+      "bytes": 4693
+    },
+    {
+      "path": "_internal/_tk_data/msgs/fr.msg",
+      "bytes": 3877
+    },
+    {
+      "path": "_internal/_tk_data/msgs/hu.msg",
+      "bytes": 4678
+    },
+    {
+      "path": "_internal/_tk_data/msgs/it.msg",
+      "bytes": 3765
+    },
+    {
+      "path": "_internal/_tk_data/msgs/nl.msg",
+      "bytes": 4557
+    },
+    {
+      "path": "_internal/_tk_data/msgs/pl.msg",
+      "bytes": 4932
+    },
+    {
+      "path": "_internal/_tk_data/msgs/pt.msg",
+      "bytes": 3987
+    },
+    {
+      "path": "_internal/_tk_data/msgs/ru.msg",
+      "bytes": 8620
+    },
+    {
+      "path": "_internal/_tk_data/msgs/sv.msg",
+      "bytes": 3908
+    },
+    {
+      "path": "_internal/_tk_data/msgs/zh_cn.msg",
+      "bytes": 4948
+    },
+    {
+      "path": "_internal/tcl8/8.5/tcltest-2.5.8.tm",
+      "bytes": 105163
+    },
+    {
+      "path": "_internal/webview/lib/pywebview-android.jar",
+      "bytes": 9071
+    },
+    {
+      "path": "_internal/webview/lib/WebBrowserInterop.x64.dll",
+      "bytes": 7168
+    },
+    {
+      "path": "_internal/webview/lib/WebBrowserInterop.x86.dll",
+      "bytes": 7168
+    }
+  ]
+}

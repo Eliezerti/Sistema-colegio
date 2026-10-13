@@ -6,3 +6,6 @@ test-results/
 build/
 dist/
 *.spec
+
+# Reviewed desktop bundle specification, not a generated local spec.
+!packaging/Aula.spec

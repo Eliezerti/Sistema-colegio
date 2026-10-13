@@ -16,8 +16,10 @@ if ($TestExitCode -ne 0) {
     }
     throw "Fallaron las pruebas; no se generará el instalador."
 }
-python -m PyInstaller --noconfirm --clean --onedir --windowed --name Aula --icon packaging/aula.ico --add-data "static;static" --add-data "colegio/fonts;colegio/fonts" --collect-all webview --hidden-import pystray._win32 desktop_entry.py
+python -m PyInstaller --noconfirm --clean packaging/Aula.spec
 if ($LASTEXITCODE -ne 0) { throw "No se pudo construir Aula.exe." }
+python packaging/bundle_inventory.py dist/Aula --output "$env:RUNNER_TEMP/aula-b2-after.json" --verify
+if ($LASTEXITCODE -ne 0) { throw "El paquete contiene módulos prohibidos o le faltan componentes necesarios." }
 $Bootstrap = Join-Path $PWD "build\MicrosoftEdgeWebview2Setup.exe"
 Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile $Bootstrap
 $Signature = Get-AuthenticodeSignature $Bootstrap

@@ -25,7 +25,7 @@ def main():
             if hashlib.sha256(path.read_bytes()).hexdigest()!=fixture['sha256']: raise RuntimeError('Fixture histórica alterada.')
             files.append(path)
     for directory in ('colegio','static','tests','packaging'):
-        files.extend(p for p in (root / directory).rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix in ('.py','.js','.cjs','.css','.html','.svg','.png','.ttf','.json','.webmanifest','.txt','.ico','.iss','.ps1'))
+        files.extend(p for p in (root / directory).rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix in ('.py','.js','.cjs','.css','.html','.svg','.png','.ttf','.json','.txt','.ico','.iss','.ps1','.spec'))
     with zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_DEFLATED) as archive:
         for path in sorted(files):
             data = path.read_bytes()

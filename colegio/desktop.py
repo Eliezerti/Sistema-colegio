@@ -308,6 +308,9 @@ def launch_window(url,*,host=None,demo=False,storage=None,smoke=False):
                     if closing() is not False:raise RuntimeError('El cierre de la ventana no conserva el servidor.')
                     window.show();window.restore()
                     if not host.thread.is_alive():raise RuntimeError('El servidor se detuvo al ocultar la ventana.')
+                if not demo:
+                    from .desktop_checks import renderer
+                    renderer(window, host.directory)
                 smoke_result.append(True)
             except Exception:logging.exception('Windows desktop smoke failed')
             finally:force_close.set();window.destroy()
@@ -340,6 +343,9 @@ def self_test(demo=False):
     from .pdf_fonts import font_data
     setup_logging(Path(tempfile.gettempdir())/'AulaColegio-Compilacion')
     with tempfile.TemporaryDirectory(prefix='aula-windows-smoke-') as temp:
+        if not demo:
+            from .desktop_checks import toolkit
+            toolkit(temp)
         assert pdf_logo(LOGO_FILE)
         assert font_data('LiberationSans-Regular.ttf') and font_data('LiberationSans-Bold.ttf')
         with DesktopHost(temp,port=0,demo=demo,demo_root=Path(temp)/'pruebas') as host:

@@ -15,6 +15,17 @@ from colegio.branding import SCHOOL_NAME, INSTITUTION_TYPE, SCHOOL_PROFILE
 
 
 class DesktopTests(unittest.TestCase):
+    def test_retired_phone_flags_rejected_before_opening_data(self):
+        from colegio.desktop import main
+        import contextlib
+        import io
+        for flag in ('--demo-phone', '--self-test-phone'):
+            with patch('sys.argv', ['Aula', flag]), patch('colegio.desktop.data_directory') as directory:
+                with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
+                    main()
+                self.assertEqual(error.exception.code, 2)
+                directory.assert_not_called()
+
     @unittest.skipUnless(os.name=='nt','El mutex y enfoque de ventanas se validan en Windows.')
     def test_windows_mutex_prevents_second_real_instance_and_allows_separate_trial(self):
         with WindowsInstance() as first:

@@ -24,6 +24,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('directory')
     parser.add_argument('--output', required=True)
+    parser.add_argument('--verify', action='store_true')
     args = parser.parse_args()
     report = inventory(args.directory)
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
@@ -31,6 +32,16 @@ def main():
     print('B2 INVENTARIO PYZ ' + json.dumps(report['pyz_modules']))
     print('B2 INVENTARIO ARCHIVOS ' + json.dumps(report['files']))
     print('B2 TAMANO ' + str(report['total_bytes']))
+    if args.verify:
+        from bundle_rules import blocked_module, keep_data
+        unexpected = [m for m in report['pyz_modules'] if blocked_module(m)]
+        required = {'colegio.server', 'colegio.desktop', 'sqlite3', 'tkinter', 'cryptography',
+                    'webview.platforms.edgechromium', 'webview.platforms.winforms'}
+        missing = required - set(report['pyz_modules'])
+        unwanted = [f['path'] for f in report['files'] if not keep_data(f['path'])]
+        if unexpected or missing or unwanted:
+            raise RuntimeError(f'Paquete incompatible: módulos sobrantes {unexpected}; faltantes {sorted(missing)}; recursos sobrantes {unwanted}')
+        print('PASS B2: inventario final sin módulos excluidos y con servidor, SQLite, cifrado, Tcl/Tk y WebView2.')
 
 
 if __name__ == '__main__':

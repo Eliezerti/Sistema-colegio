@@ -128,7 +128,7 @@ Todos consultan y modifican **la misma base**, guardada en la PC principal del c
    Si instalaste Tailscale en otra ubicación, usa la ruta de su `tailscale.exe`. Sigue el enlace de autorización que muestre el comando si solicita habilitar HTTPS. Copia el enlace privado que te indique, con formato `https://nombre-equipo.nombre-red.ts.net`. Usa **Tailscale Serve**, que comparte el acceso dentro de tu red privada. No actives **Funnel** ni abras el puerto 8765 en el router. [Documentación de Tailscale Serve](https://tailscale.com/kb/1242/tailscale-serve).
 
 5. Con el instalador de escritorio, abre **Configurar Aula**, selecciona **PC principal** y pega ese enlace HTTPS. Si usas el ZIP de código fuente, ejecuta **Configurar-Red.bat**. El enlace se guarda en `%LOCALAPPDATA%\AulaColegio\red.json`; no cambia los usuarios ni la base existente.
-6. Con el instalador, abre el icono **Aula - Administración escolar**; el modo compartido se activa automáticamente con la configuración guardada. Si usas el ZIP, abre **Iniciar-Red.bat**. Mantén Aula y Tailscale activos. **Configuración → Acceso compartido del colegio** muestra el enlace. No abras otra copia del servidor con un .bat mientras la aplicación de escritorio esté activa.
+6. Con el instalador, abre el icono **Aula - Administración escolar**; el modo compartido se activa automáticamente con la configuración guardada. Si usas el ZIP, abre **Iniciar-Red.bat**. Mantén Aula y Tailscale activos. **Configuración → Usuarios y acceso → Acceso compartido del colegio** muestra el enlace. No abras otra copia del servidor con un .bat mientras la aplicación de escritorio esté activa.
 
 ### Entrar desde las laptops y desde casa
 
@@ -284,9 +284,9 @@ Las contraseñas se almacenan con PBKDF2-SHA256 y sal aleatoria. Las sesiones ci
 
 ### Descargar y restaurar
 
-- En **Tasas y respaldo** al entrar o en **Configuración → Respaldo**, descarga una copia consistente de toda la base, incluso con el sistema abierto. Guarda copias periódicas en otro dispositivo.
+- En **Tasas y respaldo** al entrar o en **Configuración → Protección y mantenimiento**, descarga una copia consistente de toda la base, incluso con el sistema abierto. Guarda copias periódicas en otro dispositivo.
 - Al iniciar se guarda una copia automática por día en la subcarpeta `backups`; se conservan las últimas 30 copias diarias. Además, se crean respaldos después de operaciones financieras y cada cinco minutos mientras Aula permanece abierto. Configura un segundo destino para protegerte ante una falla del disco; también puedes descargar una copia manual.
-- Para restaurar, cierra Aula y ejecuta **Restaurar-respaldo.bat**. Selecciona el archivo `.sqlite3` y escribe `RESTAURAR`. La herramienta comprueba la integridad y compatibilidad del respaldo, prepara la recuperación antes de reemplazar los datos y bloquea la restauración mientras Aula utiliza esa carpeta. Si la base actual está sana, conserva un respaldo previo; si está dañada, conserva los archivos originales en una carpeta `backups/danado-antes-restauracion-*` y permite recuperar el respaldo válido. Esa carpeta conserva evidencia para una revisión técnica, no es un respaldo utilizable.
+- Para restaurar, cierra Aula completamente y abre **Inicio → Aula Colegio → Restaurar respaldo** (o **Restaurar-respaldo.bat** en el ZIP). Selecciona `.aulabak` con su contraseña o recuperación, o una copia antigua `.sqlite3` con advertencia. Revisa la comparación; confirma con `RESTAURAR`, `RESTAURAR CON PÉRDIDA DE DATOS` o `RESTAURAR SIN PODER COMPARAR`, según indique la herramienta. Se conservan la copia previa, los archivos originales cuando corresponda, informes de pérdida y correlativos. [Procedimiento y recuperación segura](docs/restauracion-segura.md).
 - Los respaldos no conservan sesiones autenticadas. Tras restaurar, inicia sesión con las cuentas que contiene el respaldo. El respaldo conserva sus contraseñas, por lo que debe almacenarse de forma segura.
 
 ### Si falla el programa o se pierden datos
@@ -297,7 +297,7 @@ Si necesitas recuperar la base:
 
 1. Cierra Aula y conserva la carpeta de datos actual; no la borres ni elimines sus respaldos.
 2. Busca la copia válida más reciente en `%LOCALAPPDATA%\AulaColegio\backups` o en el dispositivo externo donde hayas guardado una descarga.
-3. Ejecuta **Restaurar-respaldo.bat**, selecciona el archivo `.sqlite3` y confirma con `RESTAURAR`.
+3. Abre **Inicio → Aula Colegio → Restaurar respaldo** (o **Restaurar-respaldo.bat** en el ZIP), selecciona `.aulabak` o la copia antigua `.sqlite3` y sigue la comparación y confirmación que muestre. Para una copia cifrada necesitas su contraseña o recuperación.
 4. Abre Aula, entra con las cuentas del respaldo y comprueba el último recibo, fecha, cobros y saldos. Concilia los movimientos posteriores a esa copia con sus recibos y referencias bancarias.
 
 Si desapareció el archivo principal pero siguen existiendo respaldos locales, Aula avisa y no crea silenciosamente una base vacía. Usa la herramienta de restauración para recuperarla.

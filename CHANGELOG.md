@@ -5,7 +5,9 @@
 - Opción 2 aprobada: se retiran PWA/pasarela Wi-Fi y recursos exclusivos, sin retirar el menú adaptable ni el acceso privado del escritorio. Pago móvil y teléfonos de contacto permanecen.
 - Interfaz adaptable independiente; desregistro de trabajador anterior y limpieza solo de cachés públicos de Aula. Rutas retiradas responden 404.
 - Mensajes y README distinguen accesos del instalador y lanzadores del ZIP; se corrigen nombres anteriores y textos operativos desactualizados.
-- Inventario previo real del PYZ/archivos del instalador publicado 1.0.49, con huella y Defender. Todavía no se aplican exclusiones ni se afirman resultados B2. Tcl/Tk permanece.
+- Pruebas nativas ampliadas para Tcl/Tk, calendario, selectores y PDF/impresión WebView2, siempre con datos temporales; la impresión física queda para el usuario. Se retiran tres pruebas exclusivas de la pasarela eliminada y se añade rechazo de sus argumentos antes de abrir datos.
+- Inventario previo real del PYZ/archivos del instalador publicado 1.0.49, con huella y Defender. Inventario confirmado: 733 módulos, 1.113 archivos y 58.445.044 bytes instalados. Se excluyen 179 módulos presentes de las familias aprobadas y 114 recursos (308.828 bytes); Tcl/Tk, es_ve, encodings, tzdata y directorios requeridos por WebView2 permanecen. Spec sin UPX y comprobación del PYZ antes de publicar.
+- 1.0.50: inventario real y 295 pruebas Windows correctas, pero actualización posterior de firmas fallida; sin publicación. Se añade como tercer canal el paquete oficial x64 de Microsoft, con firma válida, versión/frescura y Defender activo obligatorios; los análisis y bloqueo permanecen.
 
 ## B1 · Consistencia y pruebas reales · 1.0.49 verificada
 

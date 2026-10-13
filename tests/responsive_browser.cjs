@@ -54,6 +54,7 @@ const fs = require('node:fs');
     }
     await page.setViewportSize({width:320,height:740}); await fit('Small phone fits');
     await page.setViewportSize({width:820,height:1180});
+    await page.waitForFunction(() => !document.querySelector('.sidebar').inert);
     assert.equal(await page.locator('.sidebar').evaluate(el => el.inert), false, 'Tablet preserves desktop menu');
     await fit('Tablet fits');
     await page.setViewportSize({width:375,height:812});
@@ -73,6 +74,35 @@ const fs = require('node:fs');
     await page.locator('#connection-status').waitFor({state:'hidden'});
     await click('mobile-menu'); await click('logout');
     await page.getByRole('button',{name:'Iniciar sesión'}).waitFor();
+    // Real former worker, isolated origin: remove Aula's registration, keep another app's.
+    const http = require('node:http');
+    const fixture = http.createServer((request, response) => {
+      response.setHeader('Cache-Control','no-store');
+      if (request.url.endsWith('.js')) {
+        response.setHeader('Content-Type','application/javascript');
+        response.end(request.url === '/responsive.js' ? fs.readFileSync('static/responsive.js')
+          : 'self.addEventListener("install",()=>self.skipWaiting());');
+      } else {
+        response.setHeader('Content-Type','text/html');
+        response.end('<!doctype html><div id="connection-status" hidden></div>');
+      }
+    });
+    await new Promise(resolve => fixture.listen(0,'127.0.0.1',resolve));
+    try {
+      await page.goto(`http://127.0.0.1:${fixture.address().port}/`);
+      await page.evaluate(async () => {
+        await navigator.serviceWorker.register('/service-worker.js');
+        await navigator.serviceWorker.register('/other/worker.js');
+      });
+      await page.waitForFunction(async () => (await navigator.serviceWorker.getRegistrations()).length === 2);
+      await page.addScriptTag({url:'/responsive.js'});
+      await page.waitForFunction(async () => (await navigator.serviceWorker.getRegistrations()).length === 1);
+      assert.equal(await page.evaluate(async () => {
+        const [registration] = await navigator.serviceWorker.getRegistrations();
+        const worker = registration.active || registration.waiting || registration.installing;
+        return new URL(worker.scriptURL).pathname;
+      }),'/other/worker.js');
+    } finally { await new Promise(resolve => fixture.close(resolve)); }
     assert.deepEqual(errors,[]);
     console.log('PASS: narrow-window menu, forms, payment PDF, all sections, logout, offline indication and retirement of former Aula cache without touching another cache.');
   } finally { await browser.close(); }

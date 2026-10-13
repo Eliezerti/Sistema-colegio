@@ -13,3 +13,25 @@ Antes de excluir módulos se instala en un runner desechable el EXE publicado 1.
 ## Validación pendiente
 
 Se sustituyen pruebas exclusivas de teléfono por controles de rutas retiradas y se conservan las comprobaciones de ventana estrecha, formularios, PDF, cierre de sesión y conexión. Las pruebas financieras y de seguridad existentes permanecen. Las cuatro suites solicitadas y Windows están pendientes para B2; no se presentan resultados B1 como si fueran de B2.
+
+## Comprobaciones del paquete reducido
+
+El ejecutable de prueba usa únicamente bases temporales. Comprueba Tcl/Tk, ttk, calendario con America/Caracas, traducción española y la apertura/cancelación del selector nativo. En la ventana WebView2 genera un PDF administrativo con las fuentes incluidas, imprime el área de documento a otro PDF mediante PrintToPdfAsync y abre/cancela el selector Windows. La impresión física en una impresora del colegio queda para prueba manual; no se confunde con la impresión PDF del motor.
+
+Se añaden los rechazos de los argumentos de teléfono antes de acceder a la carpeta de datos. Se retiraron tres métodos exclusivos de la pasarela eliminada; el control de recursos públicos se sustituye por comprobación de rutas retiradas. No se elimina ninguna prueba financiera o de seguridad vigente.
+
+## Resultados Linux ejecutados
+
+`python -m unittest discover -s tests -v`: 296 pruebas en 172.376 s; 293 correctas y tres exclusivas de Windows omitidas (DPAPI, mutex y ventana de restauración). Los tres comandos `python tests/run_browser.py`, `python tests/run_browser.py --demo` y `python tests/run_browser.py --roster` terminaron correctamente. También pasó `python tests/run_browser.py --responsive`: menú estrecho, formularios, PDF de cobro, las doce secciones, cierre de sesión, indicador sin conexión y eliminación solo de la caché antigua de Aula. El ZIP temporal se comprobó íntegro y sin los recursos retirados. No se presentan estos resultados como prueba de las futuras exclusiones Windows.
+
+## Selección basada en el inventario real
+
+El inventario de 1.0.49 confirmó 733 módulos PYZ, 1.113 archivos y 58.445.044 bytes instalados: 23 módulos PyInstaller, 145 setuptools, uno pefile y cuatro altgraph. También contiene los seis motores webview Android, CEF, Cocoa, GTK, MSHTML y Qt, que no usa el inicio forzado edgechromium. Se excluyen esas familias: 179 módulos presentes en el inventario anterior. El nuevo spec desactiva UPX explícitamente y verifica el PYZ final antes de generar el instalador.
+
+Se seleccionan 114 recursos innecesarios (308.828 bytes): catálogos Tcl/Tk ajenos a inglés/español, tcltest y librerías exclusivas Android/MSHTML. Se conservan el español venezolano es_ve, todos los encodings, tzdata, clock/msgcat, ttk, Tcl/Tk completos y WebView2. Se conservan también los tres directorios WebView2Loader: pywebview 5.4 comprueba su existencia al iniciar en x64; quitarlos sin cambiar esa dependencia rompería el arranque. Las exclusiones afectan al paquete, no desinstalan herramientas de la computadora que lo compila.
+
+El intento previo 1.0.50 completó el inventario anterior, 295 pruebas Windows correctas en 430.012 s y comprobaciones de ventanas/instalación. Fallaron ambos canales de actualización de firmas en el análisis posterior; no se publicó instalador ni se afirma aprobada la ejecución completa. No contenía las exclusiones ni las nuevas comprobaciones nativas: se usa como evidencia del inventario, no de la entrega final.
+
+## Actualización de firmas del verificador
+
+Ante los fallos reales de Windows Update/MMPC se agrega el paquete de inteligencia oficial x64 de Microsoft como tercer canal. Antes de ejecutarlo se exige Authenticode válido de Microsoft; se comprueban código de salida, Defender activo, versión sin retroceso y actualización reciente. Se registra la huella del paquete y las versiones. Si no se puede verificar, el pipeline se detiene. El análisis posterior y su bloqueo de publicación se mantienen; no se añaden exclusiones. Los archivos de actualización se eliminan de su temporal propio.
