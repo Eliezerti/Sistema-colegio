@@ -23,8 +23,6 @@ jobs:
   build:
     runs-on: windows-2022
     timeout-minutes: 35
-    env:
-      AULA_PERMISSION_REPORT_DIR: ${{ runner.temp }}/aula-b1-permisos
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -34,6 +32,8 @@ jobs:
           cache-dependency-path: requirements-desktop.txt
       - name: Compilar y validar el sistema
         shell: pwsh
+        env:
+          AULA_PERMISSION_REPORT_DIR: ${{ runner.temp }}/aula-b1-permisos
         run: |
           try {
             ./packaging/build_windows.ps1 -Version "1.0.${{ github.run_number }}" *>&1 | Tee-Object -FilePath desktop-build.log
