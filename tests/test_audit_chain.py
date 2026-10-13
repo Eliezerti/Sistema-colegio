@@ -6,6 +6,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
@@ -88,6 +90,69 @@ class AuditChainTests(unittest.TestCase):
             with self.assertRaises(AuditUnavailable):db.commit()
             self.assertEqual(db.execute('SELECT name FROM users').fetchone()[0],'Administración')
             self.assertEqual(load(head),changed)
+
+    def test_concurrent_writer_and_reader_wait_for_head_publication(self):
+        entered, resume = threading.Event(), threading.Event()
+        second_started, second_finished = threading.Event(), threading.Event()
+        reader_started, reader_finished = threading.Event(), threading.Event()
+        first_id = []
+        def pause(stage):
+            if stage == 'after_commit' and threading.get_ident() == first_id[0]:
+                entered.set()
+                if not resume.wait(5): raise RuntimeError('La prueba no liberó la publicación')
+        def first():
+            first_id.append(threading.get_ident())
+            with closing(connect(self.path)) as db, db: audit(db,1,'primera',{})
+        def second():
+            second_started.set()
+            try:
+                with closing(connect(self.path)) as db, db:
+                    db.execute('BEGIN IMMEDIATE')
+                    audit(db,1,'segunda',{})
+            finally: second_finished.set()
+        def reader():
+            reader_started.set()
+            try:
+                with closing(connect(self.path)) as db: return local_status(db)
+            finally: reader_finished.set()
+        with patch('colegio.audit_chain.checkpoint',side_effect=pause), ThreadPoolExecutor(max_workers=3) as pool:
+            one=pool.submit(first)
+            self.assertTrue(entered.wait(5))
+            two=pool.submit(second); three=pool.submit(reader)
+            try:
+                self.assertTrue(second_started.wait(2));self.assertTrue(reader_started.wait(2))
+                self.assertFalse(second_finished.wait(.2))
+                self.assertFalse(reader_finished.wait(.2))
+            finally: resume.set()
+            one.result(timeout=5);two.result(timeout=5)
+            self.assertTrue(three.result(timeout=5)['ok'])
+        with closing(connect(self.path)) as db:
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM audit').fetchone()[0],3)
+            self.assertTrue(local_status(db)['ok'])
+
+    def test_savepoint_rollback_and_outer_release_keep_only_committed_edits(self):
+        with closing(connect(self.path)) as db:
+            db.execute('SAVEPOINT lote')
+            db.execute("UPDATE users SET name='Guardar' WHERE id=1")
+            db.execute('SAVEPOINT fila')
+            db.execute("UPDATE users SET name='Cancelar fila' WHERE id=1")
+            audit(db,1,'fila-cancelada',{})
+            db.execute('ROLLBACK TO fila');db.execute('RELEASE fila')
+            db.execute('RELEASE lote')
+            self.assertFalse(db.in_transaction)
+            self.assertEqual(db.execute('SELECT name FROM users').fetchone()[0],'Guardar')
+            detail=json.loads(db.execute("SELECT details FROM audit WHERE action='edit-values'").fetchone()[0])
+            self.assertEqual(detail['cambios']['name'],{'anterior':'Administración','nuevo':'Guardar'})
+            self.assertFalse(db.execute("SELECT 1 FROM audit WHERE action='fila-cancelada'").fetchone())
+            before=controls(self.path)[0].read_bytes()
+            db.execute('SAVEPOINT vista_previa')
+            db.execute("UPDATE users SET name='Cancelar lote' WHERE id=1")
+            audit(db,1,'lote-cancelado',{})
+            db.execute('ROLLBACK TO vista_previa');db.execute('RELEASE vista_previa')
+            self.assertEqual(db.execute('SELECT name FROM users').fetchone()[0],'Guardar')
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM audit').fetchone()[0],2)
+            self.assertEqual(controls(self.path)[0].read_bytes(),before)
+            self.assertTrue(local_status(db)['ok'])
 
     def test_altered_row_and_removed_tail_are_detected(self):
         self.raw_tamper("UPDATE audit SET details='alterado' WHERE id=1")

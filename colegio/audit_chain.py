@@ -7,6 +7,8 @@ import json
 import os
 import sqlite3
 import uuid
+import threading
+import weakref
 from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
@@ -23,6 +25,20 @@ PRIVATE_FIELDS = {'bank', 'bank_account', 'bank_document', 'account_holder', 'ho
 
 class AuditUnavailable(ValueError):
     pass
+
+
+_LOCKS = weakref.WeakValueDictionary()
+_LOCKS_GUARD = threading.Lock()
+
+
+def path_lock(path):
+    key = os.path.normcase(str(Path(path).resolve()))
+    with _LOCKS_GUARD:
+        lock = _LOCKS.get(key)
+        if lock is None:
+            lock = threading.RLock()
+            _LOCKS[key] = lock
+        return lock
 
 
 def canonical(value):
@@ -91,6 +107,12 @@ def portable_status(db):
 
 
 def local_status(db, *, recover=False):
+    path = db.execute('PRAGMA database_list').fetchone()[2]
+    with path_lock(path):
+        return _local_status(db, recover=recover)
+
+
+def _local_status(db, *, recover=False):
     status = portable_status(db)
     if not status['ok'] or status.get('legacy'):
         return status
@@ -173,6 +195,10 @@ def append(db, user_id, action, details):
 
 class AuditConnection(sqlite3.Connection):
     def prepare_audit(self):
+        self._write_locked = False
+        self._savepoints = []
+        path = super().execute('PRAGMA database_list').fetchone()[2]
+        self._head_lock = path_lock(path) if path else threading.RLock()
         self._audit_authorized = False
         self._audit_checked = False
         self._audit_dirty = False
@@ -200,7 +226,82 @@ class AuditConnection(sqlite3.Connection):
             return 0
         self.create_function('aula_record_edit', 3, edited)
 
+    def _acquire_write(self):
+        if not self._write_locked:
+            self._head_lock.acquire()
+            self._write_locked = True
+
+    def _release_write(self):
+        if self._write_locked:
+            self._write_locked = False
+            self._head_lock.release()
+
+    def execute(self, sql, *args):
+        words = sql.strip().rstrip(';').split()
+        operation = words[0].upper() if words else ''
+        upper = [word.upper() for word in words]
+        # Keep the SQLite writer and local control publication in the SAME critical
+        # section. SQLite alone releases its writer at COMMIT, slightly too early.
+        if operation in ('COMMIT','END'):
+            self.commit(); return super().cursor()
+        if operation == 'ROLLBACK' and 'TO' not in upper:
+            self.rollback(); return super().cursor()
+        savepoint = None
+        if operation == 'SAVEPOINT':
+            savepoint = {'name':words[1].strip('"').lower(), 'edits':len(self._edits),
+                'dirty':self._audit_dirty, 'checked':self._audit_checked,
+                'before':self._audit_expected_before, 'outer':not self.in_transaction}
+        if operation == 'RELEASE' and self._savepoints:
+            name = words[-1].strip('"').lower()
+            frame = next((f for f in reversed(self._savepoints) if f['name']==name),None)
+            if frame and frame['outer']:
+                self.commit(); return super().cursor()  # RELEASE outer == COMMIT.
+        if operation in ('INSERT','UPDATE','DELETE','REPLACE','CREATE','ALTER','DROP','SAVEPOINT') or (
+                operation=='BEGIN' and ('IMMEDIATE' in upper or 'EXCLUSIVE' in upper)):
+            self._acquire_write()
+        try:
+            result = super().execute(sql, *args)
+            if savepoint: self._savepoints.append(savepoint)
+            if operation in ('RELEASE','ROLLBACK') and self._savepoints:
+                name = words[-1].strip('"').lower()
+                for index in range(len(self._savepoints)-1,-1,-1):
+                    frame = self._savepoints[index]
+                    if frame['name'] != name: continue
+                    if operation == 'ROLLBACK':
+                        del self._edits[frame['edits']:]
+                        self._audit_dirty,self._audit_checked = frame['dirty'],frame['checked']
+                        self._audit_expected_before = frame['before']
+                        del self._savepoints[index+1:]
+                    else: del self._savepoints[index:]
+                    break
+            return result
+        finally:
+            if not self.in_transaction: self._release_write()
+
+    def executemany(self, sql, parameters):
+        self._acquire_write()
+        try:
+            return super().executemany(sql, parameters)
+        finally:
+            if not self.in_transaction: self._release_write()
+
+    def executescript(self, sql):
+        if super().execute("SELECT 1 FROM sqlite_master WHERE name='audit_meta'").fetchone():
+            raise AuditUnavailable('Usa la escritura transaccional protegida de Aula; no scripts que confirmen cambios por separado.')
+        self._acquire_write()
+        try:
+            return super().executescript(sql)  # Only the existing pre-A4 initializer.
+        finally:
+            if not self.in_transaction: self._release_write()
+
     def commit(self):
+        try:
+            return self._commit_audit()
+        finally:
+            self._savepoints.clear()
+            self._release_write()
+
+    def _commit_audit(self):
         if not self.in_transaction:
             return super().commit()
         if not self._audit_dirty:
@@ -238,11 +339,21 @@ class AuditConnection(sqlite3.Connection):
         self._audit_expected_before = None
 
     def rollback(self):
+        self._savepoints.clear()
         self._edits.clear()
         self._audit_checked = False
         self._audit_dirty = False
         self._audit_expected_before = None
-        return super().rollback()
+        try:
+            return super().rollback()
+        finally:
+            self._release_write()
+
+    def close(self):
+        try:
+            return super().close()
+        finally:
+            self._release_write()
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
@@ -289,7 +400,7 @@ def install_triggers(db):
 def migrate(path, *, new=False):
     """Add companion tables without rewriting original rows; verified reversible snapshot."""
     path = Path(path).resolve()
-    with closing(sqlite3.connect(path)) as db:
+    with path_lock(path), closing(sqlite3.connect(path)) as db:
         db.row_factory = sqlite3.Row
         if db.execute('PRAGMA user_version').fetchone()[0] >= VERSION:
             local_status(db, recover=True)
@@ -347,7 +458,7 @@ def migrate(path, *, new=False):
 
 def adopt_restored(path):
     """Only called after the A1 confirmed manifest verified and published this file."""
-    with closing(sqlite3.connect(path)) as db:
+    with path_lock(path), closing(sqlite3.connect(path)) as db:
         status = portable_status(db)
         if not status['ok']:
             raise AuditUnavailable(status['message'])

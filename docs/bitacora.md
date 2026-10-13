@@ -20,7 +20,7 @@ Las huellas **detectan alteraciones; no impiden que quien controle Windows cambi
 
 Si falla la comprobación, Aula muestra **Solo consulta: revisa la bitácora**. Se impiden nuevas modificaciones, cobros y generación automática o manual de mensualidades, incluso al iniciar o consultar reportes. Se mantienen ingreso, consulta, verificación, exportación de bitácora y creación de una copia local para preservar la información. Una copia externa no se da por comprobada si su cadena falla. Conserva la carpeta completa y pide revisión técnica; no borres ni recrees controles para ocultar el aviso.
 
-`colegio.sqlite3.audit-pending.json` permite resolver un corte entre confirmar la transacción SQLite y publicar su última huella. Al siguiente inicio se comprueba si quedó la versión anterior o la nueva; no se inventa historia ni se generan mensualidades antes de resolver el control. Un registro pendiente ilegible o que no coincide deja Aula en consulta.
+`colegio.sqlite3.audit-pending.json` permite resolver un corte entre confirmar la transacción SQLite y publicar su última huella. Al siguiente inicio se comprueba si quedó la versión anterior o la nueva; no se inventa historia ni se generan mensualidades antes de resolver el control. Un registro pendiente ilegible o que no coincide deja Aula en consulta. Las escrituras y la publicación del control se coordinan también entre solicitudes simultáneas; una consulta espera que esa publicación termine. Si una fila o un lote se revierte a un punto de guardado (SAVEPOINT), sus cambios descartados tampoco se incorporan a la bitácora.
 
 ## Migración segura y reversión
 
@@ -49,4 +49,14 @@ En otra PC sigue bastando el archivo y su contraseña o clave de recuperación. 
 
 ## Evidencia de esta entrega
 
-La validación completa de Python, navegador normal, Pruebas e importación y, cuando esté disponible, el instalador Windows se incorpora aquí al cerrar A4. No se considera una prueba pasada hasta que termine con resultado correcto.
+Validación final Linux: `python -m unittest discover -s tests -v`: **278 pruebas en 146.233 s**, 275 correctas y tres exclusivas de Windows omitidas. `python tests/run_browser.py`, `python tests/run_browser.py --demo` y `python tests/run_browser.py --roster`: correctos. El recorrido normal verifica filtros, descargas PDF/CSV y conservación al vaciar, además de A3 y los controles financieros anteriores.
+
+Se añadieron **19 métodos**: 16 de cadena/migración/conservación y tres de permisos, exportación y consulta segura. Incluyen procesos reales terminados en tres etapas de publicación del control y tres etapas de migración, reversión con igualdad de todas las filas originales, manipulación de contenido/final/disparadores/control separado y rechazo de cambios. Las pruebas existentes de A1 siguen ejecutándose, incluidos los cuatro cortes reales de restauración y las cuatro versiones publicadas.
+
+Medición orientativa en Linux: comprobar 10.000 operaciones ficticias tomó 0,053 s; no es una garantía de rendimiento en otros equipos. La verificación nativa Windows y el instalador están en curso; su resultado se incorpora al finalizar. Linux no verifica DPAPI nativo, privilegios/BitLocker de tu PC ni tus archivos reales. Ninguna prueba se ejecutó sobre tu base del colegio.
+
+## Archivos de A4
+
+`CHANGELOG.md`, `README.md`, `colegio/audit_chain.py`, `colegio/audit_reports.py`, `colegio/backup_inspection.py`, `colegio/branding.py`, `colegio/db.py`, `colegio/desktop.py`, `colegio/maintenance.py`, `colegio/reset_password.py`, `colegio/reset_records.py`, `colegio/restore.py`, `colegio/restore_journal.py`, `colegio/restore_reports.py`, `colegio/server.py`, `docs/bitacora.html`, `docs/bitacora.md`, `docs/configuracion.md`, `docs/mantenimiento.html`, `docs/mantenimiento.md`, `static/app.js`, `static/style.css`, `tests/audit_helpers.py`, `tests/browser.cjs`, `tests/test_audit_api.py`, `tests/test_audit_chain.py`, `tests/test_backup_alerts.py`, `tests/test_backup_crypto.py`, `tests/test_billing_start.py`, `tests/test_clock_endpoints.py`, `tests/test_clock_guard.py`, `tests/test_desktop.py`, `tests/test_historical_restore.py`, `tests/test_production_review.py`, `tests/test_recovery.py`, `tests/test_restore_safety.py`, `tests/test_sessions.py`, `tests/test_student_admin.py`, `tests/test_system.py`.
+
+La primera ejecución Windows (runner 38338632948, fuente 0f26c3e) ejecutó 278 pruebas en 428.856 s y falló una por una carrera entre confirmar SQLite y publicar el control separado. Se detuvo antes de compilar el instalador. Se corrigió la coordinación, con prueba concurrente determinista y prueba de reversión de puntos de guardado; se requiere una nueva ejecución nativa antes de entregar.
