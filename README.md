@@ -20,7 +20,7 @@ Los cobros incluyen **Pago móvil** como método separado en recibos, reportes y
 
 ## Bitácora protegida · A4
 
-Cadena SHA-256, escritura protegida y control separado de la última operación. Ediciones con valores anteriores/nuevos sin contraseñas ni datos bancarios completos; Vaciar registros conserva la historia. Visor Administrador con filtros y PDF/CSV. Migración 10 → 11 con copia verificada y reversión probada; una alteración deja Aula en consulta, con respaldo y recuperación disponibles. Las huellas detectan cambios, no impiden alteraciones de quien controle Windows. [Guía y prueba manual de A4](docs/bitacora.md).
+Cadena SHA-256, escritura protegida y control separado de la última operación. Ediciones con valores anteriores/nuevos sin contraseñas ni datos bancarios completos; Vaciar registros conserva la historia. Visor Administrador con filtros y PDF/CSV de toda la historia filtrada; detalles desplegables y borradores de los demás apartados conservados. Migración 10 → 11 con copia verificada y reversión probada; una alteración deja Aula en consulta, con respaldo y recuperación disponibles. Las huellas detectan cambios, no impiden alteraciones de quien controle Windows. [Guía y prueba manual de A4](docs/bitacora.md).
 
 ## Sesiones y acceso · A3
 

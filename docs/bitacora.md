@@ -2,7 +2,7 @@
 
 ## Uso diario
 
-Abre **Configuración → Bitácora** con tu usuario Administrador. Muestra las últimas 300 operaciones. **Buscar** consulta toda la historia con fechas y texto; **Ver detalle** despliega los valores anteriores y nuevos. **PDF** y **CSV** exportan todas las operaciones de esos filtros, aunque no estén en las primeras 300. Las fechas de filtro son días de Venezuela; los archivos identifican las fechas de registro UTC. Caja y Consulta no pueden abrir ni exportar este visor.
+Abre **Configuración → Bitácora** con tu usuario Administrador. Muestra las últimas 300 operaciones. **Buscar** consulta toda la historia con fechas y texto; **Ver detalle** despliega los valores anteriores y nuevos. **PDF** y **CSV** exportan todas las operaciones de esos filtros, aunque no estén en las primeras 300. La búsqueda conserva los borradores de otros apartados de Configuración. El CSV protege frente a nombres que Excel podría interpretar como fórmulas. Las fechas de filtro son días de Venezuela; los archivos identifican las fechas de registro UTC. Caja y Consulta no pueden abrir ni exportar este visor.
 
 No necesitas crear otra contraseña. Las contraseñas de Aula y de respaldos siguen siendo las mismas.
 

@@ -21,6 +21,7 @@ from urllib.parse import parse_qs, urlsplit
 from .db import (ValidationError, RateConfirmationRequired, audit, charges, check_password, connect, convert_received,
                  generate_month, hash_password, initialize, integer, money, record_payment,
                  required, valid_date, valid_period, valid_rate, local_today, synchronize_monthly_charges)
+from .audit_reports import clean_entries
 from .db import next_record_id
 from .audit_chain import AuditUnavailable, local_status as audit_status, require as require_audit
 from .storage import DataLock, consistent_backup, daily_backup, automatic_backup, backup_status
@@ -114,8 +115,8 @@ def snapshot(db, user):
             'collections': rows(db, '''SELECT c.*,u.name AS operator FROM collection_notes c
                  JOIN users u ON u.id=c.created_by ORDER BY c.id DESC'''),
             'users': rows(db, 'SELECT id,name,username,role FROM users ORDER BY name') if user['role'] == 'admin' else [],
-            'audit': rows(db, '''SELECT a.*,u.name AS operator FROM audit a LEFT JOIN users u ON u.id=a.user_id
-               ORDER BY a.id DESC LIMIT 300''') if user['role'] == 'admin' else [],
+            'audit': clean_entries(rows(db, '''SELECT a.*,u.name AS operator FROM audit a LEFT JOIN users u ON u.id=a.user_id
+               ORDER BY a.id DESC LIMIT 300''')) if user['role'] == 'admin' else [],
             'summary': {'active_students': sum(s['status'] == 'active' for s in students),
                         'pending': sum(c['balance'] for c in charge_list),
                         'overdue': sum(c['balance'] for c in charge_list if c['overdue']),
@@ -877,6 +878,16 @@ class Handler(BaseHTTPRequestHandler):
                 result['demo']=self.server.demo
                 result['access']=self.server.access.snapshot()
                 self.respond(200, result)
+            elif endpoint in ('audit', 'audit.csv', 'audit.pdf'):
+                if user['role'] != 'admin': raise PermissionError('Solo Administración puede consultar o exportar la bitácora.')
+                from .audit_reports import report, csv_bytes, pdf_bytes
+                result = report(db, parse_qs(url.query), user)
+                if endpoint == 'audit': self.respond(200, result)
+                else:
+                    pdf = endpoint.endswith('.pdf')
+                    self.respond(200, pdf_bytes(result) if pdf else csv_bytes(result),
+                        'application/pdf' if pdf else 'text/csv; charset=utf-8',
+                        {'Content-Disposition': 'attachment; filename="bitacora.'+('pdf' if pdf else 'csv')+'"'})
             elif endpoint.startswith('archive-preview/'):
                 parts=endpoint.split('/')
                 if len(parts)!=3: raise ValidationError('Selecciona una ficha válida.')
