@@ -6,12 +6,15 @@ import os
 import shutil
 import sqlite3
 import subprocess
+import sys
 import time
 import urllib.request
 from contextlib import closing
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.stdout.reconfigure(encoding='utf-8')
+sys.stderr.reconfigure(encoding='utf-8')
 FINANCIAL_TABLES = ('students', 'guardians', 'grades', 'charges', 'payments', 'allocations', 'enrollment_documents')
 
 

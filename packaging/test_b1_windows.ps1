@@ -66,7 +66,7 @@ try {
     $Command = "& '$Shared/launch-other-account.ps1' -Python '$Python' -Root '$Shared' -Sid '$Sid'; exit `$LASTEXITCODE"
     $Encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($Command))
     $Credential = [PSCredential]::new("$env:COMPUTERNAME\$Name", $Password)
-    $Process = Start-Process powershell.exe -Credential $Credential -LoadUserProfile -PassThru -ArgumentList @('-NoProfile','-EncodedCommand',$Encoded) -WorkingDirectory $Shared -RedirectStandardOutput (Join-Path $Shared 'stdout.txt') -RedirectStandardError (Join-Path $Shared 'stderr.txt')
+    $Process = Start-Process powershell.exe -Credential $Credential -LoadUserProfile -PassThru -ArgumentList @('-NoProfile','-ExecutionPolicy','RemoteSigned','-EncodedCommand',$Encoded) -WorkingDirectory $Shared -RedirectStandardOutput (Join-Path $Shared 'stdout.txt') -RedirectStandardError (Join-Path $Shared 'stderr.txt')
     if (-not $Process.WaitForExit(240000)) { taskkill /PID $Process.Id /T /F | Out-Null; throw 'La prueba de la segunda cuenta no terminó.' }
     if ($Process.ExitCode -ne 0) { throw ('Falló la segunda cuenta: ' + (Get-Content (Join-Path $Shared 'stderr.txt') -Raw)) }
     $Proof = Get-Content (Join-Path $Shared 'other-account-result.json') -Raw | ConvertFrom-Json
