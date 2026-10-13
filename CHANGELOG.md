@@ -1,13 +1,13 @@
 # Historial de cambios
 
-## En validación · A3 · Sesiones y recuperación de acceso
+## A3 · Sesiones y recuperación de acceso · Windows pendiente
 
 - Cierre de 15 minutos configurable entre 5 y 60, tiempos monotónicos y máximo absoluto de doce horas. Las consultas automáticas no renuevan; cookies conservan HttpOnly/SameSite/Secure y CSRF. Tokens SHA-256 en SQLite; reiniciar exige ingreso nuevo.
 - Verificación de clave libera sus recursos incluso si falla la consulta o el comprobador; prueba de fallos consecutivos sin bloqueo persistente.
 - Espera por cuenta y origen/cuenta desde cinco fallos, progresión 5/10/20/40/60 segundos, sin prohibición global de 127.0.0.1.
 - Recuperación local con respaldo previo, invalidación de todas las sesiones y aviso persistente por administrador; evento sin contraseñas. Sin migración de esquema ni cambios financieros.
 - Aviso un minuto antes, borrador solo en RAM para el mismo usuario/perfil, sin contraseñas ni archivos. Oculta datos al vencer, descarta borradores al cambiar de usuario y no los guarda automáticamente. Preferencia independiente en Usuarios y acceso.
-- Primera verificación final Linux: 258 pruebas en 133.187 s, 255 correctas y tres exclusivas de Windows omitidas. Recorridos normal/Pruebas/importación correctos; repetición de interfaz y Windows pendientes para entrega.
+- Linux final: 259 pruebas en 134.089 s, 256 correctas y tres exclusivas de Windows omitidas. Recorridos normal (incluye A3), Pruebas e importación correctos. 17 métodos nuevos; cambio de umbral en prueba del reloj. Windows pendiente de ejecución.
 - Primer recorrido Python: 255 pruebas en 129.290 s, 252 correctas y tres exclusivas de Windows omitidas. Evidencia final y recorridos de interfaz pendientes de completar en docs/sesiones-acceso.md.
 
 
