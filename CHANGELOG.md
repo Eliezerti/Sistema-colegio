@@ -1,17 +1,18 @@
 # Historial de cambios
 
-## A3 · Sesiones y recuperación de acceso · Windows pendiente
+## A3 · Sesiones y recuperación de acceso · 1.0.37 verificada
 
 - Cierre de 15 minutos configurable entre 5 y 60, tiempos monotónicos y máximo absoluto de doce horas. Las consultas automáticas no renuevan; cookies conservan HttpOnly/SameSite/Secure y CSRF. Tokens SHA-256 en SQLite; reiniciar exige ingreso nuevo.
 - Verificación de clave libera sus recursos incluso si falla la consulta o el comprobador; prueba de fallos consecutivos sin bloqueo persistente.
 - Espera por cuenta y origen/cuenta desde cinco fallos, progresión 5/10/20/40/60 segundos, sin prohibición global de 127.0.0.1.
 - Recuperación local con respaldo previo, invalidación de todas las sesiones y aviso persistente por administrador; evento sin contraseñas. Sin migración de esquema ni cambios financieros.
 - Cierre oculta datos incluso si falla conservar el borrador; evita depender de structuredClone en WebView2 anteriores y prueba ambos casos en navegador.
-- Primera compilación Windows 1.0.36: 259 pruebas correctas en 288.365 s sin omisiones, instalación y dos análisis Defender sin detecciones (motor 1.1.26080.3, firmas 1.459.691.0). Se reemplaza por la revisión final de captura segura, pendiente de validación nativa. SHA256 1.0.36: `237be299404d54c1efade6770bdd7eba43c4c93bd134320315c74b23f5719666`.
+- Primera compilación Windows 1.0.36: 259 pruebas correctas en 288.365 s sin omisiones, instalación y dos análisis Defender sin detecciones (motor 1.1.26080.3, firmas 1.459.691.0). Se reemplaza por la revisión final de captura segura, verificada en 1.0.37. SHA256 1.0.36: `237be299404d54c1efade6770bdd7eba43c4c93bd134320315c74b23f5719666`.
 - Aviso un minuto antes, borrador solo en RAM para el mismo usuario/perfil, sin contraseñas ni archivos. Oculta datos al vencer, descarta borradores al cambiar de usuario y no los guarda automáticamente. Preferencia independiente en Usuarios y acceso.
-- Linux final: 259 pruebas en 135.019 s, 256 correctas y tres exclusivas de Windows omitidas. Recorridos normal (incluye A3), Pruebas e importación correctos. 17 métodos nuevos; cambio de umbral en prueba del reloj. Windows pendiente de ejecución.
-- Primer recorrido Python: 255 pruebas en 129.290 s, 252 correctas y tres exclusivas de Windows omitidas. Evidencia final y recorridos de interfaz pendientes de completar en docs/sesiones-acceso.md.
+- Linux final: 259 pruebas en 135.019 s, 256 correctas y tres exclusivas de Windows omitidas. Recorridos normal (incluye A3), Pruebas e importación correctos. 17 métodos nuevos; cambio de umbral en prueba del reloj. Windows final: 259 correctas en 376.416 s, sin omisiones; instalación/accesos/ventanas/bandeja/reinstalación/desinstalación conservando datos.
+- Primer recorrido Python: 255 pruebas en 129.290 s, 252 correctas y tres exclusivas de Windows omitidas. Ese recorrido preliminar fue superado por la verificación final; evidencia en docs/sesiones-acceso.md.
 
+- [Instalador final 1.0.37 en borrador](https://github.com/Eliezerti/Sistema-colegio/releases/tag/untagged-f612cb9336e27ef27bd0), 23233045 bytes; SHA256 `6492167f388f77a76fff97846c06d3aadf32044b1b84c5ba33ad0e561cc81405` comprobado contra sidecar y ambos análisis. Defender motor 1.1.26080.3, firmas 1.459.691.0, sin detecciones antes/después. Runner 38333489104, fuente d5b7a46. Las alertas antiguas y la prueba del equipo del usuario siguen pendientes. No se avanza a A4.
 
 ## A2 · cifrado de respaldos (sin migración SQL)
 

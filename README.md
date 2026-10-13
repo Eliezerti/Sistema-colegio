@@ -18,6 +18,10 @@ El recibo de pago muestra nombre y grado del alumno, sin cédula escolar ni cód
 
 Los cobros incluyen **Pago móvil** como método separado en recibos, reportes y cierre de caja. El **efectivo inicial en caja** son billetes y monedas al comenzar el día, no el saldo bancario; pagos móviles y transferencias no se suman al arqueo físico. [Guía de cobros y arqueo](docs/cobros-y-arqueo.md).
 
+## Sesiones y acceso · A3
+
+Cierre tras 15 minutos sin actividad, configurable entre 5 y 60 en Usuarios y acceso, con aviso un minuto antes. Borrador temporal para el mismo usuario, sin contraseñas ni guardado automático; si falla conservarlo, la pantalla se oculta igualmente. Tokens SHA-256, reloj monotónico y recuperación local que cierra todas las sesiones y avisa a cada administrador. No necesitas una contraseña nueva para actualizar. [Guía de A3 y prueba manual](docs/sesiones-acceso.md).
+
 ## Respaldos cifrados · A2
 
 Configuración → Protección y mantenimiento → Cifrado de respaldos. Contraseña de mínimo 12 caracteres y recuperación mostrada una vez, con confirmación de últimos cuatro. Segundo destino y Descargar copia entregan .aulabak autenticado y verificado; también las copias externas previas a vaciar/borrar. Los locales continúan sin cifrar y dependen de BitLocker/permisos. Cambiar contraseña afecta solo copias nuevas; las anteriores usan su contraseña original o recuperación. A1 abre ambas clases y conserva todas sus protecciones. No hay migración SQL ni cambios de nómina/sesiones. [Guía, rutas, límites y prueba ficticia](docs/cifrado-respaldos.md) · [Manual instalado](docs/cifrado-respaldos.html) · [Formato documentado](docs/formato-respaldo-cifrado.md).
@@ -44,7 +48,7 @@ Este punto no cambia el esquema, los datos, su ubicación, WAL, `synchronous=FUL
 
 ## Descargar el sistema
 
-**Respaldos cifrados A2 · [1.0.35 en borrador](https://github.com/Eliezerti/Sistema-colegio/releases/tag/untagged-3e6bb27e7d59ebbe89ea):** cifrado verificado de salidas externas/descargas, recuperación mostrada una vez y herramientas A1 compatibles. Conserva locales y originales antiguos sin cifrar. Windows: 242 pruebas correctas, cifrado/descifrado dentro del ejecutable, instalación/ventanas/conservación y Defender antes/después sin detecciones (motor 1.1.26080.3, firmas 1.459.690.0). Archivo descargado y hash comprobados. Primer intento detenido por actualización de firmas; segundo intento completo correcto. No se desactivó protección. [Activar, probar y revisar resultados/riesgos](docs/cifrado-respaldos.md).
+**Sesiones seguras A3 · [1.0.37 en borrador](https://github.com/Eliezerti/Sistema-colegio/releases/tag/untagged-f612cb9336e27ef27bd0):** entrega actual. Windows: 259 pruebas correctas sin omisiones, instalación/ventanas/reinstalación/desinstalación conservando datos y Defender antes/después sin detecciones (motor 1.1.26080.3, firmas 1.459.691.0). EXE descargado y SHA-256 comprobado contra sidecar y ambos análisis. Conserva A1/A2, datos y usuarios. [Resultados, archivos y prueba manual](docs/sesiones-acceso.md).
 
 El **instalador de escritorio para Windows 10/11 de 64 bits** se publica en [Versiones e instaladores](https://github.com/Eliezerti/Sistema-colegio/releases). Descarga el archivo **Aula-Colegio-Instalador-…exe**, no el ZIP de código fuente. Incluye Python y la aplicación; no necesitas instalar Python por separado. La compilación Windows y la prueba de la ventana deben terminar correctamente para que aparezca el instalador.
 
