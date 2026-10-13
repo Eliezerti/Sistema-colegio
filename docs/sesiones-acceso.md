@@ -17,7 +17,7 @@ Cerrar Aula completamente y volver a abrirlo exige iniciar sesión nuevamente. L
 Si vence la sesión, se ocultan los datos y los documentos de la ventana. Los formularios administrativos habituales se conservan **solo en memoria de esa ventana**. Tras entrar con el mismo usuario y perfil, confirmar el reloj si hace falta y confirmar la tasa, puedes retomar el borrador.
 
 - **No se guarda ni se envía automáticamente.** Revisa los datos y saldos actualizados antes de guardar.
-- Las contraseñas se vacían. El formulario de configuración de cifrado, la clave de recuperación mostrada, los archivos seleccionados y las pantallas de documentos no se conservan.
+- Las contraseñas se vacían. El formulario de configuración de cifrado, la clave de recuperación mostrada, los archivos seleccionados, las pantallas de documentos y las revisiones de operaciones masivas o destructivas no se conservan. Deben revisarse otra vez.
 - Entrar con otro usuario o con un perfil distinto descarta el borrador anterior.
 - Cerrar sesión voluntariamente, recargar/cerrar la ventana o cerrar Aula pierde el borrador. No se guarda en localStorage, sessionStorage, archivos ni la base.
 - Si no hay conexión, el cierre oculta la información igualmente. No intentes repetir un cobro sin revisar si quedó registrado; las claves de solicitud e idempotencia originales siguen vigentes.
@@ -57,6 +57,6 @@ Esto no impide que alguien con acceso a tu cuenta de Windows examine memoria, mo
 
 ## Validación y entrega
 
-La evidencia final, versión del instalador, resultados Linux/Windows y archivos tocados se registran aquí al terminar. Antes de la entrega se ejecutan las cuatro suites exigidas. La prueba de navegador acelera solo el aviso visual y revoca la sesión en el servidor real; las pruebas Python avanzan el reloj monotónico para verificar el vencimiento efectivo sin esperar quince minutos.
+Validación Linux: **258 pruebas descubiertas en 133.187 s, 255 correctas y tres exclusivas de Windows omitidas** (mutex/ventana nativa/DPAPI). Los tres recorridos de navegador pasaron; tras la última limpieza de estado visual se repiten antes de publicar. La versión del instalador y Windows quedan pendientes de verificar. Antes de la entrega se ejecutan las cuatro suites exigidas. También se prueba rollback de recuperación si falla el aviso, reconocimiento antiguo rechazado, aviso ilegible explícito y liberación del control de acceso al fallar la verificación. La prueba de navegador acelera solo el aviso visual y revoca la sesión en el servidor real; las pruebas Python avanzan el reloj monotónico para verificar el vencimiento efectivo sin esperar quince minutos.
 
 La bitácora con cadena de hashes, restricciones de datos bancarios y otras tandas siguen pendientes de aprobación; A3 no las implementa.

@@ -671,9 +671,9 @@ class Handler(BaseHTTPRequestHandler):
                         self.respond(429, {'error': 'Se están comprobando otros accesos. Intenta nuevamente en un segundo.',
                                            'retry_after': 1}, extra={'Retry-After': '1'})
                         return
-                    found = db.execute('SELECT * FROM users WHERE username=?', (username,)).fetchone()
-                    password = data.get('password', '')
                     try:
+                        found = db.execute('SELECT * FROM users WHERE username=?', (username,)).fetchone()
+                        password = data.get('password', '')
                         valid = isinstance(password, str) and len(password) <= 256 and found and check_password(password, found['password'])
                     finally:
                         self.server.login_limiter.checks.release()

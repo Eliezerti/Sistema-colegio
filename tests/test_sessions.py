@@ -215,3 +215,50 @@ class SessionAPITests(unittest.TestCase):
         self.assertIsNone(f.request('session-status')['recovery_notice'])
         f.request('recovery-notice-ack', {'notice_id': notice['id']}, status=403)
 
+    def test_failed_recovery_rolls_back_password_sessions_and_notice(self):
+        from colegio.reset_password import reset_password
+        from colegio.db import check_password
+        f = self.fixture
+        with patch('colegio.security_notices.record_recovery', side_effect=OSError('Fallo ficticio')):
+            with self.assertRaises(OSError):
+                reset_password(f.path.parent, 'admin', 'Nueva-clave-segura')
+        with closing(connect(f.path)) as db:
+            self.assertTrue(check_password('Una-clave-segura', db.execute("SELECT password FROM users WHERE username='admin'").fetchone()[0]))
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM sessions').fetchone()[0], 1)
+            self.assertIsNone(db.execute("SELECT value FROM settings WHERE key='security_password_recovery'").fetchone())
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM audit WHERE action='local-admin-password-reset'").fetchone()[0], 0)
+        self.assertIsNone(f.request('session-status')['recovery_notice'])
+        self.assertTrue(list((f.path.parent / 'backups').glob('recuperacion-clave-*.sqlite3')))
+
+    def test_stale_ack_cannot_hide_new_recovery_and_unreadable_notice_is_explicit(self):
+        from colegio.security_notices import record_recovery
+        f = self.fixture
+        with closing(connect(f.path)) as db, db:
+            user = db.execute("SELECT id,username FROM users WHERE username='admin'").fetchone()
+            old = record_recovery(db, user)
+            new = record_recovery(db, user)
+        f.request('recovery-notice-ack', {'notice_id': old['id']}, status=400)
+        self.assertEqual(f.request('session-status')['recovery_notice'], new)
+        with closing(connect(f.path)) as db, db:
+            db.execute("UPDATE settings SET value='{' WHERE key='security_password_recovery'")
+        self.assertEqual(f.request('session-status')['recovery_notice'], {'id': '', 'unreadable': True})
+        f.request('recovery-notice-ack', {'notice_id': new['id']}, status=400)
+
+    def test_reader_cannot_change_timeout_and_invalid_stored_setting_keeps_default(self):
+        f = self.fixture
+        with closing(connect(f.path)) as db, db:
+            db.execute("INSERT INTO settings(key,value) VALUES('session_idle_minutes','999999')")
+        self.assertEqual(f.request('session-status')['idle_minutes'], 15)
+        f.request('users', {'name': 'Consulta', 'username': 'consulta', 'password': 'Clave-consulta-segura', 'role': 'reader'})
+        f.request('login', {'username': 'consulta', 'password': 'Clave-consulta-segura'})
+        f.csrf = f.request('session')['user']['csrf']
+        f.request('session-preferences', {'idle_minutes': '60'}, status=403)
+
+    def test_password_check_failure_always_releases_verification_slot(self):
+        f = self.fixture
+        with patch('colegio.server.check_password', side_effect=OSError('Fallo ficticio de verificación')):
+            for _ in range(3):
+                f.request('login', {'username': 'admin', 'password': 'Una-clave-segura'}, status=500)
+        f.request('login', {'username': 'admin', 'password': 'Una-clave-segura'})
+        self.assertEqual(f.server.login_limiter.wait('127.0.0.1', 'admin'), 0)
+
