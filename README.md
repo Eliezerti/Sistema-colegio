@@ -20,7 +20,7 @@ Los cobros incluyen **Pago móvil** como método separado en recibos, reportes y
 
 ## Calidad financiera e instalación · B1
 
-Verificar datos amplía totales válidos, cargos duplicados y correlativos por encima de sus reservas, sin reparar ni recalcular. Se conservan los controles existentes y se añaden cortes reales de respaldo local/borrado, cinco cuentas de Caja simultáneas y matriz HTTP de permisos generada. La validación Windows incluye instalación sin datos, actualización desde el instalador realmente publicado 1.0.13 y otra cuenta estándar real; los resultados se documentan al terminar, sin presentarlos como ya ejecutados. [Guía, resultados y límites](docs/calidad-b1.md).
+Verificar datos amplía totales válidos, cargos duplicados y correlativos por encima de sus reservas, sin reparar ni recalcular. Se conservan los controles existentes y se añaden cortes reales de respaldo local/borrado, cinco cuentas de Caja simultáneas y matriz HTTP de permisos generada. La validación Windows incluye instalación sin datos, actualización desde el instalador realmente publicado 1.0.13 y otra cuenta estándar real; los resultados se documentan al terminar, sin presentarlos como ya ejecutados. El pipeline conserva evidencias en Verificacion-B1 y reconstruye el ZIP desde la fuente probada. [Guía, resultados y límites](docs/calidad-b1.md).
 
 ## Datos bancarios del personal · A5
 

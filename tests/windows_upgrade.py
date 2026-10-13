@@ -1,0 +1,131 @@
+"""Actual installed executables; run only on a disposable GitHub Windows runner."""
+import argparse
+import hashlib
+import json
+import os
+import shutil
+import sqlite3
+import subprocess
+import time
+import urllib.request
+from contextlib import closing
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+FINANCIAL_TABLES = ('students', 'guardians', 'grades', 'charges', 'payments', 'allocations', 'enrollment_documents')
+
+
+def execute(program, *arguments):
+    subprocess.run([str(program), *arguments], check=True, timeout=150)
+
+
+def start_and_check(program, needs_setup):
+    # Both real releases use the default port; no invented legacy CLI options.
+    process = subprocess.Popen([str(program)])
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    try:
+        deadline = time.monotonic()+75
+        while time.monotonic()<deadline:
+            if process.poll() is not None: raise RuntimeError('La aplicación terminó antes de abrir.')
+            try:
+                with opener.open('http://127.0.0.1:8765/api/session', timeout=1) as response:
+                    data = json.load(response)
+                if data['needs_setup'] != needs_setup: raise RuntimeError('La aplicación abrió otro estado de datos.')
+                time.sleep(2)
+                if process.poll() is not None: raise RuntimeError('La ventana terminó después de iniciar el servidor.')
+                return data
+            except OSError:
+                time.sleep(.2)
+        raise RuntimeError('No se pudo comprobar el inicio del ejecutable instalado.')
+    finally:
+        # Only the application process created by this test and its child WebViews.
+        if process.poll() is None:
+            subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'], stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL, check=False)
+            process.wait(timeout=15)
+
+
+def financial_snapshot(path, columns=None):
+    with closing(sqlite3.connect(path)) as db:
+        assert db.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+        assert not list(db.execute('PRAGMA foreign_key_check'))
+        if columns is None:
+            columns = {table: [r[1] for r in db.execute(f'PRAGMA table_info({table})')]
+                       for table in FINANCIAL_TABLES}
+        records = {table: sorted([list(r) for r in db.execute(f'SELECT '+','.join(names)+f' FROM {table}')],
+                                 key=lambda r:json.dumps(r)) for table, names in columns.items()}
+        balance = db.execute('''SELECT (SELECT SUM(amount) FROM charges WHERE cancelled=0)-
+                         (SELECT SUM(a.amount) FROM allocations a JOIN payments p ON p.id=a.payment_id WHERE p.voided=0)''').fetchone()[0]
+        return {'columns': columns, 'records': records, 'balance': balance}
+
+
+def main():
+    parser = argparse.ArgumentParser(); parser.add_argument('--version', required=True)
+    parser.add_argument('--historical-dir', required=True); args = parser.parse_args()
+    if os.name!='nt' or os.environ.get('GITHUB_ACTIONS')!='true':
+        raise RuntimeError('Esta prueba requiere un runner Windows desechable, sin datos reales.')
+    data = Path(os.environ['LOCALAPPDATA'])/'AulaColegio'
+    if data.exists(): raise RuntimeError('La cuenta de prueba ya tiene datos; no se modificaron.')
+    directory = Path(os.environ['RUNNER_TEMP'])/'Aula-B1-Actualizacion'
+    program = directory/'Aula.exe'
+    current = ROOT/'dist'/f'Aula-Colegio-Instalador-{args.version}.exe'
+    historical = Path(args.historical_dir)/'Aula-Colegio-Instalador-1.0.13.exe'
+    digest = hashlib.sha256(historical.read_bytes()).hexdigest()
+    assert digest == '9714be7b6edaa03eab71a247c51219de6c425b5cd72d3b7fb7f1fbe23ab08d3c'
+    assert digest in historical.with_name(historical.name+'.sha256').read_text(encoding='utf-8-sig')
+    arguments = ('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',f'/DIR={directory}', '/TASKS=')
+    try:
+        execute(current, *arguments)
+        assert not data.exists(), 'El instalador creó datos antes de abrir la aplicación.'
+        session = start_and_check(program, True)
+        assert session['school']['school_name'] == 'Mi colegio'
+        database = data/'colegio.sqlite3'
+        before = hashlib.sha256(database.read_bytes()).hexdigest()
+        execute(directory/'unins000.exe','/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
+        assert hashlib.sha256(database.read_bytes()).hexdigest() == before
+        print('PASS B1: instalación sin datos previos, inicio real y desinstalación conserva la base.', flush=True)
+        shutil.rmtree(data)
+
+        execute(historical, *arguments)
+        data.mkdir(parents=True, exist_ok=True)
+        fixture = ROOT/'tests/fixtures/restore/desktop-1.0.13.sqlite3'
+        manifest = json.loads((fixture.parent/'manifest.json').read_text())
+        expected = next(r for r in manifest if r['tag']=='desktop-1.0.13')
+        assert hashlib.sha256(fixture.read_bytes()).hexdigest() == expected['sha256']
+        shutil.copyfile(fixture, database)
+        original = financial_snapshot(database)
+        assert original['balance']==5000
+        start_and_check(program, False)
+        opened = financial_snapshot(database, original['columns'])
+        # The real old version may fill a previously empty internal pupil code on startup.
+        # Its committed financial rows/receipt must remain unchanged before taking the upgrade baseline.
+        assert opened['balance']==original['balance']
+        for table in ('charges','payments','allocations'):
+            assert opened['records'][table]==original['records'][table]
+        original = opened
+        old_backup = data/'backups'/'b1-antes-actualizar.sqlite3'
+        old_backup.parent.mkdir(exist_ok=True)
+        with closing(sqlite3.connect(database)) as source, closing(sqlite3.connect(old_backup)) as target:
+            source.backup(target)
+        backup_hash = hashlib.sha256(old_backup.read_bytes()).hexdigest()
+        execute(current, *arguments)
+        start_and_check(program, False)
+        assert financial_snapshot(database, original['columns']) == original
+        with closing(sqlite3.connect(database)) as db:
+            assert db.execute('PRAGMA user_version').fetchone()[0]==11
+        assert list((data/'backups').glob('antes-bitacora-*.sqlite3'))
+        execute(directory/'unins000.exe','/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
+        assert financial_snapshot(database, original['columns']) == original
+        assert hashlib.sha256(old_backup.read_bytes()).hexdigest() == backup_hash
+        result = dict(historical='1.0.13', target=args.version, historical_sha256=digest,
+                      balance_usd_cents=original['balance'], schema=11, data_preserved=True, backup_preserved=True)
+        (Path(os.environ['RUNNER_TEMP'])/'aula-b1-upgrade.json').write_text(json.dumps(result, indent=2))
+        print('PASS B1: actualización real 1.0.13 → '+args.version+', esquema 11, saldo USD 50 y filas/recibo/respaldo conservados.', flush=True)
+    finally:
+        if data.exists():
+            diagnostic = Path(os.environ['RUNNER_TEMP'])/'aula-b1-diagnostic'
+            if (data/'logs').exists(): shutil.copytree(data/'logs', diagnostic, dirs_exist_ok=True)
+            shutil.rmtree(data)
+
+
+if __name__=='__main__': main()

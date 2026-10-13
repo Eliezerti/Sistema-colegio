@@ -22,7 +22,9 @@ concurrency:
 jobs:
   build:
     runs-on: windows-2022
-    timeout-minutes: 25
+    timeout-minutes: 35
+    env:
+      AULA_PERMISSION_REPORT_DIR: ${{ runner.temp }}/aula-b1-permisos
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -59,6 +61,22 @@ jobs:
       - name: Repetir análisis de Defender tras pruebas de ejecución
         shell: pwsh
         run: ./packaging/scan_windows.ps1 -Path dist -ReportDir "$env:RUNNER_TEMP/defender-after-runtime"
+      - name: B1 instalación limpia, actualización publicada y otra cuenta Windows
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./packaging/test_b1_windows.ps1 -Version "1.0.${{ github.run_number }}"
+      - name: Conservar evidencia B1
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Verificacion-B1
+          path: |
+            ${{ runner.temp }}/aula-b1-permisos/
+            ${{ runner.temp }}/aula-b1-*.json
+            ${{ runner.temp }}/aula-b1-diagnostic/
+            ${{ runner.temp }}/defender-b1-historical/
+          if-no-files-found: warn
       - name: Guardar diagnóstico de la ventana si falla
         if: failure()
         uses: actions/upload-artifact@v4
@@ -88,6 +106,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          python tests/package_windows.py --output descargas/Aula-Windows.zip
+          if ($LASTEXITCODE -ne 0) { throw 'El ZIP de fuente actual no superó la verificación.' }
           $Version = "1.0.${{ github.run_number }}"
           $Body = @'
           BORRADOR: pendientes las alertas de Defender reportadas para 1.0.8 y 1.0.14. Los análisis del runner no resuelven por sí solos el reporte del equipo del usuario.
@@ -120,7 +140,7 @@ jobs:
           '@
           [System.IO.File]::WriteAllText('dist/notas-version.txt', $Body, [System.Text.UTF8Encoding]::new($false))
           # Keep the artifact as a draft until checks and its release notes have been reviewed.
-          $ReleaseOutput = @(gh release create "desktop-$Version" "dist/Aula-Colegio-Instalador-$Version.exe" "dist/Aula-Colegio-Instalador-$Version.exe.sha256" "descargas/Aula-Windows.zip" "descargas/Aula-Windows.sha256" --target $env:GITHUB_SHA --title "Aula - Sesiones seguras A3 - Windows $Version - revisión" --notes-file dist/notas-version.txt --draft 2>&1)
+          $ReleaseOutput = @(gh release create "desktop-$Version" "dist/Aula-Colegio-Instalador-$Version.exe" "dist/Aula-Colegio-Instalador-$Version.exe.sha256" "descargas/Aula-Windows.zip" "descargas/Aula-Windows.sha256" --target $env:GITHUB_SHA --title "Aula - Windows $Version - revisión" --notes-file dist/notas-version.txt --draft 2>&1)
           $ReleaseExit = $LASTEXITCODE
           $ReleaseOutput | ForEach-Object { Write-Host $_ }
           if ($ReleaseExit -ne 0) {

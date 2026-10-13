@@ -5,6 +5,7 @@
 - Verificar datos: totales de cobros válidos/aplicaciones, duplicados y saltos por encima de reservas; ninguna reparación ni cambio de esquema/datos/cálculos.
 - Cortes reales en respaldo local y borrado; prueba HTTP simultánea de cinco cuentas de Caja, calendario y seis decimales. Matriz automática de rutas con contrato independiente y evidencia por perfiles/CSRF.
 - Se conservan pruebas anteriores de cobro/restauración/cifrado/bitácora y febrero 29. Revisión dirigida final: 11 pruebas correctas en 8.444 s; 86 rutas y 561 solicitudes comprobadas. Expectativas iniciales corregidas en las nuevas pruebas, sin debilitar el producto.
+- Pruebas Windows integradas en el pipeline: se guardan evidencias de permisos, actualización histórica y segunda cuenta; el ZIP se construye desde el commit probado. No se modifica el empaquetado de módulos ni se adelanta B2.
 - Preparada validación nativa de instalación sin datos, actualización desde 1.0.13 publicada (SHA256/Defender antes de abrir), segunda identidad estándar real y conservación al desinstalar. Linux final: 298 pruebas en 170.610 s, 295 correctas y tres nativas omitidas; los tres recorridos de navegador correctos. Windows pendiente de ejecutar; no se afirma éxito todavía. [Guía](docs/calidad-b1.md).
 
 ## A5 · Datos bancarios por perfil · 1.0.42 verificada
