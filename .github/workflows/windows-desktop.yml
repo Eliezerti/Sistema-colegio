@@ -1,6 +1,11 @@
 name: Aplicación Windows
 on:
   workflow_dispatch:
+    inputs:
+      receipt_evidence_run:
+        description: 'Solo diagnosticar PDFs nativos ya guardados en esta ejecución (vacío: compilar instalador)'
+        required: false
+        type: string
   push:
     branches: [main]
     paths:
@@ -20,7 +25,29 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  receipt-evidence:
+    if: github.event_name == 'workflow_dispatch' && inputs.receipt_evidence_run != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: Comprobante-Media-Carta-Vertical
+          run-id: ${{ inputs.receipt_evidence_run }}
+          github-token: ${{ github.token }}
+          path: receipt-evidence
+      - name: Comparar PDFs ficticios de WebView2 sin recompilar
+        run: |
+          python -m pip install pypdf==6.10.0
+          python tests/verify_receipt_prints.py receipt-evidence
   build:
+    if: github.event_name != 'workflow_dispatch' || inputs.receipt_evidence_run == ''
     runs-on: windows-2022
     timeout-minutes: 35
     steps:

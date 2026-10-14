@@ -35,7 +35,7 @@ def main(directory):
     assert half_text == letter_text, 'Cambiar a carta alteró el contenido'
     assert len(half) == len(letter), 'Cambiar a carta alteró los fragmentos impresos'
     for a, b in zip(half, letter):
-        assert a[0] == b[0] and all(abs(x - y) < .1 for x, y in zip(a[1:], b[1:])), 'Cambiar a carta amplió, desplazó o cambió el texto'
+        assert a[0] == b[0] and all(abs(x - y) < .1 for x, y in zip(a[1:], b[1:])), f'Cambiar a carta alteró el fragmento: media carta={a!r}; carta={b!r}'
     print('PASS RECIBO INDEPENDIENTE: 396 x 612 puntos; una página; mismo contenido, posiciones y escala en carta; sin identificadores escolares.')
 
 
