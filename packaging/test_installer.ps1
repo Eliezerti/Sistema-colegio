@@ -56,6 +56,9 @@ try {
     $NativeChecks = @(Get-Content "$env:TEMP/AulaColegio-Compilacion/logs/*.log" | Where-Object { $_ -like 'PASS B2:*' })
     if (@($NativeChecks | Select-Object -Unique).Count -ne 2) { throw 'No quedaron comprobados selector, Tcl/Tk, PDF e impresión nativa.' }
     $NativeChecks | ForEach-Object { Write-Host $_ }
+    $ReceiptChecks = @(Get-Content "$env:TEMP/AulaColegio-Compilacion/logs/*.log" | Where-Object { $_ -like 'PASS RECIBO:*' } | Select-Object -Unique)
+    if ($ReceiptChecks.Count -ne 2) { throw 'No se verificó el recibo vertical en media carta y carta al 100 %.' }
+    $ReceiptChecks | ForEach-Object { Write-Host $_ }
     # Reinstall/update and uninstall must leave data and backups untouched.
     Execute-Checked $Installer $Arguments
     Execute-Checked (Join-Path $InstallDir 'unins000.exe') @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
