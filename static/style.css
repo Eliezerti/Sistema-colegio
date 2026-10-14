@@ -287,8 +287,8 @@ table:has(.row-actions) th:last-child{text-align:right}
   .receipt-half-letter .receipt-parties,.receipt-half-letter .receipt-payment{gap:14pt}
   .receipt-half-letter .receipt-amount-value{font-size:14pt}
   .receipt-half-letter .receipt-applied{flex-wrap:wrap;gap:3pt}
-  .receipt-half-letter .receipt-balance{gap:8pt}
-  .receipt-half-letter .receipt-balance strong{font-size:10pt}
+  .receipt-half-letter .receipt-balance{gap:8pt;flex-direction:row}
+  .receipt-half-letter .receipt-balance strong{font-size:10pt;text-align:right}
   .receipt-half-letter .receipt-bottom{gap:12pt}
   .receipt-half-letter .receipt-bottom p+p{margin-top:0}
   .receipt-half-letter th:first-child{width:40%}

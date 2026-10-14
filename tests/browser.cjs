@@ -248,8 +248,7 @@ function printedTextLayout(pdf){
     assert.match(letterPrint,/\/MediaBox\s*\[0 0 612 792\]/);
     assert.equal((letterPrint.match(/\/Type\s*\/Page\b/g)||[]).length,1);
     const letterBounds=await page.locator('#print-area .payment-receipt').boundingBox();
-    assert.equal(letterBounds.width,halfBounds.width);
-    assert.ok(letterBounds.height<=816);
+    assert.deepEqual(letterBounds,halfBounds,'Printed layout must also remain identical across paper widths');
     assert.deepEqual(printedTextLayout(Buffer.from(letterPrint,'latin1')),printedTextLayout(Buffer.from(halfPrint,'latin1')),
       'Actual PDF text positions and scale must match on half-letter and letter paper');
     await letterStyle.evaluate(el=>el.remove());
