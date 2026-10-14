@@ -1,5 +1,11 @@
 # Historial de cambios
 
+## Comprobante de pago · media carta vertical
+
+- Media carta vertical de 13,97 × 21,59 cm, PDF real de 396 × 612 puntos y formato predeterminado también en la descarga directa. Encabezado, espacios y firmas compactados; conserva R-, representante, alumno/grado, conceptos, importes, saldo, método y referencia. Sin código AL- ni cédula escolar.
+- Impresión con ancho físico fijo de 396 puntos; hoja carta al 100 % sin ampliación. Prueba nativa WebView2 ampliada con PDF ficticio de tres conceptos, dimensiones, página única y escala explícita 1,0.
+- Sin migración, cambios de cálculos, correlativos o datos históricos; A1–A5 conservados. B3 pendiente. Resultados de validación en [la guía](docs/comprobante-media-carta.md).
+
 ## B2 · Limpieza y reducción · 1.0.53 verificada
 
 - Opción 2 aprobada: se retiran PWA/pasarela Wi-Fi y recursos exclusivos, sin retirar el menú adaptable ni el acceso privado del escritorio. Pago móvil y teléfonos de contacto permanecen.
