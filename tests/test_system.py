@@ -446,7 +446,9 @@ class SystemTests(unittest.TestCase):
             pdf = self.request(f'{kind}/{target}.pdf')
             self.assertIn(b'/Subtype /Image', pdf)
             self.assertIn(b'/Predictor 15', pdf)
-            self.assertIn(b'ALEJANDRO VON HUMBOLDT, C.A.', pdf)
+            self.assertTrue(b'ALEJANDRO VON HUMBOLDT, C.A.' in pdf or
+                            (b'(ALEJANDRO VON)' in pdf and b'(HUMBOLDT, C.A.)' in pdf),
+                            'La razón social completa se conserva, aunque media carta la divida en dos líneas')
             self.assertIn(b'RIF: J-50835934-8', pdf)
             self.assertIn(b'local Nro. 16-46', pdf)
         self.assertIn(b'Direcci', self.request(f'receipt/{second}.pdf'))
@@ -498,7 +500,7 @@ class SystemTests(unittest.TestCase):
         before=self.request(f'receipt/{payment}')
         small=self.request(f'receipt/{payment}.pdf?paper=half-letter')
         full=self.request(f'receipt/{payment}.pdf?paper=a4')
-        self.assertTrue(b'/MediaBox [0 0 612 396]' in small,'Debe ser media carta real')
+        self.assertTrue(b'/MediaBox [0 0 396 612]' in small,'Debe ser media carta vertical real')
         self.assertTrue(b'/MediaBox [0 0 595 842]' in full,'Debe conservar A4 como opción')
         self.assertEqual(self.request(f'receipt/{payment}'),before)
         self.request(f'receipt/{payment}.pdf?paper=invalid',status=400)

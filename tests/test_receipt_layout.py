@@ -63,9 +63,24 @@ class ReceiptLayoutTests(unittest.TestCase):
                 data=document(currency)
                 data['payment']['guardian_address']='Calle 48, sector Centro, Barquismeto.'
                 pdf=render_pdf('receipt',data,'half-letter')
-                for value in (b'/MediaBox [0 0 612 396]',b'/Count 1 ',b'USD 10,00',
+                for value in (b'/MediaBox [0 0 396 612]',b'/Count 1 ',b'USD 10,00',
                               b'Firma del representante',b'Registrado por:',b'RIF: J-50835934-8'):
                     self.assertTrue(value in pdf,f'Falta en el recibo media carta: {value!r}')
+
+    def test_default_half_letter_keeps_three_concepts_balance_reference_and_notes_on_one_page(self):
+        for currency in ('USD', 'VES'):
+            data = document(currency, rows=3, notes='Pago ficticio para revisión de impresión.')
+            data['payment'].update(balance_before=8000, balance_after=5000,
+                                   guardian_address='Calle 48, sector Centro, Barquismeto.')
+            pdf = render_pdf('receipt', data)
+            self.assertIn(b'/MediaBox [0 0 396 612]', pdf)
+            self.assertIn(b'/Count 1 ', pdf)
+            for value in (b'R-000031', b'Ana', b'Primero / A', b'TR-001',
+                          b'USD 30,00', b'USD 50,00', b'Firma del representante'):
+                self.assertIn(value, pdf)
+            for row in data['allocations']:
+                self.assertIn(row['concept'].encode(), pdf)
+            self.assertNotIn(b'AL-000001', pdf)
 
     def test_half_letter_continuations_preserve_all_concepts_status_and_money(self):
         pdf=render_pdf('receipt',document(rows=40,voided=True,notes='FIN DE OBSERVACIONES'),'half-letter')
@@ -75,7 +90,7 @@ class ReceiptLayoutTests(unittest.TestCase):
             self.assertTrue(f'Mensualidad detalle {i:02d}'.encode() in pdf,f'Falta el concepto {i}')
         for value in (b'FIN DE OBSERVACIONES',b'USD 400,00',b'Firma del representante'):
             self.assertTrue(value in pdf,f'Falta información: {value!r}')
-        self.assertEqual(pdf.count(b'/MediaBox [0 0 612 396]'),pages)
+        self.assertEqual(pdf.count(b'/MediaBox [0 0 396 612]'),pages)
         self.assertEqual(pdf.count(b'(ANULADO)'),pages)
 
     def test_manual_charge_period_is_printed_without_treating_it_as_a_date(self):
@@ -87,7 +102,7 @@ class ReceiptLayoutTests(unittest.TestCase):
     def test_regular_receipts_keep_money_and_signatures_on_one_portrait_page(self):
         for currency in ('USD','VES'):
             with self.subTest(currency=currency):
-                pdf=render_pdf('receipt',document(currency))
+                pdf=render_pdf('receipt',document(currency),'a4')
                 self.assertTrue(b'/MediaBox [0 0 595 842]' in pdf,'El recibo debe usar A4 vertical')
                 self.assertTrue(b'/FontFile2' in pdf,'El PDF debe incorporar la tipografía')
                 self.assertIn(b'/Count 1 ',pdf)
@@ -102,7 +117,7 @@ class ReceiptLayoutTests(unittest.TestCase):
 
     def test_long_voided_receipt_repeats_status_and_keeps_all_rows_and_notes(self):
         notes=('Observaciones de un pago con muchos conceptos. '*40)+'\nFIN DE OBSERVACIONES'
-        pdf=render_pdf('receipt',document(rows=40,voided=True,notes=notes))
+        pdf=render_pdf('receipt',document(rows=40,voided=True,notes=notes),'a4')
         pages=int(re.search(rb'/Count (\d+)',pdf).group(1))
         self.assertGreater(pages,1)
         for i in range(40):
