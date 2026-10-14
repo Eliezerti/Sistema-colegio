@@ -3,6 +3,21 @@
 const {chromium} = require('playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const zlib = require('node:zlib');
+
+function printedTextLayout(pdf){
+  const layout=[];
+  for(const match of pdf.toString('latin1').matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)){
+    let stream;try{stream=zlib.inflateSync(Buffer.from(match[1],'latin1')).toString('latin1');}catch{continue;}
+    const text=stream.match(/\bBT\b[\s\S]*?\bET\b/g);
+    if(!text)continue;
+    const transforms=(stream.match(/(?:-?\d+(?:\.\d+)?\s+){6}cm/g)||[])
+      .filter(value=>!/^1 0 0 -1 0 \d+ cm$/.test(value));
+    layout.push({text,transforms});
+  }
+  assert.ok(layout.length,'Printed PDF must contain readable text drawing operators');
+  return layout;
+}
 
 (async()=>{
   const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||(fs.existsSync('/usr/bin/chromium')?'/usr/bin/chromium':undefined),headless:true,args:['--no-sandbox']});
@@ -216,6 +231,8 @@ const fs = require('node:fs');
     const smallTicketDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await smallTicketDownload).saveAs('/tmp/aula-ticket-58.pdf');
     assert.ok(fs.readFileSync('/tmp/aula-ticket-58.pdf').includes(Buffer.from('/MediaBox [0 0 164.409 ')));
     await page.locator('#receipt-paper').selectOption('half-letter');
+    const printViewport=page.viewportSize();
+    await page.setViewportSize({width:528,height:816});
     await page.emulateMedia({media:'print'});
     await page.pdf({path:'/tmp/aula-print-half-letter.pdf',preferCSSPageSize:true,printBackground:true});
     const halfPrint=fs.readFileSync('/tmp/aula-print-half-letter.pdf').toString('latin1');
@@ -225,12 +242,18 @@ const fs = require('node:fs');
     assert.ok(Math.abs(halfBounds.width-528)<1,'Receipt remains 5.5 inches wide at 100%');
     assert.ok(halfBounds.height<=816,'Receipt fits in half a letter sheet without clipping');
     const letterStyle=await page.addStyleTag({content:'@page receipt-half-letter{size:letter;margin:0}'});
+    await page.setViewportSize({width:816,height:1056});
     await page.pdf({path:'/tmp/aula-print-half-on-letter.pdf',preferCSSPageSize:true,printBackground:true,scale:1});
     const letterPrint=fs.readFileSync('/tmp/aula-print-half-on-letter.pdf').toString('latin1');
     assert.match(letterPrint,/\/MediaBox\s*\[0 0 612 792\]/);
     assert.equal((letterPrint.match(/\/Type\s*\/Page\b/g)||[]).length,1);
-    assert.deepEqual(await page.locator('#print-area .payment-receipt').boundingBox(),halfBounds);
+    const letterBounds=await page.locator('#print-area .payment-receipt').boundingBox();
+    assert.equal(letterBounds.width,halfBounds.width);
+    assert.ok(letterBounds.height<=816);
+    assert.deepEqual(printedTextLayout(Buffer.from(letterPrint,'latin1')),printedTextLayout(Buffer.from(halfPrint,'latin1')),
+      'Actual PDF text positions and scale must match on half-letter and letter paper');
     await letterStyle.evaluate(el=>el.remove());
+    await page.setViewportSize(printViewport);
     await page.emulateMedia({media:'screen'});
     await page.locator('#receipt-paper').selectOption('a4');
     assert.equal(await page.locator('#print-area .receipt-half-letter').count(),0);

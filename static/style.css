@@ -278,8 +278,8 @@ table:has(.row-actions) th:last-child{text-align:right}
 }
 
 @media print{
-  .receipt-half-letter .document-header{gap:8pt}
-  .receipt-half-letter .document-number{min-width:90pt;max-width:90pt}
+  .receipt-half-letter .document-header{gap:8pt;flex-wrap:nowrap}
+  .receipt-half-letter .document-number{min-width:90pt;max-width:90pt;align-items:flex-end;justify-content:flex-start;justify-self:auto}
   .receipt-half-letter .document-number b{font-size:11pt}
   .receipt-half-letter .school-emblem{width:30pt;height:33pt;flex-shrink:0}
   .receipt-half-letter .school-info{min-width:0;flex:1}
@@ -290,4 +290,8 @@ table:has(.row-actions) th:last-child{text-align:right}
   .receipt-half-letter .receipt-balance{gap:8pt}
   .receipt-half-letter .receipt-balance strong{font-size:10pt}
   .receipt-half-letter .receipt-bottom{gap:12pt}
+  .receipt-half-letter .receipt-bottom p+p{margin-top:0}
+  .receipt-half-letter th:first-child{width:40%}
+  .receipt-half-letter th:nth-child(2){width:22%}
+  .receipt-half-letter th:nth-child(3),.receipt-half-letter th:last-child{width:19%}
 }
