@@ -6,6 +6,11 @@ on:
         description: 'Solo diagnosticar PDFs nativos ya guardados en esta ejecución (vacío: compilar instalador)'
         required: false
         type: string
+      finalize_delivery:
+        description: 'Solo actualizar ZIP fuente y notas del borrador 1.0.57 ya validado'
+        required: false
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
@@ -25,8 +30,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  finalize-delivery:
+    if: github.event_name == 'workflow_dispatch' && inputs.finalize_delivery
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Adjuntar fuente final y huella al borrador verificado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python tests/package_windows.py --output descargas/Aula-Windows.zip
+          gh release upload desktop-1.0.57 descargas/Aula-Windows.zip descargas/Aula-Windows.sha256 --clobber
+          gh release view desktop-1.0.57 --json body --jq .body > /tmp/aula-release-notes.md
+          printf '\n\nFuente ZIP final con documentación y evidencia: SHA-256 %s. Solo se actualizan documentación/fuente; el EXE validado no cambia.\n' "$(cut -d ' ' -f 1 descargas/Aula-Windows.sha256)" >> /tmp/aula-release-notes.md
+          gh release edit desktop-1.0.57 --notes-file /tmp/aula-release-notes.md
+          gh release view desktop-1.0.57 --json url,assets
   receipt-evidence:
-    if: github.event_name == 'workflow_dispatch' && inputs.receipt_evidence_run != ''
+    if: github.event_name == 'workflow_dispatch' && inputs.receipt_evidence_run != '' && !inputs.finalize_delivery
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -47,7 +70,7 @@ jobs:
           python -m pip install pypdf==6.10.0
           python tests/verify_receipt_prints.py receipt-evidence
   build:
-    if: github.event_name != 'workflow_dispatch' || inputs.receipt_evidence_run == ''
+    if: (github.event_name != 'workflow_dispatch' || inputs.receipt_evidence_run == '') && !inputs.finalize_delivery
     runs-on: windows-2022
     timeout-minutes: 35
     steps:
