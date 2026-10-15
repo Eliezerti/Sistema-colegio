@@ -30,3 +30,14 @@ Primera revisión Windows 1.0.54: 297 pruebas correctas en 383,614 s, instalaci�
 Defender antes y después sin detecciones; motor 1.1.26090.9, firmas 1.461.26.0. Instalador descargado y comprobado: **21.248.716 bytes**, SHA-256 `6b85f2d2d1a3ba9de0d22656f86c3f9bf2067da1fef796b668dcd7885cf03b21`, coincidente con el sidecar y ambos análisis del runner. [Instalador 1.0.57 en borrador](https://github.com/Eliezerti/Sistema-colegio/releases).
 
 La guía incluida en el EXE explica tamaño y uso; esta evidencia final y la fuente ZIP actualizada se añaden después de compilar. Se comprobó el motor nativo de Windows Server 2022; no se ejecutó impresión física ni revisión del controlador de la impresora del colegio. Mantén Tamaño real / 100 % al imprimir. Los cambios están en el PR de revisión; main no se modificó. B3 sigue pendiente.
+
+
+## ORIGINAL y COPIA en una hoja
+
+Elige **Carta horizontal · 2 copias verticales**. El PDF y la impresión usan una hoja carta de **792 × 612 puntos**: a la izquierda **ORIGINAL** y a la derecha **COPIA**, cada una de 396 × 612 puntos al **100 %**, sin reducir ni ampliar. No se añaden destinatarios a los rótulos. Ambas tienen los mismos datos y número R-; no se registra un segundo pago.
+
+Se acortan los márgenes a unos 5 mm y se aproxima el inicio al borde superior. El pie acompaña al contenido y se amplía la zona libre antes de cada firma a unos 11 mm. El PDF individual continúa en media carta vertical; A4 y tickets siguen disponibles.
+
+En el diálogo de impresión selecciona Carta horizontal, Tamaño real / 100 %, sin Ajustar. Desactiva Encabezados y pies del navegador para quitar fecha, título, URL y contador, visibles en la captura de revisión. Esos textos son añadidos por el navegador y no pertenecen al recibo; Aula no cambia las preferencias permanentes del controlador.
+
+Validación Linux de ORIGINAL/COPIA: 299 descubiertas en 167,031 s, 296 correctas y tres exclusivas de Windows omitidas. Navegadores normal, --demo y --roster: PASS; incluye dos copias completas en una página, títulos ORIGINAL y COPIA, espacio para firmas y conservación del pago al cambiar de formato. La primera ejecución completa detectó una aserción ligada al salto de línea de la razón social; la prueba ahora verifica el nombre completo impreso y la repetición de toda la suite fue correcta. Nuevo instalador Windows en validación; 1.0.57 corresponde a la entrega anterior.

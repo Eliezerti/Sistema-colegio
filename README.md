@@ -191,6 +191,8 @@ Los documentos guardados conservan la razón social, el RIF, el domicilio y la v
 
 ### Diseño del recibo de pago
 
+La opción **Carta horizontal · 2 copias verticales** imprime **ORIGINAL** y **COPIA**, lado a lado y al 100 %, con el mismo número R- y los mismos datos. Cada copia ocupa una media carta vertical; márgenes más cortos, contenido cerca del borde superior y mayor espacio para las firmas. No crea otro pago. [Muestra con datos ficticios](docs/recibo-original-copia.png). Desactiva los encabezados/pies del navegador (fecha, título y URL) y usa Tamaño real / 100 %, sin Ajustar a página.
+
 El recibo presenta el membrete sin bordes exteriores, datos del representante y del alumno en columnas, con el grado / sección junto al nombre del alumno, conceptos con importes alineados y un bloque destacado para el **importe recibido**. El total aplicado en USD y la tasa BCV se muestran juntos. El grado de los pagos nuevos queda guardado con el recibo. Para recibos antiguos se consulta la última constancia de matrícula emitida antes del pago; si no existe esa información se muestra «Grado no registrado», sin sustituirlo por el grado actual. Las referencias, direcciones y observaciones aparecen cuando tienen contenido. El diseño sirve tanto para pagos completos como para abonos; indica lo aplicado en esta operación.
 
 En el recibo, **Tamaño del recibo** permite elegir **Media carta vertical (13,97 × 21,59 cm; PDF de 396 × 612 puntos)** o **A4 vertical**. Se abre inicialmente en media carta; puedes cambiar el formato antes de **Descargar PDF** o **Imprimir**, sin alterar el pago. Media carta se recomienda para los cobros habituales y A4 para recibos con muchos conceptos, direcciones u observaciones extensas.
