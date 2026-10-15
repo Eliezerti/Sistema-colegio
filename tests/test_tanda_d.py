@@ -55,6 +55,13 @@ class CleanupTests(unittest.TestCase):
         self.assertNotIn('retiro-personal-inventario',recipe)
         self.assertTrue((root/'docs/retiro-personal-inventario.md').is_file())
         self.assertIn('retiro-personal-inventario.html',(root/'packaging/retired-files.iss').read_text())
+        import re
+        for name in re.findall(r'Source: "\.\.\\docs\\([^"\\]+)\.html"',recipe):
+            guide=(root/'docs'/(name+'.md')).read_text()
+            for obsolete in ('Vaciar registros conserva','siguen sin cifrar en este punto','Aula sigue en esquema 10','motor de nómina'):
+                self.assertNotIn(obsolete,guide,(name,obsolete))
+        self.assertTrue((root/'docs/interno/manuales-anteriores-a-tanda-d/bitacora.md').is_file())
+
 
 class LocalLoginTests(unittest.TestCase):
     def test_admin_recovers_during_attack_without_weakening_throttle_or_other_user(self):

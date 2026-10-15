@@ -141,3 +141,8 @@ Type: files; Name: "{app}\_internal\static\logo-colegio-v1.png"
 Type: files; Name: "{app}\docs\calidad-b1.html"
 Type: files; Name: "{app}\docs\limpieza-b2.html"
 Type: files; Name: "{app}\docs\retiro-personal-inventario.html"
+
+; Remove the Markdown companions of obsolete internal program guides.
+Type: files; Name: "{app}\docs\calidad-b1.md"
+Type: files; Name: "{app}\docs\limpieza-b2.md"
+Type: files; Name: "{app}\docs\retiro-personal-inventario.md"

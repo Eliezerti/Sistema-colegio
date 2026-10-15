@@ -38,46 +38,6 @@ Se cuentan por usuario normalizado y por la combinación de origen y usuario. Lo
 
 Los fallos de una cuenta no bloquean a las demás por usar la misma dirección local `127.0.0.1`. Hay un límite de dos verificaciones de contraseña simultáneas; si está ocupado, se pide intentar nuevamente en un segundo. No es una prohibición permanente de la IP. Las transacciones SQLite y límites de recursos del equipo siguen siendo compartidos: esto no garantiza disponibilidad ante quien controle Windows o sature el equipo. El contador continúa en memoria; reiniciar completamente el servidor lo reinicia.
 
-## Tokens y compatibilidad
-
-El token aleatorio de 256 bits permanece en la cookie HttpOnly, SameSite=Strict y Secure cuando corresponde. En SQLite se guarda **solo SHA-256 del token**, con un prefijo de formato. Copiar ese valor no sirve como cookie. No se guardan tokens en claro en la base, bitácora ni configuración.
-
-No hay migración de esquema: se reutilizan `sessions` y `settings`; solo el estado de autenticación es descartable. Las sesiones anteriores se eliminan al iniciar el servidor y el registro monotónico empieza vacío. Los respaldos siguen excluyendo sesiones autenticadas. No se modifican fichas, cargos, importes, recibos ni la ubicación de datos. A1, A2, WAL/FULL, CSRF, permisos, control del reloj y respaldos de cinco minutos se mantienen.
-
-Esto no impide que alguien con acceso a tu cuenta de Windows examine memoria, modifique el programa o lea datos sin cifrar. Los borradores son temporales y dependen de conservar abierta la ventana.
-
-## Prueba manual con datos ficticios
-
-1. En Aula - Pruebas entra como Administrador temporal. En Usuarios y acceso elige **5 minutos** y guarda.
-2. Abre Nuevo representante y escribe un nombre ficticio sin guardar. Deja de usar la ventana. No uses datos personales reales en esta prueba.
-3. Aproximadamente un minuto antes del cierre aparece el aviso. Pulsa Seguir trabajando: el formulario debe continuar intacto.
-4. Vuelve a dejar la ventana inactiva. Al vencer debe ocultar formulario, datos y documentos.
-5. Entra con el mismo administrador de prueba y confirma la tasa. Recupera el borrador, revisa que no apareció ningún representante nuevo y cancélalo.
-6. En una cuenta de Windows o PC de prueba separada, con una base ficticia, crea dos administradores y Caja. Abre sesiones de las cuentas, cierra Aula y recupera la clave de un administrador. Al reiniciar, las cookies anteriores no sirven y cada administrador recibe su aviso.
-7. Falla cinco veces una contraseña ficticia. Debe aparecer la espera; otra cuenta debe poder ingresar desde la misma PC. No hagas esta prueba con tu única cuenta real de trabajo.
-
-## Validación y entrega
-
-Validación Linux: **259 pruebas descubiertas en 135.019 s, 256 correctas y tres exclusivas de Windows omitidas** (mutex/ventana nativa/DPAPI). Los tres recorridos de navegador pasaron con el código final: normal (incluye A3 y fallos del borrador), Pruebas e importación. La primera compilación 1.0.36 pasó las 259 pruebas nativas (288.365 s, sin omisiones), instalación/ventanas/actualización/desinstalación y ambos análisis de Defender. Se reemplaza en la entrega por la revisión final que garantiza ocultar datos incluso al fallar la captura del borrador; la entrega final 1.0.37 pasó también **259 pruebas en Windows en 376.416 s, sin omisiones**, más instalación, accesos, ventanas normal/Pruebas/bandeja, reinstalación y desinstalación con conservación de datos. Las cuatro suites exigidas se ejecutaron realmente. También se prueba rollback de recuperación si falla el aviso, reconocimiento antiguo rechazado, aviso ilegible explícito y liberación del control de acceso al fallar la verificación. La prueba de navegador acelera solo el aviso visual y revoca la sesión en el servidor real; las pruebas Python avanzan el reloj monotónico para verificar el vencimiento efectivo sin esperar quince minutos.
-
-La bitácora con cadena de hashes, restricciones de datos bancarios y otras tandas siguen pendientes de aprobación; A3 no las implementa.
-
-Archivos de A3: colegio/sessions.py, login_limiter.py, security_notices.py, server.py y reset_password.py; static/session.js, app.js, index.html y style.css; tests/test_sessions.py (17 métodos nuevos), test_clock_endpoints.py (umbral actualizado), session_browser.cjs y browser.cjs; README, CHANGELOG, guías de sesiones/configuración/mantenimiento Markdown y HTML, notas del workflow Windows y ZIP fuente/suma. No hay cambios en módulos de archivos móviles/PWA, motor financiero ni esquema.
-
-Commits de implementación: 8fb4087 (sesiones y recuperación), 9c9ff87 (fallos y reversibilidad), 728b49a (aviso, borradores y manuales).
-
-## Instalador final 1.0.37
-
-[Descargar la entrega A3](https://github.com/Eliezerti/Sistema-colegio/releases/tag/untagged-f612cb9336e27ef27bd0). Archivo **Aula-Colegio-Instalador-1.0.37.exe**, 23233045 bytes. SHA-256 **6492167f388f77a76fff97846c06d3aadf32044b1b84c5ba33ad0e561cc81405**. Descargado y coincidente con su sidecar y ambos registros de análisis. Defender: motor 1.1.26080.3, firmas 1.459.691.0, sin detecciones antes/después. Runner 38333489104 sobre d5b7a462b1cb37d5bb9c93b39b647c2abd509a7e.
-
-Crea una copia externa, cierra desde Colegio → Salir y cerrar Aula e instala con la misma cuenta de Windows. Usa tus mismos usuario y contraseña de Aula; tendrás que identificarte nuevamente. No uses Vaciar registros ni necesitas restaurar para actualizar.
-
-La compilación inicial 1.0.36 también pasó todas las pruebas; se reemplaza por 1.0.37 por el cierre seguro ante fallos del borrador, no por una detección de Defender. El instalador sigue en borrador porque las alertas antiguas de 1.0.8/1.0.14 no se explican con estos análisis. No desactives Defender ni añadas exclusiones si tu PC lo bloquea. No se añade firma digital en A3.
-
-**No ejecutado:** espera física de quince minutos, captura/recuperación en la PC del usuario, otra cuenta real de Windows, actualización desde el ejecutable histórico 1.0.35 ni pruebas nativas en un WebView2 antiguo. El reloj monotónico se controla en las pruebas para verificar límites, y el navegador simula ausencia de structuredClone y falla de captura; no se presentan como un ensayo en esos equipos. La prueba del instalador usa el instalador actual para la reinstalación. No se cambia ni ensaya una base real de alumnos.
-
-Commits posteriores: 8f7a2e5 (validación Linux/paquete), d5b7a46 (captura segura y prueba de fallos). La entrega no implementa A4/A5 ni las tandas siguientes.
-
 ## Si otros intentos bloquean tu acceso
 
 En la PC del colegio, deja Aula abierto y abre Inicio → Aula → Desbloquear acceso local. Escribe tu usuario de Administración y tu contraseña actual. Copia el código en «Acceso bloqueado por intentos» de la pantalla de ingreso y vuelve a escribir tu contraseña. El código dura dos minutos, se usa una sola vez y no cambia tu contraseña. La emisión y el ingreso quedan en la bitácora. Si olvidaste la contraseña, utiliza Recuperar clave del administrador.

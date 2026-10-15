@@ -28,7 +28,7 @@ La revisión de **ACL** busca permisos adicionales en la carpeta de datos. «Sin
 
 Esta revisión se limita a la carpeta; archivos internos pueden tener permisos distintos. No impide que alguien que controle tu cuenta de Windows acceda a los datos. BitLocker protege el disco frente a acceso fuera de Windows; no cifra automáticamente una copia en USB.
 
-**Aula no cambia ACL, no solicita elevación ni activa BitLocker.** No hay migración de esquema ni cambio de ubicación de la base. Los respaldos automáticos de cinco minutos, copias posteriores a cobros, WAL y `synchronous=FULL` mantienen su funcionamiento. Los respaldos externos y descargados siguen sin cifrar en este punto.
+**Aula no cambia ACL, no solicita elevación ni activa BitLocker.** No hay migración de esquema ni cambio de ubicación de la base. Los respaldos automáticos de cinco minutos, copias posteriores a cobros, WAL y `synchronous=FULL` mantienen su funcionamiento. Las copias nuevas del segundo destino y las descargas salen cifradas; las copias locales requieren protección del disco y de Windows.
 
 ## Prueba manual con el administrador y Caja
 
@@ -38,7 +38,7 @@ Esta revisión se limita a la carpeta; archivos internos pueden tener permisos d
 4. Entra como Caja: debe ver el problema, sin acceso a Configuración ni un botón para cerrarlo. Consulta y Pruebas no deben mostrarlo.
 5. En Configuración revisa BitLocker y ACL. Contrasta los resultados con un técnico desde Windows. Si no se pudo comprobar, debe decirlo claramente.
 
-No cambies la fecha del equipo con datos reales para simular tres días: todavía falta la protección del reloj. El límite de antigüedad y sus casos de error se comprueban en pruebas automatizadas con datos temporales.
+No cambies la fecha del equipo con datos reales para simular tres días: Aula protege los movimientos frente a cambios sospechosos del reloj. El límite de antigüedad y sus casos de error se comprueban en pruebas automatizadas con datos temporales.
 
 
 La segunda carpeta se compara con el disco de la base: si comparte disco, aparece un aviso propio aunque la copia esté recién escrita. Si no se puede determinar, se indica. En Windows se comparan unidades y particiones; unidades distintas pueden compartir disco físico. En otros sistemas solo se confirma el mismo sistema de archivos; no se supone independencia entre volúmenes. El almacenamiento virtual y las carpetas de nube requieren comprobar su protección real. Aula no verifica la subida a la nube.

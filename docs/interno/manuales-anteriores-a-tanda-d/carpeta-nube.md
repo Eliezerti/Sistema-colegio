@@ -1,0 +1,47 @@
+# Quitar el aviso de disco desconocido cuando usas Drive
+
+Drive puede aparecer como una unidad virtual, por ejemplo Google Drive (E:). Esa letra no demuestra que sea otro disco físico. Aula puede escribir los respaldos sin poder determinar el disco del destino.
+
+## Pasos
+
+1. Comprueba en la aplicación de Drive que la sincronización esté actualizada.
+2. Entra en la web de Drive y verifica un respaldo reciente en la carpeta configurada.
+3. Entra como Administrador en Aula → Configuración → Protección y mantenimiento → Declarar carpeta de nube.
+4. Revisa la ruta y marca «Revisé la subida de una copia reciente y esta carpeta está configurada para sincronizarse con la nube».
+5. Pulsa Confirmar carpeta de nube.
+
+Si solo estaba el aviso de disco desconocido, se sustituye por «Carpeta de nube declarada por administración · Aula no comprueba la subida». No se concede acceso a tu cuenta ni se verifica la nube automáticamente.
+
+## Límites y protección
+
+- Se exige una copia reciente escrita en la carpeta actual. Una copia fallida o de más de tres días no permite confirmar.
+- Los avisos de fallo local/externo, destino ausente, copia antigua, conservación y mismo disco siguen visibles.
+- Solo Administrador declara o quita la declaración. Caja ve los problemas y el recordatorio; Consulta y Pruebas conservan su comportamiento anterior.
+- CSRF y el control del reloj se mantienen. La bitácora registra Administrador, fecha, valor anterior y nuevo.
+- No cambia los resultados de discos, ACL o BitLocker. Una declaración manual no los convierte en comprobados.
+- Cambiar la ruta borra la declaración. Otra PC con distinto nombre de equipo exige revisión, aunque la ruta coincida. Si reinstalas Windows o cambias la cuenta de Drive conservando equipo y ruta, usa Quitar declaración de nube y comprueba de nuevo.
+
+Revisa periódicamente Drive. Si Aula escribe en la carpeta pero Drive no sube los archivos, Aula no puede detectar ese fallo. Conserva la carpeta privada y no pongas allí la base activa. Este cambio no cifra los respaldos.
+
+Se guarda solo la declaración de configuración: ruta, equipo, Administrador y fecha. No se cambia el esquema ni alumnos, cobros, cargos, importes, las funciones de mensualidades.
+
+## Pruebas ejecutadas
+
+- `python -m unittest discover -s tests -v`: 196 descubiertas, 195 correctas y una comprobación exclusiva de Windows omitida en Linux.
+- `python tests/run_browser.py`: correcto, incluida confirmación, recordatorio discreto, revocación y preservación del aviso real de mismo disco. El diagnóstico de unidad virtual se simula; las solicitudes y la bitácora son reales en una base temporal.
+- `python tests/run_browser.py --demo`: correcto.
+- `python tests/run_browser.py --roster`: correcto.
+
+Ocho pruebas adicionales: alcance del aviso, fallos y antigüedad, ruta distinta/valor corrupto, confirmación válida, otra PC, permisos/CSRF/bitácora y esquema/importes sin cambios, Caja/Consulta/Pruebas y cambio de ruta con reutilización posterior. No se han utilizado datos reales. Las pruebas de Windows se documentan por separado al compilar.
+
+## Instalador 1.0.29
+
+- Código: commit `a404924ed4b2482d6c85ee8994c7eb251b6e2c95`.
+- [Validación Windows](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38211825608): 196 pruebas correctas en Python 3.12; instalación, accesos directos, ventanas, bandeja, reinstalación y desinstalación conservando datos correctas.
+- Defender antes y después: sin detecciones, motor `1.1.26080.3`, firmas `1.459.680.0`. No certifica la PC del usuario ni resuelve las alertas anteriores de 1.0.8/1.0.14.
+- `Aula-Colegio-Instalador-1.0.29.exe`: 20.501.627 bytes; SHA256 `8521442cee674f34244f2361ae88d7dcd0c5dbfa01a58d97e7c0b9c583c4c010`, comprobado contra el archivo descargado, su suma y ambos análisis.
+- [Descarga en borrador](https://github.com/Eliezerti/Sistema-colegio/releases/tag/untagged-02167535a81a5db24ccf), requiere una sesión de GitHub con acceso al repositorio. Descarga el ejecutable, no el ZIP de código fuente.
+
+Antes de actualizar: crea y verifica el respaldo externo, cierra Aula desde Salir y cerrar Aula e instala con la misma cuenta de Windows. Comprueba que siguen tus alumnos y saldos. Declara la carpeta revisada de Drive; si solo existía el aviso de disco desconocido, debe quedar el recordatorio discreto. Cambiar la ruta o quitar la declaración recupera la comprobación pendiente. No simules fallos borrando copias ni cambiando el reloj con datos reales.
+
+Archivos del cambio: `colegio/backup_health.py`, `colegio/server.py`, `static/app.js`, `tests/test_backup_alerts.py`, `tests/browser.cjs`, README, CHANGELOG, guías de carpeta de nube y protección de respaldos, notas del workflow y ZIP de código fuente con su suma. No hay migración de esquema, movimiento de la base ni modificación de datos financieros. El cifrado y las fases restantes continúan pendientes.

@@ -30,44 +30,12 @@ No compartas la clave en chats o capturas. En Windows con cifrado de dispositivo
 
 BitLocker protege el disco de esa PC, no cifra por sí solo las copias del USB o de Drive. El cifrado de respaldos de Aula continúa pendiente; sus claves, cuando se implemente, serán independientes de BitLocker.
 
-## Alcance técnico
+## Usuarios y acceso
 
-No se modifica el esquema, la ubicación de datos ni registros contables. El formulario de destino conserva la validación de ruta fuera de la carpeta activa y elimina la declaración de nube si cambia la ruta. Solo Administrador puede guardarlo, con CSRF y comprobación del reloj antes de confirmar. Se registra el valor anterior/nuevo y se crea el respaldo posterior. No genera cargos como efecto de cambiar la ruta.
+Administración crea usuarios con perfil Administrador, Caja o Consulta y puede configurar entre 5 y 60 minutos de inactividad. Consulta no registra ni modifica movimientos. Si otros intentos bloquean un ingreso, utiliza Desbloquear acceso local desde Inicio de Windows, con tu contraseña actual. La recuperación de una contraseña olvidada es una operación distinta.
 
-Las funciones existentes de usuarios, contraseñas, bitácora, protección de Windows, cobros, WAL, synchronous=FULL y respaldos de cinco minutos mantienen sus reglas. Este cambio no adelanta fases de seguridad pendientes.
+## Bitácora y comprobación
 
-## Validación
+En Bitácora filtra y exporta operaciones, revisa valores anteriores y nuevos y comprueba la cadena. Si falla, Aula permite consultar y respaldar, pero bloquea cambios. No borres archivos de control para quitar el aviso. En Protección y mantenimiento, Verificar datos y cobros revisa integridad, referencias, saldos y correlativos sin reparar ni cambiar registros.
 
-- `python -m unittest discover -s tests -v`: 198 descubiertas en Linux, 197 correctas y una exclusiva de Windows omitida.
-- `python tests/run_browser.py`: correcto; recorrido normal, pestañas, teclado, borradores, formularios independientes, nube, recibos, bitácora y usuarios.
-- `python tests/run_browser.py --demo`: correcto; datos temporales aislados, sin destino externo ni vaciado real.
-- `python tests/run_browser.py --roster`: correcto; importación y exportación en prueba, sin alterar el origen.
-
-Dos pruebas nuevas del servidor verifican que guardar el destino conserva identidad, calendario, alumnos, cargos y pagos, y que mantiene CSRF, validación de ruta y permisos de Caja/Consulta. Pruebas tampoco puede usar esta operación, ni siquiera para vaciar la ruta. Se comprueban bitácora, WAL, synchronous=FULL y copia posterior.
-
-La prueba de navegador comprueba un solo panel visible, navegación con teclado, cambios sin guardar y conservación de un borrador al guardar el otro formulario. El bloqueo del reloj y las transacciones financieras continúan cubiertos por la suite existente. Todas las pruebas utilizan datos ficticios y bases temporales; no se ha accedido a la base real del usuario.
-
-## Instalador 1.0.30
-
-- Código de aplicación: `338ccd07632131f8d611f2eea8e7b9e26607190d`.
-- [Ejecución Windows](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38251125520): 198 pruebas correctas en Python 3.12; instalación, accesos directos, ventanas, bandeja, reinstalación y desinstalación conservando datos correctas.
-- Defender antes y después sin detecciones, motor `1.1.26080.3`, firmas `1.459.684.0`. Este resultado no certifica la PC del usuario ni resuelve las alertas antiguas de 1.0.8/1.0.14.
-- `Aula-Colegio-Instalador-1.0.30.exe`: 20.503.114 bytes; SHA256 `b1a39d03455984ee6e93799d3574c5b6682bc2ddc62ad28d64cf5a5548e6e48a`, verificado contra el archivo descargado, su suma y el registro del runner.
-- [Descarga en borrador](https://github.com/Eliezerti/Sistema-colegio/releases/tag/untagged-e9d0e331378824f38692); requiere iniciar sesión en GitHub con acceso al repositorio. Descarga el ejecutable, no el ZIP de código fuente.
-
-Antes de actualizar, crea y verifica el respaldo externo; cierra Aula desde Salir y cerrar Aula e instala con la misma cuenta de Windows. Comprueba tus alumnos, saldos y destino de Drive. En Configuración visita cada pestaña y prueba escribir un borrador, cambiar de apartado y volver. Usa Aula - Pruebas para ensayar cambios de identidad sin afectar los datos reales. La comprobación efectiva y activación de BitLocker de la PC del usuario se realizan desde Windows; no se han ejecutado remotamente.
-
-Archivos del cambio: AGENTS.md, `colegio/server.py`, `static/app.js`, `static/style.css`, `tests/test_system.py`, `tests/test_backup_alerts.py`, `tests/browser.cjs`, README, CHANGELOG, estas guías Markdown/HTML, notas del workflow y ZIP fuente/suma. No se implementan las fases pendientes de cifrado, sesiones o bitácora protegida; no se modifica móvil/PWA ni personalización de recibos.
-
-## Cierre por inactividad (A3)
-
-Usuarios y acceso permite guardar el tiempo de cierre (15 minutos por defecto, entre 5 y 60). Este formulario guarda solo ese tiempo, registra el valor anterior y nuevo y conserva su borrador al cambiar de pestaña. Las consultas automáticas no renuevan la sesión. [Guía de sesiones y recuperación](sesiones-acceso.md).
-
-## Bitácora · A4
-
-El apartado Bitácora permite al Administrador filtrar y exportar PDF/CSV, revisar valores anteriores/nuevos y comprobar su cadena. Se conserva al la operación del colegio. Si falla la verificación, Aula permite consultar y respaldar, pero bloquea cambios. [Guía y prueba manual](bitacora.md).
-
-
-## Verificar datos y cobros · B1
-
-En Protección y mantenimiento se añaden totales de cobros válidos/aplicaciones, cargos duplicados y revisión de saltos por encima de números reservados. La operación no repara ni cambia tus registros. [Guía y comprobaciones de B1](calidad-b1.md).
+Aula se utiliza en esta PC. El acceso privado de otras computadoras fue retirado; para soporte usa el escritorio remoto de Windows. Para consultar desde casa, abre un respaldo en solo lectura.
