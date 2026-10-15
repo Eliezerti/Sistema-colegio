@@ -5,6 +5,7 @@ import json
 import base64
 import csv
 import io
+import re
 import subprocess
 import sys
 import sqlite3
@@ -20,7 +21,8 @@ from colegio.administration import COLUMNS, parse_import
 from colegio.server import SchoolServer
 from colegio.storage import DataLock, daily_backup
 from tests.restore_helpers import approved_restore as restore
-from colegio.branding import SCHOOL_PROFILE, LOGO_FILE, SCHEMA_VERSION
+from colegio.branding import LOGO_FILE, SCHEMA_VERSION
+from tests.fictional_identity import SCHOOL_PROFILE
 
 
 class MoneyTests(unittest.TestCase):
@@ -57,12 +59,12 @@ class SystemTests(unittest.TestCase):
 
     def test_directory_downloads_are_authenticated_filtered_and_do_not_issue_financial_documents(self):
         before = self.request('state')
-        for kind in ('students', 'guardians', 'employees'):
+        for kind in ('students', 'guardians'):
             report = self.request('directory/'+kind)
             self.assertEqual(report['count'], len(before[kind]))
             pdf = self.request('directory/'+kind+'.pdf')
             self.assertTrue(pdf.startswith(b'%PDF-1.4'))
-            self.assertIn(b'J-50835934-8', pdf)
+            self.assertIn(b'J-12345678-9', pdf)
         self.assertEqual(self.request('directory/students?search=inexistente')['count'], 0)
         self.assertEqual(self.request(f'directory/students?grade={self.grade}')['count'], 1)
         self.request('directory/students?grade=999', status=400)
@@ -99,7 +101,7 @@ class SystemTests(unittest.TestCase):
         after=self.request('state')
         for table in ('students','charges','payments','expenses'):self.assertEqual(before[table],after[table])
         with closing(connect(self.path)) as db:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],11)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],12)
             dump='\n'.join(db.iterdump())
             for secret in (password,pending['recovery']):self.assertNotIn(secret,dump);self.assertNotIn(secret.encode(),path.read_bytes())
 
@@ -341,73 +343,7 @@ class SystemTests(unittest.TestCase):
         self.request('state',status=428)
         self.request('expenses', {'concept':'Bloqueado'},status=428)
 
-    def test_consolidated_payroll_banks_rounding_and_frozen_plan(self):
-        position=self.request('positions',{'name':'Docente'})['id']
-        lines=[]
-        for i in range(15):
-            emp=self.request('employees',{'name':f'Empleado {i:02}', 'document':f'V-{i+100}',
-                'position_id':position,'salary':'120','bank':'Banco Prueba',
-                'bank_account':'01020000000012345678','account_holder':f'Titular {i:02}',
-                'holder_document':f'V-{i+100}','account_type':'Corriente'})['id']
-            lines.append({'employee_id':emp,'amount':'120.01' if i==0 else '120'})
-        on=local_today().isoformat()
-        self.request('rates', {'rate_date':on,'rate':'100.125'})
-        data={'name':'Pago quincenal','pay_date':on,'lines':lines}
-        plan=self.request('payroll-plans',data)['id']
-        frozen=self.request('payroll-plan/'+str(plan))
-        self.assertEqual(len(frozen['lines']),15)
-        self.assertEqual(frozen['lines'][0]['amount_ves'],1201600)
-        self.assertEqual(frozen['total_usd'],180001)
-        self.assertEqual(frozen['total_ves'],18022600)
-        self.assertEqual(frozen['lines'][0]['bank_account'],'01020000000012345678')
-        self.assertEqual(len(self.request('state')['expenses']),0)
-        self.assertEqual(self.request('state')['employees'][0]['salary'],12000)
-        self.request('rates', {'rate_date':on,'rate':'200','rate_change_confirmed':True})
-        self.request('positions',{'id':position,'name':'Profesor'})
-        self.assertTrue(all(e['position']=='Profesor' for e in self.request('state')['employees']))
-        self.assertEqual(self.request('payroll-plan/'+str(plan))['rate'],'100.125')
-        self.assertEqual(self.request('payroll-plan/'+str(plan))['lines'][0]['position'],'Docente')
-        pdf=self.request(f'payroll-plan/{plan}.pdf')
-        self.assertTrue(pdf.startswith(b'%PDF'))
-        self.assertIn(b'Empleado 14',pdf)
-        self.assertIn(b'/Count 3',pdf)  # 15 detailed employees span 3 pages with headers.
-        self.request('payroll-plans',dict(data,lines=[lines[0],lines[0]]),status=400)
-        self.request('payroll-plans',dict(data,pay_date='2000-01-01'),status=400)
-        self.request('employees',{'name':'Inválido','document':'V-x','position_id':position,'salary':'120','bank_account':'123'},status=400)
 
-    def test_additive_upgrade_preserves_old_records_and_balances(self):
-        self.request('employees',{'name':'Empleado anterior','document':'V-ant','position':'Secretaría','salary':'155.50'})
-        self.generate()
-        receipt=self.request('payments',self.payment())['id']
-        with closing(connect(self.path)) as db, db:
-            before=db.execute('SELECT COUNT(*),SUM(amount) FROM payments').fetchone()
-            legacy_fixture(db)
-            db.execute('DROP TABLE enrollment_documents')
-            db.execute('DROP TABLE payroll_plans')
-            db.execute('DROP TABLE monthly_assessments')
-            db.execute('DROP INDEX students_code')
-            db.execute('ALTER TABLE students DROP COLUMN student_code')
-            db.execute('ALTER TABLE sessions DROP COLUMN rate_confirmed_on')
-            for column in ('position_id','bank','bank_account','account_holder','holder_document','account_type'):
-                db.execute(f'ALTER TABLE employees DROP COLUMN {column}')
-            db.execute('DROP TABLE positions')
-            db.execute('PRAGMA user_version=0')
-        initialize(self.path)
-        initialize(self.path)
-        with closing(connect(self.path)) as db, db:
-            self.assertEqual(db.execute('SELECT COUNT(*),SUM(amount) FROM payments').fetchone(),before)
-            self.assertEqual(db.execute('SELECT student_code FROM students').fetchone()[0],'AL-000001')
-            self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],SCHEMA_VERSION)
-            employee=db.execute('SELECT position,position_id,salary,bank_account FROM employees').fetchone()
-            self.assertEqual(employee[0],'Secretaría')
-            self.assertIsNotNone(employee[1])
-            self.assertEqual(employee[2],15550)
-            self.assertEqual(employee[3],'')
-        self.request('state',status=428)
-        self.request('confirm-rate', {'rate_date':local_today().isoformat(),'rate':'100'})
-        self.assertEqual(self.request('state')['students'][0]['balance'],51750)
-        self.assertEqual(self.request(f'receipt/{receipt}')['payment']['amount'],2250)
 
     def test_automatic_debts_from_enrollment_and_missing_month_on_reopen(self):
         # No explicit generation: a previous enrollment already has all 12 months.
@@ -446,9 +382,11 @@ class SystemTests(unittest.TestCase):
             pdf = self.request(f'{kind}/{target}.pdf')
             self.assertIn(b'/Subtype /Image', pdf)
             self.assertIn(b'/Predictor 15', pdf)
-            self.assertIn(b'ALEJANDRO VON HUMBOLDT, C.A.', pdf)
-            self.assertIn(b'RIF: J-50835934-8', pdf)
-            self.assertIn(b'local Nro. 16-46', pdf)
+            printed = b' '.join(re.findall(rb'\(([^()]*)\) Tj', pdf))
+            self.assertIn(b'COLEGIO FICTICIO, C.A.', printed,
+                          'La razón social completa se conserva aunque cambie el salto de línea')
+            self.assertIn(b'RIF: J-12345678-9', pdf)
+            self.assertIn(b'Direcci', pdf)
         self.assertIn(b'Direcci', self.request(f'receipt/{second}.pdf'))
 
     def test_v3_branding_upgrade_preserves_finances_and_issued_receipts(self):
@@ -462,7 +400,7 @@ class SystemTests(unittest.TestCase):
             db.execute("UPDATE settings SET value='04120001234' WHERE key='phone'")
             legacy_fixture(db)
             db.execute('PRAGMA user_version=3')
-            tables = ('students','guardians','charges','payments','allocations','monthly_assessments','employees','expenses')
+            tables = ('students','guardians','charges','payments','allocations','monthly_assessments','expenses')
             before = {t:db.execute(f'SELECT * FROM {t}').fetchall() for t in tables}
         initialize(self.path)
         initialize(self.path)
@@ -473,8 +411,8 @@ class SystemTests(unittest.TestCase):
             self.assertEqual(settings['phone'],'04120001234')
             self.assertEqual(settings['school_year'],str(self.year))
             self.assertEqual(settings['school_name'],'Colegio Prueba')
-            for key,value in SCHOOL_PROFILE.items():
-                self.assertEqual(settings[key],value)
+            for key in ('legal_name','fiscal_address','logo'):
+                self.assertEqual(settings[key],'')
             self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],SCHEMA_VERSION)
             self.assertEqual(db.execute('SELECT receipt_snapshot FROM payments WHERE id=?',(receipt,)).fetchone()[0],frozen)
             db.execute("UPDATE settings SET value='Cambio manual' WHERE key='legal_name'")
@@ -498,8 +436,12 @@ class SystemTests(unittest.TestCase):
         before=self.request(f'receipt/{payment}')
         small=self.request(f'receipt/{payment}.pdf?paper=half-letter')
         full=self.request(f'receipt/{payment}.pdf?paper=a4')
-        self.assertTrue(b'/MediaBox [0 0 612 396]' in small,'Debe ser media carta real')
+        self.assertTrue(b'/MediaBox [0 0 396 612]' in small,'Debe ser media carta vertical real')
         self.assertTrue(b'/MediaBox [0 0 595 842]' in full,'Debe conservar A4 como opción')
+        pair=self.request(f'receipt/{payment}.pdf?paper=letter-pair')
+        self.assertIn(b'/MediaBox [0 0 792 612]',pair)
+        self.assertIn(b'/Count 1 ',pair)
+        self.assertEqual(pair.count(f'(R-{payment:06d})'.encode()),2)
         self.assertEqual(self.request(f'receipt/{payment}'),before)
         self.request(f'receipt/{payment}.pdf?paper=invalid',status=400)
 

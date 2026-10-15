@@ -3,7 +3,7 @@
 1. Configura el año escolar, el mes de inicio y el vencimiento en Configuración antes de matricular.
 2. Crea los grados/secciones y su capacidad. Copia sus nombres exactos a la columna grado.
 3. Descarga la plantilla. Rellena únicamente la hoja Alumnos desde la fila 2; conserva sus 17 encabezados y su orden. La columna nueva es primer_mes_cobro; también se admite la plantilla anterior de 16 columnas.
-4. Las hojas Instrucciones, Ejemplos y Grados son de consulta y nunca se importan. Los ejemplos son ficticios.
+4. Las hojas Instrucciones y Grados son de consulta. Alumnos se entrega vacía, sin personas de ejemplo.
 5. Usa una fila por alumno. Para hermanos, repite exactamente los datos del representante. Si ya existe, los datos deben coincidir con su ficha.
 6. No se importan pagos anteriores ni saldos históricos. Las mensualidades comienzan en primer_mes_cobro, independientemente del inicio del período académico. No hay prorrateo por días.
 7. Ejemplo: base 100 USD y descuento 10 generan 90 USD al mes. Período académico desde septiembre y primer_mes_cobro 2026-11: no se generan septiembre ni octubre. Vacío al cargar en noviembre también comienza en noviembre.
@@ -15,51 +15,27 @@
 
 ## Las 17 columnas, en orden
 
-| Columna | Obligatoria | Qué escribir | Ejemplo |
-|---|---|---|---|
-| representante_nombre | Sí | Nombre completo del representante legal. | Ana María Pérez |
-| representante_cedula | Sí | Cédula propia del representante; los hermanos repiten esta misma cédula y datos. Celda como Texto. | V-12345678 |
-| representante_telefono | No | Teléfono como Texto para conservar el cero inicial. | 04121234567 |
-| representante_email | No | Correo del representante; puede quedar vacío. | ana@example.com |
-| representante_direccion | No | Dirección del representante; puede quedar vacía. | Sector Centro, Calle 10 |
-| alumno_nombre | Sí | Nombre completo del alumno; una fila por alumno. | Sofía Pérez |
-| alumno_cedula | No | Cédula propia del alumno si la tiene. Nunca la del representante. Vacía: código AL automático. Celda como Texto. |  |
-| nacimiento | No | Fecha real de nacimiento. AAAA-MM-DD como Texto o fecha de Excel; sin fórmulas. Si no la tienes, deja vacío: se mostrará Pendiente. | 2016-04-23 |
-| grado | Sí | Nombre completo EXACTO de un grado/sección ya creado en Aula. | 1° PRIMARIA / A |
-| ano_escolar | Sí | Año en que comienza el ciclo: 2026 significa 2026–2027. Entero, sin guion. | 2026 |
-| mensualidad_usd | Sí | Mensualidad base en dólares, antes del descuento. Hasta dos decimales. Sin $ ni separadores de miles. | 100.00 |
-| descuento_pct | No | Porcentaje entero entre 0 y 100, sin %. Vacío = 0. No es el precio final. | 10 |
-| inicio_matricula | No | Inicio del período académico de referencia, no la fecha exacta de inscripción. Vacío = inicio del ciclo configurado. No determina el primer mes a cobrar. | 2026-09-01 |
-| fin_matricula | No | Fin del período, dentro del mismo ciclo. Vacío = fin del ciclo configurado. | 2027-08-31 |
-| estado | No | activo o inactivo. Vacío = activo. Los inactivos no generan mensualidades automáticas. | activo |
-| observaciones | No | Notas administrativas, sin fórmulas. | Beca aprobada del 10 % |
-| primer_mes_cobro | No | Primer mes que Aula generará, en AAAA-MM. Vacío = mes de carga (o inicio del período si es futuro). Los meses anteriores no se cobran automáticamente. Para años ya terminados debes elegir un mes del período. | 2026-11 |
-
-## Ejemplo: dos hermanos
-
-Primero crea el grado **1° PRIMARIA / A** y otro llamado **3° PRIMARIA / A**, con capacidad suficiente. Configura año 2026 y mes de inicio septiembre. Este ejemplo supone que cargas los alumnos en noviembre de 2026. Usa el período académico de tu colegio y el primer mes que realmente quieres cobrar; no hace falta inventar la fecha exacta de inscripción.
-
-| Columna | Primera fila: Sofía | Segunda fila: Luis |
+| Columna | Obligatoria | Qué escribir |
 |---|---|---|
-| representante_nombre | Ana María Pérez | Ana María Pérez |
-| representante_cedula | V-12345678 | V-12345678 |
-| representante_telefono | 04121234567 | 04121234567 |
-| representante_email | ana@example.com | ana@example.com |
-| representante_direccion | Sector Centro, Calle 10 | Sector Centro, Calle 10 |
-| alumno_nombre | Sofía Pérez | Luis Pérez |
-| alumno_cedula | dejar vacío | dejar vacío |
-| nacimiento | 2016-04-23 | 2018-08-10 |
-| grado | 3° PRIMARIA / A | 1° PRIMARIA / A |
-| ano_escolar | 2026 | 2026 |
-| mensualidad_usd | 100.00 | 100.00 |
-| descuento_pct | 10 | 0 |
-| inicio_matricula | 2026-09-01 | 2026-09-01 |
-| fin_matricula | 2027-08-31 | 2027-08-31 |
-| estado | activo | activo |
-| observaciones | Beca aprobada del 10 % | dejar vacío |
-| primer_mes_cobro | 2026-11 | 2026-11 |
+| representante_nombre | Sí | Nombre completo del representante legal. |
+| representante_cedula | Sí | Cédula propia del representante; los hermanos repiten esta misma cédula y datos. Celda como Texto. |
+| representante_telefono | No | Teléfono como Texto para conservar el cero inicial. |
+| representante_email | No | Correo del representante; puede quedar vacío. |
+| representante_direccion | No | Dirección del representante; puede quedar vacía. |
+| alumno_nombre | Sí | Nombre completo del alumno; una fila por alumno. |
+| alumno_cedula | No | Cédula propia del alumno si la tiene. Nunca la del representante. Vacía: código AL automático. Celda como Texto. |
+| nacimiento | No | Fecha real de nacimiento. AAAA-MM-DD como Texto o fecha de Excel; sin fórmulas. Si no la tienes, deja vacío: se mostrará Pendiente. |
+| grado | Sí | Nombre completo EXACTO de un grado/sección ya creado en Aula. |
+| ano_escolar | Sí | Año en que comienza el ciclo: 2026 significa 2026–2027. Entero, sin guion. |
+| mensualidad_usd | Sí | Mensualidad base en dólares, antes del descuento. Hasta dos decimales. Sin $ ni separadores de miles. |
+| descuento_pct | No | Porcentaje entero entre 0 y 100, sin %. Vacío = 0. No es el precio final. |
+| inicio_matricula | No | Inicio del período académico de referencia, no la fecha exacta de inscripción. Vacío = inicio del ciclo configurado. No determina el primer mes a cobrar. |
+| fin_matricula | No | Fin del período, dentro del mismo ciclo. Vacío = fin del ciclo configurado. |
+| estado | No | activo o inactivo. Vacío = activo. Los inactivos no generan mensualidades automáticas. |
+| observaciones | No | Notas administrativas, sin fórmulas. |
+| primer_mes_cobro | No | Primer mes que Aula generará, en AAAA-MM. Vacío = mes de carga (o inicio del período si es futuro). Los meses anteriores no se cobran automáticamente. Para años ya terminados debes elegir un mes del período. |
 
-No escribas «dejar vacío» en una celda: déjala vacía de verdad. Sofía tendrá una mensualidad de USD 90 y Luis de USD 100. Al confirmar se crea un representante y dos alumnos con códigos únicos distintos. No repitas la cédula de Ana en alumno_cedula.
+Para hermanos repite los datos exactos del representante y utiliza una fila distinta por alumno. No copies la cédula del representante como documento del alumno. La plantilla está vacía; no contiene personas de ejemplo.
 
 ## Llenarlo en Excel paso a paso
 

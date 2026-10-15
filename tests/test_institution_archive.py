@@ -125,34 +125,7 @@ class InstitutionArchiveTests(unittest.TestCase):
         self.request('delete-unused-record',self.deletion('guardian',self.guardian),status=400)
         self.assertEqual(self.request(f'guardian-document/{document}'),frozen)
 
-    def test_employee_offboarding_preserves_paid_and_voided_expenses(self):
-        employee=self.request('employees',{'name':'Personal de prueba','document':'V-emp','position':'Docente','salary':'100'})['id']
-        expense=self.request('expenses',{'employee_id':employee,'concept':'Sueldo de prueba','category':'Nómina',
-            'currency':'USD','amount':'100','spent_on':local_today().isoformat(),'method':'Efectivo',
-            'period_start':local_today().isoformat(),'period_end':local_today().isoformat(),
-            'entry_time':'08:00','exit_time':'16:00'})['id']
-        before=self.request('state')['expenses']
-        self.action('archive-employee',employee)
-        self.assertFalse(self.preview('employee',employee)['can_delete'])
-        self.request('void-expense',{'id':expense,'reason':'Anulación de prueba'})
-        self.request('delete-unused-record',self.deletion('employee',employee),status=400)
-        self.assertEqual(self.request('state')['expenses'][0]['amount'],before[0]['amount'])
-        self.assertEqual(self.request('directory/employees')['count'],0)
-        self.assertEqual(self.request('directory/employees?archived=1')['count'],1)
-        self.action('restore-employee',employee)
-        self.assertEqual(self.request('directory/employees')['count'],1)
 
-    def test_empty_employee_can_be_deleted_but_saved_payroll_plan_blocks_another(self):
-        first=self.request('employees',{'name':'Sin movimientos','document':'V-empty','position':'Docente','salary':'0'})['id']
-        self.action('archive-employee',first)
-        self.request('delete-unused-record',self.deletion('employee',first))
-        second=self.request('employees',{'name':'Con relación','document':'V-new','position':'Docente','salary':'0'})['id']
-        self.assertGreater(second,first)
-        self.request('payroll-plans',{'name':'Relación guardada','pay_date':local_today().isoformat(),
-            'lines':[{'employee_id':second,'amount':'0'}]})
-        self.action('archive-employee',second)
-        self.assertIn('Relaciones de pago',self.preview('employee',second)['blockers'])
-        self.request('delete-unused-record',self.deletion('employee',second),status=400)
 
     def test_failed_local_or_second_backup_never_deletes(self):
         target=self.empty_guardian()
@@ -181,6 +154,6 @@ class InstitutionArchiveTests(unittest.TestCase):
             self.csrf=self.request('session')['user']['csrf']
             self.request('confirm-rate',{'rate_date':local_today().isoformat(),'rate':'100'})
             self.request(f'archive-preview/guardian/{target}',status=403)
-            for endpoint in ('delete-unused-record','archive-employee','restore-employee'):
+            for endpoint in ('delete-unused-record',):
                 self.request(endpoint,data,status=403)
             self.request('logout',{})

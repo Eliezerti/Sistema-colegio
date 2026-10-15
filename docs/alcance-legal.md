@@ -1,6 +1,5 @@
 # Alcance de esta versión para colegios venezolanos
 
-Esta versión trabaja en una PC Windows. Es configurable por institución: nombre comercial, tipo, razón social, RIF, domicilio fiscal, contactos, logo, grados/secciones, calendario, vencimientos, mensualidades, becas, cargos del personal y cuentas bancarias. Una instalación nueva no incorpora la identidad de otro colegio. Una actualización conserva la identidad configurada y los documentos históricos.
 
 A petición del propietario, emite **comprobantes administrativos de pago**, no facturas fiscales. El encabezado muestra identificación del colegio, representante, alumno, grado, fecha y correlativo; el importe, moneda y tasa original se conservan. Un abono es un cobro aplicado parcialmente a la deuda registrada; su saldo histórico no se actualiza después. Anular conserva el documento y deja visible el motivo.
 

@@ -4,7 +4,7 @@
 
 Se retiran la instalación PWA, manifiesto, iconos exclusivos de teléfono, aviso sin conexión de la antigua PWA, pasarela phone_demo, sus lanzadores y pruebas exclusivas. Se conserva el diseño adaptable, menú accesible, indicador de conexión y navegador remoto privado; Pago móvil y teléfonos de contacto no cambian. El antiguo trabajador de Aula se desregistra al cargar la nueva interfaz y se eliminan solo sus cachés públicos. No se borran cachés de otras aplicaciones ni datos del colegio.
 
-Se corrigen instrucciones para el instalado y para el ZIP; este último conserva sus lanzadores .bat. Tcl/Tk permanece porque los diálogos de recuperación, contraseña y selector lo utilizan. No hay migración, cambio de datos, cálculos, recibos, nómina, ubicaciones ni seguridad.
+Se corrigen instrucciones para el instalado y para el ZIP; este último conserva sus lanzadores .bat. Tcl/Tk permanece porque los diálogos de recuperación, contraseña y selector lo utilizan. No hay migración, cambio de datos, cálculos, recibos, ubicaciones ni seguridad.
 
 ## Inventario previo
 

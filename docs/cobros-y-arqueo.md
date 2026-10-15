@@ -14,4 +14,4 @@ Ejemplo: $20 iniciales + $35 cobrados en efectivo − $5 gastados en efectivo = 
 
 Si durante el día solo hubo pagos electrónicos y no había efectivo al abrir, registra 0 tanto en efectivo inicial como en efectivo contado. No conviertas el saldo bancario en fondo de caja. Los egresos antiguos sin método no se descuentan del efectivo automáticamente.
 
-Esta actualización conserva cálculos, saldos, recibos emitidos, transacciones y respaldos. No altera el módulo de nómina ni el esquema de la base.
+Esta actualización conserva cálculos, saldos, recibos emitidos, transacciones y respaldos. El esquema actual 12 retira el módulo de personal y conserva los cobros.

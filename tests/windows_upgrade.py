@@ -13,6 +13,8 @@ from contextlib import closing
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# This verifier is also launched directly as python tests/windows_upgrade.py.
+sys.path.insert(0, str(ROOT))
 sys.stdout.reconfigure(encoding='utf-8')
 sys.stderr.reconfigure(encoding='utf-8')
 FINANCIAL_TABLES = ('students', 'guardians', 'grades', 'charges', 'payments', 'allocations', 'enrollment_documents')
@@ -80,6 +82,7 @@ def financial_snapshot(path, columns=None):
 
 
 def main():
+    from tests.zero_install import assert_empty_database
     parser = argparse.ArgumentParser(); parser.add_argument('--version', required=True)
     parser.add_argument('--historical-dir', required=True); args = parser.parse_args()
     if os.name!='nt' or os.environ.get('GITHUB_ACTIONS')!='true':
@@ -100,6 +103,8 @@ def main():
         session = start_and_check(program, True)
         assert session['school']['school_name'] == 'Mi colegio'
         database = data/'colegio.sqlite3'
+        assert_empty_database(database)
+        print('PASS CERO: base instalada sin registros, usuarios ni identidad; pisos cero y bitácora válida.',flush=True)
         before = hashlib.sha256(database.read_bytes()).hexdigest()
         execute(registered_uninstaller(directory),'/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
         assert hashlib.sha256(database.read_bytes()).hexdigest() == before
@@ -128,14 +133,8 @@ def main():
         with closing(sqlite3.connect(database)) as source, closing(sqlite3.connect(old_backup)) as target:
             source.backup(target)
         backup_hash = hashlib.sha256(old_backup.read_bytes()).hexdigest()
-        execute(current, *arguments)
-        start_and_check(program, False)
-        assert financial_snapshot(database, original['columns']) == original
-        with closing(sqlite3.connect(database)) as db:
-            assert db.execute('PRAGMA user_version').fetchone()[0]==11
-        assert list((data/'backups').glob('antes-bitacora-*.sqlite3'))
-        # Also update from the actual last published bundle, so unused files from
-        # a previous installation cannot hide in a directory after reinstalling.
+        # Upgrade monotonically: 1.0.13 -> 1.0.49 -> current. A historical
+        # executable must never open the newer schema 12 as a downgrade test.
         previous = Path(os.environ['RUNNER_TEMP'])/'Aula-B2-Publicado'/'Aula-Colegio-Instalador-1.0.49.exe'
         assert hashlib.sha256(previous.read_bytes()).hexdigest() == '3d4846ab01e76a96c3e3dc738a1945dfde1aa0d3fb845173e7fc18cf3e0ead2b'
         execute(previous, *arguments)
@@ -144,6 +143,9 @@ def main():
         execute(current, *arguments)
         start_and_check(program, False)
         assert financial_snapshot(database, original['columns']) == original
+        with closing(sqlite3.connect(database)) as db:
+            assert db.execute('PRAGMA user_version').fetchone()[0]==12
+        assert list((data/'backups').glob('antes-bitacora-*.sqlite3'))
         subprocess.run([sys.executable, str(ROOT/'packaging/bundle_inventory.py'), str(directory),
                         '--output', str(Path(os.environ['RUNNER_TEMP'])/'aula-b2-upgraded.json'), '--verify'], check=True)
         print('PASS B2: actualización real 1.0.49 → '+args.version+' conserva datos y retira recursos anteriores.', flush=True)
@@ -151,9 +153,9 @@ def main():
         assert financial_snapshot(database, original['columns']) == original
         assert hashlib.sha256(old_backup.read_bytes()).hexdigest() == backup_hash
         result = dict(historical='1.0.13', target=args.version, historical_sha256=digest,
-                      balance_usd_cents=original['balance'], schema=11, data_preserved=True, backup_preserved=True)
+                      balance_usd_cents=original['balance'], schema=12, data_preserved=True, backup_preserved=True)
         (Path(os.environ['RUNNER_TEMP'])/'aula-b1-upgrade.json').write_text(json.dumps(result, indent=2))
-        print('PASS B1: actualización real 1.0.13 → '+args.version+', esquema 11, saldo USD 50 y filas/recibo/respaldo conservados.', flush=True)
+        print('PASS B1: actualización real 1.0.13 → '+args.version+', esquema 12, saldo USD 50 y filas/recibo/respaldo conservados.', flush=True)
     finally:
         if data.exists():
             diagnostic = Path(os.environ['RUNNER_TEMP'])/'aula-b1-diagnostic'

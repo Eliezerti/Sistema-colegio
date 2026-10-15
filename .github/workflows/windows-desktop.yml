@@ -1,6 +1,21 @@
 name: Aplicación Windows
 on:
   workflow_dispatch:
+    inputs:
+      receipt_evidence_run:
+        description: 'Solo diagnosticar PDFs nativos ya guardados en esta ejecución (vacío: compilar instalador)'
+        required: false
+        type: string
+      finalize_delivery:
+        description: 'Solo actualizar ZIP fuente y notas de un borrador ya validado'
+        required: false
+        type: boolean
+        default: false
+      delivery_tag:
+        description: 'Borrador ya validado para finalizar documentación y fuente'
+        required: false
+        type: string
+        default: 'desktop-1.0.57'
   push:
     branches: [main]
     paths:
@@ -20,7 +35,49 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  finalize-delivery:
+    if: github.event_name == 'workflow_dispatch' && inputs.finalize_delivery
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Adjuntar fuente final y huella al borrador verificado
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DELIVERY_TAG: ${{ inputs.delivery_tag }}
+        run: |
+          test "$(gh release view "$DELIVERY_TAG" --json isDraft --jq .isDraft)" = true
+          python tests/package_windows.py --output descargas/Aula-Windows.zip
+          gh release upload "$DELIVERY_TAG" descargas/Aula-Windows.zip descargas/Aula-Windows.sha256 --clobber
+          gh release view "$DELIVERY_TAG" --json body --jq .body > /tmp/aula-release-notes.md
+          printf '\n\nFuente ZIP final con documentación y evidencia: SHA-256 %s. Solo se actualizan documentación/fuente; el EXE validado no cambia.\n' "$(cut -d ' ' -f 1 descargas/Aula-Windows.sha256)" >> /tmp/aula-release-notes.md
+          gh release edit "$DELIVERY_TAG" --notes-file /tmp/aula-release-notes.md
+          gh release view "$DELIVERY_TAG" --json url,assets
+  receipt-evidence:
+    if: github.event_name == 'workflow_dispatch' && inputs.receipt_evidence_run != '' && !inputs.finalize_delivery
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: Comprobante-Media-Carta-Vertical
+          run-id: ${{ inputs.receipt_evidence_run }}
+          github-token: ${{ github.token }}
+          path: receipt-evidence
+      - name: Comparar PDFs ficticios de WebView2 sin recompilar
+        run: |
+          python -m pip install pypdf==6.10.0 PyMuPDF==1.26.6
+          python tests/verify_receipt_prints.py receipt-evidence
   build:
+    if: (github.event_name != 'workflow_dispatch' || inputs.receipt_evidence_run == '') && !inputs.finalize_delivery
     runs-on: windows-2022
     timeout-minutes: 35
     steps:
@@ -53,6 +110,8 @@ jobs:
         run: ./packaging/scan_windows.ps1 -Path dist
       - name: Validar instalación, ventanas, pruebas y conservación de datos
         shell: pwsh
+        env:
+          AULA_RECEIPT_REPORT_DIR: ${{ runner.temp }}/aula-recibo-native
         run: |
           $ErrorActionPreference = 'Stop'
           try {
@@ -63,6 +122,20 @@ jobs:
             Write-Host "::error title=Ventana Windows::$Details"
             throw
           }
+      - name: Verificar dimensiones y escala del comprobante impreso por WebView2
+        shell: pwsh
+        run: |
+          python -m pip install pypdf==6.10.0 PyMuPDF==1.26.6
+          if ($LASTEXITCODE -ne 0) { throw 'No se instaló el verificador independiente de PDF.' }
+          python tests/verify_receipt_prints.py "$env:RUNNER_TEMP/aula-recibo-native"
+          if ($LASTEXITCODE -ne 0) { throw 'El comprobante impreso cambió tamaño, páginas, contenido o escala.' }
+      - name: Conservar evidencia de impresión del comprobante
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Comprobante-Media-Carta-Vertical
+          path: ${{ runner.temp }}/aula-recibo-native/
+          if-no-files-found: error
       - name: Repetir análisis de Defender tras pruebas de ejecución
         shell: pwsh
         run: ./packaging/scan_windows.ps1 -Path dist -ReportDir "$env:RUNNER_TEMP/defender-after-runtime"
@@ -124,35 +197,16 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'El ZIP de fuente actual no superó la verificación.' }
           $Version = "1.0.${{ github.run_number }}"
           $Body = @'
-          BORRADOR: pendientes las alertas de Defender reportadas para 1.0.8 y 1.0.14. Los análisis del runner no resuelven por sí solos el reporte del equipo del usuario.
+          Aula: control de mensualidades y administración mínima. Personal y Nómina retirados, incluidos employees, positions, payroll_plans, salary_receipts y expenses.employee_id. Esquema 12 con respaldo verificado, transacción, integridad, referencias y cadena original de bitácora conservadas. Egresos históricos de categoría Nómina conservan importes y números, sin empleado ni horarios.
 
-          Aplicación local para una PC Windows 10/11 de 64 bits. Incluye Python, ventana propia, acceso directo y perfil de pruebas independiente. Una nueva instalación solicita el nombre del colegio y crea una base vacía; las actualizaciones conservan los datos e identidad del colegio existente. Instala con la misma cuenta de Windows y crea un respaldo externo antes de actualizar.
+          Instalación en cero: Mi colegio, sin registros de negocio ni usuarios; primer R-/E-/AL- en 1 y pisos cero. Asistente para crear administrador, plantilla vacía y modo Pruebas en carpeta temporal separada. Vaciar registros retirado de producción. Guía Puesta en producción instalada.
 
-          B2: se retiran las funciones exclusivas PWA/Wi-Fi por decisión del usuario, conservando el menú adaptable y acceso privado desde otras PC. Inventario real de 1.0.49 antes de excluir familias PyInstaller/setuptools/pefile/altgraph y plataformas no usadas; Tcl/Tk, es_ve, calendario, encodings, cifrado y WebView2 conservados. Spec explícitamente sin UPX y control del PYZ final. Pruebas nativas adicionales de selectores, PDF administrativo e impresión PDF WebView2; impresión física requiere revisión local. Guía limpieza-b2.html.
+          Conserva cobros, recibos, tasas BCV, convenios, pase de año, caja, reportes, archivo de alumnos/representantes y A1–A5. Respaldos cifrados, sesiones, bitácora, WAL y FULL conservados. Restauración y conversión de respaldos antiguos migran la copia privada antes de publicarla; no se modifica el archivo de origen. B3 (firma) y B4 pendientes.
 
-          A3: sesiones de 15 minutos sin actividad, configurables entre 5 y 60, con aviso un minuto antes. Tiempos monotónicos, máximo absoluto de doce horas, tokens guardados solo como SHA-256 y nuevo ingreso al reiniciar Aula. Formularios habituales conservados solo en RAM para el mismo usuario y perfil, sin contraseñas y sin guardado automático. Recuperación local cierra todas las sesiones y deja aviso persistente para cada administrador. Espera progresiva por cuenta/origen-cuenta sin prohibición global de la IP local. Guía instalada sesiones-acceso.html. Sin migración SQL; no cambia datos financieros, móvil/PWA o nómina.
+          Comprobantes: media carta vertical 396 × 612 puntos; opción ORIGINAL y COPIA en una carta horizontal de 792 × 612 puntos al 100 %, márgenes reducidos y espacio para firmas. Validación nativa WebView2; la impresora física del colegio requiere revisión local.
 
-          A2: cifrado AES-256-GCM/scrypt de todas las salidas de respaldo gestionadas por Aula: segundo destino, descarga y externas previas a vaciar/borrar. Recuperación mostrada una vez con confirmación de últimos cuatro; Windows DPAPI protege solo material derivado fuera de SQLite. Cambiar contraseña afecta solo copias nuevas; antiguas usan su contraseña de entonces o recuperación. Publicación atómica después de descifrar/verificar huella, integridad y referencias; temporales externos siempre cifrados. No cambia copias locales de cinco minutos/diarias ni borra originales antiguos o especiales. Formato AULABK01 documentado.
+          La compilación exige suite completa, análisis Defender antes/después, instalación/ventanas/conservación, impresión PDF y actualización publicada con otra cuenta Windows real. Resultados en la ejecución asociada. No se afirma prueba física de impresora ni Windows 10/11 del usuario.
 
-          Configura Cifrado de respaldos en Protección y mantenimiento después de actualizar; guarda la recuperación fuera de la PC, separada de la copia. Restaurar y Probar respaldo admiten .aulabak y antiguas .sqlite3 con advertencia, conservando A1. Basta archivo + contraseña o recuperación en otra PC. Convertir y descargar cifrado crea otra copia sin borrar la original; no elimina versiones antiguas de Drive. Sin migración SQL, cambio de ubicación, nómina ni móvil. No hay firma nueva ni SQLCipher.
-
-          A1: restauración con comparación por identidad/contenido y confirmación reforzada si se pierden o revierten datos. Conserva máximos de correlativos R-/E-/AL-/M-, copia anterior, archivos originales e informes PDF/CSV de pérdida. Una intención persistente permite completar la restauración confirmada después de un cierre inesperado antes de abrir/generar mensualidades; un registro ilegible bloquea el inicio y conserva las copias. Esquemas futuros se rechazan. Sin migración nueva, cifrado ni cambios de nómina/móvil/sesiones.
-
-          Probar respaldo: Configuración → Protección y mantenimiento o Inicio → Aula Colegio → Probar respaldo; funciona sin abrir la base activa, copia el archivo a un temporal y no escribe en el USB/origen. La fecha de creación desconocida se indica sin deducirla del nombre. Restauración con Aula completamente cerrado. Guía instalada restauracion-segura.html incluye prueba ficticia, limitaciones y recuperación de base ilegible: los correlativos desconocidos deben revisarse, nunca inventarse como cero.
-
-          Recibos de pago: nombre y grado del alumno, sin cédula escolar ni código AL-. Conserva el número R- y los datos del representante; la identificación escolar y el código permanecen en ficha/constancia, sin alterar pagos ni instantáneas. Cobros por Pago móvil separados en reportes y cierre; arqueo distingue efectivo físico inicial del saldo bancario.
-
-          Archivo de la institución: Administración revisa, archiva y recupera alumnos, representantes y personal en un módulo separado. Borrado definitivo solo para fichas archivadas sin movimientos ni vínculos, con contraseña, motivo, revisión vigente y copias previas verificadas. Saldo de $0 no autoriza borrar historial financiero; personal utiliza estado Inactivo sin cambiar cálculos de nómina. Sin migración de esquema ni borrado automático.
-
-          Carpeta de nube: Administración puede declarar manualmente una carpeta de Drive, OneDrive o Dropbox después de revisar una copia reciente en su web. Sustituye solo el aviso de disco desconocido por un recordatorio discreto; Aula no verifica la subida. Los fallos, copias antiguas y aviso de mismo disco permanecen. CSRF, reloj y bitácora protegen la confirmación; cambiar la ruta o usar otra PC exige revisar de nuevo. Sin migración de esquema ni cambio de datos contables.
-
-          Configuración organizada en apartados de Identidad y calendario, Protección y mantenimiento, Usuarios y acceso y Bitácora. Conserva borradores de identidad/destino durante la sesión y guarda cada formulario por separado. El destino de copias no cambia calendario ni identidad. Ayuda de BitLocker explica la clave de recuperación de 48 dígitos y la distingue de una llave de acceso; los resultados desconocidos se muestran en ámbar sin presentarlos como activos. No activa BitLocker, migra el esquema ni modifica datos financieros.
-
-          Novedades de Fase 1, punto 2: protección persistente del reloj. Avances mayores de siete días entre aperturas, retrocesos mayores de dos minutos y saltos inesperados durante el uso detienen cobros, mensualidades y documentos. Solo Administrador confirma con CSRF y registro en bitácora. Puede aparecer una revisión inicial de una base con actividad sin control previo. Conservación de respaldos por secuencia de publicación, independiente de nombres y fechas corregidas. Intentos de acceso con tiempo monotónico. Conserva avisos de respaldo, revisión de ACL/BitLocker, importación/exportación, documentos y datos anteriores. La copia en una carpeta no confirma subida a la nube; hay aviso por mismo disco o ubicación desconocida. No cambia el esquema, ubicación, importes existentes, WAL, synchronous=FULL ni frecuencia de cinco minutos. Incluye cifrado portable de respaldos A2, no SQLCipher.
-
-          Emite comprobantes administrativos, no facturas fiscales. Esta versión no certifica cumplimiento de todos los requisitos de SENIAT o Zona Educativa. La tasa BCV se registra manualmente. Cerrar X oculta la aplicación junto al reloj; usa Salir y cerrar Aula para detenerla. WebView2 de Microsoft puede requerir conexión en la primera instalación.
-
-          La compilación ejecuta pruebas financieras y de recuperación, análisis de Microsoft Defender antes y después de las pruebas de instalación, ventana nativa y conservación de datos. Un resultado de análisis sin detecciones solo corresponde a ese archivo y esas firmas; no garantiza ausencia universal de amenazas ni explica por sí solo la detección anterior de 1.0.8. No desactives Defender ni añadas exclusiones para instalar un archivo bloqueado.
           '@
           [System.IO.File]::WriteAllText('dist/notas-version.txt', $Body, [System.Text.UTF8Encoding]::new($false))
           # Keep the artifact as a draft until checks and its release notes have been reviewed.

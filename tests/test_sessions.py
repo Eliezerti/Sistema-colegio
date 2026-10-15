@@ -119,7 +119,7 @@ class SessionAPITests(unittest.TestCase):
         f.request('login', {'username': 'admin', 'password': 'Una-clave-segura'})
         f.csrf = f.request('session')['user']['csrf']
         with closing(connect(f.path)) as db:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 11)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 12)
             self.assertEqual(schema, db.execute('SELECT name,sql FROM sqlite_master ORDER BY name').fetchall())
 
     def test_background_endpoints_expire_and_cannot_emit_or_mutate_after_timeout(self):

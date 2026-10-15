@@ -122,13 +122,14 @@ class ProductionReviewTests(unittest.TestCase):
         self.assertEqual(profile['rif'],'J-12345678-9')
         self.assertEqual(profile['logo'],'');self.assertEqual(profile['legal_name'],'')
 
-    def test_template_has_empty_import_sheet_and_separate_instructions_examples_grades(self):
+    def test_template_has_empty_import_sheet_and_no_example_records(self):
         raw=import_template(True,['Primaria A'],{'school_year':'2026','start_month':'9'})
         with zipfile.ZipFile(io.BytesIO(raw)) as z:
             self.assertEqual(z.read('xl/worksheets/sheet1.xml').count(b'<row '),1)
             self.assertIn(b'Instrucciones',z.read('xl/workbook.xml'))
+            self.assertNotIn(b'Ejemplos',z.read('xl/workbook.xml'))
             self.assertIn(b'representante_cedula',z.read('xl/worksheets/sheet2.xml'))
-            self.assertIn(b'Primaria A',z.read('xl/worksheets/sheet4.xml'))
+            self.assertIn(b'Primaria A',z.read('xl/worksheets/sheet3.xml'))
         with self.assertRaises(ValidationError):parse_import({'filename':'empty.xlsx','content':base64.b64encode(raw).decode()})
 
     def test_import_accepts_local_formats_and_keeps_error_row_numbers(self):

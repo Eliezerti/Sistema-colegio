@@ -3,9 +3,9 @@
 let sessionDeadline=0, sessionGeneration=0, sessionPulseAt=-Infinity;
 let sessionPulsePending=false, sessionCheckPending=false, sessionCheckedAt=-Infinity;
 let sessionDraft=null, recoveryNotice=null, sessionWarning;
-const draftEndpoints=new Set(['students','guardians','grades','employees','payments','expenses','charges',
+const draftEndpoints=new Set(['students','guardians','grades','payments','expenses','charges',
   'close-cash','rates','settings','backup-directory','session-preferences','users','password',
-  'payment-plans','collections','positions','payroll-plans','salary-receipts','generate','correct-billing-start']);
+  'payment-plans','collections','generate','correct-billing-start']);
 
 function sessionHeaders(response, started){
   const remaining=Number(response.headers.get('X-Aula-Idle-Remaining'));

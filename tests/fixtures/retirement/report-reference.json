@@ -1,0 +1,15 @@
+{
+  "active_students": 0,
+  "pending": 0,
+  "overdue": 0,
+  "debtors": 0,
+  "income": 0,
+  "expenses": 3001,
+  "net": -3001,
+  "aging": [
+    0,
+    0,
+    0,
+    0
+  ]
+}

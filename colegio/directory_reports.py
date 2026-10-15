@@ -3,11 +3,9 @@ from datetime import datetime, timedelta, timezone
 
 from .db import ValidationError, integer
 from .documents import AdministrativePDF, amount, school_month, student_status
-from .staff_access import banking_allowed
 
 
-TITLES = {'students': 'Alumnos y matrículas', 'guardians': 'Representantes',
-          'employees': 'Personal del colegio'}
+TITLES = {'students': 'Alumnos y matrículas', 'guardians': 'Representantes'}
 
 
 def directory_report(state, kind, query):
@@ -27,11 +25,10 @@ def directory_report(state, kind, query):
     if grade and grade_name is None:
         raise ValidationError('El grado seleccionado no existe.')
     records = [r for r in state[kind] if (not grade or r['grade_id'] == grade)
-               and (archived == '1' or (r['status']=='active' if kind=='employees' else not r.get('archived')))
+               and (archived == '1' or not r.get('archived'))
                and (not search or any(search.lower() in str(r.get(k) or '').lower()
-                    for k in ('name', 'document', 'student_code', 'guardian_name', 'phone', 'position')))]
+                    for k in ('name', 'document', 'student_code', 'guardian_name', 'phone')))]
     lines = []
-    show_banking = banking_allowed(state['user'])
     for n, r in enumerate(records, 1):
         status = 'Archivado' if r.get('archived') else ('Activo' if r.get('status') == 'active' else 'Inactivo')
         if kind == 'students':
@@ -46,27 +43,16 @@ def directory_report(state, kind, query):
                 '\n'.join(filter(None, [r['phone'], r['email']])) or '—', r['address'] or '—',
                 '\n'.join(s['name']+' · '+s['grade_name']+' ('+student_status(s)+')'
                           for s in children) or 'Sin alumnos vinculados'])
-        else:
-            line = [str(n), r['name']+'\n'+r['document'], r['position'], r['phone'] or '—']
-            if show_banking:
-                line.append('\n'.join(filter(None, [r['bank'], r['bank_account']])) or 'Sin datos bancarios')
-            lines.append(line + [amount(r['salary']), status])
     headings, widths = {
         'students': (['N.º', 'Alumno / código', 'Grado / año', 'Representante', 'Mensualidad',
                       'Cobrar desde', 'Estado', 'Saldo USD'], [26, 150, 108, 157, 85, 83, 65, 84]),
         'guardians': (['N.º', 'Representante / cédula', 'Contacto', 'Dirección', 'Alumnos / grado / estado'],
                       [26, 180, 140, 170, 242]),
-        'employees': (['N.º', 'Empleado / cédula', 'Cargo', 'Teléfono', 'Banco / cuenta', 'Salario USD', 'Estado'],
-                      [26, 180, 125, 100, 168, 89, 70]),
     }[kind]
-    if kind == 'employees' and not show_banking:
-        headings = ['N.º', 'Empleado / cédula', 'Cargo', 'Teléfono', 'Salario USD', 'Estado']
-        widths = [26, 230, 160, 140, 112, 90]
     filters = ['Búsqueda: '+search] if search else []
     if grade_name:
         filters.append('Grado: '+grade_name)
-    filters.append(('Incluye personal inactivo' if archived=='1' else 'Solo personal activo') if kind=='employees'
-                   else 'Incluye archivados' if archived=='1' else 'Sin fichas archivadas')
+    filters.append('Incluye archivados' if archived=='1' else 'Sin fichas archivadas')
     now = datetime.now(timezone(timedelta(hours=-4)))
     return {'kind': kind, 'title': TITLES[kind], 'school': state['settings'], 'issued_on': state['today'],
             'issued_at': now.strftime('%d/%m/%Y · %H:%M'), 'operator': state['user']['name'],
@@ -74,8 +60,7 @@ def directory_report(state, kind, query):
             'count_label': f"{len(lines)} {'registro' if len(lines) == 1 else 'registros'}",
             'headings': headings, 'widths': widths, 'lines': lines,
             'note': 'Los importes se expresan en USD. El saldo corresponde a los cargos registrados al emitir el listado.'
-                    if kind == 'students' else 'Salarios de referencia; este listado no acredita pagos de nómina.'
-                    if kind == 'employees' else 'Cada alumno indica su estado actual: Activo, Inactivo o Inactivo · Archivado. Se conservan todos los vínculos con el representante.'}
+                    if kind == 'students' else 'Cada alumno indica su estado actual: Activo, Inactivo o Inactivo · Archivado. Se conservan todos los vínculos con el representante.'}
 
 
 class DirectoryPDF(AdministrativePDF):

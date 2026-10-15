@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .branding import SCHEMA_VERSION
 
-SEQUENCES = ('payments', 'expenses', 'students', 'guardians', 'employees', 'enrollment_documents')
+SEQUENCES = ('payments', 'expenses', 'students', 'guardians', 'enrollment_documents')
 REQUIRED = {
     'settings': {'key','value'}, 'users': {'id','username','name','password','role'},
     'students': {'id','name','guardian_id'}, 'guardians': {'id','name'}, 'grades': {'id'},
@@ -94,7 +94,7 @@ def inspect_copy(path):
         from .audit_chain import portable_status
         audit_status=portable_status(db)
         if not audit_status['ok']:raise ValueError(audit_status['message'])
-        summary={'audit':audit_status,'schema':version,'integrity':'ok','references':'ok','students':len(records['students']),
+        summary={'retired_counts':{t:len(records.get(t,[])) for t in ('employees','positions','payroll_plans','salary_receipts') if t in records},'audit':audit_status,'schema':version,'integrity':'ok','references':'ok','students':len(records['students']),
             'payments':len(payments),'valid_payments':len(valid),'voided_payments':len(payments)-len(valid),
             'income_usd':sum(p['amount'] for p in valid),'received':paid,'balance_usd':balance,
             'last_payment':({'id':last['id'],'receipt':f"R-{last['id']:06d}",'paid_on':last['paid_on'],

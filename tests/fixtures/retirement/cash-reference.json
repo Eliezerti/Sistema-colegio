@@ -1,0 +1,62 @@
+{
+  "closed_on": "2025-09-20",
+  "lines": [
+    {
+      "method": "Efectivo",
+      "currency": "USD",
+      "income": 0,
+      "expense": 1001,
+      "net": -1001,
+      "income_usd": 0,
+      "expense_usd": 1001
+    },
+    {
+      "method": "Transferencia",
+      "currency": "VES",
+      "income": 0,
+      "expense": 200000,
+      "net": -200000,
+      "income_usd": 0,
+      "expense_usd": 2000
+    }
+  ],
+  "movements": [
+    {
+      "type": "expense",
+      "id": 1,
+      "currency": "USD",
+      "received_amount": 1001,
+      "amount": 1001,
+      "method": "Efectivo",
+      "reference": "REF-1",
+      "voided": 0,
+      "exchange_rate": "100"
+    },
+    {
+      "type": "expense",
+      "id": 2,
+      "currency": "VES",
+      "received_amount": 200000,
+      "amount": 2000,
+      "method": "Transferencia",
+      "reference": "REF-2",
+      "voided": 0,
+      "exchange_rate": "100"
+    },
+    {
+      "type": "expense",
+      "id": 3,
+      "currency": "USD",
+      "received_amount": 333,
+      "amount": 333,
+      "method": "Tarjeta",
+      "reference": "REF-3",
+      "voided": 1,
+      "exchange_rate": "100"
+    }
+  ],
+  "preview_hash": "0b6def578afec085f612614201ec1b269c8271b64a97d531d10b445e538b8a55",
+  "income_usd": 0,
+  "expense_usd": 3001,
+  "active_id": null
+}

@@ -57,7 +57,7 @@ La prueba de navegador comprueba un solo panel visible, navegación con teclado,
 
 Antes de actualizar, crea y verifica el respaldo externo; cierra Aula desde Salir y cerrar Aula e instala con la misma cuenta de Windows. Comprueba tus alumnos, saldos y destino de Drive. En Configuración visita cada pestaña y prueba escribir un borrador, cambiar de apartado y volver. Usa Aula - Pruebas para ensayar cambios de identidad sin afectar los datos reales. La comprobación efectiva y activación de BitLocker de la PC del usuario se realizan desde Windows; no se han ejecutado remotamente.
 
-Archivos del cambio: AGENTS.md, `colegio/server.py`, `static/app.js`, `static/style.css`, `tests/test_system.py`, `tests/test_backup_alerts.py`, `tests/browser.cjs`, README, CHANGELOG, estas guías Markdown/HTML, notas del workflow y ZIP fuente/suma. No se implementan las fases pendientes de cifrado, sesiones o bitácora protegida; no se modifica nómina, móvil/PWA ni personalización de recibos.
+Archivos del cambio: AGENTS.md, `colegio/server.py`, `static/app.js`, `static/style.css`, `tests/test_system.py`, `tests/test_backup_alerts.py`, `tests/browser.cjs`, README, CHANGELOG, estas guías Markdown/HTML, notas del workflow y ZIP fuente/suma. No se implementan las fases pendientes de cifrado, sesiones o bitácora protegida; no se modifica móvil/PWA ni personalización de recibos.
 
 ## Cierre por inactividad (A3)
 
@@ -65,11 +65,10 @@ Usuarios y acceso permite guardar el tiempo de cierre (15 minutos por defecto, e
 
 ## Bitácora · A4
 
-El apartado Bitácora permite al Administrador filtrar y exportar PDF/CSV, revisar valores anteriores/nuevos y comprobar su cadena. Se conserva al vaciar registros. Si falla la verificación, Aula permite consultar y respaldar, pero bloquea cambios. [Guía y prueba manual](bitacora.md).
+El apartado Bitácora permite al Administrador filtrar y exportar PDF/CSV, revisar valores anteriores/nuevos y comprobar su cadena. Se conserva al la operación del colegio. Si falla la verificación, Aula permite consultar y respaldar, pero bloquea cambios. [Guía y prueba manual](bitacora.md).
 
 ## Acceso a datos bancarios del personal · A5
 
-En Usuarios y acceso, Caja y Consulta conservan fichas y salarios autorizados, pero no reciben datos bancarios ni abren documentos de nómina o sueldo. Administración conserva ese acceso. No hace falta activar un interruptor. El listado PDF del personal respeta el perfil. [Guía y prueba manual](privilegios-personal.md).
 
 ## Verificar datos y cobros · B1
 
