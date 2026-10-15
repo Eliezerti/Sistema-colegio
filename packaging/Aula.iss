@@ -49,6 +49,7 @@ Source: "..\docs\guia-importacion.html"; DestDir: "{app}\docs"; Flags: ignorever
 Source: "..\docs\mantenimiento.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "..\docs\proteccion-reloj.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "..\docs\proteccion-respaldos.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\pruebas-fisicas.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "..\docs\puesta-en-produccion.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "..\docs\restauracion-segura.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "..\docs\sesiones-acceso.html"; DestDir: "{app}\docs"; Flags: ignoreversion

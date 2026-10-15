@@ -213,6 +213,7 @@ class RecoveryTests(unittest.TestCase):
                 db.execute("UPDATE settings SET value=? WHERE key='backup_directory'",(external,))
             first=automatic_backup(source)
             prior=Path(first['secondary_path']);original=prior.read_bytes()
+            original_copies={p.name:p.read_bytes() for p in Path(external).glob('*.aulabak')}
             real_sync=os.fsync;names={};failed=[]
             real_fdopen=os.fdopen;real_mkstemp=tempfile.mkstemp
             def tracked_mkstemp(*args,**kwargs):
@@ -234,7 +235,7 @@ class RecoveryTests(unittest.TestCase):
             self.assertFalse(status.get('local_error'));self.assertTrue(status['secondary_error'])
             self.assertTrue(Path(status['local_path']).is_file())
             self.assertEqual(prior.read_bytes(),original)
-            self.assertEqual(list(Path(external).glob('*.aulabak')),[prior])
+            self.assertEqual({p.name:p.read_bytes() for p in Path(external).glob('*.aulabak')},original_copies)
             self.assertFalse(list(Path(external).glob('*.sqlite3')))
             self.assertFalse(list(Path(external).glob('.aula-cipher-*')))
 

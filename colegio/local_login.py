@@ -1,7 +1,6 @@
 """One-use local recovery without relaxing the HTTP password throttle."""
 import hashlib
 import json
-import os
 import secrets
 import time
 from contextlib import closing
@@ -15,16 +14,8 @@ GRANT = '.login-unlock.json'
 
 
 def private_json(path, value):
-    temporary = path.with_suffix('.tmp')
-    fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    try:
-        with os.fdopen(fd, 'w', encoding='utf-8') as output:
-            json.dump(value, output)
-            output.flush()
-            os.fsync(output.fileno())
-        os.replace(temporary, path)
-    finally:
-        temporary.unlink(missing_ok=True)
+    from .clock_guard import atomic_json
+    atomic_json(path, value)
 
 
 def begin_instance(directory):

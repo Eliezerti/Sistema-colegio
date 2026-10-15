@@ -1,5 +1,7 @@
 # Tanda D · en desarrollo
 
+- D7: actualización nativa desde 1.0.67, portabilidad cifrada en otra cuenta Windows, cortes reales durante publicación por niveles y guía de pruebas físicas.
+
 - D6: morosidad por grado en reporte diario y cierre mensual PDF/CSV con monedas y métodos separados, egresos, saldo, pendiente y anulaciones de bitácora, sin datos personales de alumnos.
 
 - D5: abrir respaldos cifrados o antiguos en consulta aislada; SQLite inmutable, escrituras bloqueadas en servidor, sesión en memoria y temporal eliminado al cerrar.

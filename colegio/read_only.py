@@ -1,5 +1,5 @@
 """Isolated copy viewer: immutable SQLite, fail-closed HTTP writes, RAM-only sessions."""
-from contextlib import contextmanager
+from contextlib import contextmanager, closing
 from datetime import datetime, timezone
 from http.server import ThreadingHTTPServer
 import secrets
@@ -102,7 +102,7 @@ def open_copy(source, credential=None, credential_kind='password', *, port=0):
             from .db import initialize
             # Migration affects only the verified disposable copy, never the source.
             adopt_restored(path);initialize(path)
-            with sqlite3.connect(path) as db:db.execute('PRAGMA wal_checkpoint(TRUNCATE)')
+            with closing(sqlite3.connect(path)) as db:db.execute('PRAGMA wal_checkpoint(TRUNCATE)')
             inspect_copy(path)
         copied=datetime.fromtimestamp(source.stat().st_mtime).astimezone().isoformat(timespec='seconds')
         metadata={'copied_at':copied,'date_source':'fecha del archivo, no certificada',

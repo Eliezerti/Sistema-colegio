@@ -140,8 +140,19 @@ def main():
         execute(previous, *arguments)
         start_and_check(program, False)
         assert financial_snapshot(database, original['columns']) == original
+        latest = Path(args.historical_dir)/'Aula-Colegio-Instalador-1.0.67.exe'
+        execute(latest, *arguments)
+        start_and_check(program, False)
+        assert financial_snapshot(database, original['columns']) == original
+        # Exercise removal of both genuine internal guides and stale legacy guides.
+        for name in ('privilegios-personal.html','privilegios-personal.md'):
+            (directory/'docs'/name).write_text('Guía retirada de prueba')
+        assert (directory/'docs'/'retiro-personal-inventario.html').is_file()
         execute(current, *arguments)
         start_and_check(program, False)
+        for name in ('privilegios-personal.html','privilegios-personal.md','retiro-personal-inventario.html'):
+            assert not (directory/'docs'/name).exists(), 'Guía interna/retirada todavía instalada: '+name
+        print('PASS D7: actualización real 1.0.67 → '+args.version+' conserva importes y retira guías internas.',flush=True)
         assert financial_snapshot(database, original['columns']) == original
         with closing(sqlite3.connect(database)) as db:
             assert db.execute('PRAGMA user_version').fetchone()[0]==12
