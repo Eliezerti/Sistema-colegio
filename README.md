@@ -19,6 +19,6 @@ La actualización verifica una copia previa antes de migrar. No reinicia correla
 
 ## Validación de esta entrega
 
-Linux: 291 pruebas en 159,888 s, 288 correctas y tres exclusivas de Windows omitidas. Navegadores normal, --demo y --roster: PASS. Migración, referencias de caja/reportes, cinco cortes reales, restauración/cifrado y cero registros precargados comprobados. Windows e instalador: validación pendiente. B3 (firma) y B4 permanecen pendientes.
+Linux: 292 pruebas en 150,716 s, 289 correctas y tres exclusivas de Windows omitidas. Navegadores normal, --demo y --roster: PASS. Migración, referencias de caja/reportes, cinco cortes reales, restauración/cifrado y cero registros precargados comprobados. Windows: 292 correctas en 486,343 s sin omisiones, instalación en cero, actualización publicada y otra cuenta estándar real correctas. [Instalador 1.0.67 en borrador](https://github.com/Eliezerti/Sistema-colegio/releases), 19.626.196 bytes, SHA-256 descargado y coincidente. Defender antes/después sin detecciones. B3 (firma) y B4 permanecen pendientes.
 
 Comandos: `python -m unittest discover -s tests -v`, `python tests/run_browser.py`, `python tests/run_browser.py --demo` y `python tests/run_browser.py --roster`.

@@ -93,10 +93,24 @@ La primera revisión completa terminó con 269 descubiertas, cuatro fallos, tres
 
 [La matriz activa](permisos-b1.md) y [su CSV](permisos-b1.csv) contienen resultados esperados y reales. Las rutas retiradas se comprueban adicionalmente por HTTP con Administrador, Caja y Consulta: 45 solicitudes, todas 410, sin cambios en alumnos, cobros, cargos o egresos. Las rutas son POST employees, positions, payroll-plans, salary-receipts, archive-employee, restore-employee, reset-records; GET directory/employees (JSON/PDF), payroll-plan/1 (JSON/PDF), salary-receipt/1 (JSON/PDF), archive-preview/employee/1 y reset-preview. Se conserva el Archivo para alumnos y representantes y sus permisos/revisión/borrado protegido.
 
-Instalador y validación nativa de Windows pendientes. La impresora física del colegio, Windows 10/11 del usuario y configuración de nube/USB real no se han probado desde Linux. B3/B4 pendientes.
+La validación nativa de Windows se completa en la sección Entrega final de esta guía. La impresora física del colegio, Windows 10/11 del usuario y configuración de nube/USB real no se han probado desde Linux. B3/B4 pendientes.
 
 
 Ronda sobre el código definitivo `54186b2`: **291 en 159,888 s, 288 correctas y tres exclusivas de Windows omitidas**; normal, --demo y --roster PASS. La guía Puesta en producción se renderizó con Chromium del sistema y se comprobó con pypdf: **una página A4**. La primera compilación Windows 38678162507 fue cancelada antes de terminar para incorporar las últimas correcciones de textos; no se ofrece como validación. Ejecución final: [38678340162](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38678340162), aún pendiente.
 
 
 Primera validación Windows completa, intento 1.0.65 (`54186b2`): **291 correctas en 548,575 s, sin omisiones**. Instalación básica, ventanas, bandeja, conservación, impresión de media carta y ambas copias al 100 % y Defender antes/después correctos. La fase B1 se detuvo antes de comprobar la instalación en cero porque la ejecución directa de `tests/windows_upgrade.py` no encontraba el paquete `tests` al importar `zero_install`. No se publicó instalador. Se añade la raíz del repositorio a la ruta del verificador y se comprueba su ejecución directa con Python aislado; el programa no cambia. Repetición completa: [38679528930](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38679528930), pendiente.
+
+
+## Entrega final 1.0.67 verificada
+
+[Windows 38680598685](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38680598685), fuente `ce97c94`: **292 pruebas correctas en 486,343 s, sin omisiones**. Instalación en cero real: sin registros de negocio, usuarios ni identidad precargada, pisos cero y bitácora válida. Actualizaciones reales 1.0.13 → 1.0.49 → 1.0.67, esquema 12, saldo USD 50 y filas/recibo/respaldo conservados. Otra cuenta estándar real: perfil distinto, instalación/inicio sin fichas previas y desinstalación conservando sus datos; cuenta principal intacta.
+
+Impresión nativa WebView2 e inspección independiente: una página en media carta vertical y ORIGINAL/COPIA en carta horizontal al 100 %. Instalación, accesos, ventanas, bandeja y conservación correctas. Inventario final sin los módulos retirados ni bases de uso incluidas. Defender antes/después sin detecciones, motor 1.1.26090.9 y firmas 1.461.32.0.
+
+EXE descargado y verificado: **19.626.196 bytes**, SHA-256 `661c3469fc3e01cd17b6e2ca553f8a06d247b71a0b010383a415741810a21cd3`, coincidente con el sidecar y ambos análisis del runner. [Instalador 1.0.67 en borrador](https://github.com/Eliezerti/Sistema-colegio/releases). La prueba nueva de importación de la segunda cuenta aislada pasó localmente y en la suite Windows. Se leen los registros originales íntegros de Actions para evitar el corte de líneas grandes del cliente gh.
+
+La validación nativa corresponde a Windows Server 2022. No se ejecutaron pruebas en la PC Windows 10/11 del colegio, impresora física, USB o cuenta de nube reales: no están disponibles en este entorno. La guía de una página explica la puesta en producción y el piloto local. El EXE incluye las instrucciones de uso; la evidencia final y el ZIP fuente se completan después de compilar. Main permanece sin cambios. B3/B4 pendientes.
+
+
+Suite completa Linux con el verificador aislado definitivo: **292 pruebas en 150,716 s, 289 correctas y tres exclusivas de Windows omitidas**. Los tres recorridos de navegador normal/--demo/--roster están correctos sobre el mismo código del programa; las correcciones posteriores solo afectan a verificadores y documentación. La nueva prueba reproduce los dos scripts copiados fuera del repositorio.
