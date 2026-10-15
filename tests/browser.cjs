@@ -374,7 +374,9 @@ function printedTextLayout(pdf){
     assert.equal(await page.evaluate(()=>backupReminderHidden(0)),false);
     assert.equal(await page.evaluate(()=>{const backup=state.backup;try{state.backup={...backup,alerts:[{message:'Falla ficticia de respaldo'}]};return backupProblem().includes('Falla ficticia de respaldo');}finally{state.backup=backup;}}),true,'Posponer no oculta errores reales');
 
-    await page.reload();await page.locator('.nav-button').first().waitFor();
+    await page.reload();await page.locator('form[data-endpoint="confirm-rate"]').waitFor();
+    assert.equal(await page.locator('#backup-alerts .backup-probe-reminder').count(),0);
+    await page.getByRole('button',{name:'Confirmar tasa y entrar'}).click();await page.locator('.layout').waitFor();
     assert.equal(await page.locator('#backup-alerts .backup-probe-reminder').count(),0);
     await nav('settings');await settingsTab('Protección y mantenimiento');
     const probeSource=await page.evaluate(async()=>Array.from(new Uint8Array(await(await fetch('/api/backup')).arrayBuffer())));
