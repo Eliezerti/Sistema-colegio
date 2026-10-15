@@ -1,10 +1,10 @@
 # Historial de cambios
 
-## Comprobante · ORIGINAL y COPIA, márgenes y firmas
+## Comprobante · ORIGINAL y COPIA, márgenes y firmas · 1.0.62 verificada
 
 - Media carta individual de 396 × 612 puntos con márgenes cercanos a 5 mm, contenido más arriba y pie junto al contenido. Zona para firma ampliada.
 - Nueva opción carta horizontal de 792 × 612 puntos: dos medias cartas verticales al 100 %, identificadas únicamente ORIGINAL y COPIA, con el mismo R-, importes y referencia. No duplica operaciones ni modifica cálculos, correlativos, datos, esquema o A1–A5. B3 sigue pendiente.
-- Comprobaciones de PDF, cambio repetido de formato sin acumular copias, conservación del pago e impresión nativa de ambas copias. Linux: 299 descubiertas en 167,031 s, 296 correctas y tres nativas omitidas; normal, --demo y --roster PASS. Windows final en ejecución.
+- Comprobaciones de PDF, cambio repetido de formato sin acumular copias, conservación del pago e impresión nativa de ambas copias. Linux: 299 descubiertas en 167,031 s, 296 correctas y tres nativas omitidas; normal, --demo y --roster PASS. Windows: 299 correctas en 577,177 s sin omisiones; impresión nativa y comparación independiente de ambas copias PASS, instalación/actualización/otra cuenta y conservación correctas. Defender antes/después sin detecciones. EXE descargado: 21.248.159 bytes y SHA-256 coincidente. Evidencia en la guía.
 
 ## Comprobante de pago · media carta vertical · 1.0.57 verificada
 
