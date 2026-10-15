@@ -96,7 +96,7 @@ class ReadOnlyCopyTests(unittest.TestCase):
         with self.assertRaises((ValueError,sqlite3.Error)):
             with self.read_server(corrupt):pass
         newer=self.f.path.parent/'nueva.sqlite3';newer.write_bytes(self.source.read_bytes())
-        with sqlite3.connect(newer) as db:db.execute('PRAGMA user_version=999')
+        with closing(sqlite3.connect(newer)) as db,db:db.execute('PRAGMA user_version=999')
         with self.assertRaises(ValueError):
             with self.read_server(newer):pass
 

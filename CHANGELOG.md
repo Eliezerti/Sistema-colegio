@@ -1,6 +1,6 @@
 # Tanda D · en desarrollo
 
-- D7: actualización nativa desde 1.0.67, portabilidad cifrada en otra cuenta Windows, cortes reales durante publicación por niveles y guía de pruebas físicas.
+- D7: consulta cifrada en ventana WebView2 real y cierre explícito de fixtures; actualización nativa desde 1.0.67, portabilidad cifrada en otra cuenta Windows, cortes reales durante publicación por niveles y guía de pruebas físicas.
 
 - D6: morosidad por grado en reporte diario y cierre mensual PDF/CSV con monedas y métodos separados, egresos, saldo, pendiente y anulaciones de bitácora, sin datos personales de alumnos.
 

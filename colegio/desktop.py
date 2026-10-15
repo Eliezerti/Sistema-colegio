@@ -260,11 +260,11 @@ def tray_icon(window,quit_app):
     return icon
 
 
-def launch_window(url,*,host=None,demo=False,storage=None,smoke=False):
+def launch_window(url,*,host=None,demo=False,storage=None,smoke=False,read_only=False):
     import webview
     from webview.menu import Menu,MenuAction
     webview.settings['ALLOW_DOWNLOADS']=True
-    window=webview.create_window(('PRUEBAS · ' if demo else '')+TITLE,url,width=1280,height=820,min_size=(860,600),hidden=smoke)
+    window=webview.create_window(('SOLO LECTURA · ' if read_only else 'PRUEBAS · ' if demo else '')+TITLE,url,width=1280,height=820,min_size=(860,600),hidden=smoke)
     force_close=threading.Event();tray=None
     def quit_app():
         if force_close.is_set():return
@@ -283,7 +283,7 @@ def launch_window(url,*,host=None,demo=False,storage=None,smoke=False):
             try:
                 # Exercise the real Windows renderer, bundled JS and image.
                 for _ in range(100):
-                    ready=window.evaluate_js("Boolean(document.querySelector('form') && document.querySelector('.brand img,.brand .school-placeholder') && typeof api==='function')")
+                    ready=window.evaluate_js("Boolean(document.querySelector('.layout') && document.querySelector('#readonly-banner') && state?.read_only && state?.user.role==='reader')" if read_only else "Boolean(document.querySelector('form') && document.querySelector('.brand img,.brand .school-placeholder') && typeof api==='function')")
                     if ready:break
                     time.sleep(.1)
                 if not ready:raise RuntimeError('La interfaz de escritorio no cargó el formulario, logo y JavaScript.')
@@ -300,7 +300,7 @@ def launch_window(url,*,host=None,demo=False,storage=None,smoke=False):
                     if not host.thread.is_alive():raise RuntimeError('El servidor se detuvo al ocultar la ventana.')
                 if not demo:
                     from .desktop_checks import renderer
-                    renderer(window, host.directory)
+                    renderer(window, Path(storage).parent if read_only else host.directory)
                 smoke_result.append(True)
             except Exception:logging.exception('Windows desktop smoke failed')
             finally:force_close.set();window.destroy()
@@ -310,7 +310,7 @@ def launch_window(url,*,host=None,demo=False,storage=None,smoke=False):
     smoke_result=[]
     try:
         menu=[Menu('Colegio',[MenuAction('Salir y cerrar Aula',quit_app)])]
-        webview.start(monitor,gui='edgechromium',private_mode=demo or smoke,storage_path=str(storage) if storage else None,menu=menu)
+        webview.start(monitor,gui='edgechromium',private_mode=demo or smoke or read_only,storage_path=str(storage) if storage else None,menu=menu)
     finally:
         force_close.set()
         if tray:tray.stop()
@@ -355,14 +355,42 @@ def self_test(demo=False):
         if demo and disposable.exists():raise RuntimeError('No se eliminaron los datos de prueba al cerrar la ventana.')
 
 
+def self_test_copy():
+    from .db import initialize
+    from .storage import consistent_backup
+    from .read_only import open_copy
+    from .backup_keys import prepare,confirm
+    from .backup_export import write_encrypted
+    setup_logging(Path(tempfile.gettempdir())/'AulaColegio-Compilacion')
+    with tempfile.TemporaryDirectory(prefix='aula-windows-copy-smoke-') as temp:
+        directory=Path(temp);source=directory/'origen.sqlite3';initialize(source)
+        snapshot=directory/'snapshot.sqlite3';consistent_backup(source,snapshot)
+        keys=directory/'keys';password='FICTICIO-consulta-nativa-2026'
+        pending,_=prepare(keys,password);confirm(keys,pending)
+        cipher=directory/'copia.aulabak';write_encrypted(snapshot,cipher,keys)
+        original=cipher.read_bytes()
+        with open_copy(cipher,password) as server:
+            disposable=Path(server.db_path).parent
+            thread=threading.Thread(target=server.serve_forever);thread.start()
+            try:
+                launch_window(f'http://127.0.0.1:{server.server_port}/?view_token={server.launch}',
+                    storage=disposable/'webview',smoke=True,read_only=True)
+            finally:server.shutdown();thread.join()
+        assert not disposable.exists(),'La consulta nativa dejó el temporal abierto.'
+        assert cipher.read_bytes()==original,'La consulta cambió el archivo de origen.'
+    print('PASS COPIA: WebView2 real, copia cifrada, aviso permanente, perfil Consulta y temporal eliminado.',flush=True)
+
+
 def main():
     parser=argparse.ArgumentParser(description='Aplicación de escritorio del colegio.')
     actions=parser.add_mutually_exclusive_group()
-    for name in ('demo','view-copy','configure','unlock-login','restore','reset-password','data-folder','test-backup','self-test','self-test-demo'):
+    for name in ('demo','view-copy','configure','unlock-login','restore','reset-password','data-folder','test-backup','self-test','self-test-demo','self-test-copy'):
         actions.add_argument('--'+name,action='store_true')
     args=parser.parse_args()
     directory=None
     try:
+        if args.self_test_copy:
+            self_test_copy();return
         if args.self_test or args.self_test_demo:
             self_test(demo=args.self_test_demo);return
         if args.view_copy:
@@ -378,7 +406,7 @@ def main():
             with open_copy(source,*credentials) as server:
                 thread=threading.Thread(target=server.serve_forever);thread.start()
                 try:launch_window(f'http://127.0.0.1:{server.server_port}/?view_token={server.launch}',
-                    storage=Path(server.db_path).parent/'webview')
+                    storage=Path(server.db_path).parent/'webview',read_only=True)
                 finally:server.shutdown();thread.join()
             return
         if args.test_backup:
@@ -417,7 +445,7 @@ def main():
                 launch_window(host.url,host=host,demo=demo,storage=host.directory/'webview')
     except (Exception,SystemExit) as error:
         logging.exception('No se pudo iniciar o completar la operación de escritorio')
-        if args.self_test or args.self_test_demo:raise
+        if args.self_test or args.self_test_demo or args.self_test_copy:raise
         import tkinter as tk
         from tkinter import messagebox
         root=tk.Tk();root.withdraw()

@@ -310,3 +310,5 @@ table:has(.row-actions) th:last-child{text-align:right}
 /* Copy viewer: status remains visible while browsing; writes are blocked by the server. */
 #readonly-banner{position:fixed;top:0;left:0;right:0;z-index:9999;background:#fff1cb;color:#523d08;text-align:center;padding:10px;font-weight:700;font-size:14px}
 body.readonly-copy{padding-top:44px}.readonly-copy .sidebar{top:44px}.readonly-copy .mobile-header{top:44px}
+
+@media print{#readonly-banner{display:none!important}body.readonly-copy{padding-top:0}}

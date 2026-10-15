@@ -53,6 +53,10 @@ try {
     if ($Probe.TargetPath -ne $Executable -or $Probe.Arguments -ne '--test-backup') { throw 'Probar respaldo no abre la función independiente.' }
     Execute-Checked $Executable @('--self-test')
     Execute-Checked $Executable @('--self-test-demo')
+    Execute-Checked $Executable @('--self-test-copy')
+    $CopyCheck = @(Get-Content "$env:TEMP/AulaColegio-Compilacion/logs/*.log" | Where-Object { $_ -like 'PASS COPIA:*' })
+    if ($CopyCheck.Count -lt 1) { throw 'No se verificó la consulta nativa ni su limpieza temporal.' }
+    $CopyCheck | ForEach-Object { Write-Host $_ }
     $NativeChecks = @(Get-Content "$env:TEMP/AulaColegio-Compilacion/logs/*.log" | Where-Object { $_ -like 'PASS B2:*' })
     if (@($NativeChecks | Select-Object -Unique).Count -ne 2) { throw 'No quedaron comprobados selector, Tcl/Tk, PDF e impresión nativa.' }
     $NativeChecks | ForEach-Object { Write-Host $_ }
