@@ -77,3 +77,7 @@ La compilación inicial 1.0.36 también pasó todas las pruebas; se reemplaza po
 **No ejecutado:** espera física de quince minutos, captura/recuperación en la PC del usuario, otra cuenta real de Windows, actualización desde el ejecutable histórico 1.0.35 ni pruebas nativas en un WebView2 antiguo. El reloj monotónico se controla en las pruebas para verificar límites, y el navegador simula ausencia de structuredClone y falla de captura; no se presentan como un ensayo en esos equipos. La prueba del instalador usa el instalador actual para la reinstalación. No se cambia ni ensaya una base real de alumnos.
 
 Commits posteriores: 8f7a2e5 (validación Linux/paquete), d5b7a46 (captura segura y prueba de fallos). La entrega no implementa A4/A5 ni las tandas siguientes.
+
+## Si otros intentos bloquean tu acceso
+
+En la PC del colegio, deja Aula abierto y abre Inicio → Aula → Desbloquear acceso local. Escribe tu usuario de Administración y tu contraseña actual. Copia el código en «Acceso bloqueado por intentos» de la pantalla de ingreso y vuelve a escribir tu contraseña. El código dura dos minutos, se usa una sola vez y no cambia tu contraseña. La emisión y el ingreso quedan en la bitácora. Si olvidaste la contraseña, utiliza Recuperar clave del administrador.

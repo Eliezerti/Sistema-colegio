@@ -404,6 +404,9 @@ class SchoolServer(ThreadingHTTPServer):
         self.protection = ProtectionMonitor(Path(db_path).parent)
         self.sessions = Sessions()
         self.login_limiter = LoginLimiter()
+        from .local_login import begin_instance
+        self.login_instance = begin_instance(Path(db_path).parent)
+        self.local_login_check = threading.BoundedSemaphore(1)
         # Tokens from older versions or another process have no trusted monotonic
         # lifetime. Authentication state is disposable; financial records are untouched.
         with closing(connect(db_path)) as auth_db, auth_db:
@@ -641,12 +644,17 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     username = required(data, 'username', 80).strip().lower()
                     origin = self.client_address[0]
-                    wait = self.server.login_limiter.wait(origin, username)
+                    from .local_login import consume
+                    with self.server.login_limiter.lock:
+                        local_unlock = consume(Path(self.server.db_path).parent, self.server.login_instance,
+                                               username, data.get('local_unlock_code'))
+                    wait = 0 if local_unlock else self.server.login_limiter.wait(origin, username)
                     if wait:
                         self.respond(429, {'error': f'Demasiados intentos para esta cuenta. Espera {wait} segundos.',
                                            'retry_after': wait}, extra={'Retry-After': str(wait)})
                         return
-                    if not self.server.login_limiter.checks.acquire(blocking=False):
+                    checks = self.server.local_login_check if local_unlock else self.server.login_limiter.checks
+                    if not checks.acquire(blocking=False):
                         self.respond(429, {'error': 'Se están comprobando otros accesos. Intenta nuevamente en un segundo.',
                                            'retry_after': 1}, extra={'Retry-After': '1'})
                         return
@@ -655,12 +663,17 @@ class Handler(BaseHTTPRequestHandler):
                         password = data.get('password', '')
                         valid = isinstance(password, str) and len(password) <= 256 and found and check_password(password, found['password'])
                     finally:
-                        self.server.login_limiter.checks.release()
+                        checks.release()
                     if not valid:
                         self.server.login_limiter.failure(origin, username)
                         self.respond(401, {'error': 'Usuario o contraseña incorrectos.'})
                         return
                     user_id = found['id']
+                    if local_unlock:
+                        if found['role'] != 'admin':
+                            raise PermissionError('El código local corresponde a Administración.')
+                        require_audit(db)
+                        audit(db, user_id, 'local_login_unlocked', {'username': username, 'source': 'Windows local'})
                     self.server.login_limiter.success(origin, username)
                 token, csrf = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
                 minutes = idle_minutes(db)

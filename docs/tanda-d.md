@@ -11,3 +11,11 @@ Diseño aplicado: lista explícita de manuales del colegio; internos conservados
 Línea base local: unittest 292 pruebas en 163,338 s, 289 correctas y tres exclusivas de Windows omitidas. Navegadores normal, demo y roster correctos. Restricción inicial de sockets resuelta mediante ejecución autorizada. cryptography 50.0.0 instalado.
 
 Pruebas D1: 15 pruebas en 5,335 s, 14 correctas y mutex exclusivo de Windows omitido. Incluyen API real, conservación de egresos históricos y totales de caja/reporte, privacidad por perfil, rechazo de red y protección contra abrir datos vacíos. Validación final de toda la tanda pendiente.
+
+## D2 · desbloqueo local protegido
+
+Se conserva íntegro el limitador monotónico: cinco fallos, espera progresiva hasta 60 segundos, aislamiento por usuario y dos comprobaciones simultáneas. Hallazgo en server.py:632–640 de la versión previa: la espera se aplicaba antes de comprobar una contraseña correcta. No se permite saltarla desde HTTP sin una prueba local.
+
+Inicio de Windows → Desbloquear acceso local pide usuario y contraseña actuales de Administración. Emite un código aleatorio de 128 bits, válido dos minutos y una sola vez, ligado a la ejecución actual de Aula. No modifica la contraseña. El formulario de login recibe el código en un campo secreto; sigue exigiendo la contraseña correcta. La recuperación tiene una plaza propia para que un ataque no ocupe todas las comprobaciones. Emisión y uso quedan en bitácora sin guardar código ni contraseña. Reiniciar invalida los códigos. El respaldo de SQLite no contiene los archivos temporales de acceso.
+
+Alternativa para el ZIP: python -m colegio.local_login --data-dir CARPETA --username USUARIO. La contraseña se pide sin mostrarla ni pasarla en argumentos. Pruebas: cuatro correctas en 2,656 s, incluyendo ataque, otro usuario, credencial incorrecta, código ajeno, una sola utilización, saturación, reloj monotónico, reinicio y bitácora válida.

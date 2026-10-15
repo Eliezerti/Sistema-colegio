@@ -345,7 +345,7 @@ def self_test(demo=False):
 def main():
     parser=argparse.ArgumentParser(description='Aplicación de escritorio del colegio.')
     actions=parser.add_mutually_exclusive_group()
-    for name in ('demo','configure','restore','reset-password','data-folder','test-backup','self-test','self-test-demo'):
+    for name in ('demo','configure','unlock-login','restore','reset-password','data-folder','test-backup','self-test','self-test-demo'):
         actions.add_argument('--'+name,action='store_true')
     args=parser.parse_args()
     directory=None
@@ -360,6 +360,20 @@ def main():
             current=read_desktop_config(directory)
             if current and current['mode']=='client':raise ValueError('Esta computadora se conecta al colegio. La recuperación se hace en la PC principal.')
             recovery(directory,'restore' if args.restore else 'password');return
+        if args.unlock_login:
+            from tkinter import Tk, simpledialog, messagebox
+            from .local_login import issue
+            root=Tk();root.withdraw()
+            try:
+                username=simpledialog.askstring('Desbloquear acceso local','Usuario de Administración:',parent=root)
+                if not username:return
+                password=simpledialog.askstring('Desbloquear acceso local','Contraseña actual:',show='*',parent=root)
+                if password is None:return
+                code=issue(directory,username,password)
+                simpledialog.askstring('Código válido por dos minutos',
+                    'Copia este código en el login de Aula. Se usa una sola vez:',initialvalue=code,parent=root)
+            finally:root.destroy()
+            return
         if args.configure:configure(directory);return
         demo=args.demo
         with WindowsInstance(demo) as first:

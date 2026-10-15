@@ -55,3 +55,45 @@ class CleanupTests(unittest.TestCase):
         self.assertNotIn('retiro-personal-inventario',recipe)
         self.assertTrue((root/'docs/retiro-personal-inventario.md').is_file())
         self.assertIn('retiro-personal-inventario.html',(root/'packaging/retired-files.iss').read_text())
+
+class LocalLoginTests(unittest.TestCase):
+    def test_admin_recovers_during_attack_without_weakening_throttle_or_other_user(self):
+        from tests.test_system import SystemTests
+        from colegio.local_login import issue
+        f=SystemTests();f.setUp()
+        try:
+            f.request('users',dict(name='Caja',username='caja',password='Otra-clave-ficticia',role='cashier'))
+            for _ in range(5):f.request('login',dict(username='admin',password='incorrecta'),status=401)
+            f.request('login',dict(username='admin',password='Una-clave-segura'),status=429)
+            f.request('login',dict(username='caja',password='Otra-clave-ficticia'))
+            with self.assertRaises(ValueError):issue(f.path.parent,'caja','Otra-clave-ficticia')
+            with self.assertRaises(ValueError):issue(f.path.parent,'admin','incorrecta')
+            code=issue(f.path.parent,'admin','Una-clave-segura')
+            f.request('login',dict(username='admin',password='Una-clave-segura',local_unlock_code='0'*32),status=429)
+            # Ordinary slots can be saturated without occupying the local recovery slot.
+            f.server.login_limiter.checks.acquire();f.server.login_limiter.checks.acquire()
+            try:f.request('login',dict(username='admin',password='Una-clave-segura',local_unlock_code=code))
+            finally:f.server.login_limiter.checks.release();f.server.login_limiter.checks.release()
+            f.csrf=f.request('session')['user']['csrf']
+            f.request('confirm-rate',dict(rate_date=local_today().isoformat(),rate='100'))
+            with closing(connect(f.path)) as db:
+                self.assertEqual(db.execute("SELECT COUNT(*) FROM audit WHERE action='local_login_unlocked'").fetchone()[0],1)
+                from colegio.audit_chain import local_status
+                self.assertTrue(local_status(db)['ok'])
+            for _ in range(5):f.request('login',dict(username='admin',password='incorrecta'),status=401)
+            f.request('login',dict(username='admin',password='Una-clave-segura',local_unlock_code=code),status=429)
+        finally:f.tearDown()
+
+    def test_code_expiration_is_monotonic_and_restart_invalidates_grant(self):
+        from tests.test_system import SystemTests
+        from colegio.local_login import issue,consume,begin_instance
+        f=SystemTests();f.setUp()
+        try:
+            with patch('colegio.local_login.time.monotonic',return_value=100):
+                code=issue(f.path.parent,'admin','Una-clave-segura')
+            with patch('time.time',return_value=0),patch('colegio.local_login.time.monotonic',return_value=221):
+                self.assertFalse(consume(f.path.parent,f.server.login_instance,'admin',code))
+            code=issue(f.path.parent,'admin','Una-clave-segura')
+            identifier=begin_instance(f.path.parent)
+            self.assertFalse(consume(f.path.parent,identifier,'admin',code))
+        finally:f.tearDown()

@@ -68,6 +68,7 @@ Name: "{group}\Aula - Pruebas"; Filename: "{app}\Aula.exe"; Parameters: "--demo"
 Name: "{group}\Configurar Aula"; Filename: "{app}\Aula.exe"; Parameters: "--configure"
 Name: "{group}\Probar respaldo"; Filename: "{app}\Aula.exe"; Parameters: "--test-backup"
 Name: "{group}\Restaurar respaldo"; Filename: "{app}\Aula.exe"; Parameters: "--restore"
+Name: "{group}\Desbloquear acceso local"; Filename: "{app}\Aula.exe"; Parameters: "--unlock-login"
 Name: "{group}\Recuperar clave del administrador"; Filename: "{app}\Aula.exe"; Parameters: "--reset-password"
 Name: "{group}\Abrir carpeta de datos"; Filename: "{app}\Aula.exe"; Parameters: "--data-folder"
 Name: "{userdesktop}\Aula - Administración escolar"; Filename: "{app}\Aula.exe"; Tasks: desktopicon
