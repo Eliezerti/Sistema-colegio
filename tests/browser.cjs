@@ -152,7 +152,8 @@ function printedTextLayout(pdf){
     await click('backup-cloud-declare');
     await page.locator('dialog[open] input[name="reviewed"]').check();await submit();
     assert.equal(await page.locator('#backup-alerts .backup-persistent').count(),0);
-    assert.match(await page.locator('#backup-alerts .backup-cloud-status').innerText(),/Aula no comprueba la subida/);
+    assert.equal(await page.locator('#backup-alerts .backup-cloud-status').count(),0);
+    assert.match(await page.locator('#protection-status').innerText(),/Aula no comprueba si los archivos llegaron a la nube/);
     await page.evaluate(()=>window.scrollTo(0,0));
     await page.screenshot({path:scratch('aula-settings-maintenance-tabs.png')});
     await settingsTab('Identidad y calendario');
@@ -365,12 +366,30 @@ function printedTextLayout(pdf){
     await page.locator('dialog[open] [data-action="close"]').first().click();
     await click('reopen-cash');await fill('reason','Revisión de prueba');await submit();
     await nav('settings');await settingsTab('Protección y mantenimiento');assert.match(await page.locator('.data-path').innerText(),/colegio.sqlite3/);
+    // Posponer solo el recordatorio; los errores reales conservan su aviso.
+    await page.evaluate(()=>{localStorage.removeItem('aula-backup-reminder-snooze');updateBackupWarnings();});
+    await page.locator('#backup-alerts [data-action="snooze-backup-reminder"]').click();
+    assert.equal(await page.locator('#backup-alerts .backup-probe-reminder').count(),0);
+    assert.equal(await page.evaluate(()=>backupReminderHidden(Date.now()+8*86400000)),false);
+    assert.equal(await page.evaluate(()=>backupReminderHidden(0)),false);
+    assert.equal(await page.evaluate(()=>{const backup=state.backup;try{state.backup={...backup,alerts:[{message:'Falla ficticia de respaldo'}]};return backupProblem().includes('Falla ficticia de respaldo');}finally{state.backup=backup;}}),true,'Posponer no oculta errores reales');
+
+    await page.reload();await page.locator('.nav-button').first().waitFor();
+    assert.equal(await page.locator('#backup-alerts .backup-probe-reminder').count(),0);
+    await nav('settings');await settingsTab('Protección y mantenimiento');
     const probeSource=await page.evaluate(async()=>Array.from(new Uint8Array(await(await fetch('/api/backup')).arrayBuffer())));
     const probeBefore=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());
     await click('probe-backup');await page.locator('#probe-backup-file').setInputFiles({name:'respaldo.aulabak',mimeType:'application/octet-stream',buffer:Buffer.from(probeSource)});
     await page.getByLabel('Contraseña o clave de la copia seleccionada').fill('FICTICIO-respaldo-navegador-2026');
     await click('run-probe-backup');await page.getByRole('heading',{name:'Respaldo comprobado',exact:true}).waitFor();
     assert.match(await page.locator('#probe-result').innerText(),/No se modificaron ni restauraron datos/);
+    assert.equal(await page.evaluate(()=>state.backup.external_probe_reminder.due),true,'Una copia no declarada externa no reinicia el plazo');
+    await page.locator('#probe-external').check();
+    await page.evaluate(()=>localStorage.removeItem('aula-backup-reminder-snooze'));
+    await click('run-probe-backup');await page.getByText('Prueba externa registrada.',{exact:false}).waitFor();
+    assert.equal(await page.locator('#backup-alerts .backup-probe-reminder').count(),0);
+    assert.equal(await page.evaluate(()=>state.backup.external_probe_reminder.due),false);
+
     await page.screenshot({path:scratch('aula-probar-respaldo.png'),fullPage:true});
     const probeAfter=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());
     assert.deepEqual(probeBefore.payments,probeAfter.payments);assert.deepEqual(probeBefore.charges,probeAfter.charges);

@@ -312,3 +312,22 @@ table:has(.row-actions) th:last-child{text-align:right}
 body.readonly-copy{padding-top:44px}.readonly-copy .sidebar{top:44px}.readonly-copy .mobile-header{top:44px}
 
 @media print{#readonly-banner{display:none!important}body.readonly-copy{padding-top:0}}
+
+/* Más aire entre bloques sin cambiar el tamaño de papel ni la escala del diálogo. */
+.receipt-half-letter .document-header{margin-bottom:18px;padding-bottom:15px}
+.receipt-half-letter .receipt-parties{margin-bottom:18px}
+.receipt-half-letter .table-wrap{margin-bottom:18px}
+@media print{
+ .payment-receipt.receipt-half-letter{padding:14pt 14pt}
+ .receipt-half-letter .document-header{margin-bottom:10pt;padding-bottom:8pt}
+ .receipt-half-letter .receipt-parties{margin-bottom:10pt}
+ .receipt-half-letter .receipt-charges>h3{margin-bottom:5pt}
+ .receipt-half-letter .table-wrap{margin-bottom:10pt}
+ .receipt-half-letter th,.receipt-half-letter td{padding:5pt 6pt}
+ .receipt-half-letter .receipt-method p{margin:4pt 0 8pt}
+ .receipt-half-letter .receipt-amount{padding:8pt 8pt}
+ .receipt-half-letter .receipt-balance{padding:7pt;margin:9pt 0 4pt}
+ .receipt-half-letter .receipt-balance-note{margin:4pt 0 7pt!important}
+ .receipt-half-letter .signature-row{margin-top:34pt}
+ .receipt-half-letter .receipt-bottom{margin-top:8pt;padding-top:6pt}
+}

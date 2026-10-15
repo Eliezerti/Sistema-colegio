@@ -128,7 +128,7 @@ def renderer(window, directory):
             core = form.browser.webview.CoreWebView2
             settings = core.Environment.CreatePrintSettings()
             settings.PageWidth, settings.PageHeight = width, height
-            settings.ScaleFactor = 1.0
+            # Escala predeterminada de WebView2; no se impone al usuario.
             settings.MarginTop = settings.MarginBottom = 0
             settings.MarginLeft = settings.MarginRight = 0
             settings.ShouldPrintBackgrounds = True
@@ -147,7 +147,7 @@ def renderer(window, directory):
             raise RuntimeError('WebView2 cambió las dimensiones físicas del comprobante.')
         if len(re.findall(rb'/Type\s*/Page\b', printed)) != 1:
             raise RuntimeError('WebView2 añadió páginas al comprobante.')
-        print(f'PASS RECIBO: WebView2 {name}, {width * 72:g} x {height * 72:g} puntos, una página, escala 100 %.')
+        print(f'PASS RECIBO: WebView2 {name}, {width * 72:g} x {height * 72:g} puntos, una página, escala predeterminada.')
     window.evaluate_js("setReceiptPaper('half-letter')")
     if os.environ.get('AULA_RECEIPT_REPORT_DIR'):
         evidence = Path(os.environ['AULA_RECEIPT_REPORT_DIR'])
