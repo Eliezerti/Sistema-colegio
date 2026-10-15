@@ -78,7 +78,7 @@ def restore(backup,directory,*,preview_hash=None,confirmation=None,emergency_flo
         floors=dict(review['floors'])
         if review['requires_floor_review']:
             if not isinstance(emergency_floors,dict) or set(emergency_floors)!=set(SEQUENCES):
-                raise ReviewRequired('No se pudieron comprobar los últimos correlativos de la base dañada. Revisa los seis números antes de recuperar.')
+                raise ReviewRequired('No se pudieron comprobar los últimos correlativos de la base dañada. Revisa los cinco números antes de recuperar.')
             for table in SEQUENCES:
                 value=emergency_floors[table]
                 if isinstance(value,bool) or not isinstance(value,int) or not floors[table]<=value<2147483647:
