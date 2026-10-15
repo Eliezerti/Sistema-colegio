@@ -171,6 +171,11 @@ def daily_report(state, payment_people=None):
         debtor_lines.append([str(n), s['name']+'\n'+s['student_code']+('\nArchivado' if s.get('archived') else ''),
             s['grade_name'], s['guardian_name']+'\n'+(s['guardian_phone'] or 'Sin teléfono'),
             amount(s['overdue']), f'{days} días'])
+    by_grade={}
+    for student in debtors:
+        grade=student['grade_name']
+        item=by_grade.setdefault(grade,{'students':0,'overdue':0})
+        item['students']+=1;item['overdue']+=student['overdue']
     now = datetime.now(timezone(timedelta(hours=-4)))
     day_label = datetime.strptime(today, '%Y-%m-%d').strftime('%d/%m/%Y')
     return {'title': 'Reporte diario de cobros y morosidad', 'school': state['settings'],
@@ -179,6 +184,7 @@ def daily_report(state, payment_people=None):
         'count_label': f"{len(valid)} {'cobro válido' if len(valid) == 1 else 'cobros válidos'} · "
                        f"{len(debtors)} {'alumno' if len(debtors) == 1 else 'alumnos'} con deuda vencida",
         'summaries': summaries, 'payment_count': len(valid), 'debtor_count': len(debtors),
+        'arrears_by_grade':[dict(grade=g,**by_grade[g]) for g in sorted(by_grade)],
         'received_usd': collected_usd, 'received_ves': collected_ves, 'income_usd': income, 'overdue_usd': overdue,
         'sections': [
             {'title': 'Cobros del día', 'headings': ['N.º', 'Recibo', 'Alumno / grado', 'Representante',
@@ -188,7 +194,9 @@ def daily_report(state, payment_people=None):
             {'title': 'Morosidad actual', 'headings': ['N.º', 'Alumno / código', 'Grado',
                 'Representante / contacto', 'Vencido USD', 'Mayor atraso'],
              'widths': [26, 180, 115, 240, 105, 92], 'lines': debtor_lines,
-             'empty_message': 'No hay alumnos con deuda vencida.'}],
+             'empty_message': 'No hay alumnos con deuda vencida.'},
+            {'title':'Morosidad por grado','headings':['Grado','Alumnos con deuda','Vencido USD'],
+             'widths':[400,180,178],'lines':[[g,str(by_grade[g]['students']),amount(by_grade[g]['overdue'])] for g in sorted(by_grade)]}],
         'note': 'Los totales incluyen cobros válidos; las anulaciones se muestran y se excluyen de los totales. '
                 'Cada pago conserva su conversión original. La morosidad incluye cargos vencidos pendientes '
                 'al generar el reporte, también de fichas archivadas.'}

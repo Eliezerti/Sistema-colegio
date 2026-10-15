@@ -32,7 +32,7 @@ class RestoreWindowsUITests(unittest.TestCase):
                 root.after(300,accept);root.after(5000,timeout)
                 self.assertTrue(restoration_review_dialog(root,review))
             finally:root.destroy()
-            with patch('sys.argv',['Aula','--test-backup']),patch('tkinter.filedialog.askopenfilename',return_value=str(source)),patch('tkinter.messagebox.showinfo') as shown,patch('colegio.desktop.data_directory',side_effect=AssertionError('No debe abrir la base activa')):
+            with patch('sys.argv',['Aula','--test-backup']),patch('tkinter.filedialog.askopenfilename',return_value=str(source)),patch('tkinter.messagebox.showinfo') as shown,patch('tkinter.messagebox.askyesno',return_value=False),patch('colegio.desktop.data_directory',side_effect=AssertionError('No debe abrir la base activa')):
                 main()
                 self.assertIn('Integridad y referencias: correctas',shown.call_args.args[1])
                 self.assertIn('R-000001',shown.call_args.args[1])

@@ -10,7 +10,7 @@ ADMIN = ('admin',)
 WRITERS = ('admin', 'cashier')
 
 GET_ALL = ('session', 'session-status', 'clock-status', 'rate-gate', 'state', 'cash-preview',
-           'backup-status', 'daily-report', 'daily-report.pdf', 'health', 'export')
+           'backup-status', 'daily-report', 'daily-report.pdf', 'monthly-report','monthly-report.pdf','monthly-report.csv', 'health', 'export')
 GET_ADMIN = ('audit', 'audit.csv', 'audit.pdf', 'import-template', 'import-guide',
              'backup', 'maintenance-review')
 POST_ADMIN = ('settings', 'backup-directory', 'grades', 'guardians', 'students',

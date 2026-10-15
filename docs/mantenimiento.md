@@ -163,3 +163,7 @@ Todas las copias nuevas del segundo destino siguen cifradas. Aula conserva las �
 Antes de confirmar un pase de año revisado se crea una copia cifrada permanente del estado de cierre, en backups/cierres-permanentes y también en el segundo destino cuando está configurado. Esta copia no se elimina automáticamente. Si no puede crearse o copiarse al destino configurado, no se confirma el pase. El modo Pruebas no publica cierres ni respaldos reales. Configura el cifrado antes del pase de año.
 
 Cada mes usa Probar respaldo con una copia tomada del USB o de la nube. Marca que seleccionaste una copia externa; Aula registra la comprobación correcta, pero no puede verificar que el navegador tomó el archivo de una nube. Tras más de 35 días aparece un recordatorio que no bloquea el trabajo. Una contraseña errónea o una copia corrupta no lo reinician.
+
+## Cierre mensual
+
+En Reportes elige el mes y descarga PDF mensual o CSV mensual. Revisa cobros y egresos por moneda y método, saldo previo y saldo al cierre, pendiente por grado y anulaciones hechas en ese mes. El saldo suma operaciones válidas: no sustituye el conteo físico de efectivo. El pendiente se calcula con los saldos actuales de los cargos que vencen hasta el cierre; no es una foto histórica congelada. Las anulaciones se ubican por la fecha registrada en la bitácora. El informe mensual no incluye datos personales de alumnos. El reporte diario mantiene el detalle y añade un resumen de morosidad por grado.

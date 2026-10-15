@@ -159,9 +159,10 @@ def probe_dialog():
         credentials=backup_credentials_dialog(root,file)
         if credentials is False:return
         s=probe_backup(file,*credentials);last=s['last_payment']
-        database=data_directory()/'colegio.sqlite3'
-        if database.is_file() and messagebox.askyesno('Copia externa',
-                '¿Seleccionaste una copia del segundo destino, USB o nube? Esto registra la prueba mensual.',parent=root):
+        if messagebox.askyesno('Copia externa',
+                '¿Deseas registrar esta comprobación como prueba de una copia externa en la base local de esta PC?',parent=root):
+            database=data_directory()/'colegio.sqlite3'
+            if not database.is_file():raise ValueError('La copia está verificada; esta PC no tiene base local donde registrar el recordatorio.')
             from contextlib import closing
             from .db import connect,audit
             from .audit_chain import require

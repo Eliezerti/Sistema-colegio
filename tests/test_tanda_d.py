@@ -164,3 +164,37 @@ class BackupLevelsTests(unittest.TestCase):
             self.assertFalse(reminder(path,now=now)['due'])
             self.assertTrue(reminder(path,now=now+timedelta(days=36))['due'])
             self.assertTrue(reminder(path,now=now-timedelta(days=1))['due'])
+
+class MonthlyReportsTests(unittest.TestCase):
+    def test_monthly_money_voids_grade_totals_csv_pdf_and_existing_reports_unchanged(self):
+        from tests.test_system import SystemTests
+        from colegio.monthly_report import report,csv_bytes,pdf_bytes
+        from colegio.server import snapshot
+        f=SystemTests();f.setUp()
+        try:
+            f.request('payments',f.payment(amount='10',key='monthly-usd',paid_on=local_today().isoformat()))
+            second=f.request('payments',f.payment(amount='20',key='monthly-void',paid_on=local_today().isoformat()))['id']
+            f.request('payments',f.payment(amount='500',key='monthly-ves',currency='VES',paid_on=local_today().isoformat()))
+            f.request('void-payment',dict(id=second,reason='=Motivo ficticio de anulación'))
+            f.request('expenses',dict(concept='Gasto de prueba',category='Servicios',amount='3',currency='USD',
+                spent_on=local_today().isoformat(),method='Efectivo'))
+            before=f.request('state');cash=f.request('cash-preview');daily=f.request('daily-report')
+            data=f.request('monthly-report?month='+local_today().strftime('%Y-%m'))
+            self.assertEqual(data['income_usd'],1500)
+            self.assertEqual(data['expenses_usd'],300)
+            self.assertEqual(data['net_usd'],1200)
+            self.assertEqual(sum(r['overdue'] for r in daily['arrears_by_grade']),before['summary']['overdue'])
+            self.assertEqual([r['number'] for r in data['annulments']],['R-'+str(second).zfill(6)])
+            self.assertEqual(sum(r['income_usd'] for r in data['balances']),1500)
+            encoded=csv_bytes(data)
+            self.assertTrue(encoded.startswith(b'\xef\xbb\xbf'))
+            self.assertIn(b"'=Motivo",encoded)
+            for private in ('Alumno Uno','AL-000001','V-123','04120000000'):
+                self.assertNotIn(private.encode(),encoded)
+            self.assertTrue(pdf_bytes(data).startswith(b'%PDF'))
+            self.assertTrue(f.request('monthly-report.pdf').startswith(b'%PDF'))
+            self.assertTrue(f.request('monthly-report.csv').startswith(b'\xef\xbb\xbf'))
+            self.assertEqual(cash,f.request('cash-preview'))
+            self.assertEqual(before['summary'],f.request('state')['summary'])
+            self.assertEqual(daily['summaries'],f.request('daily-report')['summaries'])
+        finally:f.tearDown()

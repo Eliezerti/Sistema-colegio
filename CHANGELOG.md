@@ -1,5 +1,7 @@
 # Tanda D · en desarrollo
 
+- D6: morosidad por grado en reporte diario y cierre mensual PDF/CSV con monedas y métodos separados, egresos, saldo, pendiente y anulaciones de bitácora, sin datos personales de alumnos.
+
 - D5: abrir respaldos cifrados o antiguos en consulta aislada; SQLite inmutable, escrituras bloqueadas en servidor, sesión en memoria y temporal eliminado al cerrar.
 
 - D4: niveles cifrados de 60 copias diarias y 24 mensuales, cierres escolares permanentes y recordatorio de prueba externa después de 35 días.

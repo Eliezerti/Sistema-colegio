@@ -935,6 +935,15 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(200,cash_summary(db,parse_qs(url.query).get('date',[local_today().isoformat()])[0]))
             elif endpoint=='backup-status':
                 self.respond(200,self.server.backup_status())
+            elif endpoint in ('monthly-report','monthly-report.pdf','monthly-report.csv'):
+                from .monthly_report import report as monthly_report, pdf_bytes as monthly_pdf, csv_bytes as monthly_csv
+                document=monthly_report(db,snapshot(db,user),parse_qs(url.query).get('month',[local_today().strftime('%Y-%m')])[0])
+                if endpoint=='monthly-report':self.respond(200,document)
+                else:
+                    pdf=endpoint.endswith('.pdf')
+                    self.respond(200,monthly_pdf(document) if pdf else monthly_csv(document),
+                        'application/pdf' if pdf else 'text/csv; charset=utf-8',
+                        {'Content-Disposition':f'attachment; filename="cierre-mensual-{document["period"]}.{"pdf" if pdf else "csv"}"'})
             elif endpoint in ('daily-report', 'daily-report.pdf'):
                 report_state = snapshot(db, user)
                 people = {}
