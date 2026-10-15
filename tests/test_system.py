@@ -5,6 +5,7 @@ import json
 import base64
 import csv
 import io
+import re
 import subprocess
 import sys
 import sqlite3
@@ -446,7 +447,9 @@ class SystemTests(unittest.TestCase):
             pdf = self.request(f'{kind}/{target}.pdf')
             self.assertIn(b'/Subtype /Image', pdf)
             self.assertIn(b'/Predictor 15', pdf)
-            self.assertIn(b'ALEJANDRO VON HUMBOLDT, C.A.', pdf)
+            printed = b' '.join(re.findall(rb'\(([^()]*)\) Tj', pdf))
+            self.assertIn(b'ALEJANDRO VON HUMBOLDT, C.A.', printed,
+                          'La razón social completa se conserva aunque cambie el salto de línea')
             self.assertIn(b'RIF: J-50835934-8', pdf)
             self.assertIn(b'local Nro. 16-46', pdf)
         self.assertIn(b'Direcci', self.request(f'receipt/{second}.pdf'))
@@ -498,8 +501,12 @@ class SystemTests(unittest.TestCase):
         before=self.request(f'receipt/{payment}')
         small=self.request(f'receipt/{payment}.pdf?paper=half-letter')
         full=self.request(f'receipt/{payment}.pdf?paper=a4')
-        self.assertTrue(b'/MediaBox [0 0 612 396]' in small,'Debe ser media carta real')
+        self.assertTrue(b'/MediaBox [0 0 396 612]' in small,'Debe ser media carta vertical real')
         self.assertTrue(b'/MediaBox [0 0 595 842]' in full,'Debe conservar A4 como opción')
+        pair=self.request(f'receipt/{payment}.pdf?paper=letter-pair')
+        self.assertIn(b'/MediaBox [0 0 792 612]',pair)
+        self.assertIn(b'/Count 1 ',pair)
+        self.assertEqual(pair.count(f'(R-{payment:06d})'.encode()),2)
         self.assertEqual(self.request(f'receipt/{payment}'),before)
         self.request(f'receipt/{payment}.pdf?paper=invalid',status=400)
 

@@ -3,6 +3,21 @@
 const {chromium} = require('playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const zlib = require('node:zlib');
+
+function printedTextLayout(pdf){
+  const layout=[];
+  for(const match of pdf.toString('latin1').matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)){
+    let stream;try{stream=zlib.inflateSync(Buffer.from(match[1],'latin1')).toString('latin1');}catch{continue;}
+    const text=stream.match(/\bBT\b[\s\S]*?\bET\b/g);
+    if(!text)continue;
+    const transforms=(stream.match(/(?:-?\d+(?:\.\d+)?\s+){6}cm/g)||[])
+      .filter(value=>!/^1 0 0 -1 0 \d+ cm$/.test(value));
+    layout.push({text,transforms});
+  }
+  assert.ok(layout.length,'Printed PDF must contain readable text drawing operators');
+  return layout;
+}
 
 (async()=>{
   const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||(fs.existsSync('/usr/bin/chromium')?'/usr/bin/chromium':undefined),headless:true,args:['--no-sandbox']});
@@ -205,7 +220,8 @@ const fs = require('node:fs');
     assert.equal(await page.locator('#receipt-paper').inputValue(),'half-letter');
     assert.equal(await page.locator('#print-area .receipt-half-letter').count(),1);
     const halfDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await halfDownload).saveAs('/tmp/aula-half-letter.pdf');
-    assert.ok(fs.readFileSync('/tmp/aula-half-letter.pdf').includes(Buffer.from('/MediaBox [0 0 612 396]')));
+    assert.ok(fs.readFileSync('/tmp/aula-half-letter.pdf').includes(Buffer.from('/MediaBox [0 0 396 612]')));
+    assert.ok(fs.readFileSync('/tmp/aula-half-letter.pdf').includes(Buffer.from('/Count 1 ')));
     assert.equal(fs.readFileSync('/tmp/aula-half-letter.pdf').includes(Buffer.from('AL-000001')),false);
 
     await page.locator('#receipt-paper').selectOption('ticket-80');
@@ -215,9 +231,55 @@ const fs = require('node:fs');
     const smallTicketDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await smallTicketDownload).saveAs('/tmp/aula-ticket-58.pdf');
     assert.ok(fs.readFileSync('/tmp/aula-ticket-58.pdf').includes(Buffer.from('/MediaBox [0 0 164.409 ')));
     await page.locator('#receipt-paper').selectOption('half-letter');
+    const printViewport=page.viewportSize();
+    await page.setViewportSize({width:528,height:816});
     await page.emulateMedia({media:'print'});
     await page.pdf({path:'/tmp/aula-print-half-letter.pdf',preferCSSPageSize:true,printBackground:true});
+    const halfPrint=fs.readFileSync('/tmp/aula-print-half-letter.pdf').toString('latin1');
+    assert.match(halfPrint,/\/MediaBox\s*\[0 0 396 612\]/);
+    assert.equal((halfPrint.match(/\/Type\s*\/Page\b/g)||[]).length,1);
+    const halfBounds=await page.locator('#print-area .payment-receipt').boundingBox();
+    assert.ok(Math.abs(halfBounds.width-528)<1,'Receipt remains 5.5 inches wide at 100%');
+    assert.ok(halfBounds.height<=816,'Receipt fits in half a letter sheet without clipping');
+    const letterStyle=await page.addStyleTag({content:'@page receipt-half-letter{size:letter;margin:0}'});
+    await page.setViewportSize({width:816,height:1056});
+    await page.pdf({path:'/tmp/aula-print-half-on-letter.pdf',preferCSSPageSize:true,printBackground:true,scale:1});
+    const letterPrint=fs.readFileSync('/tmp/aula-print-half-on-letter.pdf').toString('latin1');
+    assert.match(letterPrint,/\/MediaBox\s*\[0 0 612 792\]/);
+    assert.equal((letterPrint.match(/\/Type\s*\/Page\b/g)||[]).length,1);
+    const letterBounds=await page.locator('#print-area .payment-receipt').boundingBox();
+    assert.deepEqual(letterBounds,halfBounds,'Printed layout must also remain identical across paper widths');
+    assert.deepEqual(printedTextLayout(Buffer.from(letterPrint,'latin1')),printedTextLayout(Buffer.from(halfPrint,'latin1')),
+      'Actual PDF text positions and scale must match on half-letter and letter paper');
+    await letterStyle.evaluate(el=>el.remove());
+    await page.setViewportSize(printViewport);
     await page.emulateMedia({media:'screen'});
+    const frozenReceipt=await page.evaluate(()=>api('receipt/1'));
+    await page.locator('#receipt-paper').selectOption('letter-pair');
+    assert.equal(await page.locator('#print-area .receipt-print-pair>.payment-receipt').count(),2);
+    assert.equal(await page.locator('#print-area .receipt-copy-label').nth(0).innerText(),'ORIGINAL');
+    assert.equal(await page.locator('#print-area .receipt-copy-label').nth(1).innerText(),'COPIA');
+    const pairDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await pairDownload).saveAs('/tmp/aula-letter-pair.pdf');
+    assert.ok(fs.readFileSync('/tmp/aula-letter-pair.pdf').includes(Buffer.from('/MediaBox [0 0 792 612]')));
+    await page.emulateMedia({media:'print'});
+    await page.pdf({path:'/tmp/aula-print-letter-pair.pdf',preferCSSPageSize:true,printBackground:true,scale:1});
+    const pairPrint=fs.readFileSync('/tmp/aula-print-letter-pair.pdf').toString('latin1');
+    assert.match(pairPrint,/\/MediaBox\s*\[0 0 792 612\]/);
+    assert.equal((pairPrint.match(/\/Type\s*\/Page\b/g)||[]).length,1);
+    const copies=page.locator('#print-area .receipt-print-pair>.payment-receipt');
+    const firstCopy=await copies.nth(0).boundingBox(),secondCopy=await copies.nth(1).boundingBox();
+    assert.equal(firstCopy.width,528);assert.equal(secondCopy.width,528);
+    assert.equal(secondCopy.x-firstCopy.x,528);assert.equal(firstCopy.y,secondCopy.y);
+    assert.ok(firstCopy.height<=816&&secondCopy.height<=816);
+    assert.ok(await copies.nth(0).locator('.signature-row').evaluate(el=>parseFloat(getComputedStyle(el).marginTop))>=40,'Space for a handwritten signature');
+    assert.deepEqual(await page.evaluate(()=>api('receipt/1')),frozenReceipt);
+    await page.emulateMedia({media:'screen'});
+    await page.locator('#receipt-paper').selectOption('half-letter');
+    assert.equal(await page.locator('#print-area .receipt-print-pair').count(),0);
+    assert.equal(await page.locator('#print-area .payment-receipt').count(),1);
+    assert.equal(await page.locator('#print-area .receipt-copy-label').count(),0);
+    await page.locator('#receipt-paper').selectOption('letter-pair');
+    assert.equal(await page.locator('#print-area .payment-receipt').count(),2);
     await page.locator('#receipt-paper').selectOption('a4');
     assert.equal(await page.locator('#print-area .receipt-half-letter').count(),0);
     assert.match(await page.getByRole('link',{name:'Descargar PDF'}).getAttribute('href'),/paper=a4/);

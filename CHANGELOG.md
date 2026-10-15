@@ -1,5 +1,19 @@
 # Historial de cambios
 
+## Comprobante · ORIGINAL y COPIA, márgenes y firmas · 1.0.62 verificada
+
+- Media carta individual de 396 × 612 puntos con márgenes cercanos a 5 mm, contenido más arriba y pie junto al contenido. Zona para firma ampliada.
+- Nueva opción carta horizontal de 792 × 612 puntos: dos medias cartas verticales al 100 %, identificadas únicamente ORIGINAL y COPIA, con el mismo R-, importes y referencia. No duplica operaciones ni modifica cálculos, correlativos, datos, esquema o A1–A5. B3 sigue pendiente.
+- Comprobaciones de PDF, cambio repetido de formato sin acumular copias, conservación del pago e impresión nativa de ambas copias. Linux: 299 descubiertas en 167,031 s, 296 correctas y tres nativas omitidas; normal, --demo y --roster PASS. Windows: 299 correctas en 577,177 s sin omisiones; impresión nativa y comparación independiente de ambas copias PASS, instalación/actualización/otra cuenta y conservación correctas. Defender antes/después sin detecciones. EXE descargado: 21.248.159 bytes y SHA-256 coincidente. Evidencia en la guía.
+
+## Comprobante de pago · media carta vertical · 1.0.57 verificada
+
+- Media carta vertical de 13,97 × 21,59 cm, PDF real de 396 × 612 puntos y formato predeterminado también en la descarga directa. Encabezado, espacios y firmas compactados; conserva R-, representante, alumno/grado, conceptos, importes, saldo, método y referencia. Sin código AL- ni cédula escolar.
+- Impresión con ancho físico fijo de 396 puntos; hoja carta al 100 % sin ampliación. Prueba nativa WebView2 ampliada con PDF ficticio de tres conceptos, dimensiones, página única y escala explícita 1,0.
+- Validación final: Linux 297 descubiertas en 170,788 s, 294 correctas y tres nativas omitidas; navegadores normal/--demo/--roster PASS. Windows 297 correctas en 419,073 s sin omisiones; PDFs nativos de una página y equivalencia de posiciones/tamaños al 100 %, instalación/actualización/otra cuenta y conservación completas. Defender antes/después sin detecciones. Instalador 1.0.57 de 21.248.716 bytes descargado y SHA-256 coincidente.
+- 1.0.54 y 1.0.56 no se entregan: la verificación independiente detectó efectos de reglas adaptables sobre número R- y saldo. Se corrigieron las reglas de impresión y se repitieron las cuatro suites y Windows, sin relajar verificaciones. Ejecución 1.0.55 exclusivamente diagnóstica sobre los PDFs guardados, sin compilar instalador.
+- Sin migración, cambios de cálculos, correlativos o datos históricos; A1–A5 conservados. B3 pendiente. Resultados de validación en [la guía](docs/comprobante-media-carta.md).
+
 ## B2 · Limpieza y reducción · 1.0.53 verificada
 
 - Opción 2 aprobada: se retiran PWA/pasarela Wi-Fi y recursos exclusivos, sin retirar el menú adaptable ni el acceso privado del escritorio. Pago móvil y teléfonos de contacto permanecen.

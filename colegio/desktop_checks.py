@@ -1,6 +1,9 @@
 """Native smoke checks, called only with disposable --self-test data."""
 import ctypes
+import json
 import os
+import re
+import shutil
 import threading
 import time
 from pathlib import Path
@@ -89,6 +92,69 @@ def renderer(window, directory):
         time.sleep(.05)
     if not task.IsCompleted or not task.GetAwaiter().GetResult() or not output.read_bytes().startswith(b'%PDF-'):
         raise RuntimeError('No se pudo comprobar la impresión PDF del motor Windows.')
+    # Exercise the real receipt markup and WebView2 print settings with a frozen,
+    # fictional document. No payment is registered in any database.
+    from .branding import SCHOOL_PROFILE
+    from .documents import render_pdf
+    receipt = {'settings': dict(SCHOOL_PROFILE), 'payment': {
+        'id': 31, 'paid_on': '2026-10-14', 'guardian_name': 'Ana Pérez ficticia',
+        'guardian_document': 'V-12345678', 'guardian_phone': '04121234567',
+        'guardian_address': 'Calle ficticia, Barquismeto.', 'student_name': 'Sofía Pérez ficticia',
+        'student_code': 'AL-000001', 'student_document': 'CE-199998887771',
+        'grade_name': 'Primero / A', 'currency': 'VES', 'received_amount': 300000,
+        'amount': 3000, 'balance_before': 8000, 'balance_after': 5000,
+        'exchange_rate': '100', 'method': 'Transferencia', 'reference': 'TR-001',
+        'operator': 'Administración ficticia', 'voided': False, 'notes': 'Pago ficticio.'},
+        'allocations': [{'concept': f'Mensualidad ficticia {i}', 'period': '2026-09',
+                         'amount': 1000, 'balance_after': 0} for i in range(3)]}
+    pdf = render_pdf('receipt', receipt)
+    if b'/MediaBox [0 0 396 612]' not in pdf or b'/Count 1 ' not in pdf:
+        raise RuntimeError('El comprobante PDF no ocupa una única media carta.')
+    (path / 'comprobante-media-carta.pdf').write_bytes(pdf)
+    window.evaluate_js("document.querySelector('#print-area').innerHTML=paymentReceiptMarkup(" +
+                       json.dumps(receipt, ensure_ascii=False) + ");setReceiptPaper('half-letter');")
+    paired = render_pdf('receipt', receipt, 'letter-pair')
+    if b'/MediaBox [0 0 792 612]' not in paired or b'/Count 1 ' not in paired:
+        raise RuntimeError('No se prepararon dos copias en una sola carta horizontal.')
+    (path / 'comprobante-dos-copias.pdf').write_bytes(paired)
+    for name, width, height in (('media-carta',5.5,8.5), ('media-carta-en-carta',8.5,11), ('dos-copias',11,8.5)):
+        target = path / (name + '-webview2.pdf')
+        if name == 'dos-copias':
+            window.evaluate_js("document.querySelector('#native-letter-check').remove();setReceiptPaper('letter-pair');")
+        if height == 11:
+            window.evaluate_js("document.head.insertAdjacentHTML('beforeend','<style id=native-letter-check>@page receipt-half-letter{size:letter;margin:0}</style>')")
+
+        def print_receipt():
+            core = form.browser.webview.CoreWebView2
+            settings = core.Environment.CreatePrintSettings()
+            settings.PageWidth, settings.PageHeight = width, height
+            settings.ScaleFactor = 1.0
+            settings.MarginTop = settings.MarginBottom = 0
+            settings.MarginLeft = settings.MarginRight = 0
+            settings.ShouldPrintBackgrounds = True
+            settings.ShouldPrintHeaderAndFooter = False
+            return core.PrintToPdfAsync(str(target), settings)
+
+        task = form.Invoke(Func[Object](print_receipt))
+        until = time.monotonic() + 30
+        while not task.IsCompleted and time.monotonic() < until:
+            time.sleep(.05)
+        if not task.IsCompleted or not task.GetAwaiter().GetResult():
+            raise RuntimeError('No se pudo imprimir el comprobante con WebView2.')
+        printed = target.read_bytes()
+        box = re.search(rb'/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]', printed)
+        if not box or tuple(float(v) for v in box.groups()) != (width * 72, height * 72):
+            raise RuntimeError('WebView2 cambió las dimensiones físicas del comprobante.')
+        if len(re.findall(rb'/Type\s*/Page\b', printed)) != 1:
+            raise RuntimeError('WebView2 añadió páginas al comprobante.')
+        print(f'PASS RECIBO: WebView2 {name}, {width * 72:g} x {height * 72:g} puntos, una página, escala 100 %.')
+    window.evaluate_js("setReceiptPaper('half-letter')")
+    if os.environ.get('AULA_RECEIPT_REPORT_DIR'):
+        evidence = Path(os.environ['AULA_RECEIPT_REPORT_DIR'])
+        evidence.mkdir(parents=True, exist_ok=True)
+        for name in ('comprobante-media-carta.pdf', 'media-carta-webview2.pdf', 'media-carta-en-carta-webview2.pdf',
+                     'comprobante-dos-copias.pdf', 'dos-copias-webview2.pdf'):
+            shutil.copyfile(path / name, evidence / name)
     found, watcher = cancel_dialog()
     # WinForms file dialogs must run on the window's STA thread.
     selected = form.Invoke(Func[Object](lambda: window.create_file_dialog(

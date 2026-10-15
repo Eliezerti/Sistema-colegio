@@ -1003,7 +1003,7 @@ class Handler(BaseHTTPRequestHandler):
                       ON c.id=a.charge_id WHERE a.payment_id=?''', (target,))}
                 self.server.mark_document(document)
                 if pdf:
-                    paper = parse_qs(url.query).get('paper',['a4'])[0]
+                    paper = parse_qs(url.query).get('paper',['half-letter'])[0]
                     self.respond(200, render_pdf('receipt', document, paper), 'application/pdf',
                                  {'Content-Disposition': f'attachment; filename="recibo-R-{target:06d}.pdf"'})
                 else:
