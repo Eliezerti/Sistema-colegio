@@ -42,7 +42,7 @@ def main(directory):
     pair = [v for v in pair if 'ORIGINAL' not in v[0] and 'COPIA' not in v[0]]
     left = [v for v in pair if v[1] < 396]
     right = [(text, x-396, y, size) for text, x, y, size in pair if x >= 396]
-    assert len(left) == len(right) == len(half), 'No se imprimieron dos copias completas'
+    assert len(left) == len(right) == len(half), f'Fragmentos: individual={len(half)}, original={len(left)}, copia={len(right)}; textos individual={[v[0] for v in half]!r}; original={[v[0] for v in left]!r}; copia={[v[0] for v in right]!r}'
     for expected, a, b in zip(half, left, right):
         assert a[0] == b[0] == expected[0], 'La copia alteró información del comprobante'
         assert all(abs(x-y)<.1 for x,y in zip(a[1:],b[1:])), f'Las copias cambiaron posición o escala: {a!r}; {b!r}'
