@@ -75,7 +75,7 @@ def renderer(window, directory):
     from System import Func, Object
     from .directory_reports import directory_report, directory_pdf
     path = Path(directory)
-    school = {'school_name': 'Colegio ficticio B2', 'school_year': '2026'}
+    school = {'school_name': 'Mi colegio', 'school_year': '2026'}
     report = directory_report({'settings': school, 'students': [], 'grades': [],
                                'today': '2026-10-13', 'user': {'role': 'admin', 'name': 'Prueba B2'}},
                               'students', {})
@@ -97,14 +97,14 @@ def renderer(window, directory):
     from .branding import SCHOOL_PROFILE
     from .documents import render_pdf
     receipt = {'settings': dict(SCHOOL_PROFILE), 'payment': {
-        'id': 31, 'paid_on': '2026-10-14', 'guardian_name': 'Ana Pérez ficticia',
+        'id': 31, 'paid_on': '2026-10-14', 'guardian_name': 'Representante',
         'guardian_document': 'V-12345678', 'guardian_phone': '04121234567',
-        'guardian_address': 'Calle ficticia, Barquismeto.', 'student_name': 'Sofía Pérez ficticia',
+        'guardian_address': '', 'student_name': 'Alumno',
         'student_code': 'AL-000001', 'student_document': 'CE-199998887771',
         'grade_name': 'Primero / A', 'currency': 'VES', 'received_amount': 300000,
         'amount': 3000, 'balance_before': 8000, 'balance_after': 5000,
         'exchange_rate': '100', 'method': 'Transferencia', 'reference': 'TR-001',
-        'operator': 'Administración ficticia', 'voided': False, 'notes': 'Pago ficticio.'},
+        'operator': 'Administración', 'voided': False, 'notes': 'Pago ficticio.'},
         'allocations': [{'concept': f'Mensualidad ficticia {i}', 'period': '2026-09',
                          'amount': 1000, 'balance_after': 0} for i in range(3)]}
     pdf = render_pdf('receipt', receipt)
