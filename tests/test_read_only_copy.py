@@ -19,7 +19,9 @@ class ReadOnlyCopyTests(unittest.TestCase):
         from tests.test_system import SystemTests
         self.f=SystemTests();self.f.setUp()
         self.f.request('payments',self.f.payment())
-        self.source=self.f.path.parent/'copia.sqlite3'
+        source_directory=self.f.path.parent/'origen-independiente'
+        source_directory.mkdir()
+        self.source=source_directory/'copia.sqlite3'
         consistent_backup(self.f.path,self.source)
 
     def tearDown(self):self.f.tearDown()
@@ -43,7 +45,11 @@ class ReadOnlyCopyTests(unittest.TestCase):
                 if response.getheader('Set-Cookie'):cookie=response.getheader('Set-Cookie').split(';')[0]
                 status=response.status;client.close();return status,data
             try:
-                self.assertEqual(request('/?view_token='+server.launch)[0],200)
+                launch=server.launch
+                self.assertEqual(request('/?view_token='+launch)[0],303)
+                self.assertEqual(request('/')[0],200)
+                self.assertEqual(request('/')[0],200)
+                self.assertEqual(request('/?view_token='+launch)[0],403)
                 status,data=request('/api/session');session=json.loads(data);csrf=session['user']['csrf']
                 self.assertEqual(session['user']['role'],'reader')
                 self.assertIn('solo lectura',session['read_only']['message'])

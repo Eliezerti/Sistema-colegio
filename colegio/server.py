@@ -602,7 +602,9 @@ class Handler(BaseHTTPRequestHandler):
                 extra=None
                 if read_only and url.path=='/' and parse_qs(url.query).get('view_token'):
                     token=self.server.accept_launch(parse_qs(url.query)['view_token'][0])
-                    extra={'Set-Cookie':f'{self.server.cookie_name}={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=900'}
+                    extra={'Set-Cookie':f'{self.server.cookie_name}={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200','Location':'/'}
+                    self.respond(303,b'',content_type,extra)
+                    return
                 self.respond(200, file.read_bytes(), content_type,extra)
                 return
             if retired_route(endpoint):

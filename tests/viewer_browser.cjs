@@ -6,6 +6,8 @@ const {chromium}=require('playwright');
  try{
   const page=await browser.newPage();await page.goto(process.env.AULA_VIEW_URL);
   await page.locator('.layout').waitFor();
+  assert.equal(new URL(page.url()).search,'');
+  await page.reload();await page.locator('.layout').waitFor({timeout:5000});
   assert.match(await page.locator('#readonly-banner').innerText(),/Copia del .*solo lectura/);
   assert.equal(await page.locator('form[data-endpoint="confirm-rate"]').count(),0);
   assert.equal(await page.getByRole('button',{name:'Registrar pago',exact:true}).count(),0);
@@ -22,6 +24,10 @@ const {chromium}=require('playwright');
   });assert.ok(blocked.every(status=>status===403));
   const after=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());
   assert.deepEqual(after.charges,before.charges);assert.deepEqual(after.summary,before.summary);
-  console.log('PASS: copy viewer banner, no rate confirmation, history navigation, server write rejection and unchanged ledger.');
+  await page.evaluate(async()=>{await api('logout',{});try{await api('state');}catch{}});
+  await page.getByRole('heading',{name:'La consulta terminó'}).waitFor();
+  assert.equal(await page.locator('.auth-form').count(),0);
+  assert.equal(await page.locator('#readonly-banner').isVisible(),true);
+  console.log('PASS: copy viewer banner, safe reload and session end, no rate confirmation, history navigation, server write rejection and unchanged ledger.');
  }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});
