@@ -2,7 +2,7 @@
 const $ = (s, root = document) => root.querySelector(s);
 const app = $('#app'), modal = $('#modal');
 let state, session, page = 'dashboard', filters = {}, reportFrom = '', reportTo = '';
-let publicSchool = {}, setupToday;
+let publicSchool = {}, setupToday, readOnlyInfo;
 let receiptPaper = 'half-letter';
 const paymentMethods=['Efectivo','Transferencia','Pago móvil','Tarjeta','Otro'];
 let demoMode = false, demoToken = '', demoTimer;
@@ -92,13 +92,20 @@ function toast(text, failure = false) {
 async function boot() {
   try {
     const result = await api('session');
-    setupToday=result.today; session = result.user; publicSchool = result.school || {};
+    readOnlyInfo=result.read_only;setupToday=result.today; session = result.user; publicSchool = result.school || {};
+    if(readOnlyInfo){
+      let banner=$('#readonly-banner');if(!banner){banner=document.createElement('div');banner.id='readonly-banner';document.body.prepend(banner);}
+      banner.textContent=readOnlyInfo.message;document.body.classList.add('readonly-copy');
+      if(!session){app.innerHTML='<div class="loading"><h2>La consulta terminó</h2><p>Abre la copia nuevamente desde Windows para continuar.</p></div>';return;}
+      await sessionCheck();await refresh();return;
+    }
     configureDemo(result);
     if (!session) { settingsSection='identity';settingsDrafts={};auth(result.needs_setup); return; }
     await sessionCheck();await openRateGate();
   } catch (error) { app.innerHTML = `<div class="loading"><h2>No se pudo abrir Aula</h2><p>${esc(error.message)}</p>${btn('Reintentar','boot')}</div>`; }
 }
 async function openRateGate() {
+  if(readOnlyInfo){await refresh();return;}
   const clock=await api('clock-status');if(clock.blocked){await openClockGate(clock);return;}
   const gate = await api('rate-gate'); publicSchool = gate.school || publicSchool;
   gateBackup=gate.backup;gateRole=gate.role;
@@ -599,6 +606,7 @@ document.addEventListener('change',event=>{
 modal.addEventListener('click',event=>{if(event.target===modal){const r=modal.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)modal.close();}});
 modal.addEventListener('close',()=>{if(!modal.open){$('#modal-content').replaceChildren();if(modal.dataset.recoveryPrint){$('#print-area').replaceChildren();delete modal.dataset.recoveryPrint;}}});
 async function checkDay() {
+  if(readOnlyInfo)return;
   if(!session||document.hidden)return;
   try {
     const gate=await api('rate-gate');

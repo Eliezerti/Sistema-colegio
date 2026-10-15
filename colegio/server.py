@@ -56,11 +56,15 @@ def retired_route(endpoint):
 
 
 def snapshot(db, user):
-    owns_transaction = not db.in_transaction
+    read_only=getattr(db,'read_only',False)
+    owns_transaction = not db.in_transaction and not read_only
     if owns_transaction:
         db.execute('BEGIN IMMEDIATE')
-    integrity = audit_status(db)
-    if integrity['ok']:
+    if read_only:
+        from .audit_chain import portable_status
+        integrity=portable_status(db)
+    else:integrity = audit_status(db)
+    if integrity['ok'] and not read_only:
         synchronize_monthly_charges(db)
     if owns_transaction:
         db.commit()
@@ -551,6 +555,8 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def session(self, db):
+        if getattr(self.server,'read_only',False):
+            return self.server.view_session(self.headers.get('Cookie',''))
         token = ''
         for part in self.headers.get('Cookie', '').split(';'):
             if part.strip().startswith(self.server.cookie_name+'='):
@@ -580,6 +586,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
             url = urlsplit(self.path)
             endpoint = url.path.removeprefix('/api/')
+            read_only=getattr(self.server,'read_only',False)
+            if read_only and post and endpoint not in ('session-activity','logout'):
+                raise PermissionError('Copia de solo lectura: no se permiten cambios, tasas, cobros ni respaldos.')
             if not post and not url.path.startswith('/api/'):
                 assets = {'/': 'index.html', '/app.js': 'app.js', '/session.js': 'session.js', '/style.css': 'style.css', '/favicon.svg': 'favicon.svg',
                           '/'+LOGO_FILE: LOGO_FILE, '/responsive.js': 'responsive.js'}
@@ -590,12 +599,16 @@ class Handler(BaseHTTPRequestHandler):
                 content_type = mimetypes.guess_type(file.name)[0] or 'application/octet-stream'
                 if content_type.startswith('text/') or content_type in ('application/javascript','image/svg+xml'):
                     content_type += '; charset=utf-8'
-                self.respond(200, file.read_bytes(), content_type)
+                extra=None
+                if read_only and url.path=='/' and parse_qs(url.query).get('view_token'):
+                    token=self.server.accept_launch(parse_qs(url.query)['view_token'][0])
+                    extra={'Set-Cookie':f'{self.server.cookie_name}={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=900'}
+                self.respond(200, file.read_bytes(), content_type,extra)
                 return
             if retired_route(endpoint):
                 self.respond(410, {'error': 'Esta función fue retirada de Aula.'})
                 return
-            db = connect(self.server.db_path)
+            db = self.server.connect_view() if read_only else connect(self.server.db_path)
             if post:
                 if not self.server.access.allowed_origin(host,self.headers.get('Origin'),self.server.server_port):
                     raise PermissionError('Origen no permitido.')
@@ -606,7 +619,7 @@ class Handler(BaseHTTPRequestHandler):
                 data = json.loads(self.rfile.read(length))
                 if not isinstance(data, dict):
                     raise ValidationError('Se esperaba un objeto JSON.')
-                db.execute('BEGIN IMMEDIATE')
+                if not read_only:db.execute('BEGIN IMMEDIATE')
             if post and endpoint == 'demo-presence':
                 if not self.server.demo:
                     raise PermissionError('Esta instalación no está en modo prueba.')
@@ -617,11 +630,23 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(200, {'ok': True})
                 return
             user = self.session(db)
-            needs_setup = not db.execute('SELECT 1 FROM users LIMIT 1').fetchone()
+            needs_setup = not read_only and not db.execute('SELECT 1 FROM users LIMIT 1').fetchone()
+            if read_only and post:
+                if not self.server.access.allowed_origin(host,self.headers.get('Origin'),self.server.server_port):
+                    raise PermissionError('Origen no permitido.')
+                if not user or not secrets.compare_digest(self.headers.get('X-CSRF-Token',''),user['csrf']):
+                    raise PermissionError('Sesión inválida de la copia.')
+                if endpoint=='logout':
+                    self.server.sessions.revoke(user['token'])
+                    self.respond(200,{'ok':True})
+                else:
+                    self.respond(200,self.server.sessions.touch(user['token'],idle_minutes(db)))
+                return
             if not post and endpoint == 'session':
                 self.respond(200, {'needs_setup': needs_setup, 'today': local_today().isoformat(), 'user': {k:v for k,v in user.items() if k != 'token'} if user else None,
                                    'school': {k:v for k,v in db.execute('SELECT key,value FROM settings') if k in ('school_name','institution_type','logo')},
-                                   'demo': self.server.demo, 'demo_token': self.server.demo_token})
+                                   'demo': self.server.demo, 'demo_token': getattr(self.server,'demo_token',''),
+                                   'read_only':self.server.read_only_info if read_only else None})
                 return
             if post and endpoint in ('setup', 'login', 'demo-login'):
                 if endpoint == 'demo-login':
@@ -694,7 +719,10 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(401, {'error': 'Tu sesión terminó. Inicia sesión para continuar.', 'session_expired': True})
                 return
             db.audit_user = user['id']
-            integrity = audit_status(db)
+            if read_only:
+                from .audit_chain import portable_status
+                integrity=portable_status(db)
+            else:integrity = audit_status(db)
             if post and endpoint not in ('logout','session-activity','demo-exit','probe-backup','export-encrypted-backup','backup-now'):
                 require_audit(db)
             if endpoint in ('session-status', 'session-activity', 'session-preferences', 'recovery-notice-ack'):
@@ -878,6 +906,7 @@ class Handler(BaseHTTPRequestHandler):
                 result['backup']=self.server.backup_status()
                 result['demo']=self.server.demo
                 result['access']=self.server.access.snapshot()
+                result['read_only']=self.server.read_only_info if read_only else None
                 self.respond(200, result)
             elif endpoint in ('audit', 'audit.csv', 'audit.pdf'):
                 if user['role'] != 'admin': raise PermissionError('Solo Administración puede consultar o exportar la bitácora.')

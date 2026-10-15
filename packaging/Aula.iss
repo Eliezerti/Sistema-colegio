@@ -43,6 +43,7 @@ Source: "..\docs\archivo-institucion.html"; DestDir: "{app}\docs"; Flags: ignore
 Source: "..\docs\carpeta-nube.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "..\docs\cifrado-respaldos.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "..\docs\comprobante-media-carta.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\consulta-copias.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "..\docs\configuracion.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "..\docs\guia-importacion.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "..\docs\mantenimiento.html"; DestDir: "{app}\docs"; Flags: ignoreversion
@@ -66,6 +67,7 @@ Type: files; Name: "{userstartup}\Aula Colegio.lnk"
 Name: "{group}\Aula - Administración escolar"; Filename: "{app}\Aula.exe"
 Name: "{group}\Aula - Pruebas"; Filename: "{app}\Aula.exe"; Parameters: "--demo"
 Name: "{group}\Configurar Aula"; Filename: "{app}\Aula.exe"; Parameters: "--configure"
+Name: "{group}\Abrir copia en solo lectura"; Filename: "{app}\Aula.exe"; Parameters: "--view-copy"
 Name: "{group}\Probar respaldo"; Filename: "{app}\Aula.exe"; Parameters: "--test-backup"
 Name: "{group}\Restaurar respaldo"; Filename: "{app}\Aula.exe"; Parameters: "--restore"
 Name: "{group}\Desbloquear acceso local"; Filename: "{app}\Aula.exe"; Parameters: "--unlock-login"

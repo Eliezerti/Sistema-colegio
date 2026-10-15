@@ -52,6 +52,8 @@ def main():
                     if server.wait(timeout=10)!=0:raise RuntimeError('El servidor de prueba no cerró correctamente.')
                     if list((Path(temp)/'AulaColegio-Pruebas').glob('prueba-*')):
                         raise RuntimeError('No se eliminaron los registros temporales al cerrar la última pestaña.')
+                if result.returncode==0 and not any((args.demo,args.responsive,args.directory,args.roster)):
+                    return subprocess.run([sys.executable,'tests/run_viewer_browser.py'],cwd=root,env=runtime_env).returncode
                 return result.returncode
             finally:
                 server.terminate()

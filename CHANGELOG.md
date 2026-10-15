@@ -1,5 +1,7 @@
 # Tanda D · en desarrollo
 
+- D5: abrir respaldos cifrados o antiguos en consulta aislada; SQLite inmutable, escrituras bloqueadas en servidor, sesión en memoria y temporal eliminado al cerrar.
+
 - D4: niveles cifrados de 60 copias diarias y 24 mensuales, cierres escolares permanentes y recordatorio de prueba externa después de 35 días.
 
 - D3: estado principal acotado con totales íntegros; historial bajo demanda y medición HTTP reproducible de 500/800 alumnos con uno, dos y tres años.

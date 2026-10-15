@@ -19,7 +19,7 @@ La actualización verifica una copia previa antes de migrar. No reinicia correla
 
 ## Tanda D en desarrollo
 
-D1: guías del instalador por lista explícita, contadores internos fuera de la API, calendario en el primer inicio y egresos nuevos sin categoría Nómina. Acceso privado retirado; soporte mediante escritorio remoto de Windows. D2 conserva el límite de intentos y añade un código local de recuperación de un solo uso desde Windows. D3 carga el historial bajo demanda: el resumen conserva todos los totales. D4 añade retención cifrada por niveles, cierre permanente y recordatorio mensual de prueba externa. No cambia el esquema ni los importes. [Diseño y validación de la tanda](docs/tanda-d.md).
+D1: guías del instalador por lista explícita, contadores internos fuera de la API, calendario en el primer inicio y egresos nuevos sin categoría Nómina. Acceso privado retirado; soporte mediante escritorio remoto de Windows. D2 conserva el límite de intentos y añade un código local de recuperación de un solo uso desde Windows. D3 carga el historial bajo demanda: el resumen conserva todos los totales. D4 añade retención cifrada por niveles, cierre permanente y recordatorio mensual de prueba externa. [Consulta de copias](docs/consulta-copias.md) sin restaurar ni escribir. No cambia el esquema ni los importes. [Diseño y validación de la tanda](docs/tanda-d.md).
 
 ## Validación de la entrega anterior 1.0.67
 

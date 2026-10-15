@@ -357,13 +357,29 @@ def self_test(demo=False):
 def main():
     parser=argparse.ArgumentParser(description='Aplicación de escritorio del colegio.')
     actions=parser.add_mutually_exclusive_group()
-    for name in ('demo','configure','unlock-login','restore','reset-password','data-folder','test-backup','self-test','self-test-demo'):
+    for name in ('demo','view-copy','configure','unlock-login','restore','reset-password','data-folder','test-backup','self-test','self-test-demo'):
         actions.add_argument('--'+name,action='store_true')
     args=parser.parse_args()
     directory=None
     try:
         if args.self_test or args.self_test_demo:
             self_test(demo=args.self_test_demo);return
+        if args.view_copy:
+            from tkinter import Tk,filedialog
+            from .read_only import open_copy
+            root=Tk();root.withdraw()
+            try:
+                source=filedialog.askopenfilename(parent=root,title='Abrir copia en solo lectura',filetypes=[('Respaldo de Aula','*.aulabak *.sqlite3')])
+                if not source:return
+                credentials=backup_credentials_dialog(root,source)
+                if credentials is False:return
+            finally:root.destroy()
+            with open_copy(source,*credentials) as server:
+                thread=threading.Thread(target=server.serve_forever);thread.start()
+                try:launch_window(f'http://127.0.0.1:{server.server_port}/?view_token={server.launch}',
+                    storage=Path(server.db_path).parent/'webview')
+                finally:server.shutdown();thread.join()
+            return
         if args.test_backup:
             probe_dialog();return
         directory=data_directory();setup_logging(directory)
