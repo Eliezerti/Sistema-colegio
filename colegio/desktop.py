@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .demo import DemoWorkspace
-from .network import private_origin, load_config, save_config
+from .network import private_origin
 from .server import ROOT, open_school
 from .storage import DataLock
 from .branding import SCHOOL_NAME
@@ -73,15 +73,15 @@ def read_desktop_config(directory):
 
 
 def write_desktop_config(directory,mode,origin=''):
-    if mode not in ('primary','client'):raise ValueError('Selecciona el tipo de computadora.')
+    if mode != 'primary' or origin:
+        raise ValueError('El acceso privado fue retirado. Usa el escritorio remoto de Windows.')
     origin=private_origin(origin) if origin else ''
     if mode=='client' and not origin:raise ValueError('Indica el enlace privado del colegio para conectarte.')
     directory=Path(directory);directory.mkdir(parents=True,exist_ok=True)
     # Never change the role/link while this PC is serving its real database.
     with DataLock(directory):
         if mode=='primary':
-            if origin:save_config(directory,origin)
-            else:(directory/'red.json').unlink(missing_ok=True)
+            (directory/'red.json').unlink(missing_ok=True)
         value={'version':1,'mode':mode,'remote_url':origin if mode=='client' else ''}
         path=directory/'escritorio.json';temporary=path.with_suffix('.tmp')
         temporary.write_text(json.dumps(value,ensure_ascii=False),encoding='utf-8');temporary.replace(path)
@@ -89,33 +89,10 @@ def write_desktop_config(directory,mode,origin=''):
 
 
 def configure(directory):
-    import tkinter as tk
-    from tkinter import ttk, messagebox
-    try:current=read_desktop_config(directory) or {'mode':'primary','remote_url':''}
-    except ValueError:current={'mode':'primary','remote_url':''}
-    origin=current['remote_url']
-    if current['mode']=='primary' and (Path(directory)/'red.json').exists():
-        try:origin=load_config(Path(directory)/'red.json')
-        except ValueError:origin=''
-    root=tk.Tk();root.title('Configurar Aula');root.resizable(False,False)
-    body=ttk.Frame(root,padding=24);body.pack(fill='both',expand=True)
-    ttk.Label(body,text=TITLE,font=('Segoe UI',14,'bold'),wraplength=490).pack(anchor='w',pady=(0,15))
-    ttk.Label(body,text='¿Cómo usarás esta computadora?',font=('Segoe UI',11,'bold')).pack(anchor='w')
-    mode=tk.StringVar(value=current['mode']);url=tk.StringVar(value=origin);result=[]
-    ttk.Radiobutton(body,text='PC principal · aquí se guardan los datos del colegio',variable=mode,value='primary').pack(anchor='w',pady=8)
-    ttk.Radiobutton(body,text='Conectarme al colegio · desde una laptop o desde casa',variable=mode,value='client').pack(anchor='w',pady=(0,16))
-    ttk.Label(body,text='Enlace privado del colegio · HTTPS').pack(anchor='w')
-    ttk.Entry(body,textvariable=url,width=65).pack(fill='x',pady=6)
-    ttk.Label(body,text='En la PC principal puedes dejarlo vacío para uso local.\nPara compartirlo, configura Tailscale Serve y copia su enlace.\nLas otras computadoras deben tener Tailscale conectado.',wraplength=490).pack(anchor='w',pady=(0,18))
-    def save():
-        try:result.append(write_desktop_config(directory,mode.get(),url.get().strip()))
-        except (ValueError,RuntimeError,OSError) as error:messagebox.showerror('Revisa la configuración',str(error),parent=root);return
-        root.destroy()
-    buttons=ttk.Frame(body);buttons.pack(fill='x')
-    ttk.Button(buttons,text='Cancelar',command=root.destroy).pack(side='left')
-    ttk.Button(buttons,text='Guardar configuración',command=save).pack(side='right')
-    root.mainloop()
-    return result[0] if result else None
+    from tkinter import messagebox
+    messagebox.showinfo('Aula · uso local',
+        'Aula funciona en esta PC. Configura el colegio dentro de Aula. '
+        'Para soporte utiliza el escritorio remoto de Windows.')
 
 
 class DesktopHost:
@@ -128,7 +105,7 @@ class DesktopHost:
     def __enter__(self):
         try:
             directory=Path(self.stack.enter_context(DemoWorkspace(self.demo_root))) if self.demo else self.directory
-            origin=load_config(directory/'red.json') if not self.demo and (directory/'red.json').exists() else ''
+            origin=''
             self.server=self.stack.enter_context(open_school(directory/'colegio.sqlite3',self.port,self.demo,origin))
             self.server.daemon_threads=False
             self.directory=directory
@@ -392,7 +369,7 @@ def main():
                 # A fresh desktop install works on this PC without a network wizard.
                 config=write_desktop_config(directory,'primary')
             if config['mode']=='client':
-                launch_window(config['remote_url'],storage=directory/'webview-cliente');return
+                raise ValueError('Esta PC tenía acceso privado. Abre Aula en la PC del colegio mediante el escritorio remoto de Windows. No se creó una base local.')
             with DesktopHost(directory,demo=demo) as host:
                 launch_window(host.url,host=host,demo=demo,storage=host.directory/'webview')
     except (Exception,SystemExit) as error:

@@ -64,7 +64,7 @@ def snapshot(db, user):
         synchronize_monthly_charges(db)
     if owns_transaction:
         db.commit()
-    settings = dict(db.execute('SELECT key,value FROM settings'))
+    settings = {k:v for k,v in db.execute('SELECT key,value FROM settings') if not k.startswith('id_floor_')}
     students = rows(db, '''SELECT s.*,g.name AS guardian_name,g.phone AS guardian_phone,g.email AS guardian_email,
       gr.name AS grade_name FROM students s JOIN guardians g ON g.id=s.guardian_id
       JOIN grades gr ON gr.id=s.grade_id ORDER BY s.name''')
@@ -273,7 +273,7 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
                   'status': data.get('status', 'active'), 'notes': str(data.get('notes', ''))[:2000]}
         if not data.get('id'):
             fields.update(id=next_id, student_code=code, archived=int(bool(import_archived)))
-        settings = dict(db.execute('SELECT key,value FROM settings'))
+        settings = {k:v for k,v in db.execute('SELECT key,value FROM settings') if not k.startswith('id_floor_')}
         academic_start = date(fields['school_year'], int(settings['start_month']), 1).isoformat()
         academic_end = date(fields['school_year'] + 1, int(settings['start_month']), 1).isoformat()
         fields['enrollment_start'] = valid_date(data.get('enrollment_start') or academic_start)
@@ -353,6 +353,11 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
         on = valid_date(data.get('spent_on'))
         if on > local_today().isoformat():
             raise ValidationError('La fecha del egreso no puede ser futura.')
+        import unicodedata
+        category = required(data, 'category')
+        normalized = ''.join(c for c in unicodedata.normalize('NFKD', category) if not unicodedata.combining(c)).strip().casefold()
+        if normalized == 'nomina':
+            raise ValidationError('La categoría Nómina fue retirada. Usa Operación u Otro para un egreso nuevo.')
         amount, currency, received, rate = convert_received(db, data, on)
         fields = {'concept': required(data, 'concept'), 'category': required(data, 'category'), 'amount': amount,
                   'spent_on': on, 'reference': str(data.get('reference', ''))[:200],
@@ -383,7 +388,7 @@ class SchoolServer(ThreadingHTTPServer):
         from .restore_journal import PENDING, fail_closed
         if (Path(db_path).parent/PENDING).exists(): raise fail_closed()
         if address[0]!='127.0.0.1':
-            raise ValueError('Aula escucha solo en 127.0.0.1. Usa Tailscale Serve para compartir el acceso privado.')
+            raise ValueError('Aula escucha solo en 127.0.0.1. Usa el escritorio remoto de Windows.')
         if demo and remote_origin:
             raise ValueError('El modo de prueba no admite acceso remoto a la base del colegio.')
         self.access=PrivateAccess(remote_origin)
@@ -609,7 +614,7 @@ class Handler(BaseHTTPRequestHandler):
             user = self.session(db)
             needs_setup = not db.execute('SELECT 1 FROM users LIMIT 1').fetchone()
             if not post and endpoint == 'session':
-                self.respond(200, {'needs_setup': needs_setup, 'user': {k:v for k,v in user.items() if k != 'token'} if user else None,
+                self.respond(200, {'needs_setup': needs_setup, 'today': local_today().isoformat(), 'user': {k:v for k,v in user.items() if k != 'token'} if user else None,
                                    'school': {k:v for k,v in db.execute('SELECT key,value FROM settings') if k in ('school_name','institution_type','logo')},
                                    'demo': self.server.demo, 'demo_token': self.server.demo_token})
                 return
@@ -621,6 +626,12 @@ class Handler(BaseHTTPRequestHandler):
                 elif endpoint == 'setup':
                     if not needs_setup:
                         raise ValidationError('El administrador ya está configurado.')
+                    start = integer(data.get('start_month', 9), 1, 12)
+                    due = integer(data.get('due_day', 10), 1, 31)
+                    today = local_today()
+                    year = integer(data.get('school_year', today.year - (today.month < start)), 2000, 2100)
+                    db.executemany('UPDATE settings SET value=? WHERE key=?',
+                                   [(str(year),'school_year'),(str(start),'start_month'),(str(due),'due_day')])
                     result = db.execute('INSERT INTO users(username,name,password,role) VALUES(?,?,?,?)',
                                         (required(data, 'username', 80).lower(), required(data, 'name'), hash_password(data.get('password')), 'admin'))
                     user_id = result.lastrowid
@@ -1039,6 +1050,8 @@ class Handler(BaseHTTPRequestHandler):
 @contextmanager
 def open_school(path, port, demo=False, remote_origin=''):
     """Own the data lock and resources for both CLI and desktop lifetimes."""
+    if remote_origin:
+        raise ValueError('El acceso privado fue retirado. Usa el escritorio remoto de Windows.')
     path=Path(path)
     with DataLock(path.parent):
         from .restore_journal import finish_pending
@@ -1108,6 +1121,8 @@ def main():
     access.add_argument('--remote-origin',help='Enlace HTTPS privado de Tailscale Serve.')
     access.add_argument('--network-config',help='Archivo red.json creado por Configurar-Red.bat.')
     args = parser.parse_args()
+    if args.remote_origin is not None or args.network_config is not None:
+        parser.error('El acceso privado fue retirado. Usa el escritorio remoto de Windows.')
     if args.demo and args.data_dir is not None:
         parser.error('--demo no admite --data-dir: nunca se abre una base existente en modo prueba.')
     if args.demo and (args.remote_origin is not None or args.network_config is not None):

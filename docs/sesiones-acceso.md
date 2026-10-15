@@ -42,7 +42,7 @@ Los fallos de una cuenta no bloquean a las demás por usar la misma dirección l
 
 El token aleatorio de 256 bits permanece en la cookie HttpOnly, SameSite=Strict y Secure cuando corresponde. En SQLite se guarda **solo SHA-256 del token**, con un prefijo de formato. Copiar ese valor no sirve como cookie. No se guardan tokens en claro en la base, bitácora ni configuración.
 
-No hay migración de esquema: se reutilizan `sessions` y `settings`; solo el estado de autenticación es descartable. Las sesiones anteriores se eliminan al iniciar el servidor y el registro monotónico empieza vacío. Los respaldos siguen excluyendo sesiones autenticadas. No se modifican fichas, cargos, importes, recibos, motor de nómina ni la ubicación de datos. A1, A2, WAL/FULL, CSRF, permisos, control del reloj y respaldos de cinco minutos se mantienen.
+No hay migración de esquema: se reutilizan `sessions` y `settings`; solo el estado de autenticación es descartable. Las sesiones anteriores se eliminan al iniciar el servidor y el registro monotónico empieza vacío. Los respaldos siguen excluyendo sesiones autenticadas. No se modifican fichas, cargos, importes, recibos ni la ubicación de datos. A1, A2, WAL/FULL, CSRF, permisos, control del reloj y respaldos de cinco minutos se mantienen.
 
 Esto no impide que alguien con acceso a tu cuenta de Windows examine memoria, modifique el programa o lea datos sin cifrar. Los borradores son temporales y dependen de conservar abierta la ventana.
 

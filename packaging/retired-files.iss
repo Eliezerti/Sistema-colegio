@@ -136,3 +136,8 @@ Type: files; Name: "{app}\_internal\colegio\salary.py"
 Type: files; Name: "{app}\_internal\colegio\staff_access.py"
 Type: files; Name: "{app}\_internal\colegio\reset_records.py"
 Type: files; Name: "{app}\_internal\static\logo-colegio-v1.png"
+
+; Internal development guides are not school manuals.
+Type: files; Name: "{app}\docs\calidad-b1.html"
+Type: files; Name: "{app}\docs\limpieza-b2.html"
+Type: files; Name: "{app}\docs\retiro-personal-inventario.html"

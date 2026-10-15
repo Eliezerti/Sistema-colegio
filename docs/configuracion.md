@@ -67,8 +67,6 @@ Usuarios y acceso permite guardar el tiempo de cierre (15 minutos por defecto, e
 
 El apartado Bitácora permite al Administrador filtrar y exportar PDF/CSV, revisar valores anteriores/nuevos y comprobar su cadena. Se conserva al la operación del colegio. Si falla la verificación, Aula permite consultar y respaldar, pero bloquea cambios. [Guía y prueba manual](bitacora.md).
 
-## Acceso a datos bancarios del personal · A5
-
 
 ## Verificar datos y cobros · B1
 

@@ -38,7 +38,20 @@ Source: "..\dist\Aula\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs 
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\MicrosoftEdgeWebview2Setup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 
-Source: "..\docs\*.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\alcance-legal.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\archivo-institucion.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\carpeta-nube.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\cifrado-respaldos.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\comprobante-media-carta.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\configuracion.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\guia-importacion.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\mantenimiento.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\proteccion-reloj.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\proteccion-respaldos.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\puesta-en-produccion.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\restauracion-segura.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\sesiones-acceso.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\bitacora.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 
 [InstallDelete]
 #include "retired-files.iss"

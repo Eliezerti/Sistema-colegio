@@ -13,11 +13,15 @@ Una instalación nueva comienza con identidad «Mi colegio», sin alumnos, repre
 - [Comprobantes](docs/comprobante-media-carta.md): media carta vertical y ORIGINAL/COPIA en carta horizontal al 100 %.
 - [Archivo de la institución](docs/archivo-institucion.md): alumnos y representantes, con borrado protegido solo de fichas sin movimientos ni vínculos.
 - [Restauración segura](docs/restauracion-segura.md), [cifrado de respaldos](docs/cifrado-respaldos.md), [sesiones](docs/sesiones-acceso.md) y [bitácora](docs/bitacora.md).
-- [Inventario, dependencias y migración](docs/retiro-personal-inventario.md).
+- [Inventario técnico del retiro](https://github.com/Eliezerti/Sistema-colegio/blob/mensualidades-sin-nomina/docs/retiro-personal-inventario.md) (solo repositorio).
 
 La actualización verifica una copia previa antes de migrar. No reinicia correlativos existentes. Los respaldos antiguos pueden revisarse y restaurarse: la candidata se migra antes de publicarla, con integridad, referencias y cadena comprobadas. No se reescriben recibos de cobro históricos ni huellas antiguas. WAL, synchronous=FULL y protecciones A1–A5 permanecen. El filtrado de secretos sigue protegiendo registros históricos aunque ya no exista Personal.
 
-## Validación de esta entrega
+## Tanda D en desarrollo
+
+D1: guías del instalador por lista explícita, contadores internos fuera de la API, calendario en el primer inicio y egresos nuevos sin categoría Nómina. Acceso privado retirado; soporte mediante escritorio remoto de Windows. No cambia el esquema ni los importes. [Diseño y validación de la tanda](docs/tanda-d.md).
+
+## Validación de la entrega anterior 1.0.67
 
 Linux: 292 pruebas en 150,716 s, 289 correctas y tres exclusivas de Windows omitidas. Navegadores normal, --demo y --roster: PASS. Migración, referencias de caja/reportes, cinco cortes reales, restauración/cifrado y cero registros precargados comprobados. Windows: 292 correctas en 486,343 s sin omisiones, instalación en cero, actualización publicada y otra cuenta estándar real correctas. [Instalador 1.0.67 en borrador](https://github.com/Eliezerti/Sistema-colegio/releases), 19.626.196 bytes, SHA-256 descargado y coincidente. Defender antes/después sin detecciones. B3 (firma) y B4 permanecen pendientes.
 

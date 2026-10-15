@@ -87,7 +87,7 @@ No se probaron tu PC real, tu impresora/cola, restauración de datos reales, otr
 ## Archivos y commits
 
 - Núcleo nuevo: colegio/backup_crypto.py, backup_keys.py, backup_export.py, backup_setup.py, backup_work.py y backup_temporary.py.
-- Integración: colegio/backup_inspection.py, backup_health.py, storage.py, restore.py, server.py, institution_archive.py. Solo cambia publicación externa de borrado de fichas sin movimientos; no modifica su política, bitácora general, nómina o transacciones financieras.
+- Integración: colegio/backup_inspection.py, backup_health.py, storage.py, restore.py, server.py, institution_archive.py. Solo cambia publicación externa de borrado de fichas sin movimientos; no modifica su política, bitácora general o transacciones financieras.
 - Interfaz: colegio/desktop.py y static/app.js. Dependencias: requirements.txt / requirements-desktop.txt. Empaquetado: tests/package_windows.py, .github/workflows/windows-desktop.yml, descargas/Aula-Windows.zip/.sha256.
 - Pruebas nuevas: tests/test_backup_crypto.py (16 métodos, uno DPAPI exclusivo Windows) y tres métodos de API en tests/test_system.py, total **19**. tests/crypto_helpers.py contiene únicamente credenciales ficticias. Adaptaciones: tests/restore_helpers.py, test_recovery.py, test_admin_safety.py, test_backup_alerts.py, test_backup_retention.py, test_institution_archive.py, test_network.py y browser.cjs. Se descifran las nuevas copias antes de conservar las verificaciones financieras/recuperación existentes; no se reemplazan por comprobaciones vacías.
 - Documentación: README.md, CHANGELOG.md, docs/cifrado-respaldos.md/.html, formato-respaldo-cifrado.md, mantenimiento.md/.html y restauracion-segura.md/.html.

@@ -22,7 +22,7 @@ No deduce la fecha de creación a partir del nombre o la fecha del archivo. Para
 6. Antes de reemplazar, guarda la copia completa verificada **antes-restauracion-…sqlite3**, los archivos originales, la candidata y los informes de pérdida PDF/CSV cuando hay diferencias. Si falla esta preparación, no reemplaza.
 7. Al terminar muestra las rutas de los informes y de la copia anterior. Abre Aula, confirma el reloj/tasa si lo solicita y verifica saldos y recibos.
 
-El PDF/CSV identifica movimientos con correlativo, fecha, alumno/persona, USD, moneda e importe recibido, método, referencia y estados anterior/restaurado. No incluye cuentas bancarias de empleados ni contraseñas. El estado exacto completo se conserva en la copia SQLite anterior. CSV UTF-8 con separador punto y coma; textos que podrían ejecutarse como fórmulas en Excel llevan un apóstrofo de protección.
+El PDF/CSV identifica movimientos con correlativo, fecha, alumno/persona, USD, moneda e importe recibido, método, referencia y estados anterior/restaurado. No incluye contraseñas. El estado exacto completo se conserva en la copia SQLite anterior. CSV UTF-8 con separador punto y coma; textos que podrían ejecutarse como fórmulas en Excel llevan un apóstrofo de protección.
 
 El respaldo completo reemplaza usuarios, configuración y datos. No fusiona dos PC ni importa solo un alumno. Registra la restauración en la bitácora de la base restaurada y en **restauraciones.json**, junto a la base. Identifica la cuenta del sistema operativo; no la presenta como una sesión autenticada de Administrador de Aula.
 

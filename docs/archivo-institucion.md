@@ -48,7 +48,7 @@ Prueba primero en Aula - Pruebas: una ficha sin movimientos admite borrado tras 
 - `python tests/run_browser.py --demo`: correcto.
 - `python tests/run_browser.py --roster`: correcto.
 
-Nueve pruebas de archivo y una nueva de aislamiento temporal ejercitan copia local/segundo destino, contraseña/CSRF/permisos, revisión desactualizada, conservación de recibos con saldo cero, historia de representantes reasignados, personal pagado/anulado y relaciones de pago, fallos de copia, correlativos y restauración del respaldo en otra carpeta. Las pruebas usan bases temporales y no modifican datos del usuario.
+Nueve pruebas de archivo y una nueva de aislamiento temporal ejercitan copia local/segundo destino, contraseña/CSRF/permisos, revisión desactualizada, conservación de recibos con saldo cero, historia de representantes reasignados, fallos de copia, correlativos y restauración del respaldo en otra carpeta. Las pruebas usan bases temporales y no modifican datos del usuario.
 
 Archivos: `colegio/institution_archive.py`, integración en `colegio/server.py`, correlativos en `colegio/db.py` y `colegio/documents.py`, filtro en `colegio/directory_reports.py`, `static/app.js`, `static/style.css`, `tests/test_institution_archive.py`, `tests/browser.cjs`, `tests/test_demo.py`, `tests/demo_browser.cjs`, `AGENTS.md`, README, CHANGELOG y guías de archivo. Las notas de compilación y el paquete fuente se actualizan para la entrega.
 
