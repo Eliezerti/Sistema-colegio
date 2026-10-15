@@ -159,6 +159,18 @@ def probe_dialog():
         credentials=backup_credentials_dialog(root,file)
         if credentials is False:return
         s=probe_backup(file,*credentials);last=s['last_payment']
+        database=data_directory()/'colegio.sqlite3'
+        if database.is_file() and messagebox.askyesno('Copia externa',
+                '¿Seleccionaste una copia del segundo destino, USB o nube? Esto registra la prueba mensual.',parent=root):
+            from contextlib import closing
+            from .db import connect,audit
+            from .audit_chain import require
+            from .clock_guard import get_clock
+            from .backup_probe_record import record
+            with closing(connect(database)) as db,db:
+                require(db);get_clock(database).require()
+                audit(db,None,'external_backup_tested',{'sha256':s['sha256'],'external_declared':True,'source':'Windows local'})
+            record(database,s['sha256'])
         protection='Advertencia: respaldo antiguo sin cifrar.' if s['unencrypted'] else 'Cifrado autenticado y comprobado.'
         messagebox.showinfo('Respaldo comprobado','Integridad y referencias: correctas.\nEsquema: '+str(s['schema'])+'\nAlumnos: '+str(s['students'])+'\nPagos: '+str(s['payments'])+'\nÚltimo recibo: '+(last['receipt']+' · '+last['paid_on'] if last else 'Sin pagos')+'\nSaldo pendiente USD: '+f"{s['balance_usd']/100:.2f}"+'\n\n'+s['creation_note']+'\n'+s.get('audit',{}).get('message','Bitácora antigua sin cadena de huellas.')+'\n'+protection+' No se modificó ni se restauró ninguna base.',parent=root)
     finally:root.destroy()

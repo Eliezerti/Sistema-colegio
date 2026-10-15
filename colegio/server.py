@@ -485,6 +485,8 @@ class SchoolServer(ThreadingHTTPServer):
         status['protection'] = protection
         from .backup_keys import status as crypto_status
         status['crypto']=crypto_status(Path(self.db_path).parent)
+        from .backup_probe_record import reminder
+        status['external_probe_reminder']=reminder(self.db_path)
         return status
 
     def make_backup(self):
@@ -791,7 +793,14 @@ class Handler(BaseHTTPRequestHandler):
                                     result=output.read_bytes()
                         except (ValueError,sqlite3.Error) as error:
                             raise ValidationError(str(error) if isinstance(error,ValueError) else 'El archivo está dañado o no es un respaldo SQLite de Aula.') from None
-                    if endpoint=='probe-backup':self.respond(200,result)
+                    if endpoint=='probe-backup':
+                        if data.get('external_copy') is True and not self.server.demo:
+                            require_audit(db)
+                            audit(db,user['id'],'external_backup_tested',{'sha256':result['sha256'],'external_declared':True})
+                            self.server.clock.require();db.commit()
+                            from .backup_probe_record import record
+                            record(self.server.db_path,result['sha256'])
+                        self.respond(200,result)
                     else:self.respond(200,result,'application/octet-stream',{'Content-Disposition':'attachment; filename="respaldo-convertido.aulabak"'})
                     return
                 if endpoint == 'demo-exit':
@@ -840,7 +849,16 @@ class Handler(BaseHTTPRequestHandler):
                     if (endpoint in DIRECTORY_ACTIONS or endpoint=='correct-billing-start' or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True)) and user['role']=='admin':
                         status=self.server.make_backup()
                         if status.get('local_error'): raise ValidationError('No se puede realizar la operación sin completar primero un respaldo local.')
+                    permanent=None
+                    if endpoint=='transition-year' and data.get('preview') is not True and user['role']=='admin' and not self.server.demo:
+                        review=transition_year(db,dict(data,preview=True),user,
+                            lambda db,endpoint,data,user:mutate(db,endpoint,data,user,synchronize=False))
+                        if review['errors'] or data.get('confirmed_hash')!=review['hash']:
+                            raise ValidationError('Revisa la vista previa del pase de año antes de confirmar.')
+                        from .backup_tiers import preserve_year
+                        with self.server.backup_lock:permanent=preserve_year(self.server.db_path,review['source_year'])
                     result = mutate(db, endpoint, data, user, demo=self.server.demo)
+                    if permanent:result['permanent_backup']=permanent
                 if endpoint not in ('logout','demo-exit'):
                     self.server.clock.require()
                 db.commit()

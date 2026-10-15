@@ -36,3 +36,9 @@ Medición real Linux por HTTP, una ejecución de calentamiento y tres medidas; m
 | 800 | 3 | 24000 | 7200 | 11656156 | 7067 | 0.1716 |
 
 Objetivo menor a 1 MB y 1 s: alcanzado en esta máquina Linux, incluso con 800 alumnos y tres años. No se extrapola a Windows: medición nativa pendiente. La CPU todavía recorre el historial para conservar totales; la carga completa bajo demanda puede superar 1 MB. Dos pruebas específicas correctas en 2,609 s y navegador normal correcto. La primera repetición del navegador detectó que su ayudante de navegación no esperaba la carga asíncrona; se ajustó a esperar la pantalla activa y la repetición pasó.
+
+## D4 · conservación y prueba externa
+
+storage.py:112–143 ya publicaba ciphertext verificado al segundo destino; backup_retention.py conservaba únicamente 90 copias frecuentes allí. Se añaden niveles independientes de 60 días y 24 meses, copiando solo ciphertext ya verificado, mediante temporal, comparación y publicación atómica. Se conserva el orden de publicación resistente a retrocesos del reloj. Las copias permanentes están fuera de los patrones de rotación. El pase valida primero su vista previa y genera una copia cifrada del cierre inmediatamente antes de cambiar el año. No cambia cálculos ni esquema.
+
+Probar respaldo registra una prueba externa únicamente tras éxito y declaración explícita del usuario; es una declaración de origen, no prueba de subida a nube. Recordatorio informativo después de 35 días o si no existe una prueba registrada. La interfaz de Windows también puede registrar esa declaración. Pruebas específicas: siete correctas en 1,895 s; límites, inventario corrupto, permanencia, descifrado real y referencia de saldos.

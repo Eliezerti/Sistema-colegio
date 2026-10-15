@@ -155,3 +155,11 @@ Cierre tras 15 minutos sin actividad, configurable entre 5 y 60 en Usuarios y ac
 ## Control de la bitácora · A4
 
 Verificar datos y cobros comprueba ahora la cadena de la bitácora y su control separado. Las rutas de vaciado están retiradas y no pueden borrar esta historia. Se conservan sin borrado automático las copias antes-bitacora y antes-restauracion, sus originales y los informes. Dependen de BitLocker y permisos locales. [Migración, reversión y límites](bitacora.md).
+
+## Cuánto se conserva en el segundo destino
+
+Todas las copias nuevas del segundo destino siguen cifradas. Aula conserva las últimas 90 copias frecuentes, hasta 60 copias diarias y 24 mensuales. Se guarda la primera copia verificada de cada día y de cada mes; las frecuentes contienen el movimiento posterior. Al superar cada límite se retiran únicamente las más antiguas de ese mismo nivel, por orden de publicación comprobado. Si el inventario está dañado, no se autoriza borrar copias. Los archivos manuales y permanentes no participan en esta rotación.
+
+Antes de confirmar un pase de año revisado se crea una copia cifrada permanente del estado de cierre, en backups/cierres-permanentes y también en el segundo destino cuando está configurado. Esta copia no se elimina automáticamente. Si no puede crearse o copiarse al destino configurado, no se confirma el pase. El modo Pruebas no publica cierres ni respaldos reales. Configura el cifrado antes del pase de año.
+
+Cada mes usa Probar respaldo con una copia tomada del USB o de la nube. Marca que seleccionaste una copia externa; Aula registra la comprobación correcta, pero no puede verificar que el navegador tomó el archivo de una nube. Tras más de 35 días aparece un recordatorio que no bloquea el trabajo. Una contraseña errónea o una copia corrupta no lo reinician.

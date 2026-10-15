@@ -134,6 +134,8 @@ def automatic_backup(database):
                           secondary_path=result['path'],secondary_sha256=result['sha256'],secondary_key_id=result['key_id'])
             status['secondary_retention_error'] = ''
             try:
+                from .backup_tiers import retain_levels
+                retain_levels(Path(result['path']),dest)
                 retain_backups(dest,Path(result['path']),'aula-auto-*.aulabak',90)
             except OSError:
                 status['secondary_retention_error'] = 'Se copió el respaldo al segundo destino, pero no se pudo comprobar la conservación de copias allí.'

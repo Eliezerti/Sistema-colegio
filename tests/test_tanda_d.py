@@ -118,3 +118,49 @@ class PrincipalTests(unittest.TestCase):
             self.assertEqual(actual['dashboard']['income'],sum(p['amount'] for p in before['payments'] if not p['voided'] and p['paid_on']==before['today']))
             self.assertEqual(before['charges'],f.request('state')['charges'])
         finally:f.tearDown()
+
+class BackupLevelsTests(unittest.TestCase):
+    def test_levels_are_bounded_and_permanent_copies_never_rotated(self):
+        from colegio.backup_tiers import retain_levels
+        from colegio.backup_crypto import MAGIC
+        from datetime import timedelta
+        with tempfile.TemporaryDirectory() as temp:
+            directory=Path(temp);source=directory/'verified.aulabak';source.write_bytes(MAGIC+b'fictional-ciphertext')
+            permanent=directory/'aula-cierre-2026-2027-unica.aulabak';permanent.write_bytes(source.read_bytes())
+            for n in range(26):retain_levels(source,directory,today=date(2020+n//12,n%12+1,1))
+            for n in range(62):retain_levels(source,directory,today=date(2023,1,1)+timedelta(days=n))
+            self.assertEqual(len(list(directory.glob('aula-diario-*.aulabak'))),60)
+            self.assertEqual(len(list(directory.glob('aula-mensual-*.aulabak'))),24)
+            self.assertEqual(permanent.read_bytes(),source.read_bytes())
+            self.assertTrue(all(p.read_bytes().startswith(MAGIC) for p in directory.glob('*.aulabak')))
+            # A broken retention ledger must never authorize deletion.
+            (directory/'.aula-backup-history.json').write_text('corrupto')
+            before={p.name for p in directory.glob('*.aulabak')}
+            with self.assertRaises(OSError):retain_levels(source,directory,today=date(2023,4,1))
+            self.assertTrue(before<={p.name for p in directory.glob('*.aulabak')})
+
+    def test_permanent_year_copy_decrypts_and_preserves_financial_totals(self):
+        from tests.test_system import SystemTests
+        from colegio.backup_tiers import preserve_year
+        from colegio.backup_inspection import probe_backup
+        f=SystemTests();f.setUp()
+        try:
+            f.request('payments',f.payment())
+            before=f.request('state');path=preserve_year(f.path,f.year)
+            result=probe_backup(path,'FICTICIO-respaldo-seguro-2026')
+            self.assertEqual(result['balance_usd'],before['summary']['pending'])
+            self.assertFalse(result['unencrypted'])
+            self.assertEqual(before['summary'],f.request('state')['summary'])
+        finally:f.tearDown()
+
+    def test_external_probe_reminder_requires_explicit_success_and_expires_after_35_days(self):
+        from colegio.backup_probe_record import record,reminder
+        from datetime import datetime,timedelta,timezone
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'colegio.sqlite3'
+            self.assertTrue(reminder(path)['due'])
+            record(path,'ficticio')
+            now=datetime.now(timezone.utc)
+            self.assertFalse(reminder(path,now=now)['due'])
+            self.assertTrue(reminder(path,now=now+timedelta(days=36))['due'])
+            self.assertTrue(reminder(path,now=now-timedelta(days=1))['due'])
