@@ -1,4 +1,6 @@
-# Tanda D · en desarrollo
+# Tanda D · 1.0.68 · 15/10/2026
+
+Validación Windows Server 2022 completa: 301 correctas, tres navegadores, instalación/actualización/otra cuenta, consulta cifrada e impresión nativa correctas. Linux: 301, con tres exclusivas de Windows omitidas; tres navegadores correctos. Objetivo principal con 800 alumnos y tres ciclos alcanzado: 7.334 bytes y 0,399 s en Windows. [Entrega y evidencia](docs/tanda-d.md).
 
 - D7: consulta cifrada en ventana WebView2 real y cierre explícito de fixtures; actualización nativa desde 1.0.67, portabilidad cifrada en otra cuenta Windows, cortes reales durante publicación por niveles y guía de pruebas físicas.
 

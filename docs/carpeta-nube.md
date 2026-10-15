@@ -24,4 +24,3 @@ Si solo estaba el aviso de disco desconocido, se sustituye por «Carpeta de nube
 Revisa periódicamente Drive. Si Aula escribe en la carpeta pero Drive no sube los archivos, Aula no puede detectar ese fallo. Conserva la carpeta privada y no pongas allí la base activa. Este cambio no cifra los respaldos.
 
 Se guarda solo la declaración de configuración: ruta, equipo, Administrador y fecha. No se cambia el esquema ni alumnos, cobros, cargos, importes, las funciones de mensualidades.
-

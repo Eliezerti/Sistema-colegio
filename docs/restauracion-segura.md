@@ -41,4 +41,3 @@ Antes de retirar WAL/SHM queda **.restore-pending.json**, con la operación ya c
 Si el registro está truncado, ilegible, alterado o falta una copia verificable, aparece **Recuperación pendiente**. No abre la base ni borra los respaldos. Conserva toda la carpeta y pide ayuda técnica; no borres el registro pendiente ni WAL/SHM manualmente.
 
 Esto protege frente a la terminación del proceso en las etapas probadas. No sustituye un UPS ni garantiza recuperación ante fallos de hardware que destruyan simultáneamente datos y copias. Las huellas detectan inconsistencias; no impiden que alguien con control de Windows reescriba el registro.
-

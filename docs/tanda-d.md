@@ -1,88 +1,83 @@
-# Tanda D · diseño y evidencia
+# Tanda D · entrega 1.0.68
 
-Trabajo autorizado completo, por cambios pequeños. Firma del instalador y publicación de huellas fuera del alcance.
+Implementación terminada y validación nativa correcta el 15/10/2026. Base auditada 1.0.67; programa compilado desde `11fbacf`, sin modificar main. Esquema 12 conservado; no hay migración nueva sobre la base real. No se registraron pagos ni se usaron datos reales.
 
-## D1 · limpieza
+- [Instalador validado, ZIP con el EXE](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38769010822/artifacts/11992255597).
+- [Evidencia nativa: registros, mediciones y PDF ficticios](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38769010822/artifacts/11991821161).
+- [Ejecución Windows completa](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38769010822) y [revisión del código](https://github.com/Eliezerti/Sistema-colegio/pull/3).
 
-Evidencia previa: packaging/Aula.iss:41 empaquetaba todo HTML; las líneas 133–134 de retired-files.iss eliminaban privilegios-personal, no lo incluían. server.py:67 y :102 exponían settings completos. db.py:198–199 ya derivaba el año; el asistente en app.js:127 no pedía calendario. app.js:367 ya ocultaba Nómina, pero server.py:358 aceptaba la categoría por API. network.py:20–24 limitaba el origen a Tailscale; desktop.py:105–109 permitía activarlo. El servidor solo escuchaba en loopback.
+Los enlaces de artefactos requieren iniciar sesión en GitHub. El ZIP del instalador contiene Aula-Colegio-Instalador-1.0.68.exe; no es el ZIP de código fuente. La firma digital y la publicación de huellas no forman parte de esta tanda.
 
-Diseño aplicado: lista explícita de manuales del colegio; internos conservados solo en repositorio. id_floor_* se conservan en SQLite y se omiten en el estado de todos los perfiles. Primer inicio pide calendario con fecha local de Venezuela. Nuevos egresos rechazan Nómina, incluidos variantes de mayúsculas y acento; históricos intactos. Acceso privado retirado, incluyendo activación por Windows, CLI y scripts; una configuración antigua de cliente nunca crea una base local por accidente. Se conservan Host, Origin, CSRF, permisos y sesiones.
+## Qué quedó listo y dónde se verifica
 
-Línea base local: unittest 292 pruebas en 163,338 s, 289 correctas y tres exclusivas de Windows omitidas. Navegadores normal, demo y roster correctos. Restricción inicial de sockets resuelta mediante ejecución autorizada. cryptography 50.0.0 instalado.
+| Punto | Resultado | Evidencia de implementación |
+|---|---|---|
+| D1 | Manuales del colegio separados del historial técnico; limpieza de guías antiguas al actualizar; pisos internos omitidos para todos los perfiles; calendario explícito en primer inicio; Nómina rechazada en egresos nuevos, históricos intactos; acceso privado retirado. | packaging/Aula.iss:41, packaging/retired-files.iss:133, colegio/server.py:71, :364 y :661; colegio/network.py:28. |
+| D2 | Limitador monotónico conservado y recuperación local con contraseña de Administración, código aleatorio de un uso, dos minutos de validez y bitácora. No cambia la contraseña. | colegio/local_login.py:29 y :52; tests/test_tanda_d.py, LocalLoginTests. |
+| D3 | Resumen principal acotado y libro completo bajo demanda; totales completos, cobros recientes y alertas calculadas antes de limitar. La interfaz pide historia al navegar u operar. | colegio/state_view.py:5; tests/benchmark_state.py; PrincipalTests. |
+| D4 | Segundo destino cifrado: 90 frecuentes, 60 diarias, 24 mensuales; copia permanente antes del pase escolar revisado; recordatorio informativo tras 35 días sin prueba externa declarada. | colegio/backup_tiers.py:33 y :47; colegio/backup_probe_record.py; BackupLevelsTests. |
+| D5 | Copia verificada en temporal separado, SQLite inmutable/query_only y bloqueo de escrituras en servidor. Sesión solo en memoria; enlace inicial de un uso, recarga segura y aviso permanente. No genera mensualidades ni confirma tasas. | colegio/read_only.py:33 y :96; colegio/server.py:590; tests/test_read_only_copy.py y tests/viewer_browser.cjs. |
+| D6 | Reporte diario con morosidad por grado; cierre mensual JSON/PDF/CSV con moneda/método, cobros, egresos, saldo, pendiente por grado y anulaciones de bitácora. Sin identificadores de alumnos en el mensual. | colegio/monthly_report.py:13; colegio/directory_reports.py, daily_report; MonthlyReportsTests. |
+| D7 | Instalación sin datos, actualización real desde 1.0.67, otra cuenta estándar real, desinstalación conservando datos, portabilidad sin almacén de origen, cortes reales y guía física. | tests/windows_upgrade.py; tests/windows_other_account.py; tests/windows_portability.py; packaging/test_installer.ps1; docs/pruebas-fisicas.md. |
 
-Pruebas D1: 15 pruebas en 5,335 s, 14 correctas y mutex exclusivo de Windows omitido. Incluyen API real, conservación de egresos históricos y totales de caja/reporte, privacidad por perfil, rechazo de red y protección contra abrir datos vacíos. Validación final de toda la tanda pendiente.
+### Precisiones de los hallazgos iniciales
 
-## D2 · desbloqueo local protegido
+Las referencias siguientes corresponden a la base auditada `9c9ba24`, antes de modificarla. Aula.iss:41 incluía todos los HTML, por eso empaquetaba el inventario interno. Los archivos privilegios-personal ya no existían en el repositorio y retired-files.iss:133–134 eran instrucciones para eliminarlos, no para incluirlos. Se conserva ese retiro y se añaden eliminaciones específicas de guías internas antiguas.
 
-Se conserva íntegro el limitador monotónico: cinco fallos, espera progresiva hasta 60 segundos, aislamiento por usuario y dos comprobaciones simultáneas. Hallazgo en server.py:632–640 de la versión previa: la espera se aplicaba antes de comprobar una contraseña correcta. No se permite saltarla desde HTTP sin una prueba local.
+server.py:67 y :102 exponían todos los ajustes en el estado. db.py:198–199 ya calculaba el año con la fecha: no estaba fijo en 2026. En enero de 2027, un ciclo que empieza en septiembre puede ser 2026–2027; el asistente ahora pide revisarlo, y con inicio en enero sugiere 2027–2028. Una elección manual no se sobrescribe. app.js:367 ya ocultaba Nómina, pero server.py:358 la aceptaba por API; ahora se rechaza para egresos nuevos. PrivateAccess estaba apagado por defecto y ampliaba Host/Origin para un enlace HTTPS de Tailscale, manteniendo el servidor en loopback; se retiraron sus vías de activación.
 
-Inicio de Windows → Desbloquear acceso local pide usuario y contraseña actuales de Administración. Emite un código aleatorio de 128 bits, válido dos minutos y una sola vez, ligado a la ejecución actual de Aula. No modifica la contraseña. El formulario de login recibe el código en un campo secreto; sigue exigiendo la contraseña correcta. La recuperación tiene una plaza propia para que un ataque no ocupe todas las comprobaciones. Emisión y uso quedan en bitácora sin guardar código ni contraseña. Reiniciar invalida los códigos. El respaldo de SQLite no contiene los archivos temporales de acceso.
+Se encontraron además manuales históricos que todavía describían vaciado global o copias externas sin cifrar. Se conservan íntegros en docs/interno/manuales-anteriores-a-tanda-d y se entregan solo guías actuales en el instalador. El seguimiento técnico completo queda en docs/interno/seguimiento-tanda-d.md, también fuera del paquete.
 
-Alternativa para el ZIP: python -m colegio.local_login --data-dir CARPETA --username USUARIO. La contraseña se pide sin mostrarla ni pasarla en argumentos. Pruebas: cuatro correctas en 2,656 s, incluyendo ataque, otro usuario, credencial incorrecta, código ajeno, una sola utilización, saturación, reloj monotónico, reinicio y bitácora válida.
+## Cuatro suites: resultados reales
 
-## D3 · resumen e historial bajo demanda
+| Suite | Linux | Windows Server 2022 |
+|---|---|---|
+| python -m unittest discover -s tests -v | 301 en 173,864 s: 298 correctas, tres de Windows omitidas | 301 correctas en 509,889 s, sin omisiones |
+| python tests/run_browser.py | PASS; incluye calendario 2027 y consulta con recarga/cierre | PASS, incluidas esas verificaciones |
+| python tests/run_browser.py --demo | PASS | PASS |
+| python tests/run_browser.py --roster | PASS | PASS |
 
-Evidencia: snapshot en server.py:58–127 cargaba todo el historial en cada estado; app.js calculaba la pantalla principal desde esas listas. Se mantiene el cálculo completo de saldos, reportes y morosidad; la API principal proyecta únicamente resúmenes completos, cinco cobros recientes, cinco deudores y cinco vencimientos, con cantidades y totales de la semana calculados antes de limitar. history=1 solicita el libro completo. La interfaz carga el historial al navegar o abrir operaciones y conserva las pantallas y documentos existentes. Las pruebas del libro completo ahora lo piden explícitamente; la respuesta predeterminada tiene su prueba propia. Sin migración.
+Las tres omisiones Linux son DPAPI, mutex/enfoque de ventanas y diálogo nativo Tk. Se ejecutaron en Windows. La restricción inicial de sockets se resolvió con el mecanismo autorizado, sin omitir ni alterar pruebas para eludirla. cryptography 50.0.0 instalado, según el requisito fijado.
 
-Medición real Linux por HTTP, una ejecución de calentamiento y tres medidas; mediana, sin compresión. Datos ficticios: diez cargos y tres pagos por alumno y año; sin logo personalizado.
+El primer intento nativo completo detectó una conexión de prueba sin cerrar; se corrigió manteniendo el rechazo de esquema futuro. Otro runner se detuvo porque Defender no estaba activo; se añadió una espera acotada de arranque, conservando el rechazo obligatorio si no se activa. Los verificadores de navegador tenían rutas de Linux; se hicieron portables manteniendo todas sus aserciones. La ejecución final anterior pasó íntegra; los intentos parciales o cancelados no se presentan como entregas validadas.
 
-| Alumnos | Años | Cargos | Pagos | Completo, bytes | Principal, bytes | Principal, segundos |
+## Rendimiento D3
+
+HTTP real, sin compresión, una solicitud de calentamiento y mediana de tres solicitudes. Cada carga tiene 500 u 800 alumnos, diez cargos y tres pagos por alumno y ciclo; uno, dos o tres ciclos, incluyendo períodos preparados del ciclo activo. No se usó logo personalizado. Se mide la respuesta completa por HTTP, no arranque ni dibujo de toda la interfaz. El libro completo sigue disponible con history=1. CSV con bytes, medianas y máximos: [tanda-d-mediciones.csv](tanda-d-mediciones.csv).
+
+| Alumnos | Ciclos | Cargos | Pagos | Principal Linux, bytes / s | Principal Windows, bytes / s | Completo Windows, bytes / s |
 |---|---|---|---|---|---|---|
-| 500 | 1 | 5000 | 1500 | 2642112 | 7017 | 0.0517 |
-| 500 | 2 | 10000 | 3000 | 4958241 | 7059 | 0.0827 |
-| 500 | 3 | 15000 | 4500 | 7277354 | 7065 | 0.1075 |
-| 800 | 1 | 8000 | 2400 | 4229112 | 7017 | 0.0833 |
-| 800 | 2 | 16000 | 4800 | 7943242 | 7060 | 0.1228 |
-| 800 | 3 | 24000 | 7200 | 11656156 | 7067 | 0.1716 |
+| 500 | 1 | 5000 | 1500 | 7184 / 0.0563 | 7284 / 0.1852 | 2642127 / 0.2330 |
+| 500 | 2 | 10000 | 3000 | 7226 / 0.0860 | 7326 / 0.2201 | 4958508 / 0.2742 |
+| 500 | 3 | 15000 | 4500 | 7232 / 0.1006 | 7332 / 0.2569 | 7277621 / 0.3376 |
+| 800 | 1 | 8000 | 2400 | 7184 / 0.1132 | 7284 / 0.2870 | 4229379 / 0.3579 |
+| 800 | 2 | 16000 | 4800 | 7227 / 0.1155 | 7327 / 0.3389 | 7943509 / 0.4159 |
+| 800 | 3 | 24000 | 7200 | 7234 / 0.2025 | 7334 / 0.3990 | 11656423 / 0.5011 |
 
-Objetivo menor a 1 MB y 1 s: alcanzado en esta máquina Linux, incluso con 800 alumnos y tres años. No se extrapola a Windows: medición nativa pendiente. La CPU todavía recorre el historial para conservar totales; la carga completa bajo demanda puede superar 1 MB. Dos pruebas específicas correctas en 2,609 s y navegador normal correcto. La primera repetición del navegador detectó que su ayudante de navegación no esperaba la carga asíncrona; se ajustó a esperar la pantalla activa y la repetición pasó.
+Objetivo propuesto menor a 1 MB y 1 s: alcanzado en las seis cargas, también en Windows. Con 800 y tres ciclos, Windows devuelve 7.334 bytes con mediana 0,399 s y máximo 0,404 s. No garantiza el mismo tiempo en cualquier PC: el cálculo todavía recorre el historial para conservar los totales y el libro completo solicitado bajo demanda puede superar 1 MB.
 
-## D4 · conservación y prueba externa
+## Dinero, cadena, respaldos y permisos
 
-storage.py:112–143 ya publicaba ciphertext verificado al segundo destino; backup_retention.py conservaba únicamente 90 copias frecuentes allí. Se añaden niveles independientes de 60 días y 24 meses, copiando solo ciphertext ya verificado, mediante temporal, comparación y publicación atómica. Se conserva el orden de publicación resistente a retrocesos del reloj. Las copias permanentes están fuera de los patrones de rotación. El pase valida primero su vista previa y genera una copia cifrada del cierre inmediatamente antes de cambiar el año. No cambia cálculos ni esquema.
+Las referencias publicadas de caja y reportes se conservaron exactamente: egresos válidos equivalentes a USD 30,01, con USD 10,01 en efectivo y Bs 2.000,00 por transferencia a su tasa original; el egreso anulado queda fuera. Se compararon movimientos, importes originales/conversiones, anulaciones y totales, no solo cantidades de filas. Las pruebas de cobros, cinco cajeros y referencias de saldos/antigüedad también pasaron. La actualización nativa conserva el saldo USD 50 de su fixture y todas sus filas/documentos financieros.
 
-Probar respaldo registra una prueba externa únicamente tras éxito y declaración explícita del usuario; es una declaración de origen, no prueba de subida a nube. Recordatorio informativo después de 35 días o si no existe una prueba registrada. La interfaz de Windows también puede registrar esa declaración. Pruebas específicas: siete correctas en 1,895 s; límites, inventario corrupto, permanencia, descifrado real y referencia de saldos.
+Matriz de perfiles y CSRF completa, rutas de Personal retiradas, protección de correlativos, integrity_check, foreign_key_check, Verificar datos y cadena válidos. Se mantienen A1–A5, WAL/FULL, importes y recibos congelados. No hay una migración nueva de producción. Las copias antiguas usadas para consultar se actualizan solo en el temporal verificado y se vuelven a comprobar; se prueba con un fixture publicado.
 
-## D5 · consulta aislada de copias
+Cortes reales del proceso durante cobro, respaldo SQLite, cifrado/publicación, restauración, migración y borrado de ficha; se añaden tres puntos durante publicación de copias por niveles. Las bases quedan completas o intactas, con recuperación/verificación posterior. Son terminaciones reales, no excepciones que pretendan simular un corte eléctrico.
 
-El servidor habitual inicializaba sesiones en SQLite y snapshot sincronizaba mensualidades. Se crea un servidor de consulta separado, sin esos servicios: abre únicamente un temporal verificado, conecta SQLite con mode=ro, immutable y query_only, y rechaza antes de abrir la base todos los POST salvo actividad/cierre de sesión en memoria. Esas dos rutas requieren sesión y CSRF y nunca modifican SQLite. GET utiliza los mismos cálculos y documentos, sin sincronización de mensualidades. Inicio por enlace de un uso con cookie HttpOnly/SameSite, sin usuarios predeterminados ni sesiones importadas.
+La cuenta estándar Windows real usó solo archivo cifrado más contraseña y solo archivo más recuperación, sin el almacén de origen: Probar respaldo, restauración y consulta correctos. La ventana WebView2 real abrió la copia cifrada, mostró el aviso, mantuvo Consulta, conservó el origen y eliminó el temporal al cerrar. No hay una ruta de servidor que permita registrar cobros desde esa copia; solo actividad y cierre de sesión pueden cambiar RAM con sesión y CSRF.
 
-La copia antigua se migra solo dentro del temporal verificado y se vuelve a comprobar; el archivo original queda intacto. No hay migración de la base real. La fecha visible es la del archivo, explícitamente no certificada. Tres pruebas de servidor correctas en 4,473 s: todas las rutas de escritura descubiertas más rutas nuevas desconocidas, cifrado con contraseña y recuperación sin llaves de origen, contraseña errónea, corrupción, esquema nuevo, fixture publicado antiguo, integridad, ausencia de mensualidades nuevas, hashes del origen y temporal, y limpieza al cerrar. Chromium real correcto: aviso permanente, navegación e historial, sin confirmación de tasa, escrituras rechazadas y libro intacto. El recorrido normal incorpora esta comprobación.
+La retención explica qué se conserva y qué se elimina. El pase de año crea su copia permanente cifrada tras validar la revisión y antes de cambiar el curso; si falla, no confirma el pase. La declaración de haber tomado una copia externa es manual: Aula verifica su contenido, no una subida a la nube.
 
-## D6 · reportes
+El pendiente del informe mensual es el saldo actual de cargos que vencen hasta el fin del mes elegido; no reconstruye una foto histórica. El saldo de caja acumula movimientos válidos, no certifica efectivo contado. Las anulaciones se seleccionan por fecha de bitácora en Venezuela. PDF/CSV se comprobaron además desde los botones reales, sin datos de identificación del alumno y sin alterar saldos.
 
-El reporte diario previo detallaba alumnos morosos, pero no agrupaba por grado; daily_report en directory_reports.py:150 calculaba los totales generales. Se añade una sección por grado con cantidad de alumnos y vencido USD, sin cambiar las secciones previas ni sus sumas. El informe mensual ofrece JSON, PDF y CSV y separa moneda/método, saldo previo, cobrado, egresos y saldo acumulado hasta fin de mes. Usa importes y conversiones originales, estado actual de anulaciones y pendiente actual por grado de cargos con vencimiento hasta ese mes. Se explica que no reconstruye una foto histórica ni certifica efectivo contado. Las anulaciones realizadas en el mes provienen de la fecha de bitácora convertida a Venezuela, aunque el movimiento anulado sea anterior. No incluye nombres, códigos, documentos ni teléfonos de alumnos. CSV protege fórmulas.
+## PDF, impresión e instalación
 
-Once pruebas correctas en 4,625 s: reportes previos, matriz completa de perfiles, totales/caja idénticos tras generar informes, PDF/CSV, separación de monedas, privacidad y anulaciones. Primer intento detectó un supuesto de orden de secciones del reporte diario: se mantuvo el orden original y se añadió la nueva sección al final. La prueba mensual usa fechas coherentes con su mes y tasa registrada.
+WebView2 e inspección independiente correctos: individual de 396 × 612 puntos, una página; sobre carta 612 × 792, una página y misma posición/tamaño al 100 %; ORIGINAL/COPIA en 792 × 612, una página con dos copias completas al 100 %. No aparecen código interno ni cédula escolar. La consulta de copias no desplaza el comprobante al imprimir. La impresora física del colegio se comprueba aparte.
 
-## D7 · validación de entrega
+Instalación en cero, apertura real, ventanas, bandeja, actualización 1.0.13 → 1.0.49 → 1.0.67 → 1.0.68 y desinstalación conservando datos: correctas. Otra cuenta estándar real: carpeta y SID distintos, instalación/inicio vacíos y datos de la cuenta principal intactos. Guías internas y antiguas retiradas de la instalación. Defender antes/después sin detecciones, motor 1.1.26090.9 y firmas 1.461.41.0.
 
-Se incorpora la actualización real 1.0.67 entre los instaladores históricos y el nuevo, comprobando filas, importes, integridad y eliminación de guías internas y antiguas. La cuenta estándar real también prueba un archivo cifrado con contraseña y con recuperación: Probar respaldo, restaurar, consultar y verificar cadena sin almacén de origen. La creación del fixture destruye su almacén antes de trasladar archivo y credenciales ficticios. Se conserva la instalación limpia y la desinstalación que deja los datos. El flujo Tanda D ejecuta cuatro suites, seis medidas HTTP y validación nativa e impresión; entrega únicamente el EXE si todo pasa, sin publicación de huellas ni firma digital.
+## Límites reales y pruebas del colegio
 
-Cortes de procesos reales: cobro (test_system), respaldo SQLite y publicación cifrada (test_operation_kills/test_backup_crypto), restauración (test_restore_safety), migración publicada (test_staff_retirement) y borrado de ficha (test_operation_kills). Se añaden cortes durante copia por niveles, antes de publicar y después de publicar. No se sustituyen por excepciones simuladas. Se mantiene la referencia publicada de caja/reportes tras el retiro.
+No se dispone de la PC Windows 10/11 del colegio, su impresora ni capacidad de cortar físicamente su electricidad. Por eso no se presentan esas pruebas como ejecutadas. [Pruebas físicas](pruebas-fisicas.md) detalla corte eléctrico con datos ficticios, impresión y restauración en otra PC. Puesta en producción se volvió a renderizar: una página A4. El aviso de consulta usa la fecha del archivo, expresamente no certificada; copiar o descargar un archivo puede cambiarla.
 
-Primera suite conjunta D1–D6: 299 pruebas en 171,540 s, un fallo y un error. El control nuevo de login usaba una vía de escritura que no satisfacía la prueba de sincronización Windows; se reutiliza atomic_json, ya probado. La prueba de fallo del segundo destino se actualiza para exigir conservación byte a byte de todas las copias anteriores, incluidos los niveles nuevos. Repetición específica: siete correctas en 8,076 s. Los tres recorridos de navegador de esta ronda pasaron. Repetición completa y Windows pendientes.
-
-La guía Pruebas físicas detalla corte eléctrico, impresora y restauración en otra PC. No se presentan como ejecutados desde un runner.
-
-Primer arranque del flujo Windows 38760139693: rechazado antes de crear un trabajo. actionlint confirmó en tanda-d.yml:23 que runner.temp no se permite en env del trabajo. La variable se mueve al paso nativo que la utiliza, donde ese contexto sí está disponible. No se llegó a compilar ni a probar el producto en ese intento.
-
-Revisión final del asistente: al cambiar el mes inicial se recalcula el año sugerido según la fecha de Venezuela, mientras el usuario no haya escrito un año manual. Se prueba enero de 2027 con septiembre (2026–2027) y enero (2027–2028), y que una elección manual no se sobrescriba. Backend: calendario inválido no crea el administrador; enero de 2027 con inicio en enero deriva 2027. Una prueba API correcta en 0,543 s y navegador normal completo correcto. Se sustituye la ejecución Windows 38760482303, aún sin validación terminada, para compilar este ajuste final.
-
-Cierre de manuales D1: se detectaron todavía textos heredados en bitacora.md:9 (vaciado global), proteccion-respaldos.md:31 (copias externas sin cifrar), sesiones-acceso.md:63 (bitácora pendiente) y archivo-institucion.md:70 (cifrado pendiente). Los manuales anteriores completos se conservan en docs/interno/manuales-anteriores-a-tanda-d, fuera del instalador. Las guías del colegio quedan actualizadas y sin evidencia de desarrollo mezclada; README distingue instrucciones y evidencia técnica. La prueba de empaquetado revisa también esos textos obsoletos. Se sustituye la compilación 38761315453 para incorporar estos manuales al EXE final.
-
-Suite local del programa definitivo: 301 pruebas en 162,925 s, 298 correctas y tres exclusivas de Windows omitidas. Navegador normal (incluye calendario 2027 y consulta de copias), demo y roster correctos. Los ajustes posteriores de manuales se verifican por separado y no modifican el programa.
-
-Windows 38762044853 ejecutó 301 pruebas en 520,891 s: 300 correctas y un error de limpieza del fixture nueva.sqlite3. La prueba había usado el contexto transaccional de sqlite3 sin cerrar su conexión; Windows mantuvo bloqueado el archivo. Se corrige con closing, conservando el rechazo del esquema futuro y todas las comprobaciones. No se generó instalador. La repetición local de consulta, escritorio y recibos pasó: 22 pruebas en 6,815 s, una exclusiva de Windows omitida.
-
-Se amplía además el verificador del instalador para abrir una copia cifrada en una ventana WebView2 real y comprobar aviso permanente, perfil Consulta, PDF/impresión, origen intacto y temporal eliminado al cerrar. La consulta usa navegación privada; su aviso se mantiene en pantalla y no desplaza el comprobante al imprimir. Esta comprobación se realiza exclusivamente con una base vacía ficticia y nunca usa la carpeta real.
-
-Windows 38764616361 se detuvo antes de las pruebas, en el análisis del instalador histórico: WinDefend estaba iniciado, pero Get-MpComputerStatus todavía informó protección inactiva. No fue una detección del programa. El análisis sigue siendo obligatorio y no se genera ni entrega instalador. Se espera hasta 60 segundos la activación real del motor al arrancar un runner; si continúa inactivo, se mantiene el rechazo y se muestran sus indicadores para diagnóstico. No se desactiva protección ni se añaden exclusiones.
-
-Repetición local tras la corrección de cierre y la ampliación nativa: 301 pruebas en 165,088 s, 298 correctas y las tres de Windows omitidas. Navegadores normal, demo y roster correctos.
-
-Cierre de sesión/recarga de la consulta: server.py:603 volvía a consumir view_token cada vez que se recargaba la dirección inicial; read_only.py:58 lo admite una sola vez. La prueba real de Chromium reprodujo 403 al recargar. Se intercambia el enlace por cookie y se redirige a / sin token; la recarga conserva la sesión y reutilizar el enlace sigue dando 403. Se conserva el máximo de doce horas y el límite de inactividad de la copia. Al terminar la sesión se pide reabrir la copia desde Windows, sin mostrar un login que ese servidor no admite. Tres pruebas de servidor correctas en 4,414 s y Chromium real correcto, incluidos recarga, cierre, privacidad y rechazos de escritura.
-
-La prueba del origen se separa de la carpeta de la base activa de la fixture: así sus checkpoints WAL normales no interfieren con la comprobación exacta de que la carpeta del respaldo no cambia. No se reduce esa comprobación.
-
-Windows 38765642694: suite completa de 301 pruebas correcta en 492,998 s, sin omisiones, y compilación correcta. El navegador normal quedó retenido por ENOENT en browser.cjs:28, que intentaba crear /tmp/aula-cloud-browser- en Windows; el registro confirma esa ruta. demo_browser.cjs:6 y roster_browser.cjs:6 también fijaban el ejecutable de Linux. Se detiene esa ejecución y se conservan sus resultados como parciales, sin entregar ese EXE. Los verificadores ahora usan temporales propios del sistema, conservan todas las aserciones y usan Chromium local o administrado por Playwright. El subproceso de matrícula utiliza el mismo Python del corredor. Las tres suites portables pasaron en Linux. La suite local completa de la corrección de consulta pasó: 301 en 173,864 s, con las tres de Windows omitidas.
+El entorno de trabajo bloqueó la descarga local de los ZIP desde productionresultssa2.blob.core.windows.net, dominio no autorizado por su política de red. No se eludió esa restricción: el EXE y la evidencia están entregados en los artefactos de GitHub enlazados arriba, y los resultados se leyeron de los registros completos accesibles de Actions. No se adjuntaron archivos de huellas ni se trabajó en firma del instalador.

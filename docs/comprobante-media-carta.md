@@ -19,4 +19,3 @@ Elige **Carta horizontal · 2 copias verticales**. El PDF y la impresión usan u
 Se acortan los márgenes a unos 5 mm y se aproxima el inicio al borde superior. El pie acompaña al contenido y se amplía la zona libre antes de cada firma a unos 11 mm. El PDF individual continúa en media carta vertical; A4 y tickets siguen disponibles.
 
 En el diálogo de impresión selecciona Carta horizontal, Tamaño real / 100 %, sin Ajustar. Desactiva Encabezados y pies del navegador para quitar fecha, título, URL y contador, visibles en la captura de revisión. Esos textos son añadidos por el navegador y no pertenecen al recibo; Aula no cambia las preferencias permanentes del controlador.
-
