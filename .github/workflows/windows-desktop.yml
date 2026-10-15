@@ -7,10 +7,15 @@ on:
         required: false
         type: string
       finalize_delivery:
-        description: 'Solo actualizar ZIP fuente y notas del borrador 1.0.57 ya validado'
+        description: 'Solo actualizar ZIP fuente y notas de un borrador ya validado'
         required: false
         type: boolean
         default: false
+      delivery_tag:
+        description: 'Borrador ya validado para finalizar documentación y fuente'
+        required: false
+        type: string
+        default: 'desktop-1.0.57'
   push:
     branches: [main]
     paths:
@@ -41,13 +46,15 @@ jobs:
       - name: Adjuntar fuente final y huella al borrador verificado
         env:
           GH_TOKEN: ${{ github.token }}
+          DELIVERY_TAG: ${{ inputs.delivery_tag }}
         run: |
+          test "$(gh release view "$DELIVERY_TAG" --json isDraft --jq .isDraft)" = true
           python tests/package_windows.py --output descargas/Aula-Windows.zip
-          gh release upload desktop-1.0.57 descargas/Aula-Windows.zip descargas/Aula-Windows.sha256 --clobber
-          gh release view desktop-1.0.57 --json body --jq .body > /tmp/aula-release-notes.md
+          gh release upload "$DELIVERY_TAG" descargas/Aula-Windows.zip descargas/Aula-Windows.sha256 --clobber
+          gh release view "$DELIVERY_TAG" --json body --jq .body > /tmp/aula-release-notes.md
           printf '\n\nFuente ZIP final con documentación y evidencia: SHA-256 %s. Solo se actualizan documentación/fuente; el EXE validado no cambia.\n' "$(cut -d ' ' -f 1 descargas/Aula-Windows.sha256)" >> /tmp/aula-release-notes.md
-          gh release edit desktop-1.0.57 --notes-file /tmp/aula-release-notes.md
-          gh release view desktop-1.0.57 --json url,assets
+          gh release edit "$DELIVERY_TAG" --notes-file /tmp/aula-release-notes.md
+          gh release view "$DELIVERY_TAG" --json url,assets
   receipt-evidence:
     if: github.event_name == 'workflow_dispatch' && inputs.receipt_evidence_run != '' && !inputs.finalize_delivery
     runs-on: ubuntu-latest
@@ -205,6 +212,8 @@ jobs:
           A1: restauración con comparación por identidad/contenido y confirmación reforzada si se pierden o revierten datos. Conserva máximos de correlativos R-/E-/AL-/M-, copia anterior, archivos originales e informes PDF/CSV de pérdida. Una intención persistente permite completar la restauración confirmada después de un cierre inesperado antes de abrir/generar mensualidades; un registro ilegible bloquea el inicio y conserva las copias. Esquemas futuros se rechazan. Sin migración nueva, cifrado ni cambios de nómina/móvil/sesiones.
 
           Probar respaldo: Configuración → Protección y mantenimiento o Inicio → Aula Colegio → Probar respaldo; funciona sin abrir la base activa, copia el archivo a un temporal y no escribe en el USB/origen. La fecha de creación desconocida se indica sin deducirla del nombre. Restauración con Aula completamente cerrado. Guía instalada restauracion-segura.html incluye prueba ficticia, limitaciones y recuperación de base ilegible: los correlativos desconocidos deben revisarse, nunca inventarse como cero.
+
+          ORIGINAL y COPIA en una hoja carta horizontal de 792 × 612 puntos, dos medias cartas verticales al 100 % con el mismo R-. Márgenes cercanos a 5 mm, inicio más arriba, pie junto al contenido y espacio ampliado para firmas. Rótulos únicamente ORIGINAL y COPIA; no duplica pagos. El PDF individual mantiene 396 × 612 puntos. Verificación nativa WebView2 e independiente de tamaños, datos completos y escala en ambos ejemplares.
 
           Comprobante de pago en media carta vertical: PDF real de 396 × 612 puntos (13,97 × 21,59 cm), encabezado y firmas compactos. Mantiene R-, representante, alumno/grado, conceptos, importes, saldo, método y referencia, sin código interno ni cédula escolar. Comprobación nativa WebView2 e independiente del PDF: una página, escala 100 % y mismas posiciones/tamaños en hoja carta. Sin cambios de cálculos, correlativos o esquema. B3 pendiente. Impresión física requiere revisión con el controlador del colegio. Guía comprobante-media-carta.html.
 

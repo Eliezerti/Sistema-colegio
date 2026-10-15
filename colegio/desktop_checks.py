@@ -113,15 +113,21 @@ def renderer(window, directory):
     (path / 'comprobante-media-carta.pdf').write_bytes(pdf)
     window.evaluate_js("document.querySelector('#print-area').innerHTML=paymentReceiptMarkup(" +
                        json.dumps(receipt, ensure_ascii=False) + ");setReceiptPaper('half-letter');")
-    for name, height in (('media-carta', 8.5), ('media-carta-en-carta', 11)):
+    paired = render_pdf('receipt', receipt, 'letter-pair')
+    if b'/MediaBox [0 0 792 612]' not in paired or b'/Count 1 ' not in paired:
+        raise RuntimeError('No se prepararon dos copias en una sola carta horizontal.')
+    (path / 'comprobante-dos-copias.pdf').write_bytes(paired)
+    for name, width, height in (('media-carta',5.5,8.5), ('media-carta-en-carta',8.5,11), ('dos-copias',11,8.5)):
         target = path / (name + '-webview2.pdf')
+        if name == 'dos-copias':
+            window.evaluate_js("document.querySelector('#native-letter-check').remove();setReceiptPaper('letter-pair');")
         if height == 11:
             window.evaluate_js("document.head.insertAdjacentHTML('beforeend','<style id=native-letter-check>@page receipt-half-letter{size:letter;margin:0}</style>')")
 
         def print_receipt():
             core = form.browser.webview.CoreWebView2
             settings = core.Environment.CreatePrintSettings()
-            settings.PageWidth, settings.PageHeight = (5.5 if height == 8.5 else 8.5), height
+            settings.PageWidth, settings.PageHeight = width, height
             settings.ScaleFactor = 1.0
             settings.MarginTop = settings.MarginBottom = 0
             settings.MarginLeft = settings.MarginRight = 0
@@ -137,16 +143,17 @@ def renderer(window, directory):
             raise RuntimeError('No se pudo imprimir el comprobante con WebView2.')
         printed = target.read_bytes()
         box = re.search(rb'/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]', printed)
-        if not box or tuple(float(v) for v in box.groups()) != (396 if height == 8.5 else 612, height * 72):
+        if not box or tuple(float(v) for v in box.groups()) != (width * 72, height * 72):
             raise RuntimeError('WebView2 cambió las dimensiones físicas del comprobante.')
         if len(re.findall(rb'/Type\s*/Page\b', printed)) != 1:
             raise RuntimeError('WebView2 añadió páginas al comprobante.')
-        print(f'PASS RECIBO: WebView2 {name}, {396 if height == 8.5 else 612} x {height * 72:g} puntos, una página, escala 100 %.')
-    window.evaluate_js("document.querySelector('#native-letter-check').remove()")
+        print(f'PASS RECIBO: WebView2 {name}, {width * 72:g} x {height * 72:g} puntos, una página, escala 100 %.')
+    window.evaluate_js("setReceiptPaper('half-letter')")
     if os.environ.get('AULA_RECEIPT_REPORT_DIR'):
         evidence = Path(os.environ['AULA_RECEIPT_REPORT_DIR'])
         evidence.mkdir(parents=True, exist_ok=True)
-        for name in ('comprobante-media-carta.pdf', 'media-carta-webview2.pdf', 'media-carta-en-carta-webview2.pdf'):
+        for name in ('comprobante-media-carta.pdf', 'media-carta-webview2.pdf', 'media-carta-en-carta-webview2.pdf',
+                     'comprobante-dos-copias.pdf', 'dos-copias-webview2.pdf'):
             shutil.copyfile(path / name, evidence / name)
     found, watcher = cancel_dialog()
     # WinForms file dialogs must run on the window's STA thread.
