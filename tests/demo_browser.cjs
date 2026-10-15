@@ -1,9 +1,10 @@
+const {scratch}=require('./browser_paths.cjs');
 // Run through run_browser.py --demo: disposable data only.
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 (async()=>{
-  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
+  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||(fs.existsSync('/usr/bin/chromium')?'/usr/bin/chromium':undefined),headless:true,args:['--no-sandbox']});
   const context=await browser.newContext({viewport:{width:1440,height:1050}}),page=await context.newPage();
   const url=process.env.AULA_TEST_URL;
   const nav=async id=>{await page.locator(`.nav-button[data-id="${id}"]`).click();await page.locator(`.nav-button.active[data-id="${id}"]`).waitFor();};
@@ -33,7 +34,7 @@ const fs=require('node:fs');
     await page.reload();await page.getByRole('button',{name:'Confirmar tasa y entrar'}).click();await page.locator('.layout').waitFor();
     assert.equal(await page.evaluate(async()=>(await(await fetch('/api/state?history=1')).json()).expenses.length),1,'Reload must preserve the running trial');
     await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
-    await page.screenshot({path:'/tmp/aula-demo-mobile.png',fullPage:true});await page.setViewportSize({width:1440,height:1050});
+    await page.screenshot({path:scratch('aula-demo-mobile.png'),fullPage:true});await page.setViewportSize({width:1440,height:1050});
     const second=await context.newPage();await second.goto(url);await second.getByRole('button',{name:'Confirmar tasa y entrar'}).waitFor();
     await second.close();await page.waitForTimeout(6000);assert.equal(await page.evaluate(async()=>(await(await fetch('/api/state?history=1')).json()).expenses.length),1);
     await page.close(); // The runner checks shutdown and physical deletion after the last tab closes.

@@ -43,6 +43,7 @@ def main():
                         time.sleep(0.1)
                 if not ready:
                     raise RuntimeError('El servidor no inició dentro del tiempo esperado.')
+                runtime_env['AULA_TEST_PYTHON'] = sys.executable
                 runtime_env['AULA_TEST_URL'] = f'http://127.0.0.1:{port}'
                 script = 'tests/roster_browser.cjs' if args.roster else 'tests/directory_browser.cjs' if args.directory else 'tests/demo_browser.cjs' if args.demo else 'tests/responsive_browser.cjs' if args.responsive else 'tests/browser.cjs'
                 result = subprocess.run(['node', script], cwd=root, env=runtime_env)

@@ -1,3 +1,4 @@
+const {scratch}=require('./browser_paths.cjs');
 // Called by the normal browser suite, with fictional admin/caja/consulta users.
 const assert=require('node:assert/strict');
 module.exports=async function checkSessions(page,expected){
@@ -35,7 +36,7 @@ module.exports=async function checkSessions(page,expected){
   assert.equal(pulses,0,'Automatic queries never renew the session');
   await page.evaluate(()=>{sessionDeadline=performance.now()+45000;sessionCheckedAt=performance.now();sessionTick();});
   await page.locator('#session-warning[open]').waitFor();
-  await page.screenshot({path:'/tmp/aula-aviso-sesion.png'});
+  await page.screenshot({path:scratch('aula-aviso-sesion.png')});
   assert.match(await page.locator('#session-countdown').innerText(),/segundos/);
   await page.keyboard.press('Escape');assert.equal(await page.locator('#session-warning').evaluate(node=>node.open),true);
   await page.locator('#session-continue').click();
@@ -44,7 +45,7 @@ module.exports=async function checkSessions(page,expected){
   assert.equal(await page.locator('#modal [name="name"]').inputValue(),'Borrador ficticio de recuperación');
   const before=await page.evaluate(async()=>await api('state'));
   await expire();
-  await page.screenshot({path:'/tmp/aula-cierre-sesion.png'});
+  await page.screenshot({path:scratch('aula-cierre-sesion.png')});
   assert.equal(await page.locator('#modal-content').innerText(),'');
   assert.equal(await page.locator('#print-area').innerText(),'');
   assert.equal(await page.locator('.layout').count(),0,'Data must be hidden after expiration');
