@@ -19,6 +19,6 @@ La actualización verifica una copia previa antes de migrar. No reinicia correla
 
 ## Validación de esta entrega
 
-Linux: 291 pruebas en 158,530 s, 288 correctas y tres exclusivas de Windows omitidas. Navegadores normal, --demo y --roster: PASS. Migración, referencias de caja/reportes, cinco cortes reales, restauración/cifrado y cero registros precargados comprobados. Windows e instalador: validación pendiente. B3 (firma) y B4 permanecen pendientes.
+Linux: 291 pruebas en 159,888 s, 288 correctas y tres exclusivas de Windows omitidas. Navegadores normal, --demo y --roster: PASS. Migración, referencias de caja/reportes, cinco cortes reales, restauración/cifrado y cero registros precargados comprobados. Windows e instalador: validación pendiente. B3 (firma) y B4 permanecen pendientes.
 
 Comandos: `python -m unittest discover -s tests -v`, `python tests/run_browser.py`, `python tests/run_browser.py --demo` y `python tests/run_browser.py --roster`.
