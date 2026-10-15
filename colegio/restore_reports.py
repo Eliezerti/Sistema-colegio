@@ -31,10 +31,21 @@ def identity(table,row):
     return fingerprint(row)
 
 
+def normalized_records(data):
+    # Compare the supported business model on both sides. A removed employee link
+    # is not a changed amount or a lost expense. Original files remain untouched.
+    from .schema import RETIRED
+    result={table:[dict(row) for row in records] for table,records in data['records'].items() if table not in RETIRED}
+    for row in result.get('expenses',[]):row.pop('employee_id',None)
+    result['settings']=[r for r in result['settings'] if not (r['key'].startswith('id_floor_') and r['key'][9:] in RETIRED)]
+    return result
+
+
 def compare(current,incoming):
+    current=dict(current,records=normalized_records(current))
+    incoming=dict(incoming,records=normalized_records(incoming))
     details=[];counts={}
     students={r['id']:r['name'] for r in current['records']['students']}
-    employees={r['id']:r['name'] for r in current['records'].get('employees',[])}
     # Audit history is retained in the verified previous snapshot; sessions are ephemeral.
     for table,rows in current['records'].items():
         if table in ('audit','audit_links','audit_meta','sessions'): continue
@@ -49,7 +60,7 @@ def compare(current,incoming):
                 if other and row.get('voided') and not other.get('voided'): action='Anulación se revierte'
                 elif other and not row.get('voided') and other.get('voided'): action='Queda anulado'
                 prefix='R' if table=='payments' else 'E'
-                person=students.get(row.get('student_id'),'') if table=='payments' else employees.get(row.get('employee_id'),'')
+                person=students.get(row.get('student_id'),'') if table=='payments' else ''
                 if table=='payments':
                     import json
                     try: person=json.loads(row['receipt_snapshot'])['person'].get('student_name',person)
@@ -61,7 +72,7 @@ def compare(current,incoming):
                     'before_state':'Anulado' if row['voided'] else 'Válido',
                     'after_state':('Anulado' if other['voided'] else 'Válido') if other else 'Ausente',
                     'before_hash':fingerprint(row),'after_hash':fingerprint(other) if other else None})
-            elif table in ('students','guardians','employees','enrollment_documents'):
+            elif table in ('students','guardians','enrollment_documents'):
                 details.append({'type':table,'action':action,'number':str(row.get('student_code') or row['id']),
                     'date':row.get('created_at',''),'person':row.get('name',''),
                     'before_hash':fingerprint(row),'after_hash':fingerprint(other) if other else None})

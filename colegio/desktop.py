@@ -231,7 +231,7 @@ def recovery(directory,action):
             if not restoration_review_dialog(root,review):return
             floors=None
             if review['requires_floor_review']:
-                labels={'payments':'recibos R','expenses':'egresos E','students':'alumnos AL','guardians':'representantes','employees':'personal','enrollment_documents':'constancias M'}
+                labels={'payments':'recibos R','expenses':'egresos E','students':'alumnos AL','guardians':'representantes','enrollment_documents':'constancias M'}
                 floors={}
                 for table in SEQUENCES:
                     number=simpledialog.askinteger('Revisar correlativos','No se pudo leer el último número de '+labels[table]+'.\nEscribe el mayor número ya utilizado. Si no lo conoces, cancela y solicita ayuda técnica.',minvalue=review['floors'][table],maxvalue=2147483646,parent=root)

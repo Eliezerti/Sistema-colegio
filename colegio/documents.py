@@ -71,35 +71,8 @@ def store(db, table, data, user_id, student_id=None):
     return result.lastrowid
 
 
-def payroll(db, data, user_id):
-    on = valid_date(data.get('pay_date'))
-    rate = db.execute('SELECT rate FROM exchange_rates WHERE rate_date=?', (on,)).fetchone()
-    if not rate:
-        raise ValidationError('Registra la tasa BCV de la fecha de la nómina primero.')
-    source = data.get('lines')
-    if not isinstance(source, list) or not 1 <= len(source) <= 500:
-        raise ValidationError('Selecciona entre 1 y 500 empleados.')
-    lines, seen = [], set()
-    for item in source:
-        if not isinstance(item, dict):
-            raise ValidationError('Detalle de nómina inválido.')
-        employee_id = integer(item.get('employee_id'), 1, 2147483647)
-        if employee_id in seen:
-            raise ValidationError('El empleado está repetido en la nómina.')
-        seen.add(employee_id)
-        emp = db.execute("SELECT * FROM employees WHERE id=? AND status='active'", (employee_id,)).fetchone()
-        if not emp:
-            raise ValidationError('Selecciona empleados activos existentes.')
-        usd = money(item.get('amount'))
-        lines.append(dict(emp, amount_usd=usd, amount_ves=converted(usd, rate['rate'])))
-    frozen = {'name': required(data, 'name'), 'pay_date': on, 'rate': rate['rate'], 'lines': lines,
-              'school': dict(db.execute('SELECT key,value FROM settings')),
-              'total_usd': sum(r['amount_usd'] for r in lines), 'total_ves': sum(r['amount_ves'] for r in lines)}
-    return {'id': store(db, 'payroll_plans', frozen, user_id)}
-
-
 def load_document(db, kind, target):
-    table = {'enrollment': 'enrollment_documents', 'payroll-plan': 'payroll_plans'}[kind]
+    table = {'enrollment': 'enrollment_documents'}[kind]
     row = db.execute(f'SELECT snapshot_json FROM {table} WHERE id=?', (target,)).fetchone()
     if not row:
         raise ValidationError('Documento inexistente.')
@@ -793,35 +766,6 @@ def signed_amount(cents,currency):
 
 
 def render_pdf(kind, data, paper='half-letter'):
-    if kind == 'salary-receipt':
-        e, employee = data['expense'], data['employee']
-        received_label = amount(e['received_amount'], 'Bs' if e['currency']=='VES' else 'USD')
-        pdf = AdministrativePDF(f"RECIBO DE SUELDO · E-{e['id']:06d}", data['school'])
-        if e['voided']:
-            pdf.line('RECIBO ANULADO: '+e['void_reason'], True)
-        pdf.line('Fecha del pago: '+e['spent_on'], True)
-        pdf.line('Empleado: '+employee['name'], True)
-        pdf.line('Cédula: '+employee['document']+' | Cargo: '+employee['position'])
-        pdf.table(['Período pagado: desde','Hasta','Entrada','Salida'],
-                  [[data['period_start'],data['period_end'],data['entry_time'],data['exit_time']]], [175,174,85,85])
-        pdf.line('Concepto: '+e['concept'])
-        pdf.total('Importe recibido: '+received_label)
-        pdf.line('Equivalente USD: '+amount(e['amount'])+(' | Tasa aplicada: Bs '+e['exchange_rate']+' por USD' if e['currency']=='VES' else ''))
-        pdf.line('Método: '+e['method']+' | Referencia: '+(e['reference'] or 'Sin referencia'))
-        if e['method']=='Transferencia':
-            pdf.line('Banco registrado: '+(employee['bank'] or 'No registrado'))
-            pdf.line('Cuenta registrada: '+(employee['bank_account'] or 'No registrada'))
-            pdf.line('Titular: '+(employee['account_holder'] or employee['name'])+' | Cédula: '+(employee['holder_document'] or employee['document']))
-        pdf.line('Horario informado para el período: entrada '+data['entry_time']+' y salida '+data['exit_time']+'.')
-        pdf.line('Yo, '+employee['name']+', titular de la cédula '+employee['document']+', declaro haber recibido '+
-                 received_label+' por el sueldo correspondiente al período del '+
-                 data['period_start']+' al '+data['period_end']+'.')
-        if data['notes']:
-            pdf.line('Observaciones: '+data['notes'])
-        pdf.line('La conformidad de recepción se acredita con la firma del empleado.')
-        pdf.signature('Pagado por administración','Recibí conforme · Firma del empleado',data['operator'])
-        pdf.line('Fecha de firma: ____________________    Huella: ____________________')
-        return pdf.output()
     if kind in ('year-transition','payment-plan'):
         title='ACTA DE PASE DE AÑO' if kind=='year-transition' else 'CONVENIO DE PAGO'
         pdf=AdministrativePDF(f"{title} · {data['id']:06d}",data['school'])
@@ -860,15 +804,6 @@ def render_pdf(kind, data, paper='half-letter'):
         pdf.table(['Mensualidad base USD','Descuento','Mensualidad final USD'],
                   [[amount(s['monthly_fee']), f"{s['discount']} %", amount(s['net_fee'])]], [180,120,219])
         pdf.line('Observaciones: '+s['notes'])
-    elif kind == 'payroll-plan':
-        pdf = PDF(f"RELACIÓN DE PAGO · N-{data['id']:06d}", data['school'], True)
-        pdf.line(f"{data['name']} | Fecha de pago: {data['pay_date']} | BCV: Bs {data['rate']} por USD", True)
-        pdf.line('Preparación de nómina. Este documento no registra egresos ni acredita pagos realizados.')
-        pdf.table(['Empleado / cédula / cargo','Banco / tipo / cuenta','Titular / cédula','USD','Bs a pagar'],
-            [[f"{r['name']}\n{r['document']}\n{r['position']}",f"{r['bank'] or 'BANCO PENDIENTE'}\n{r['account_type']}\n{r['bank_account'] or 'CUENTA PENDIENTE'}",
-              f"{r['account_holder'] or r['name']}\n{r['holder_document'] or r['document']}",amount(r['amount_usd']),amount(r['amount_ves'],'Bs')] for r in data['lines']],
-            [210,200,160,86,110])
-        pdf.total(f"TOTAL PROPUESTO: {amount(data['total_usd'])} | {amount(data['total_ves'],'Bs')}")
     else:
         if paper not in ('a4','half-letter','letter-pair','ticket-58','ticket-80'):
             raise ValidationError('Formato de recibo inválido. Selecciona media carta o A4.')
@@ -879,7 +814,7 @@ def render_pdf(kind, data, paper='half-letter'):
         if paper.startswith('ticket-'):
             return TicketReceiptPDF(data,round(int(paper.split('-')[1])*72/25.4,3)).render(data)
         return ReceiptPDF(data).render(data)
-    pdf.signature('Preparado por administración' if kind=='payroll-plan' else 'Firma de administración',
-                  'Aprobado por' if kind=='payroll-plan' else 'Firma del representante legal',
+    pdf.signature('Firma de administración',
+                  'Firma del representante legal',
                   data.get('operator', data.get('payment',{}).get('operator','')))
     return pdf.output()

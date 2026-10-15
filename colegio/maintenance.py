@@ -1,7 +1,7 @@
 """Read-only integrity checks; never repair or recalculate financial records."""
 from .db import local_today
 
-SEQUENCES = ('payments', 'expenses', 'students', 'guardians', 'employees', 'enrollment_documents')
+SEQUENCES = ('payments', 'expenses', 'students', 'guardians', 'enrollment_documents')
 
 
 def sequence_review(db):
@@ -58,7 +58,7 @@ def review_database(db):
     if payments != allocations:
         errors.append('El total de cobros válidos no coincide con sus aplicaciones.')
     sequences = sequence_review(db)
-    labels = dict(zip(SEQUENCES, ('recibos', 'egresos', 'alumnos', 'representantes', 'personal', 'constancias')))
+    labels = dict(zip(SEQUENCES, ('recibos', 'egresos', 'alumnos', 'representantes', 'constancias')))
     for sequence in sequences:
         if not sequence['ok']:
             errors.append('Revisa la numeración de '+labels[sequence['table']]+': '+

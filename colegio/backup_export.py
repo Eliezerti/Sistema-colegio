@@ -20,6 +20,20 @@ def write_encrypted(source,destination,directory):
     destination=Path(destination)
     state,nonces=reserve(directory)
     with job_space(directory,destination.parent) as (work,identifier),staged_backup(source,temporary_root=work) as (snapshot,_,digest):
+        # Converting a historical backup must not republish the retired tables.
+        # This disposable copy is private; source files are never opened for write.
+        from .branding import SCHEMA_VERSION
+        import sqlite3
+        from contextlib import closing
+        with closing(sqlite3.connect(snapshot)) as db:
+            old_version=db.execute('PRAGMA user_version').fetchone()[0]
+        if old_version < SCHEMA_VERSION:
+            from .audit_chain import adopt_restored
+            from .db import initialize
+            adopt_restored(snapshot)
+            initialize(snapshot)
+            with closing(sqlite3.connect(snapshot)) as db:db.execute('PRAGMA wal_checkpoint(TRUNCATE)')
+            digest=hashlib.sha256(snapshot.read_bytes()).hexdigest()
         encoded,keys=encrypt(snapshot.read_bytes(),state,nonces)
         destination.parent.mkdir(parents=True,exist_ok=True)
         handle,name=tempfile.mkstemp(prefix='.aula-cipher-'+identifier+'-',suffix='.tmp',dir=destination.parent)

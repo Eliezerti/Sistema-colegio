@@ -7,8 +7,8 @@ from pathlib import Path
 from .db import ValidationError, audit, charges, check_password, integer, next_record_id, required
 from .storage import consistent_backup
 
-KINDS = {'student': 'students', 'guardian': 'guardians', 'employee': 'employees'}
-ARCHIVE_ACTIONS = {'archive-employee', 'restore-employee', 'delete-unused-record'}
+KINDS = {'student': 'students', 'guardian': 'guardians'}
+ARCHIVE_ACTIONS = {'delete-unused-record'}
 
 
 def admin_only(user):
@@ -19,7 +19,7 @@ def admin_only(user):
 def references(value, kind, target, context=''):
     """Recognize typed IDs in existing document snapshots, never compare names."""
     contexts = {'student': {'student', 'students', 'source'},
-                'guardian': {'guardian'}, 'employee': {'employee', 'lines'}}[kind]
+                'guardian': {'guardian'}}[kind]
     if isinstance(value, dict):
         if value.get(kind+'_id') == target or (context in contexts and value.get('id') == target):
             return True
@@ -60,14 +60,9 @@ def record_preview(db, kind, target, user):
             blocked.append('Evaluaciones de mensualidad con importe')
     elif kind == 'guardian':
         linked('students', 'guardian_id', 'Alumnos vinculados, incluidos archivados')
-    else:
-        linked('expenses', 'employee_id', 'Egresos y pagos de sueldo, incluidos anulados')
-
     # These documents have JSON snapshots rather than relational foreign keys.
     for table, label in (('guardian_documents', 'Documentos familiares'),
                          ('year_transitions', 'Actas de pase de año'),
-                         ('payroll_plans', 'Relaciones de pago'),
-                         ('salary_receipts', 'Recibos de sueldo'),
                          ('enrollment_documents', 'Constancias vinculadas')):
         if kind == 'student' and table == 'enrollment_documents':
             continue  # Own, nonfinancial enrollment copies are explicitly included in the deletion preview.
@@ -84,7 +79,7 @@ def record_preview(db, kind, target, user):
         digest.update(json.dumps(found, ensure_ascii=False).encode())
         if found:
             blocked.append(label)
-    archived = record['status'] == 'inactive' if kind == 'employee' else bool(record['archived'])
+    archived = bool(record['archived'])
     balance = sum(c['balance'] for c in charges(db, target)) if kind == 'student' else None
     if not archived:
         blocked.insert(0, 'Primero debes archivar esta ficha')
@@ -97,21 +92,6 @@ def record_preview(db, kind, target, user):
 
 def archive_action(db, endpoint, data, user, *, demo=False):
     admin_only(user)
-    if endpoint in ('archive-employee', 'restore-employee'):
-        target = integer(data.get('id'), 1, 2147483647)
-        reason = required(data, 'reason', 500)
-        archiving = endpoint == 'archive-employee'
-        if data.get('confirmation') != ('ARCHIVAR' if archiving else 'RECUPERAR'):
-            raise ValidationError('Escribe la palabra de confirmación indicada.')
-        prior = db.execute('SELECT id,name,status FROM employees WHERE id=?', (target,)).fetchone()
-        status = 'inactive' if archiving else 'active'
-        if not prior or prior['status'] == status:
-            raise ValidationError('La ficha no existe o ya tiene ese estado. Actualiza el archivo.')
-        db.execute('UPDATE employees SET status=? WHERE id=?', (status, target))
-        audit(db, user['id'], endpoint, {'id': target, 'name': prior['name'],
-              'before': {'status': prior['status']}, 'after': {'status': status}, 'reason': reason})
-        return {'saved': True, 'id': target}
-
     preview = record_preview(db, data.get('kind'), data.get('id'), user)
     if not preview['can_delete']:
         raise ValidationError('Esta ficha conserva historial o vínculos. Usa Archivar; un saldo de $0 no autoriza borrar movimientos.')

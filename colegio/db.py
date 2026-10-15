@@ -126,7 +126,7 @@ def connect(path):
 
 
 def next_record_id(db, table):
-    if table not in ('payments', 'expenses', 'students', 'guardians', 'employees', 'enrollment_documents'):
+    if table not in ('payments', 'expenses', 'students', 'guardians', 'enrollment_documents'):
         raise ValueError('Correlativo desconocido.')
     floor = db.execute('SELECT value FROM settings WHERE key=?', ('id_floor_'+table,)).fetchone()
     largest = db.execute(f'SELECT COALESCE(MAX(id),0) FROM {table}').fetchone()[0]
@@ -139,18 +139,17 @@ def initialize(path):
     from .audit_chain import migrate, VERSION
     with closing(connect(path)) as current:
         existing_version = current.execute('PRAGMA user_version').fetchone()[0]
-        if existing_version > VERSION: raise ValueError('Esta base requiere una versión más reciente de Aula.')
+        if existing_version > SCHEMA_VERSION: raise ValueError('Esta base requiere una versión más reciente de Aula.')
         if existing_version >= 10:
             current.execute('PRAGMA journal_mode=WAL')
             migrate(path)
+            from .schema import migrate as migrate_schema
+            migrate_schema(path)
             return
     with closing(connect(path)) as db, db:
         db.execute('PRAGMA journal_mode=WAL')
         existing_school = bool(db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='settings'").fetchone())
         db.executescript('''
-            CREATE TABLE IF NOT EXISTS salary_receipts(id INTEGER PRIMARY KEY,
-                expense_id INTEGER UNIQUE NOT NULL REFERENCES expenses(id),snapshot_json TEXT NOT NULL,
-                created_at TEXT NOT NULL,created_by INTEGER NOT NULL REFERENCES users(id));
             CREATE TABLE IF NOT EXISTS year_transitions(id INTEGER PRIMARY KEY,
                 snapshot_json TEXT NOT NULL,created_at TEXT NOT NULL,created_by INTEGER NOT NULL REFERENCES users(id));
             CREATE TABLE IF NOT EXISTS payment_plans(id INTEGER PRIMARY KEY,
@@ -185,12 +184,9 @@ def initialize(path):
           receipt_snapshot TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS allocations(payment_id INTEGER NOT NULL REFERENCES payments(id),
           charge_id INTEGER NOT NULL REFERENCES charges(id),amount INTEGER NOT NULL CHECK(amount>0),PRIMARY KEY(payment_id,charge_id));
-        CREATE TABLE IF NOT EXISTS employees(id INTEGER PRIMARY KEY,name TEXT NOT NULL,document TEXT UNIQUE NOT NULL,
-          position TEXT NOT NULL,phone TEXT NOT NULL DEFAULT '',salary INTEGER NOT NULL CHECK(salary>=0),
-          status TEXT NOT NULL CHECK(status IN ('active','inactive')));
         CREATE TABLE IF NOT EXISTS expenses(id INTEGER PRIMARY KEY,concept TEXT NOT NULL,category TEXT NOT NULL,
           amount INTEGER NOT NULL CHECK(amount>0),spent_on TEXT NOT NULL,reference TEXT NOT NULL DEFAULT '',
-          employee_id INTEGER REFERENCES employees(id),created_by INTEGER NOT NULL REFERENCES users(id),
+          created_by INTEGER NOT NULL REFERENCES users(id),
           voided INTEGER NOT NULL DEFAULT 0,void_reason TEXT NOT NULL DEFAULT '',
           currency TEXT NOT NULL,received_amount INTEGER NOT NULL,exchange_rate TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY,user_id INTEGER REFERENCES users(id),
@@ -207,12 +203,7 @@ def initialize(path):
         additions = {
             'sessions': {'rate_confirmed_on': "TEXT NOT NULL DEFAULT ''"},
             'students': {'student_code': "TEXT NOT NULL DEFAULT ''", 'billing_start': "TEXT NOT NULL DEFAULT ''", 'archived': 'INTEGER NOT NULL DEFAULT 0'},
-            'guardians': {'archived': 'INTEGER NOT NULL DEFAULT 0'},
-            'employees': {'position_id': 'INTEGER REFERENCES positions(id)',
-                'bank': "TEXT NOT NULL DEFAULT ''", 'bank_account': "TEXT NOT NULL DEFAULT ''",
-                'account_holder': "TEXT NOT NULL DEFAULT ''", 'holder_document': "TEXT NOT NULL DEFAULT ''",
-                'account_type': "TEXT NOT NULL DEFAULT ''"}}
-        db.execute('CREATE TABLE IF NOT EXISTS positions(id INTEGER PRIMARY KEY,name TEXT UNIQUE NOT NULL)')
+            'guardians': {'archived': 'INTEGER NOT NULL DEFAULT 0'}}
         for table, columns in additions.items():
             existing = {r['name'] for r in db.execute(f'PRAGMA table_info({table})')}
             for name, definition in columns.items():
@@ -223,15 +214,9 @@ def initialize(path):
         for student in db.execute("SELECT id FROM students WHERE student_code='' ").fetchall():
             db.execute('UPDATE students SET student_code=? WHERE id=?', (f"AL-{student['id']:06d}", student['id']))
         db.execute('CREATE UNIQUE INDEX IF NOT EXISTS students_code ON students(student_code)')
-        for employee in db.execute('SELECT id,position FROM employees WHERE position_id IS NULL').fetchall():
-            db.execute('INSERT OR IGNORE INTO positions(name) VALUES(?)', (employee['position'],))
-            db.execute('UPDATE employees SET position_id=(SELECT id FROM positions WHERE name=?) WHERE id=?',
-                       (employee['position'], employee['id']))
         db.executescript("""
             CREATE TABLE IF NOT EXISTS enrollment_documents(id INTEGER PRIMARY KEY,
                 student_id INTEGER NOT NULL REFERENCES students(id),snapshot_json TEXT NOT NULL,
-                created_at TEXT NOT NULL,created_by INTEGER NOT NULL REFERENCES users(id));
-            CREATE TABLE IF NOT EXISTS payroll_plans(id INTEGER PRIMARY KEY,snapshot_json TEXT NOT NULL,
                 created_at TEXT NOT NULL,created_by INTEGER NOT NULL REFERENCES users(id));
             CREATE TABLE IF NOT EXISTS monthly_assessments(
                 student_id INTEGER NOT NULL REFERENCES students(id),period TEXT NOT NULL,
@@ -252,21 +237,10 @@ def initialize(path):
         if 'method' not in {r['name'] for r in db.execute('PRAGMA table_info(expenses)')}:
             db.execute("ALTER TABLE expenses ADD COLUMN method TEXT NOT NULL DEFAULT 'No especificado'")
         db.execute("INSERT OR IGNORE INTO settings VALUES('backup_directory','')")
-        profile = dict(db.execute('SELECT key,value FROM settings'))
-        legacy_owner = (profile.get('rif') == SCHOOL_PROFILE['rif'] or profile.get('logo') == SCHOOL_PROFILE['logo']
-            or profile.get('school_name') in (SCHOOL_NAME,'U.E.C. Alejandro Von Humboldt','Alejandro Von Humboldt','ALEJANDRO VON HUMBOLDT'))
-        if existing_school and legacy_owner and db.execute('PRAGMA user_version').fetchone()[0] < 4:
-            # Apply the owner's fiscal identity once, without altering issued snapshots
-            # or operational settings. Later manual edits survive every restart.
-            db.executemany("UPDATE settings SET value=? WHERE key=? AND value=''", [(v,k) for k,v in SCHOOL_PROFILE.items()])
-            db.execute("UPDATE settings SET value='U.E.C. Alejandro Von Humboldt' WHERE key='school_name' AND value='Mi colegio'")
-            audit(db, None, 'school-profile', SCHOOL_PROFILE)
-        if existing_school and legacy_owner and db.execute('PRAGMA user_version').fetchone()[0] < 7:
-            db.execute("UPDATE settings SET value=? WHERE key='school_name' AND value IN (?,?,?,?)",
-                       (SCHOOL_NAME,'U.E.C. Alejandro Von Humboldt','Alejandro Von Humboldt','ALEJANDRO VON HUMBOLDT','Mi colegio'))
-            audit(db,None,'institution-identity',{'institution_type':INSTITUTION_TYPE})
         db.execute('PRAGMA user_version=10')
     migrate(path, new=new_database)
+    from .schema import migrate as migrate_schema
+    migrate_schema(path, new=new_database)
 
 
 

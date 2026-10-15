@@ -5,17 +5,11 @@ import base64
 from functools import lru_cache
 from pathlib import Path
 
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 INSTITUTION_TYPE = 'Unidad Educativa Colegio'
-SCHOOL_NAME = 'Unidad Educativa Colegio Alejandro Von Humboldt'
-LOGO_FILE = 'logo-colegio-v1.png'
-SCHOOL_PROFILE = {
-    'legal_name': 'ALEJANDRO VON HUMBOLDT, C.A.',
-    'rif': 'J-50835934-8',
-    'fiscal_address': ('Calle 48 entre carreras 16 y 17, local Nro. 16-46, sector Centro, '
-                       'Barquisimeto, Lara. Zona postal 3001.'),
-    'logo': LOGO_FILE,
-}
+SCHOOL_NAME = 'Mi colegio'
+LOGO_FILE = 'aula-app.png'
+SCHOOL_PROFILE = {'legal_name': '', 'rif': '', 'fiscal_address': '', 'logo': ''}
 
 
 def logo_bytes(filename):

@@ -31,25 +31,28 @@ from .protection import ProtectionMonitor
 from .clock_guard import ClockConfirmationRequired, ClockInputError, get_clock
 from .administration import (import_roster, import_template, export_roster, cash_summary, close_cash, reopen_cash,
     ensure_open_day, guardian_account, issue_guardian_document, load_administrative_document)
-from .documents import enrollment, payroll, load_document, render_pdf
+from .documents import enrollment, load_document, render_pdf
 from .directory_reports import directory_report, directory_pdf, daily_report, daily_pdf
 from .branding import SCHEMA_VERSION, LOGO_FILE
 from .lifecycle import roster_for_year, transition_year, create_plan, cancel_plan, plan_status
 from .student_admin import DIRECTORY_ACTIONS, directory_action, correct_billing_start
 from .institution_archive import ARCHIVE_ACTIONS, archive_action, record_preview
 from .demo import DemoWorkspace
-from .salary import details as salary_details, issue_salary_receipt, load_salary_receipt
-from .reset_records import reset_preview, reset_records
 from .network import PrivateAccess, load_config
 from .sessions import Sessions, token_hash, idle_minutes, IDLE_KEY
 from .login_limiter import LoginLimiter
-from .staff_access import banking_allowed, employee_columns, payroll_columns
 
 ROOT = Path(__file__).resolve().parent.parent
 
 
 def rows(db, sql, params=()):
     return [dict(row) for row in db.execute(sql, params)]
+
+
+def retired_route(endpoint):
+    return endpoint in {'employees', 'positions', 'payroll-plans', 'salary-receipts',
+                        'archive-employee', 'restore-employee', 'reset-records', 'reset-preview'} or endpoint.startswith(
+                        ('payroll-plan/', 'salary-receipt/', 'directory/employees', 'archive-preview/employee'))
 
 
 def snapshot(db, user):
@@ -87,9 +90,7 @@ def snapshot(db, user):
     for payment in payments:
         payment.pop('receipt_snapshot', None)
         payment.pop('request_key', None)
-    expenses = rows(db, '''SELECT e.*,emp.name AS employee_name,r.id AS salary_receipt_id FROM expenses e
-       LEFT JOIN employees emp ON emp.id=e.employee_id LEFT JOIN salary_receipts r ON r.expense_id=e.id
-       ORDER BY e.spent_on DESC,e.id DESC''')
+    expenses = rows(db, 'SELECT * FROM expenses ORDER BY spent_on DESC,id DESC')
     month = today[:7]
     income = sum(p['amount'] for p in payments if not p['voided'] and p['paid_on'].startswith(month))
     outgo = sum(e['amount'] for e in expenses if not e['voided'] and e['spent_on'].startswith(month))
@@ -101,11 +102,7 @@ def snapshot(db, user):
     return {'audit_status': integrity, 'settings': settings, 'today': today, 'user': user, 'students': students,
             'guardians': rows(db, 'SELECT * FROM guardians ORDER BY name'),
             'grades': rows(db, 'SELECT * FROM grades ORDER BY name'),
-            'employees': rows(db, f'SELECT {employee_columns(user)} FROM employees ORDER BY name'),
-            'positions': rows(db, 'SELECT * FROM positions ORDER BY name'),
             'enrollments': rows(db, 'SELECT id,student_id,created_at FROM enrollment_documents ORDER BY id DESC'),
-            'payroll_plans': ([dict(json.loads(r['snapshot_json']), id=r['id']) for r in db.execute('SELECT * FROM payroll_plans ORDER BY id DESC LIMIT 30')]
-                             if banking_allowed(user) else rows(db, f'SELECT {payroll_columns(user)} FROM payroll_plans ORDER BY id DESC LIMIT 30')),
             'charges': charge_list, 'payments': payments, 'expenses': expenses,
             'cash_closures': rows(db,'SELECT id,closed_on,created_at,reopened_at,reopen_reason FROM cash_closures ORDER BY id DESC LIMIT 100'),
             'payment_plans': [plan_status(db,r) for r in db.execute('SELECT * FROM payment_plans ORDER BY id DESC LIMIT 100')],
@@ -135,7 +132,7 @@ def save_record(db, table, fields, data):
         db.execute(f'UPDATE {table} SET ' + ','.join(f'{k}=?' for k in fields) + ' WHERE id=?',
                    [*fields.values(), record_id])
         return record_id
-    if table in ('students', 'expenses', 'guardians', 'employees'):
+    if table in ('students', 'expenses', 'guardians'):
         fields = dict(fields, id=next_record_id(db, table))
     result = db.execute(f'INSERT INTO {table}(' + ','.join(fields) + ') VALUES(' + ','.join('?' for _ in fields) + ')', list(fields.values()))
     return result.lastrowid
@@ -161,7 +158,7 @@ def prepare_backup_directory(db, value, uid):
 def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, import_archived=False, demo=False):
     uid = user['id']
     db.audit_user = uid
-    admin_paths = {'settings','backup-directory','grades','guardians','students','employees','users','password','void-payment','void-expense','cancel-charge','positions','payroll-plans','salary-receipts','import-roster','reopen-cash','transition-year','cancel-plan','correct-billing-start'} | DIRECTORY_ACTIONS | ARCHIVE_ACTIONS
+    admin_paths = {'settings','backup-directory','grades','guardians','students','users','password','void-payment','void-expense','cancel-charge','import-roster','reopen-cash','transition-year','cancel-plan','correct-billing-start'} | DIRECTORY_ACTIONS | ARCHIVE_ACTIONS
     if user['role'] == 'reader' or (endpoint in admin_paths and user['role'] != 'admin'):
         raise PermissionError('Tu perfil no permite esta operación.')
     if endpoint == 'backup-directory':
@@ -196,10 +193,6 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
         table,column=('payments','paid_on') if endpoint=='void-payment' else ('expenses','spent_on')
         prior=db.execute(f'SELECT {column} FROM {table} WHERE id=?',(data.get('id'),)).fetchone()
         if prior: ensure_open_day(db,prior[0])
-    if endpoint == 'payroll-plans':
-        return payroll(db, data, uid)
-    if endpoint == 'salary-receipts':
-        return {'id': issue_salary_receipt(db, data.get('expense_id'), data, uid)}
     if endpoint == 'generate':
         return generate_month(db, data, uid)
     if endpoint == 'payments':
@@ -251,11 +244,7 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
         db.executemany('UPDATE settings SET value=? WHERE key=?', [(v, k) for k, v in fields.items()])
         audit(db, uid, 'settings', {k:(bool(v) if k=='logo' else v) for k,v in fields.items()})
         return {'saved': True}
-    if endpoint == 'positions':
-        fields = {'name': required(data, 'name')}
-        if data.get('id'):
-            db.execute('UPDATE employees SET position=? WHERE position_id=?', (fields['name'], data['id']))
-    elif endpoint == 'grades':
+    if endpoint == 'grades':
         fields = {'name': required(data, 'name'), 'capacity': integer(data.get('capacity'), 1, 500)}
         if data.get('id') and db.execute("""SELECT 1 FROM students WHERE grade_id=? AND status='active'
            GROUP BY school_year HAVING COUNT(*)>?""", (integer(data['id'], 1, 2147483647), fields['capacity'])).fetchone():
@@ -315,25 +304,6 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
                               (fields['grade_id'], fields['school_year'], data.get('id', 0))).fetchone()[0]
         if fields['status'] == 'active' and occupied >= grade['capacity']:
             raise ValidationError('El grado alcanzó su capacidad para ese año escolar.')
-    elif endpoint == 'employees':
-        if data.get('position_id'):
-            position = db.execute('SELECT * FROM positions WHERE id=?', (integer(data['position_id'], 1, 2147483647),)).fetchone()
-            if not position:
-                raise ValidationError('Selecciona un cargo existente.')
-        else:
-            name = required(data, 'position')  # Compatibility with earlier saved clients.
-            db.execute('INSERT OR IGNORE INTO positions(name) VALUES(?)', (name,))
-            position = db.execute('SELECT * FROM positions WHERE name=?', (name,)).fetchone()
-        account = str(data.get('bank_account', '')).strip()
-        if account and (len(account)!=20 or not account.isascii() or not account.isdigit()):
-            raise ValidationError('La cuenta bancaria venezolana debe tener 20 dígitos.')
-        fields = {'name': required(data, 'name'), 'document': required(data, 'document'),
-                  'position': position['name'], 'position_id': position['id'], 'phone': str(data.get('phone', ''))[:100],
-                  'salary': money(data.get('salary')), 'status': data.get('status', 'active'),
-                  'bank': str(data.get('bank', ''))[:100], 'bank_account': account,
-                  'account_holder': str(data.get('account_holder', '')).strip()[:200],
-                  'holder_document': str(data.get('holder_document', '')).strip()[:200],
-                  'account_type': str(data.get('account_type', ''))[:100]}
     elif endpoint == 'users':
         role = data.get('role')
         if role not in ('admin','cashier','reader'):
@@ -386,16 +356,11 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
         amount, currency, received, rate = convert_received(db, data, on)
         fields = {'concept': required(data, 'concept'), 'category': required(data, 'category'), 'amount': amount,
                   'spent_on': on, 'reference': str(data.get('reference', ''))[:200],
-                  'employee_id': integer(data['employee_id'], 1, 2147483647) if data.get('employee_id') else None,
                   'created_by': uid, 'currency': currency, 'received_amount': received, 'exchange_rate': rate}
         method=data.get('method','No especificado')
         if method not in ('Efectivo','Transferencia','Tarjeta','Otro','No especificado'):
             raise ValidationError('Método de pago inválido.')
         fields['method']=method
-        if fields['category'] == 'Nómina':
-            if not fields['employee_id']:
-                raise ValidationError('Selecciona el empleado para emitir su recibo de sueldo.')
-            salary_details(data)
         if data.get('id'):
             raise ValidationError('Los egresos se corrigen anulándolos y creando uno nuevo.')
     else:
@@ -408,8 +373,6 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
         result['document_id'] = enrollment(db, record_id, uid)
         result['student_code'] = db.execute('SELECT student_code FROM students WHERE id=?', (record_id,)).fetchone()[0]
         result['billing_start'] = fields['billing_start']
-    elif endpoint == 'expenses' and fields['category'] == 'Nómina':
-        result['salary_receipt_id'] = issue_salary_receipt(db, record_id, data, uid)
     return result
 
 
@@ -618,6 +581,9 @@ class Handler(BaseHTTPRequestHandler):
                 if content_type.startswith('text/') or content_type in ('application/javascript','image/svg+xml'):
                     content_type += '; charset=utf-8'
                 self.respond(200, file.read_bytes(), content_type)
+                return
+            if retired_route(endpoint):
+                self.respond(410, {'error': 'Esta función fue retirada de Aula.'})
                 return
             db = connect(self.server.db_path)
             if post:
@@ -830,14 +796,6 @@ class Handler(BaseHTTPRequestHandler):
                     db.commit()
                     self.respond(200, result)
                     return
-                if endpoint == 'reset-records':
-                    if self.server.demo:
-                        raise ValidationError('Cierra el modo prueba para borrar sus datos. No se vacía la base real desde aquí.')
-                    with self.server.backup_lock:
-                        result = reset_records(db, data, user)
-                    db.commit()
-                    self.respond(200, result)
-                    return
                 if endpoint == 'confirm-rate':
                     on = local_today().isoformat()
                     if data.get('rate_date') != on:
@@ -855,14 +813,14 @@ class Handler(BaseHTTPRequestHandler):
                     self.server.sessions.revoke(user['token'])
                     result = {'ok': True}
                 else:
-                    if (endpoint in DIRECTORY_ACTIONS or endpoint in ('archive-employee','restore-employee') or endpoint=='correct-billing-start' or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True)) and user['role']=='admin':
+                    if (endpoint in DIRECTORY_ACTIONS or endpoint=='correct-billing-start' or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True)) and user['role']=='admin':
                         status=self.server.make_backup()
                         if status.get('local_error'): raise ValidationError('No se puede realizar la operación sin completar primero un respaldo local.')
                     result = mutate(db, endpoint, data, user, demo=self.server.demo)
                 if endpoint not in ('logout','demo-exit'):
                     self.server.clock.require()
                 db.commit()
-                if endpoint in DIRECTORY_ACTIONS or endpoint in ARCHIVE_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','expenses','salary-receipts','void-payment','void-expense','close-cash','reopen-cash','settings','backup-directory','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
+                if endpoint in DIRECTORY_ACTIONS or endpoint in ARCHIVE_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','expenses','void-payment','void-expense','close-cash','reopen-cash','settings','backup-directory','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
                     status=self.server.make_backup()
                     if status.get('local_error') or status.get('secondary_error'):
                         result['backup_warning']=status.get('local_error') or status.get('secondary_error')
@@ -889,10 +847,6 @@ class Handler(BaseHTTPRequestHandler):
                 parts=endpoint.split('/')
                 if len(parts)!=3: raise ValidationError('Selecciona una ficha válida.')
                 self.respond(200, record_preview(db, parts[1], parts[2], user))
-            elif endpoint == 'reset-preview':
-                if self.server.demo or user['role'] != 'admin':
-                    raise PermissionError('Esta operación solo está disponible para administración en el sistema real.')
-                self.respond(200, reset_preview(db))
             elif endpoint=='import-template':
                 if user['role']!='admin': raise PermissionError('Solo administración puede importar alumnos.')
                 xlsx=parse_qs(url.query).get('format',['csv'])[0]=='xlsx'
@@ -959,13 +913,11 @@ class Handler(BaseHTTPRequestHandler):
                     self.respond(200,render_pdf(kind,document),'application/pdf',
                         {'Content-Disposition':f'attachment; filename="{kind}-{target:06d}.pdf"'})
                 else: self.respond(200,document)
-            elif endpoint.startswith(('enrollment/', 'payroll-plan/', 'salary-receipt/')):
+            elif endpoint.startswith(('enrollment/',)):
                 kind, raw = endpoint.split('/')
-                if kind in ('payroll-plan', 'salary-receipt') and not banking_allowed(user):
-                    raise PermissionError('Solo Administración puede abrir documentos con datos bancarios del personal.')
                 pdf = raw.endswith('.pdf')
                 target = integer(raw.removesuffix('.pdf'), 1, 2147483647)
-                document = load_salary_receipt(db, target) if kind == 'salary-receipt' else load_document(db, kind, target)
+                document = load_document(db, kind, target)
                 self.server.mark_document(document)
                 if pdf:
                     self.respond(200, render_pdf(kind, document), 'application/pdf',
@@ -1103,7 +1055,7 @@ def open_school(path, port, demo=False, remote_origin=''):
                 if version>SCHEMA_VERSION:
                     raise ValueError(f'La base usa el esquema {version}; esta versión de Aula admite hasta {SCHEMA_VERSION}. Actualiza Aula. No se modificó ni migró la base.')
                 needs_upgrade = version < SCHEMA_VERSION
-            if needs_upgrade:
+            if needs_upgrade and version < 11:
                 consistent_backup(path, path.parent / 'backups' / f'antes-actualizacion-{datetime.now():%Y%m%d-%H%M%S}.sqlite3')
         initialize(path)
         clock = get_clock(path, history=True)
