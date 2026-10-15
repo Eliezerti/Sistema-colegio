@@ -15,7 +15,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 # This verifier is also launched directly as python tests/windows_upgrade.py.
 sys.path.insert(0, str(ROOT))
-from tests.zero_install import assert_empty_database
 sys.stdout.reconfigure(encoding='utf-8')
 sys.stderr.reconfigure(encoding='utf-8')
 FINANCIAL_TABLES = ('students', 'guardians', 'grades', 'charges', 'payments', 'allocations', 'enrollment_documents')
@@ -83,6 +82,7 @@ def financial_snapshot(path, columns=None):
 
 
 def main():
+    from tests.zero_install import assert_empty_database
     parser = argparse.ArgumentParser(); parser.add_argument('--version', required=True)
     parser.add_argument('--historical-dir', required=True); args = parser.parse_args()
     if os.name!='nt' or os.environ.get('GITHUB_ACTIONS')!='true':

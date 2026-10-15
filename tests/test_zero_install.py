@@ -49,3 +49,18 @@ class ZeroInstallTests(unittest.TestCase):
         self.assertFalse((root/'docs/privilegios-personal.html').exists())
         for name in ('salary.py','staff_access.py','reset_records.py'):
             self.assertFalse((root/'colegio'/name).exists())
+
+
+    def test_windows_account_verifier_imports_without_repository_modules(self):
+        import shutil, subprocess, sys
+        root=Path(__file__).resolve().parent
+        with tempfile.TemporaryDirectory() as directory:
+            for name in ('windows_upgrade.py','windows_other_account.py'):
+                shutil.copyfile(root/name,Path(directory)/name)
+            # The actual second-account layout contains these two scripts, not
+            # the repository, tests package or application source.
+            command="import sys;sys.path.insert(0,sys.argv[1]);import windows_other_account;print('PASS aislado')"
+            result=subprocess.run([sys.executable,'-I','-c',command,directory],cwd=directory,
+                                  capture_output=True,text=True,timeout=15)
+            self.assertEqual(result.returncode,0,result.stderr)
+            self.assertIn('PASS aislado',result.stdout)
