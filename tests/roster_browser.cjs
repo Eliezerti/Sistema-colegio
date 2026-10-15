@@ -8,8 +8,8 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('nod
   const temp=fs.mkdtempSync(path.join(os.tmpdir(),'aula-roster-trial-'));let child,trial;
   const click=(p,a)=>p.locator(`[data-action="${a}"]`).first().click();
   const fill=(p,n,v)=>p.locator(`dialog[open] [name="${n}"]`).fill(v);
-  const nav=(p,n)=>p.locator(`.nav-button[data-id="${n}"]`).click();
-  const state=p=>p.evaluate(async()=>await(await fetch('/api/state')).json());
+  const nav=async(p,n)=>{await p.locator(`.nav-button[data-id="${n}"]`).click();await p.locator(`.nav-button.active[data-id="${n}"]`).waitFor();};
+  const state=p=>p.evaluate(async()=>await(await fetch('/api/state?history=1')).json());
   try{
     await source.goto(process.env.AULA_TEST_URL);
     await source.getByLabel('Nombre del colegio',{exact:true}).fill('Colegio ficticio');

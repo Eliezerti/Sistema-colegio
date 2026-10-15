@@ -19,3 +19,20 @@ Se conserva íntegro el limitador monotónico: cinco fallos, espera progresiva h
 Inicio de Windows → Desbloquear acceso local pide usuario y contraseña actuales de Administración. Emite un código aleatorio de 128 bits, válido dos minutos y una sola vez, ligado a la ejecución actual de Aula. No modifica la contraseña. El formulario de login recibe el código en un campo secreto; sigue exigiendo la contraseña correcta. La recuperación tiene una plaza propia para que un ataque no ocupe todas las comprobaciones. Emisión y uso quedan en bitácora sin guardar código ni contraseña. Reiniciar invalida los códigos. El respaldo de SQLite no contiene los archivos temporales de acceso.
 
 Alternativa para el ZIP: python -m colegio.local_login --data-dir CARPETA --username USUARIO. La contraseña se pide sin mostrarla ni pasarla en argumentos. Pruebas: cuatro correctas en 2,656 s, incluyendo ataque, otro usuario, credencial incorrecta, código ajeno, una sola utilización, saturación, reloj monotónico, reinicio y bitácora válida.
+
+## D3 · resumen e historial bajo demanda
+
+Evidencia: snapshot en server.py:58–127 cargaba todo el historial en cada estado; app.js calculaba la pantalla principal desde esas listas. Se mantiene el cálculo completo de saldos, reportes y morosidad; la API principal proyecta únicamente resúmenes completos, cinco cobros recientes, cinco deudores y cinco vencimientos, con cantidades y totales de la semana calculados antes de limitar. history=1 solicita el libro completo. La interfaz carga el historial al navegar o abrir operaciones y conserva las pantallas y documentos existentes. Las pruebas del libro completo ahora lo piden explícitamente; la respuesta predeterminada tiene su prueba propia. Sin migración.
+
+Medición real Linux por HTTP, una ejecución de calentamiento y tres medidas; mediana, sin compresión. Datos ficticios: diez cargos y tres pagos por alumno y año; sin logo personalizado.
+
+| Alumnos | Años | Cargos | Pagos | Completo, bytes | Principal, bytes | Principal, segundos |
+|---|---|---|---|---|---|---|
+| 500 | 1 | 5000 | 1500 | 2642112 | 7017 | 0.0517 |
+| 500 | 2 | 10000 | 3000 | 4958241 | 7059 | 0.0827 |
+| 500 | 3 | 15000 | 4500 | 7277354 | 7065 | 0.1075 |
+| 800 | 1 | 8000 | 2400 | 4229112 | 7017 | 0.0833 |
+| 800 | 2 | 16000 | 4800 | 7943242 | 7060 | 0.1228 |
+| 800 | 3 | 24000 | 7200 | 11656156 | 7067 | 0.1716 |
+
+Objetivo menor a 1 MB y 1 s: alcanzado en esta máquina Linux, incluso con 800 alumnos y tres años. No se extrapola a Windows: medición nativa pendiente. La CPU todavía recorre el historial para conservar totales; la carga completa bajo demanda puede superar 1 MB. Dos pruebas específicas correctas en 2,609 s y navegador normal correcto. La primera repetición del navegador detectó que su ayudante de navegación no esperaba la carga asíncrona; se ajustó a esperar la pantalla activa y la repetición pasó.

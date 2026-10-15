@@ -97,3 +97,24 @@ class LocalLoginTests(unittest.TestCase):
             identifier=begin_instance(f.path.parent)
             self.assertFalse(consume(f.path.parent,identifier,'admin',code))
         finally:f.tearDown()
+
+class PrincipalTests(unittest.TestCase):
+    def test_projection_keeps_complete_totals_and_bounds_history(self):
+        from tests.test_system import SystemTests
+        from colegio.state_view import principal
+        f=SystemTests();f.setUp()
+        try:
+            f.request('payments',f.payment())
+            before=f.request('state')
+            projected=principal(before)
+            self.assertEqual(projected['summary'],before['summary'])
+            self.assertFalse(projected['history_loaded'])
+            self.assertEqual(projected['counts']['charges'],len(before['charges']))
+            self.assertEqual(projected['charges'],[])
+            # The real endpoint defaults to principal; explicit history is complete.
+            actual=f.request('state?history=0')
+            self.assertFalse(actual['history_loaded'])
+            self.assertEqual(actual['summary'],before['summary'])
+            self.assertEqual(actual['dashboard']['income'],sum(p['amount'] for p in before['payments'] if not p['voided'] and p['paid_on']==before['today']))
+            self.assertEqual(before['charges'],f.request('state')['charges'])
+        finally:f.tearDown()

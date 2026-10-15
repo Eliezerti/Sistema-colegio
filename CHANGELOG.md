@@ -1,5 +1,7 @@
 # Tanda D · en desarrollo
 
+- D3: estado principal acotado con totales íntegros; historial bajo demanda y medición HTTP reproducible de 500/800 alumnos con uno, dos y tres años.
+
 - D2: recuperación local durante un bloqueo de login, con contraseña de Administración, código de un uso, vencimiento monotónico y bitácora; el limitador de fuerza bruta se conserva.
 
 - D1: documentación interna fuera del instalador y limpieza de copias antiguas; correlativos privados; calendario explícito al crear el administrador; rechazo de Nómina en egresos nuevos sin alterar históricos; retiro del acceso privado, conservando acceso local y sus protecciones. Sin migración.

@@ -190,6 +190,8 @@ class SystemTests(unittest.TestCase):
         self.temp.cleanup()
 
     def request(self,path,data=None,status=200,csrf=True,origin=None):
+        # These fixture assertions inspect the full financial ledger, requested explicitly.
+        if path == 'state':path='state?history=1'
         conn=http.client.HTTPConnection('127.0.0.1',self.server.server_port,timeout=10)
         headers={'Cookie':self.cookie}
         if data is not None:

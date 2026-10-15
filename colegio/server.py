@@ -853,6 +853,10 @@ class Handler(BaseHTTPRequestHandler):
             public_user = {k:v for k,v in user.items() if k not in ('token', 'csrf')}
             if endpoint == 'state':
                 result=snapshot(db, public_user)
+                result['history_loaded']=True
+                if parse_qs(url.query).get('history') != ['1']:
+                    from .state_view import principal
+                    result=principal(result)
                 result['backup']=self.server.backup_status()
                 result['demo']=self.server.demo
                 result['access']=self.server.access.snapshot()

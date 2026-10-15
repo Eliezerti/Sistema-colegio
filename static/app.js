@@ -126,7 +126,7 @@ function auth(setup) {
   state=undefined;modal.close();$('#print-area').replaceChildren();
   app.innerHTML = `<div class="auth-screen"><section class="auth-story"><div class="brand">${schoolLogo(publicSchool)}<div><small>${esc(publicSchool.institution_type||'Administración escolar')}</small><b>${esc(publicSchool.school_name||'Aula')}</b><small>Administración escolar</small></div></div><h1>Tu colegio,<br>con las cuentas<br><em>en orden.</em></h1><p>Alumnos, mensualidades y cobranza en un mismo lugar. Pensado para el día a día de tu colegio en Venezuela.</p><p>${icon('shield')} Datos locales · USD y bolívares</p></section><section class="auth-form"><div class="eyebrow">${setup ? 'Empecemos' : 'Bienvenido de nuevo'}</div><h2>${setup ? 'Configura tu administrador' : 'Entrar a tu colegio'}</h2><p>${setup ? 'Esta cuenta gestionará el colegio y podrá crear usuarios de caja y consulta.' : 'Ingresa tus datos para continuar con la administración.'}</p><form data-endpoint="${setup ? 'setup' : 'login'}">${setup ? field('Nombre del colegio','school_name','','text','required maxlength="200" autocomplete="organization"')+field('Año de inicio del ciclo escolar','school_year',Number(setupToday.slice(0,4))-(Number(setupToday.slice(5,7))<9),'number','required min="2000" max="2100"','Ejemplo: 2027 corresponde al ciclo 2027–2028.')+select('Mes de inicio del ciclo','start_month',Array.from({length:12},(_,i)=>[i+1,new Date(2020,i,1).toLocaleDateString('es-VE',{month:'long'})]),9)+field('Día de vencimiento mensual','due_day',10,'number','required min="1" max="31"','En meses cortos se utiliza el último día.')+field('Nombre del administrador','name','','text','required maxlength="200" autocomplete="name"') : ''}${field('Usuario','username','','text','required maxlength="80" autocomplete="username"')}${field('Contraseña','password','','password',`required ${setup ? 'minlength="10"' : ''} maxlength="256" autocomplete="${setup ? 'new-password' : 'current-password'}"`,setup ? 'Como mínimo 10 caracteres. Guárdala en un lugar seguro.' : '')}${setup?'':`<details><summary>Acceso bloqueado por intentos</summary><p class="hint">En esta PC abre Inicio → Aula → Desbloquear acceso local. Genera un código con tu contraseña actual y úsalo aquí antes de dos minutos.</p>${field('Código de acceso local','local_unlock_code','','password','maxlength="32" autocomplete="off"')}</details>`}<div class="error" role="alert"></div><button class="btn primary" type="submit">${setup ? 'Crear mi cuenta' : 'Iniciar sesión'} ${icon('arrow')}</button></form><p class="recovery-link">${btn('Olvidé mi usuario o contraseña','recovery-help','ghost')}</p><div class="auth-note">Los datos se guardan en esta PC y puedes trabajar sin internet. La tasa BCV se registra manualmente por fecha. Usa siempre la misma cuenta de Windows.</div></section></div>`;
 }
-async function refresh(savedEndpoint) { rememberSettingsDrafts(savedEndpoint);state = await api('state'); auditView=null; render(); }
+async function refresh(savedEndpoint) { rememberSettingsDrafts(savedEndpoint);state = await api(page==='dashboard'?'state':'state?history=1'); auditView=null; render(); }
 const navItems = [['dashboard','Resumen','dashboard'],['students','Alumnos y matrículas','students'],['guardians','Representantes','guardians'],['grades','Grados y secciones','grades'],['billing','Mensualidades y cargos','billing'],['payments','Caja y cobros','payments'],['cash','Cierre de caja','payments'],['arrears','Morosidad','arrears'],['expenses','Egresos','expenses'],['archive','Archivo de la institución','students'],['reports','Reportes','reports'],['settings','Configuración','settings']];
 function render() {
   if (!state) return;
@@ -492,6 +492,7 @@ document.addEventListener('click',async event=>{
   const target=event.target.closest('[data-action]');if(!target)return;
   const {action,id}=target.dataset;
   try {
+    if(state&&!state.history_loaded&&!['nav','boot','logout','close','mobile-menu','mobile-menu-close'].includes(action)){state=await api('state?history=1');}
     switch(action) {
       case 'clock-check':await openClockGate();break;
       case 'windows-protection-help':windowsProtectionHelp();break;
@@ -502,7 +503,7 @@ document.addEventListener('click',async event=>{
       case 'delete-unused-review':{const [kind,target]=id.split(':');await openUnusedDelete(kind,target);break;}
       case 'settings-section':selectSettingsSection(id);break;
       case 'open-maintenance':rememberSettingsDrafts();page='settings';settingsSection='maintenance';render();break;
-      case 'nav':rememberSettingsDrafts();page=id;filters={};render();break;
+      case 'nav':rememberSettingsDrafts();page=id;filters={};await refresh();break;
       case 'close':modal.close();break;
       case 'boot':await boot();break;
       case 'demo-exit':await closeDemo();break;
@@ -794,6 +795,7 @@ async function planDocument(id){
 
 function isoDay(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;}
 function dashboardActivity(){
+  if(state.dashboard&&!state.history_loaded)return {due:state.dashboard.due,newDebtors:{length:state.dashboard.new_debtors},paid:[]};
   const today=state.today,end=new Date(today+'T12:00:00'),start=new Date(today+'T12:00:00');end.setDate(end.getDate()+6);start.setDate(start.getDate()-7);
   const due=state.charges.filter(c=>c.balance>0&&c.due_date>=today&&c.due_date<=isoDay(end)).sort((a,b)=>a.due_date.localeCompare(b.due_date)||a.id-b.id);
   const newDebtors=state.students.filter(s=>{const overdue=state.charges.filter(c=>c.student_id===s.id&&c.overdue);return overdue.length&&overdue.every(c=>c.due_date>=isoDay(start));});
@@ -801,15 +803,18 @@ function dashboardActivity(){
   return {due,newDebtors,paid};
 }
 function dashboardOverview({due,newDebtors,paid}){
-  const s=state.summary,amount=paid.reduce((sum,p)=>sum+p.amount,0);
-  const dollars=paid.filter(p=>p.currency==='USD').reduce((sum,p)=>sum+p.received_amount,0);
-  const bolivars=paid.filter(p=>p.currency==='VES').reduce((sum,p)=>sum+p.received_amount,0);
+  const s=state.summary,amount=state.dashboard&&!state.history_loaded?state.dashboard.income:paid.reduce((sum,p)=>sum+p.amount,0);
+  const paidCount=state.dashboard&&!state.history_loaded?state.dashboard.payment_count:paid.length;
+  const dueCount=state.dashboard&&!state.history_loaded?state.dashboard.due_count:due.length;
+  const dueTotal=state.dashboard&&!state.history_loaded?state.dashboard.due_total:due.reduce((sum,c)=>sum+c.balance,0);
+  const dollars=state.dashboard&&!state.history_loaded?state.dashboard.dollars:paid.filter(p=>p.currency==='USD').reduce((sum,p)=>sum+p.received_amount,0);
+  const bolivars=state.dashboard&&!state.history_loaded?state.dashboard.bolivars:paid.filter(p=>p.currency==='VES').reduce((sum,p)=>sum+p.received_amount,0);
   return `<section class="dashboard-overview" aria-label="Resumen de cobros y deudas">
     <div class="dashboard-main-metrics">
       <div class="dashboard-collected">
         <div class="dashboard-metric-label">${icon('payments')}<h2>Cobrado hoy</h2><span class="dashboard-today-tag">Hoy</span></div>
         <div class="dashboard-amount" id="dashboard-today">${usd(amount)}</div>
-        <p class="dashboard-unit">Equivalente en USD · ${paid.length} ${paid.length===1?'cobro':'cobros'}</p>
+        <p class="dashboard-unit">Equivalente en USD · ${paidCount} ${paidCount===1?'cobro':'cobros'}</p>
         <p class="dashboard-received">Recibido: <b>${usd(dollars)}</b> y <b>${bs(bolivars)}</b></p>
       </div>
       <div class="dashboard-overdue">
@@ -827,7 +832,7 @@ function dashboardOverview({due,newDebtors,paid}){
   </section>
   <div class="dashboard-alerts" aria-label="Seguimiento de la semana">
     <button type="button" class="dashboard-alert" data-action="nav" data-id="billing">
-      ${icon('clock')}<span><b>Vencen en los próximos 7 días</b><small>${due.length ? `${due.length} ${due.length===1?'cargo pendiente':'cargos pendientes'} · ${usd(due.reduce((sum,c)=>sum+c.balance,0))} USD` : 'Sin vencimientos pendientes esta semana'}</small></span>${icon('arrow')}
+      ${icon('clock')}<span><b>Vencen en los próximos 7 días</b><small>${dueCount ? `${dueCount} ${dueCount===1?'cargo pendiente':'cargos pendientes'} · ${usd(dueTotal)} USD` : 'Sin vencimientos pendientes esta semana'}</small></span>${icon('arrow')}
     </button>
     <button type="button" class="dashboard-alert" data-action="nav" data-id="arrears" title="Alumnos cuya primera deuda actualmente vencida corresponde a los últimos 7 días">
       ${icon('arrears')}<span><b>Morosos nuevos</b><small>${newDebtors.length ? `${newDebtors.length} ${newDebtors.length===1?'alumno nuevo':'alumnos nuevos'} en mora en los últimos 7 días` : 'Sin nuevos alumnos en mora en los últimos 7 días'}</small></span>${icon('arrow')}
