@@ -572,6 +572,7 @@ document.addEventListener('submit',async event=>{
 });
 document.addEventListener('input',event=>{
   const el=event.target;
+  if(el.name==='school_year'&&el.closest('form[data-endpoint="setup"]'))el.dataset.manual='true';
   if(el.id==='collection-text'){const link=$('#wa-collection');if(link){const url=new URL(link.href);url.searchParams.set('text',el.value);link.href=url.href;}}
   if(el.id==='plan-count'){buildPlanRows();return;}
   if(el.closest('form[data-endpoint="correct-billing-start"]')&&el.name==='billing_start')updateBillingCorrection();
@@ -584,6 +585,10 @@ document.addEventListener('input',event=>{
   if(el.closest('form[data-endpoint="payments"], form[data-endpoint="expenses"]'))updateConversion();
 });
 document.addEventListener('change',event=>{
+  const calendarForm=event.target.closest('form[data-endpoint="setup"]');
+  if(calendarForm&&event.target.name==='start_month'&&!calendarForm.elements.school_year.dataset.manual){
+    calendarForm.elements.school_year.value=Number(setupToday.slice(0,4))-(Number(setupToday.slice(5,7))<Number(event.target.value));
+  }
   if(event.target.id==='roster-file'){rosterFile=rosterPreview=undefined;$('#roster-preview').innerHTML='';}
 
   if(event.target.closest('form[data-endpoint="expenses"]')&&event.target.name==='category')

@@ -198,3 +198,27 @@ class MonthlyReportsTests(unittest.TestCase):
             self.assertEqual(before['summary'],f.request('state')['summary'])
             self.assertEqual(daily['summaries'],f.request('daily-report')['summaries'])
         finally:f.tearDown()
+
+class FirstStartCalendarTests(unittest.TestCase):
+    def test_calendar_validation_rolls_back_and_derives_year_for_selected_month(self):
+        from tests.test_system import SystemTests
+        import threading
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'colegio.sqlite3';initialize(path)
+            self.server=SchoolServer(('127.0.0.1',0),str(path))
+            self.cookie=self.csrf=''
+            thread=threading.Thread(target=self.server.serve_forever);thread.start()
+            request=lambda route,body,status=200:SystemTests.request(self,route,body,status=status)
+            try:
+                body=dict(name='Administración ficticia',username='admin',password='FICTICIO-primera-clave',start_month=13,due_day=31)
+                request('setup',body,400)
+                with closing(connect(path)) as db:self.assertEqual(db.execute('SELECT COUNT(*) FROM users').fetchone()[0],0)
+                with patch('colegio.server.local_today',return_value=date(2027,1,15)):
+                    request('setup',dict(body,start_month=1))
+                with closing(connect(path)) as db:
+                    settings=dict(db.execute('SELECT key,value FROM settings'))
+                    self.assertEqual((settings['school_year'],settings['start_month'],settings['due_day']),('2027','1','31'))
+                    self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],12)
+                    from colegio.audit_chain import local_status
+                    self.assertTrue(local_status(db)['ok'])
+            finally:self.server.shutdown();thread.join();self.server.server_close()

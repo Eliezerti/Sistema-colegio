@@ -66,3 +66,5 @@ Primera suite conjunta D1–D6: 299 pruebas en 171,540 s, un fallo y un error. E
 La guía Pruebas físicas detalla corte eléctrico, impresora y restauración en otra PC. No se presentan como ejecutados desde un runner.
 
 Primer arranque del flujo Windows 38760139693: rechazado antes de crear un trabajo. actionlint confirmó en tanda-d.yml:23 que runner.temp no se permite en env del trabajo. La variable se mueve al paso nativo que la utiliza, donde ese contexto sí está disponible. No se llegó a compilar ni a probar el producto en ese intento.
+
+Revisión final del asistente: al cambiar el mes inicial se recalcula el año sugerido según la fecha de Venezuela, mientras el usuario no haya escrito un año manual. Se prueba enero de 2027 con septiembre (2026–2027) y enero (2027–2028), y que una elección manual no se sobrescriba. Backend: calendario inválido no crea el administrador; enero de 2027 con inicio en enero deriva 2027. Una prueba API correcta en 0,543 s y navegador normal completo correcto. Se sustituye la ejecución Windows 38760482303, aún sin validación terminada, para compilar este ajuste final.

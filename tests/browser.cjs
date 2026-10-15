@@ -47,6 +47,15 @@ function printedTextLayout(pdf){
   try {
     await page.goto(process.env.AULA_TEST_URL||'http://127.0.0.1:8765');
     await page.locator('.brand .school-placeholder').waitFor();
+    // First-start calendar follows the server's Venezuelan date and chosen start month.
+    await page.evaluate(()=>{setupToday='2027-01-15';auth(true);});
+    assert.equal(await page.locator('.auth-form [name="school_year"]').inputValue(),'2026');
+    await page.locator('.auth-form [name="start_month"]').selectOption('1');
+    assert.equal(await page.locator('.auth-form [name="school_year"]').inputValue(),'2027');
+    await page.locator('.auth-form [name="school_year"]').fill('2025');
+    await page.locator('.auth-form [name="start_month"]').selectOption('9');
+    assert.equal(await page.locator('.auth-form [name="school_year"]').inputValue(),'2025');
+    await page.evaluate(async()=>{setupToday=(await api('session')).today;auth(true);});
     await page.getByLabel('Nombre del colegio',{exact:true}).fill('Colegio de prueba');
     await page.getByLabel('Nombre del administrador').fill('María Administradora');
     await page.getByLabel('Usuario',{exact:true}).fill('admin');
