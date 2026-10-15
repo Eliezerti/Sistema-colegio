@@ -4,7 +4,7 @@
 - Retira cobros ficticios y sus aplicaciones; conserva alumnos, cargos, egresos y configuración. El piso de recibos queda en cero y el primer recibo es R-000001. Conserva la cadena de bitácora y registra la limpieza y el respaldo previo. Sin migración de esquema.
 - Se detiene ante cierres o documentos financieros emitidos, restauración pendiente, errores de integridad, reloj bloqueado, respaldo fallido o cambios posteriores a la revisión.
 - Pruebas nuevas: conservación, respaldo descifrable, primer pago real de prueba R-000001, autorización y seis terminaciones reales del proceso. El instalador comprueba también la operación dentro del EXE con datos ficticios.
-- Validación completa en curso. B3 sigue pendiente. [Guía](docs/limpieza-cobros-prueba.md).
+- Validación completa: Linux, 306 (303 correctas y 3 nativas omitidas); Windows Server 2022, 306 correctas sin omisiones. Tres navegadores correctos en ambos; limpieza cifrada desde el EXE instalado, actualización, otra cuenta, PDF y Defender correctos. B3 sigue pendiente. [Guía](docs/limpieza-cobros-prueba.md) · [Evidencia](docs/interno/validacion-1.0.70.md).
 
 # Ajustes de comprobantes y recordatorio · 1.0.69
 
