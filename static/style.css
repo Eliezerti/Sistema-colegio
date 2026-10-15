@@ -259,7 +259,7 @@ table:has(.row-actions) th:last-child{text-align:right}
 
 /* Fixed physical width also when the Windows driver uses a letter sheet. */
 @media print{
-  .payment-receipt.receipt-half-letter{width:396pt;max-width:none;padding:18pt 20pt;line-height:1.25}
+  .payment-receipt.receipt-half-letter{width:396pt;max-width:none;padding:10pt 12pt;line-height:1.25}
   .receipt-half-letter .document-header{margin-bottom:6pt;padding-bottom:5pt}
   .receipt-half-letter .school-info p{margin:2pt 0;line-height:1.2}
   .receipt-half-letter .receipt-parties{margin-bottom:5pt}
@@ -272,7 +272,7 @@ table:has(.row-actions) th:last-child{text-align:right}
   .receipt-half-letter .receipt-balance{padding:4pt 7pt;margin:5pt 0 2pt}
   .receipt-half-letter .receipt-balance strong{font-size:11pt}
   .receipt-half-letter .receipt-balance-note{margin:2pt 0 4pt!important}
-  .receipt-half-letter .signature-row{margin-top:12pt}
+  .receipt-half-letter .signature-row{margin-top:30pt}
   .receipt-half-letter .receipt-bottom{margin-top:5pt;padding-top:4pt}
   .receipt-half-letter .receipt-notes{padding-top:4pt}
 }
@@ -295,3 +295,14 @@ table:has(.row-actions) th:last-child{text-align:right}
   .receipt-half-letter th:nth-child(2){width:22%}
   .receipt-half-letter th:nth-child(3),.receipt-half-letter th:last-child{width:19%}
 }
+
+@media print{.payment-receipt.receipt-half-letter{margin:0!important;align-self:start;justify-self:start}.receipt-half-letter .receipt-bottom{padding-bottom:0}}
+
+/* Two real half-letter portraits on one letter landscape sheet, without scaling. */
+@page receipt-letter-pair{size:11in 8.5in;margin:0}
+@media print{
+  #print-area>.receipt-print-pair{page:receipt-letter-pair;display:grid;grid-template-columns:396pt 396pt;width:792pt;gap:0;margin:0;padding:0;align-items:start}
+  #print-area>.receipt-print-pair>.payment-receipt.receipt-half-letter{page:auto;break-before:auto;break-after:auto}
+}
+
+#print-area .receipt-copy-label{order:-1;font-size:8pt!important;line-height:1.2;letter-spacing:0;white-space:nowrap;font-weight:700;color:#173f65}

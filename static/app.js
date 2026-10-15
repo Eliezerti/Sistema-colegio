@@ -466,15 +466,29 @@ function schoolHeader(s,title,code,on) {
 }
 function documentActions(path) {
   const isReceipt=path.startsWith('receipt/');
-  return `<div class="actions document-actions">${isReceipt?`<label class="receipt-paper-control">Tamaño del recibo<select id="receipt-paper"><option value="half-letter" ${receiptPaper==='half-letter'?'selected':''}>Media carta · vertical</option><option value="a4" ${receiptPaper==='a4'?'selected':''}>A4 · vertical</option><option value="ticket-80" ${receiptPaper==='ticket-80'?'selected':''}>Ticket térmico · 80 mm</option><option value="ticket-58" ${receiptPaper==='ticket-58'?'selected':''}>Ticket térmico · 58 mm</option></select></label>`:''}<a class="btn primary" href="/api/${path}.pdf${isReceipt?'?paper='+receiptPaper:''}" download>${icon('download')} Descargar PDF</a>${btn(`${icon('print')} Imprimir`,'print-receipt')}</div>${isReceipt?'<p class="receipt-paper-help" id="receipt-paper-help"></p>':''}`;
+  return `<div class="actions document-actions">${isReceipt?`<label class="receipt-paper-control">Tamaño del recibo<select id="receipt-paper"><option value="half-letter" ${receiptPaper==='half-letter'?'selected':''}>Media carta · vertical</option><option value="letter-pair" ${receiptPaper==='letter-pair'?'selected':''}>Carta horizontal · 2 copias verticales</option><option value="a4" ${receiptPaper==='a4'?'selected':''}>A4 · vertical</option><option value="ticket-80" ${receiptPaper==='ticket-80'?'selected':''}>Ticket térmico · 80 mm</option><option value="ticket-58" ${receiptPaper==='ticket-58'?'selected':''}>Ticket térmico · 58 mm</option></select></label>`:''}<a class="btn primary" href="/api/${path}.pdf${isReceipt?'?paper='+receiptPaper:''}" download>${icon('download')} Descargar PDF</a>${btn(`${icon('print')} Imprimir`,'print-receipt')}</div>${isReceipt?'<p class="receipt-paper-help" id="receipt-paper-help"></p>':''}`;
 }
 function setReceiptPaper(paper) {
-  receiptPaper=['a4','half-letter','ticket-58','ticket-80'].includes(paper)?paper:'half-letter';
-  document.querySelectorAll('.payment-receipt').forEach(el=>{el.classList.toggle('receipt-half-letter',receiptPaper==='half-letter');el.classList.toggle('receipt-ticket',receiptPaper.startsWith('ticket-'));el.classList.toggle('receipt-ticket-58',receiptPaper==='ticket-58');el.classList.toggle('receipt-ticket-80',receiptPaper==='ticket-80');});
+  receiptPaper=['a4','half-letter','letter-pair','ticket-58','ticket-80'].includes(paper)?paper:'half-letter';
+  const area=$('#print-area'),previous=area.querySelector('.receipt-print-pair');
+  if(previous)area.replaceChildren(previous.querySelector('.payment-receipt'));
+  area.querySelectorAll('.receipt-copy-label').forEach(el=>el.remove());
+  const half=receiptPaper==='half-letter'||receiptPaper==='letter-pair';
+  document.querySelectorAll('.payment-receipt').forEach(el=>{el.classList.toggle('receipt-half-letter',half);el.classList.toggle('receipt-ticket',receiptPaper.startsWith('ticket-'));el.classList.toggle('receipt-ticket-58',receiptPaper==='ticket-58');el.classList.toggle('receipt-ticket-80',receiptPaper==='ticket-80');});
+  if(receiptPaper==='letter-pair'){
+    const receipt=area.querySelector('.payment-receipt');
+    if(receipt){
+      const sheet=document.createElement('section'),copy=receipt.cloneNode(true);sheet.className='receipt-print-pair';
+      for(const [item,label] of [[receipt,'ORIGINAL'],[copy,'COPIA']]){
+        const badge=document.createElement('span');badge.className='receipt-copy-label';badge.textContent=label;item.querySelector('.document-number').append(badge);
+      }
+      sheet.append(receipt,copy);area.replaceChildren(sheet);
+    }
+  }
   const link=modal.querySelector('.document-actions a[download]');
   if(link){const url=new URL(link.href);url.searchParams.set('paper',receiptPaper);link.href=url.pathname+url.search;}
   const help=$('#receipt-paper-help');
-  if(help)help.textContent=receiptPaper.startsWith('ticket-')?'Ticket de '+receiptPaper.slice(-2)+' mm. Selecciona la impresora térmica y usa escala 100 %. La impresión depende del controlador instalado en Windows.':receiptPaper==='half-letter'?'13,97 × 21,59 cm. Selecciona media carta o una hoja carta con escala 100 % (tamaño real), sin ajustar ni ampliar. En carta ocupa solo media hoja.':'A4 vertical. Recomendado para muchos conceptos u observaciones extensas.';
+  if(help)help.textContent=receiptPaper==='letter-pair'?'Original para el representante y copia para el colegio, con el mismo número R-, en carta horizontal. Escala 100 %, sin ajustar. Desactiva encabezados y pies del navegador; ambas copias dejan espacio para firmar.':receiptPaper.startsWith('ticket-')?'Ticket de '+receiptPaper.slice(-2)+' mm. Selecciona la impresora térmica y usa escala 100 %. La impresión depende del controlador instalado en Windows.':receiptPaper==='half-letter'?'13,97 × 21,59 cm. Selecciona media carta o una hoja carta con escala 100 % (tamaño real), sin ajustar ni ampliar. Sin encabezados ni pies del navegador. Para dos copias en una hoja, elige Carta horizontal · 2 copias verticales.':'A4 vertical. Recomendado para muchos conceptos u observaciones extensas.';
 }
 function showDocument(title,path,markup) {
   showModal(title,'Documento listo para descargar o imprimir.',documentActions(path)+markup);modal.classList.toggle('document-modal',markup.includes('payment-receipt'));$('#print-area').innerHTML=markup;

@@ -18,7 +18,7 @@ def document(currency='VES', rows=1, voided=False, notes=''):
 class ReceiptLayoutTests(unittest.TestCase):
     def test_student_document_and_internal_code_are_never_printed_in_any_receipt_format(self):
         for code in ('AL-000001', None, ''):
-            for paper in ('a4', 'half-letter', 'ticket-58', 'ticket-80'):
+            for paper in ('a4', 'half-letter', 'letter-pair', 'ticket-58', 'ticket-80'):
                 with self.subTest(code=code, paper=paper):
                     data = document()
                     data['payment']['student_document'] = 'CE-199998887771'
@@ -92,6 +92,31 @@ class ReceiptLayoutTests(unittest.TestCase):
             self.assertTrue(value in pdf,f'Falta información: {value!r}')
         self.assertEqual(pdf.count(b'/MediaBox [0 0 396 612]'),pages)
         self.assertEqual(pdf.count(b'(ANULADO)'),pages)
+
+    def test_letter_pair_keeps_two_complete_unscaled_copies_without_mutating_document(self):
+        import copy
+        data = document(rows=3, notes='Pago ficticio para ambas copias.')
+        data['payment'].update(balance_before=8000, balance_after=5000)
+        before = copy.deepcopy(data)
+        pdf = render_pdf('receipt', data, 'letter-pair')
+        self.assertIn(b'/MediaBox [0 0 792 612]', pdf)
+        self.assertIn(b'/Count 1 ', pdf)
+        self.assertIn(b'q 1 0 0 1 396 0 cm', pdf)
+        self.assertEqual(pdf.count(b'ORIGINAL'),1)
+        self.assertEqual(pdf.count(b'COPIA'),1)
+        for text in (b'(R-000031)', b'(TR-001)', b'(Firma del representante)'):
+            self.assertEqual(pdf.count(text), 2)
+        for row in data['allocations']:
+            self.assertEqual(pdf.count(row['concept'].encode()), 2)
+        self.assertEqual(data, before)
+
+    def test_letter_pair_continues_without_dropping_long_receipt_details(self):
+        data = document(rows=40, voided=True, notes='FIN DE AMBAS COPIAS')
+        pdf = render_pdf('receipt', data, 'letter-pair')
+        self.assertGreater(int(re.search(rb'/Count (\d+)', pdf).group(1)), 1)
+        for row in data['allocations']:
+            self.assertEqual(pdf.count(row['concept'].encode()), 2)
+        self.assertEqual(pdf.count(b'FIN DE AMBAS COPIAS'), 2)
 
     def test_manual_charge_period_is_printed_without_treating_it_as_a_date(self):
         data=document()
