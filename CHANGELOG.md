@@ -3,7 +3,7 @@
 - Más espacio entre las secciones del comprobante, conservando media carta vertical y ORIGINAL/COPIA en carta horizontal, sin alterar pagos ni correlativos. Impresión con la configuración normal del diálogo, sin exigir escala 100 %.
 - Probar una copia externa actualiza inmediatamente el recordatorio. Si no se marca como externa, el resultado explica cómo reiniciar el plazo.
 - Opción «Ocultar por 7 días» para el recordatorio en ese navegador. Los errores de respaldo siguen visibles; el estado detallado de cifrado y nube se consulta en Protección y mantenimiento.
-- Validación de esta revisión en curso; resultados en docs/ajustes-1.0.69.md.
+- Validación: Linux, 301 pruebas (298 correctas y 3 nativas omitidas); Windows Server 2022, 301 correctas sin omisiones. Tres navegadores correctos en ambos. Instalación, actualización, otra cuenta, Defender y PDF/impresión WebView2 correctos. [Resultados y descarga](docs/ajustes-1.0.69.md).
 
 # Tanda D · 1.0.68 · 15/10/2026
 
