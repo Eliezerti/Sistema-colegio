@@ -9,7 +9,6 @@
 3. Abre **Aula - Administración escolar** desde el escritorio. Esta versión inicia localmente, sin configurar teléfonos ni otras computadoras.
 4. Escribe el nombre del colegio, tu nombre, usuario y una contraseña de al menos diez caracteres. Conserva el usuario y la contraseña en un lugar seguro.
 5. Confirma la tasa BCV vigente del día. En Configuración completa razón social, RIF, domicilio fiscal, tipo de institución, teléfono, correo y logo.
-6. Define calendario y fecha de vencimiento antes de matricular. Crea los grados/secciones y cargos del personal según tu colegio; no existen catálogos académicos universales obligatorios.
 7. Configura la segunda carpeta de respaldos, por ejemplo `E:\RespaldosColegio` para un USB o una carpeta local sincronizada por Drive. Tiene que estar fuera de la carpeta de datos de Aula.
 8. Abre **Aula - Pruebas** para practicar con acceso de administrador. Los datos de esa sesión se eliminan al cerrar su ventana y nunca se mezclan con los reales.
 
@@ -87,7 +86,7 @@ El envío es manual desde tu correo; Aula genera el documento, pero no lo envía
 1. En la PC donde estás cargando los datos, entra como administrador y abre Configuración → Crear respaldo ahora. Después pulsa Descargar copia y guarda el archivo `colegio-AAAA-MM-DD.aulabak` en un USB. La descarga es una copia completa y consistente; no copies la base activa de la carpeta de datos.
 2. Lleva también el instalador de Aula. En el colegio instala la misma versión o una más reciente, con la cuenta de Windows que usarán en esa PC. No abras el respaldo con una versión anterior.
 3. Cierra Aula completamente en la PC del colegio, incluida la bandeja junto al reloj. Desde Inicio de Windows abre Restaurar respaldo, selecciona el `.aulabak` del USB, escribe la contraseña o recuperación y confirma lo indicado en la comparación A1. Esto reemplaza los datos que hubiera en esa PC; no fusiona bases. Si ya hay datos importantes allí, descarga primero una copia de ellos.
-4. Abre Aula e inicia sesión con el usuario y la contraseña de Aula que ya usas en tu PC. El respaldo lleva alumnos, representantes, personal, cargos, pagos, recibos, usuarios, logo y configuración guardados en la base.
+4. Abre Aula e inicia sesión con el usuario y la contraseña de Aula que ya usas en tu PC. El respaldo lleva alumnos, representantes, cargos, pagos, recibos, usuarios, logo y configuración guardados en la base.
 5. Confirma la tasa del día; compara la cantidad de alumnos, un saldo conocido y el último recibo. Ejecuta Configuración → Verificar datos y cobros. Revisa también la segunda carpeta de respaldos: la ruta de tu PC puede no existir en la del colegio; configura el USB o destino que tenga esa computadora.
 6. Las dos instalaciones son independientes. Un cobro o edición en el colegio no aparecerá en casa automáticamente. Para usar esta etapa en una sola PC, decide cuál será la base principal y realiza allí los cambios reales. Llevar después otra copia reemplaza la base completa; no combina cambios de ambas computadoras.
 
@@ -126,13 +125,13 @@ La herramienta funciona localmente, necesita acceso a esta cuenta de Windows y n
 
 La restauración no fusiona bases: los cobros posteriores a la copia seleccionada no estarán en los datos restaurados. Conserva los comprobantes y consulta antes de volver a registrar un cobro que podría duplicarse. No existe recuperación garantizada si falla el disco y todas las copias estaban en el mismo disco.
 
-## Vaciar registros
+## Producción y pruebas
 
-No se necesita para actualizar, importar, pasar de año ni hacer pruebas. Es una operación destructiva reservada a administración avanzada: exige contraseña, revisión de cantidades, frase de confirmación y respaldo previo verificado en ambos destinos cuando existe una segunda carpeta. Conserva usuarios y configuración, pero borra registros administrativos y financieros. Para practicar usa **Aula - Pruebas**.
+En producción no existe Vaciar registros. Para practicar abre Aula - Pruebas y cierra su última ventana al terminar; solo se elimina esa carpeta temporal. Para comenzar la operación real utiliza una carpeta nueva y vacía, siguiendo [Puesta en producción](puesta-en-produccion.md).
 
 ## Llevar alumnos a Aula - Pruebas
 
-1. Actualiza Aula con la misma cuenta de Windows, sin vaciar registros. Crea antes un respaldo externo.
+1. Actualiza Aula con la misma cuenta de Windows, sin la operación del colegio. Crea antes un respaldo externo.
 2. En la aplicación real abre Alumnos y matrículas → Exportar Excel / CSV → Exportar Excel (.xlsx). Guarda el archivo.
 3. Abre Aula - Pruebas vacío y confirma la tasa. Si ya estabas probando, usa Cerrar y borrar pruebas y vuelve a abrirlo para comenzar vacío.
 4. Revisa que el ciclo escolar y las reglas de cobro de Pruebas sean los que quieres mostrar. El nombre y logo del colegio se configuran allí por separado.
@@ -155,4 +154,4 @@ Cierre tras 15 minutos sin actividad, configurable entre 5 y 60 en Usuarios y ac
 
 ## Control de la bitácora · A4
 
-Verificar datos y cobros comprueba ahora la cadena de la bitácora y su control separado. Vaciar registros no borra esta historia. Se conservan sin borrado automático las copias antes-bitacora y antes-restauracion, sus originales y los informes. Dependen de BitLocker y permisos locales. [Migración, reversión y límites](bitacora.md).
+Verificar datos y cobros comprueba ahora la cadena de la bitácora y su control separado. Las rutas de vaciado están retiradas y no pueden borrar esta historia. Se conservan sin borrado automático las copias antes-bitacora y antes-restauracion, sus originales y los informes. Dependen de BitLocker y permisos locales. [Migración, reversión y límites](bitacora.md).

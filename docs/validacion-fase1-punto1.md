@@ -43,7 +43,7 @@ Linux no ejecuta el mutex/enfoque de ventanas de Windows. Las pruebas unitarias 
 ## Archivos del cambio
 
 - Servidor: `colegio/backup_health.py`, `colegio/protection.py`, `colegio/server.py`, `colegio/storage.py`.
-- Interfaz: `static/app.js`, `static/style.css`. No se modificó móvil/PWA ni el módulo de nómina.
+- Interfaz: `static/app.js`, `static/style.css`. La protección continúa en la versión enfocada en mensualidades.
 - Pruebas: `tests/test_backup_alerts.py`, `tests/test_protection.py`, `tests/browser.cjs`.
 - Documentación: `README.md`, `CHANGELOG.md`, `docs/mantenimiento.md`, `docs/mantenimiento.html`, `docs/proteccion-respaldos.md`, `docs/proteccion-respaldos.html`, `docs/revision-defender.md` y este informe.
 - Entrega: `.github/workflows/windows-desktop.yml`, exclusivamente notas y título del borrador para describir el punto 1.

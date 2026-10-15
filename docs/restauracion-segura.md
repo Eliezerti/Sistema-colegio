@@ -30,13 +30,13 @@ El respaldo completo reemplaza usuarios, configuración y datos. No fusiona dos 
 
 next_record_id en colegio/db.py utiliza MAX(id) o id_floor_<tabla>, el mayor, más uno. Restaurar antes reemplazaba ese piso con el de la copia antigua.
 
-Ahora combina el máximo de ambas bases para payments, expenses, students, guardians, employees y enrollment_documents. Los siguientes R-, E-, AL- y M- no reutilizan automáticamente números que aparecían en la base sustituida. Puede haber saltos justificados por registros conservados en el informe/copia anterior, o por borrados previos.
+Ahora combina el máximo de ambas bases para payments, expenses, students, guardians y enrollment_documents. Los siguientes R-, E-, AL- y M- no reutilizan automáticamente números que aparecían en la base sustituida. Puede haber saltos justificados por registros conservados en el informe/copia anterior, o por borrados previos.
 
 ## Base actual dañada
 
 Muestra **No se pudo comparar**, sin inventar cero movimientos. Conserva los archivos originales en **danado-antes-restauracion-…**. La confirmación es **RESTAURAR SIN PODER COMPARAR**.
 
-Si los pisos actuales son ilegibles, debes indicar los últimos seis números utilizados, nunca inferiores a los de la copia seleccionada. Revisa recibos/documentos emitidos; si no los conoces, cancela y solicita ayuda técnica. No se puede garantizar un máximo desconocido de una base ilegible solo a partir de un respaldo antiguo. Los números declarados quedan registrados.
+Si los pisos actuales son ilegibles, debes indicar los últimos cinco números utilizados, nunca inferiores a los de la copia seleccionada. Revisa recibos/documentos emitidos; si no los conoces, cancela y solicita ayuda técnica. No se puede garantizar un máximo desconocido de una base ilegible solo a partir de un respaldo antiguo. Los números declarados quedan registrados.
 
 ## Si el proceso se interrumpe
 

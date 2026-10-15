@@ -6,9 +6,9 @@ En Configuración → Protección y mantenimiento → Verificar datos y cobros, 
 
 Los abonos de pagos anulados se conservan como historial, pero no se suman a cobros válidos ni al saldo abonado. La revisión mantiene además la comparación individual de cada cobro con sus aplicaciones originales.
 
-Los correlativos reservados en id_floor_payments, expenses, students, guardians, employees y enrollment_documents explican saltos hasta ese límite después de restaurar, vaciar o borrar una ficha sin movimientos. Se informan intervalos faltantes por encima del límite, sin recorrer millones de números inexistentes. Si el límite es inválido dice que no se pudo comprobar. No se exige reutilizar números ni se renumeran registros. La reserva y la bitácora permiten revisar el contexto; no certifican por sí solas qué recibos fueron entregados físicamente antes del historial disponible.
+Los correlativos reservados en id_floor_payments, expenses, students, guardians y enrollment_documents explican saltos hasta ese límite después de restaurar, vaciar o borrar una ficha sin movimientos. Se informan intervalos faltantes por encima del límite, sin recorrer millones de números inexistentes. Si el límite es inválido dice que no se pudo comprobar. No se exige reutilizar números ni se renumeran registros. La reserva y la bitácora permiten revisar el contexto; no certifican por sí solas qué recibos fueron entregados físicamente antes del historial disponible.
 
-No cambia el esquema 11, ubicación de la base, cálculos financieros, móvil/PWA, nómina, comprobantes, respaldos de cinco minutos, A1–A5 ni los avisos. Las nuevas comprobaciones son de solo lectura; una inconsistencia se informa sin intentar corregirla.
+No cambia el esquema 11, ubicación de la base, cálculos financieros, móvil/PWA, comprobantes, respaldos de cinco minutos, A1–A5 ni los avisos. Las nuevas comprobaciones son de solo lectura; una inconsistencia se informa sin intentar corregirla.
 
 ## Pruebas existentes que se conservan
 

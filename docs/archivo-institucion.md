@@ -1,12 +1,11 @@
 # Archivo de la institución
 
-## Retirar a un alumno, representante o empleado
+## Retirar a un alumno o representante
 
 1. En Administración, abre **Archivo de la institución**. Solo lo ve Administrador; en Aula - Pruebas funciona sobre datos temporales.
-2. Elige **Alumnos**, **Representantes** o **Personal**. Busca por nombre o documento y filtra **En directorio**, **En archivo** o **Todas las fichas**.
+2. Elige **Alumnos** o **Representantes**. Busca por nombre o documento y filtra **En directorio**, **En archivo** o **Todas las fichas**.
 3. Pulsa **Revisar ficha**. Verás sus vínculos, documentos y movimientos; para alumnos, el saldo pendiente.
 4. Selecciona **Archivar ficha**, escribe un motivo y ARCHIVAR. El alumno queda inactivo y deja de generar mensualidades nuevas. No se anulan deudas existentes. El representante solo se archiva si sus alumnos ya están archivados o fueron reasignados.
-5. El empleado queda Inactivo; no se cambian salarios, pagos ni recibos. Puedes verlo en Personal → Mostrar inactivos y en el PDF generado con ese filtro.
 
 El directorio habitual muestra las fichas disponibles. El archivo conserva el historial sin llenar el listado cotidiano. Las fichas ocupan poco espacio: eliminarlas no es una estrategia de mantenimiento de disco.
 
@@ -14,7 +13,7 @@ Al borrar una ficha, el archivo SQLite puede conservar su tamaño y reutilizar d
 
 ## Recuperar una ficha
 
-Revisar ficha → Recuperar ficha → motivo y RECUPERAR. El alumno vuelve como inactivo: revisa el primer mes a cobrar, representante y período antes de activarlo. El representante vuelve al directorio. El empleado vuelve como activo; revisa sus datos antes de utilizarlo.
+Revisar ficha → Recuperar ficha → motivo y RECUPERAR. El alumno vuelve como inactivo: revisa el primer mes a cobrar, representante y período antes de activarlo. El representante vuelve al directorio.
 
 ## Borrar una ficha creada por error
 
@@ -26,7 +25,7 @@ Solo si la ficha ya está archivada y no tiene movimientos ni vínculos protegid
 2. Escribe el motivo, tu contraseña de Administrador y BORRAR FICHA.
 3. Aula vuelve a comprobar el historial dentro de la transacción. Si cambió desde la revisión, tendrás que revisarlo nuevamente.
 4. Antes de borrar, crea un respaldo completo `antes-borrar-ficha-…sqlite3` y verifica su integridad. Copia también al segundo destino si está configurado. Si falla cualquier copia, no borra la ficha.
-5. Guarda la operación y su motivo en bitácora. No borra otros alumnos, representantes, empleados ni movimientos. Conserva el correlativo para no reutilizar automáticamente el código o número de una ficha/constancia eliminada.
+5. Guarda la operación y su motivo en bitácora. No borra otros alumnos, representantes ni movimientos. Conserva el correlativo para no reutilizar automáticamente el código o número de una ficha/constancia eliminada.
 
 En **Aula - Pruebas**, la cuenta entra sin una contraseña conocida: el borrado de fichas temporales pide motivo y BORRAR FICHA, conserva la revisión y crea su copia previa en la carpeta temporal, pero no pide la contraseña del sistema real. Solo el modo Pruebas configurado por el servidor permite esto; enviar un campo «demo» desde el navegador al sistema real no lo habilita. El Administrador real siempre debe confirmar con su contraseña. Las copias de la sesión de pruebas se eliminan al cerrar esa sesión.
 
@@ -36,7 +35,7 @@ Los respaldos anteriores, PDF, Excel y archivos enviados siguen conteniendo sus 
 
 ## Alcance y comprobaciones
 
-No cambia el esquema ni la ubicación de la base, datos existentes durante la actualización, móvil/PWA, cálculo de nómina, cifrado o las fases de seguridad pendientes. Reutiliza los estados de archivo/inactividad existentes y claves de correlativos en configuración. Conserva CSRF, permisos del servidor, bloqueo del reloj, transacciones, WAL/FULL y copias de cinco minutos.
+No cambia el esquema ni la ubicación de la base, datos existentes durante la actualización, móvil/PWA, cálculo de cifrado o las fases de seguridad pendientes. Reutiliza los estados de archivo/inactividad existentes y claves de correlativos en configuración. Conserva CSRF, permisos del servidor, bloqueo del reloj, transacciones, WAL/FULL y copias de cinco minutos.
 
 La revisión de documentos históricos ilegibles bloquea el borrado: no los considera vacíos. No se afirma cumplimiento de un plazo legal de conservación específico; esa política se revisa con la institución.
 

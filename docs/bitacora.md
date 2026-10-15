@@ -8,7 +8,6 @@ No necesitas crear otra contraseña. Las contraseñas de Aula y de respaldos sig
 
 **Vaciar registros conserva toda la bitácora**, sus huellas y los usuarios. Añade quién vació, cuándo, las cantidades revisadas y la ruta del respaldo previo. No hay borrado ni retención automática de la bitácora. Un saldo de $0 tampoco autoriza borrar historia financiera.
 
-Las ediciones guardan los campos que realmente cambiaron, calculados desde las filas de SQLite dentro de la misma transacción. Se registra el usuario autenticado; procesos automáticos y recuperación local quedan identificados como tales. No se guardan contraseñas, hashes de contraseñas, cookies, tokens ni claves de respaldo. Los cambios de datos bancarios personales se señalan sin copiar los números; un logo se identifica por su huella, sin duplicar la imagen. A4 no cambió quién podía ver la nómina; A5 restringe sus datos bancarios y documentos a Administración. [Acceso por perfil](privilegios-personal.md).
 
 ## Verificación y límites
 

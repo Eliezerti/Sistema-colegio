@@ -18,7 +18,6 @@
 | GET | audit | admin | True | 200 | 200 |
 | GET | audit.csv | admin | True | 200 | 200 |
 | GET | audit.pdf | admin | True | 200 | 200 |
-| GET | reset-preview | admin | True | 200 | 200 |
 | GET | import-template | admin | True | 200 | 200 |
 | GET | import-guide | admin | True | 200 | 200 |
 | GET | backup | admin | True | 200 | 200 |
@@ -28,8 +27,6 @@
 | GET | directory/students.pdf | admin | True | 200 | 200 |
 | GET | directory/guardians | admin | True | 200 | 200 |
 | GET | directory/guardians.pdf | admin | True | 200 | 200 |
-| GET | directory/employees | admin | True | 200 | 200 |
-| GET | directory/employees.pdf | admin | True | 200 | 200 |
 | GET | enrollment/0 | admin | True | 400 | 400 |
 | GET | enrollment/0.pdf | admin | True | 400 | 400 |
 | GET | receipt/0 | admin | True | 400 | 400 |
@@ -43,10 +40,6 @@
 | GET | cash-close/0 | admin | True | 400 | 400 |
 | GET | cash-close/0.pdf | admin | True | 400 | 400 |
 | GET | guardian-account/0 | admin | True | 400 | 400 |
-| GET | payroll-plan/0 | admin | True | 400 | 400 |
-| GET | payroll-plan/0.pdf | admin | True | 400 | 400 |
-| GET | salary-receipt/0 | admin | True | 400 | 400 |
-| GET | salary-receipt/0.pdf | admin | True | 400 | 400 |
 | GET | archive-preview/student/0 | admin | True | 400 | 400 |
 | GET | export?type=students | admin | True | 200 | 200 |
 | GET | export?type=payments | admin | True | 200 | 200 |
@@ -61,8 +54,6 @@
 | POST | guardians | admin | True | 400 | 400 |
 | POST | students | admin | False | 403 | 403 |
 | POST | students | admin | True | 400 | 400 |
-| POST | employees | admin | False | 403 | 403 |
-| POST | employees | admin | True | 400 | 400 |
 | POST | users | admin | False | 403 | 403 |
 | POST | users | admin | True | 400 | 400 |
 | POST | password | admin | False | 403 | 403 |
@@ -73,12 +64,6 @@
 | POST | void-expense | admin | True | 400 | 400 |
 | POST | cancel-charge | admin | False | 403 | 403 |
 | POST | cancel-charge | admin | True | 400 | 400 |
-| POST | positions | admin | False | 403 | 403 |
-| POST | positions | admin | True | 400 | 400 |
-| POST | payroll-plans | admin | False | 403 | 403 |
-| POST | payroll-plans | admin | True | 400 | 400 |
-| POST | salary-receipts | admin | False | 403 | 403 |
-| POST | salary-receipts | admin | True | 400 | 400 |
 | POST | import-roster | admin | False | 403 | 403 |
 | POST | import-roster | admin | True | 400 | 400 |
 | POST | reopen-cash | admin | False | 403 | 403 |
@@ -99,10 +84,6 @@
 | POST | restore-guardian | admin | True | 400 | 400 |
 | POST | delete-grade | admin | False | 403 | 403 |
 | POST | delete-grade | admin | True | 400 | 400 |
-| POST | archive-employee | admin | False | 403 | 403 |
-| POST | archive-employee | admin | True | 400 | 400 |
-| POST | restore-employee | admin | False | 403 | 403 |
-| POST | restore-employee | admin | True | 400 | 400 |
 | POST | delete-unused-record | admin | False | 403 | 403 |
 | POST | delete-unused-record | admin | True | 400 | 400 |
 | POST | clock-confirm | admin | False | 403 | 403 |
@@ -125,8 +106,6 @@
 | POST | backup-now | admin | True | 200 | 200 |
 | POST | backup-cloud-declare | admin | False | 403 | 403 |
 | POST | backup-cloud-declare | admin | True | 400 | 400 |
-| POST | reset-records | admin | False | 403 | 403 |
-| POST | reset-records | admin | True | 400 | 400 |
 | POST | generate | admin | False | 403 | 403 |
 | POST | generate | admin | True | 400 | 400 |
 | POST | payments | admin | False | 403 | 403 |
@@ -171,7 +150,6 @@
 | GET | audit | cashier | True | 403 | 403 |
 | GET | audit.csv | cashier | True | 403 | 403 |
 | GET | audit.pdf | cashier | True | 403 | 403 |
-| GET | reset-preview | cashier | True | 403 | 403 |
 | GET | import-template | cashier | True | 403 | 403 |
 | GET | import-guide | cashier | True | 403 | 403 |
 | GET | backup | cashier | True | 403 | 403 |
@@ -181,8 +159,6 @@
 | GET | directory/students.pdf | cashier | True | 200 | 200 |
 | GET | directory/guardians | cashier | True | 200 | 200 |
 | GET | directory/guardians.pdf | cashier | True | 200 | 200 |
-| GET | directory/employees | cashier | True | 200 | 200 |
-| GET | directory/employees.pdf | cashier | True | 200 | 200 |
 | GET | enrollment/0 | cashier | True | 400 | 400 |
 | GET | enrollment/0.pdf | cashier | True | 400 | 400 |
 | GET | receipt/0 | cashier | True | 400 | 400 |
@@ -196,10 +172,6 @@
 | GET | cash-close/0 | cashier | True | 400 | 400 |
 | GET | cash-close/0.pdf | cashier | True | 400 | 400 |
 | GET | guardian-account/0 | cashier | True | 400 | 400 |
-| GET | payroll-plan/0 | cashier | True | 403 | 403 |
-| GET | payroll-plan/0.pdf | cashier | True | 403 | 403 |
-| GET | salary-receipt/0 | cashier | True | 403 | 403 |
-| GET | salary-receipt/0.pdf | cashier | True | 403 | 403 |
 | GET | archive-preview/student/0 | cashier | True | 403 | 403 |
 | GET | export?type=students | cashier | True | 200 | 200 |
 | GET | export?type=payments | cashier | True | 200 | 200 |
@@ -214,8 +186,6 @@
 | POST | guardians | cashier | True | 403 | 403 |
 | POST | students | cashier | False | 403 | 403 |
 | POST | students | cashier | True | 403 | 403 |
-| POST | employees | cashier | False | 403 | 403 |
-| POST | employees | cashier | True | 403 | 403 |
 | POST | users | cashier | False | 403 | 403 |
 | POST | users | cashier | True | 403 | 403 |
 | POST | password | cashier | False | 403 | 403 |
@@ -226,12 +196,6 @@
 | POST | void-expense | cashier | True | 403 | 403 |
 | POST | cancel-charge | cashier | False | 403 | 403 |
 | POST | cancel-charge | cashier | True | 403 | 403 |
-| POST | positions | cashier | False | 403 | 403 |
-| POST | positions | cashier | True | 403 | 403 |
-| POST | payroll-plans | cashier | False | 403 | 403 |
-| POST | payroll-plans | cashier | True | 403 | 403 |
-| POST | salary-receipts | cashier | False | 403 | 403 |
-| POST | salary-receipts | cashier | True | 403 | 403 |
 | POST | import-roster | cashier | False | 403 | 403 |
 | POST | import-roster | cashier | True | 403 | 403 |
 | POST | reopen-cash | cashier | False | 403 | 403 |
@@ -252,10 +216,6 @@
 | POST | restore-guardian | cashier | True | 403 | 403 |
 | POST | delete-grade | cashier | False | 403 | 403 |
 | POST | delete-grade | cashier | True | 403 | 403 |
-| POST | archive-employee | cashier | False | 403 | 403 |
-| POST | archive-employee | cashier | True | 403 | 403 |
-| POST | restore-employee | cashier | False | 403 | 403 |
-| POST | restore-employee | cashier | True | 403 | 403 |
 | POST | delete-unused-record | cashier | False | 403 | 403 |
 | POST | delete-unused-record | cashier | True | 403 | 403 |
 | POST | clock-confirm | cashier | False | 403 | 403 |
@@ -278,8 +238,6 @@
 | POST | backup-now | cashier | True | 403 | 403 |
 | POST | backup-cloud-declare | cashier | False | 403 | 403 |
 | POST | backup-cloud-declare | cashier | True | 403 | 403 |
-| POST | reset-records | cashier | False | 403 | 403 |
-| POST | reset-records | cashier | True | 403 | 403 |
 | POST | generate | cashier | False | 403 | 403 |
 | POST | generate | cashier | True | 400 | 400 |
 | POST | payments | cashier | False | 403 | 403 |
@@ -324,7 +282,6 @@
 | GET | audit | reader | True | 403 | 403 |
 | GET | audit.csv | reader | True | 403 | 403 |
 | GET | audit.pdf | reader | True | 403 | 403 |
-| GET | reset-preview | reader | True | 403 | 403 |
 | GET | import-template | reader | True | 403 | 403 |
 | GET | import-guide | reader | True | 403 | 403 |
 | GET | backup | reader | True | 403 | 403 |
@@ -334,8 +291,6 @@
 | GET | directory/students.pdf | reader | True | 200 | 200 |
 | GET | directory/guardians | reader | True | 200 | 200 |
 | GET | directory/guardians.pdf | reader | True | 200 | 200 |
-| GET | directory/employees | reader | True | 200 | 200 |
-| GET | directory/employees.pdf | reader | True | 200 | 200 |
 | GET | enrollment/0 | reader | True | 400 | 400 |
 | GET | enrollment/0.pdf | reader | True | 400 | 400 |
 | GET | receipt/0 | reader | True | 400 | 400 |
@@ -349,10 +304,6 @@
 | GET | cash-close/0 | reader | True | 400 | 400 |
 | GET | cash-close/0.pdf | reader | True | 400 | 400 |
 | GET | guardian-account/0 | reader | True | 400 | 400 |
-| GET | payroll-plan/0 | reader | True | 403 | 403 |
-| GET | payroll-plan/0.pdf | reader | True | 403 | 403 |
-| GET | salary-receipt/0 | reader | True | 403 | 403 |
-| GET | salary-receipt/0.pdf | reader | True | 403 | 403 |
 | GET | archive-preview/student/0 | reader | True | 403 | 403 |
 | GET | export?type=students | reader | True | 200 | 200 |
 | GET | export?type=payments | reader | True | 200 | 200 |
@@ -367,8 +318,6 @@
 | POST | guardians | reader | True | 403 | 403 |
 | POST | students | reader | False | 403 | 403 |
 | POST | students | reader | True | 403 | 403 |
-| POST | employees | reader | False | 403 | 403 |
-| POST | employees | reader | True | 403 | 403 |
 | POST | users | reader | False | 403 | 403 |
 | POST | users | reader | True | 403 | 403 |
 | POST | password | reader | False | 403 | 403 |
@@ -379,12 +328,6 @@
 | POST | void-expense | reader | True | 403 | 403 |
 | POST | cancel-charge | reader | False | 403 | 403 |
 | POST | cancel-charge | reader | True | 403 | 403 |
-| POST | positions | reader | False | 403 | 403 |
-| POST | positions | reader | True | 403 | 403 |
-| POST | payroll-plans | reader | False | 403 | 403 |
-| POST | payroll-plans | reader | True | 403 | 403 |
-| POST | salary-receipts | reader | False | 403 | 403 |
-| POST | salary-receipts | reader | True | 403 | 403 |
 | POST | import-roster | reader | False | 403 | 403 |
 | POST | import-roster | reader | True | 403 | 403 |
 | POST | reopen-cash | reader | False | 403 | 403 |
@@ -405,10 +348,6 @@
 | POST | restore-guardian | reader | True | 403 | 403 |
 | POST | delete-grade | reader | False | 403 | 403 |
 | POST | delete-grade | reader | True | 403 | 403 |
-| POST | archive-employee | reader | False | 403 | 403 |
-| POST | archive-employee | reader | True | 403 | 403 |
-| POST | restore-employee | reader | False | 403 | 403 |
-| POST | restore-employee | reader | True | 403 | 403 |
 | POST | delete-unused-record | reader | False | 403 | 403 |
 | POST | delete-unused-record | reader | True | 403 | 403 |
 | POST | clock-confirm | reader | False | 403 | 403 |
@@ -431,8 +370,6 @@
 | POST | backup-now | reader | True | 403 | 403 |
 | POST | backup-cloud-declare | reader | False | 403 | 403 |
 | POST | backup-cloud-declare | reader | True | 403 | 403 |
-| POST | reset-records | reader | False | 403 | 403 |
-| POST | reset-records | reader | True | 403 | 403 |
 | POST | generate | reader | False | 403 | 403 |
 | POST | generate | reader | True | 403 | 403 |
 | POST | payments | reader | False | 403 | 403 |
@@ -477,7 +414,6 @@
 | GET | audit | anonymous | True | 401 | 401 |
 | GET | audit.csv | anonymous | True | 401 | 401 |
 | GET | audit.pdf | anonymous | True | 401 | 401 |
-| GET | reset-preview | anonymous | True | 401 | 401 |
 | GET | import-template | anonymous | True | 401 | 401 |
 | GET | import-guide | anonymous | True | 401 | 401 |
 | GET | backup | anonymous | True | 401 | 401 |
@@ -487,8 +423,6 @@
 | GET | directory/students.pdf | anonymous | True | 401 | 401 |
 | GET | directory/guardians | anonymous | True | 401 | 401 |
 | GET | directory/guardians.pdf | anonymous | True | 401 | 401 |
-| GET | directory/employees | anonymous | True | 401 | 401 |
-| GET | directory/employees.pdf | anonymous | True | 401 | 401 |
 | GET | enrollment/0 | anonymous | True | 401 | 401 |
 | GET | enrollment/0.pdf | anonymous | True | 401 | 401 |
 | GET | receipt/0 | anonymous | True | 401 | 401 |
@@ -502,10 +436,6 @@
 | GET | cash-close/0 | anonymous | True | 401 | 401 |
 | GET | cash-close/0.pdf | anonymous | True | 401 | 401 |
 | GET | guardian-account/0 | anonymous | True | 401 | 401 |
-| GET | payroll-plan/0 | anonymous | True | 401 | 401 |
-| GET | payroll-plan/0.pdf | anonymous | True | 401 | 401 |
-| GET | salary-receipt/0 | anonymous | True | 401 | 401 |
-| GET | salary-receipt/0.pdf | anonymous | True | 401 | 401 |
 | GET | archive-preview/student/0 | anonymous | True | 401 | 401 |
 | GET | export?type=students | anonymous | True | 401 | 401 |
 | GET | export?type=payments | anonymous | True | 401 | 401 |
@@ -515,15 +445,11 @@
 | POST | grades | anonymous | True | 401 | 401 |
 | POST | guardians | anonymous | True | 401 | 401 |
 | POST | students | anonymous | True | 401 | 401 |
-| POST | employees | anonymous | True | 401 | 401 |
 | POST | users | anonymous | True | 401 | 401 |
 | POST | password | anonymous | True | 401 | 401 |
 | POST | void-payment | anonymous | True | 401 | 401 |
 | POST | void-expense | anonymous | True | 401 | 401 |
 | POST | cancel-charge | anonymous | True | 401 | 401 |
-| POST | positions | anonymous | True | 401 | 401 |
-| POST | payroll-plans | anonymous | True | 401 | 401 |
-| POST | salary-receipts | anonymous | True | 401 | 401 |
 | POST | import-roster | anonymous | True | 401 | 401 |
 | POST | reopen-cash | anonymous | True | 401 | 401 |
 | POST | transition-year | anonymous | True | 401 | 401 |
@@ -534,8 +460,6 @@
 | POST | restore-student | anonymous | True | 401 | 401 |
 | POST | restore-guardian | anonymous | True | 401 | 401 |
 | POST | delete-grade | anonymous | True | 401 | 401 |
-| POST | archive-employee | anonymous | True | 401 | 401 |
-| POST | restore-employee | anonymous | True | 401 | 401 |
 | POST | delete-unused-record | anonymous | True | 401 | 401 |
 | POST | clock-confirm | anonymous | True | 401 | 401 |
 | POST | session-preferences | anonymous | True | 401 | 401 |
@@ -547,7 +471,6 @@
 | POST | export-encrypted-backup | anonymous | True | 401 | 401 |
 | POST | backup-now | anonymous | True | 401 | 401 |
 | POST | backup-cloud-declare | anonymous | True | 401 | 401 |
-| POST | reset-records | anonymous | True | 401 | 401 |
 | POST | generate | anonymous | True | 401 | 401 |
 | POST | payments | anonymous | True | 401 | 401 |
 | POST | collections | anonymous | True | 401 | 401 |

@@ -62,7 +62,7 @@ Validación Linux: **259 pruebas descubiertas en 135.019 s, 256 correctas y tres
 
 La bitácora con cadena de hashes, restricciones de datos bancarios y otras tandas siguen pendientes de aprobación; A3 no las implementa.
 
-Archivos de A3: colegio/sessions.py, login_limiter.py, security_notices.py, server.py y reset_password.py; static/session.js, app.js, index.html y style.css; tests/test_sessions.py (17 métodos nuevos), test_clock_endpoints.py (umbral actualizado), session_browser.cjs y browser.cjs; README, CHANGELOG, guías de sesiones/configuración/mantenimiento Markdown y HTML, notas del workflow Windows y ZIP fuente/suma. No hay cambios en módulos de nómina, archivos móviles/PWA, motor financiero ni esquema.
+Archivos de A3: colegio/sessions.py, login_limiter.py, security_notices.py, server.py y reset_password.py; static/session.js, app.js, index.html y style.css; tests/test_sessions.py (17 métodos nuevos), test_clock_endpoints.py (umbral actualizado), session_browser.cjs y browser.cjs; README, CHANGELOG, guías de sesiones/configuración/mantenimiento Markdown y HTML, notas del workflow Windows y ZIP fuente/suma. No hay cambios en módulos de archivos móviles/PWA, motor financiero ni esquema.
 
 Commits de implementación: 8fb4087 (sesiones y recuperación), 9c9ff87 (fallos y reversibilidad), 728b49a (aviso, borradores y manuales).
 

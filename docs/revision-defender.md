@@ -102,7 +102,7 @@ La segunda ejecución terminó correctamente: 117 pruebas, instalación, accesos
 
 ## Reporte diario y listados PDF · 1.0.20 en borrador
 
-Alumnos y matrículas, Representantes y Personal incluyen un botón PDF / Imprimir con vista previa y PDF A4 horizontal. Los listados respetan búsquedas, grado y archivados del directorio. Llevan logo, razón social, RIF, fecha, cantidad de registros, encabezados repetidos y número de página. Las filas extensas de representantes se continúan sin perder alumnos vinculados. Las mensualidades descontadas y saldos se expresan en USD; las cuentas bancarias conservan todos sus dígitos.
+Alumnos y matrículas y Representantes incluyen un botón PDF / Imprimir con vista previa y PDF A4 horizontal. Los listados respetan búsquedas, grado y archivados del directorio. Llevan logo, razón social, RIF, fecha, cantidad de registros, encabezados repetidos y número de página. Las filas extensas de representantes se continúan sin perder alumnos vinculados. Las mensualidades descontadas y saldos se expresan en USD; las cuentas bancarias conservan todos sus dígitos.
 
 Reportes → Reporte diario PDF muestra cobros con fecha de hoy, referencias, importes reales por moneda y equivalente USD de cada operación, conservando su conversión original. Los cobros anulados permanecen identificados y fuera de los totales. Los datos del alumno, representante y grado se toman del recibo conservado, o de la constancia anterior al pago para un grado histórico no guardado. La morosidad corresponde al corte al generar el documento, incluye deudas de fichas archivadas y muestra contacto, grado, vencido y mayor atraso. El perfil de pruebas identifica los documentos como prueba. El envío por correo es manual.
 

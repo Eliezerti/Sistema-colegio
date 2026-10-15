@@ -1,0 +1,11 @@
+# Puesta en producción
+
+1. Cierra Aula por completo. Instala la versión validada con la cuenta de Windows que se usará en el colegio. Para empezar en cero utiliza una carpeta de datos nueva y vacía: no restaures una base de pruebas ni borres archivos de una base abierta. El instalador no trae alumnos, movimientos ni usuarios.
+2. En el primer inicio crea tu administrador con una contraseña nueva. Configura el nombre y los datos del colegio, el calendario, los grados y las secciones. No hay usuario ni contraseña predeterminados.
+3. Descarga la plantilla vacía y carga alumnos y representantes por importación. Revisa primero las fechas, el primer mes a cobrar, las mensualidades y los descuentos en la vista previa. La importación no copia pagos ni saldos históricos.
+4. Registra y confirma la tasa BCV del día antes de cobrar. Revisa el cobro y comprueba que el primer recibo sea R-000001; el primer alumno es AL-000001 y el primer egreso E-000001. Una actualización o restauración de una base existente conserva sus números y no debe reiniciarlos.
+5. En Protección y mantenimiento configura respaldos cifrados con una contraseña nueva y una clave de recuperación nueva. Guarda la recuperación fuera de la PC y separada del respaldo. Configura un segundo destino y usa Probar respaldo para comprobar la copia cifrada.
+6. Cuando hayas comprobado que la instalación de producción es la correcta, elimina todos los respaldos de pruebas que tú hayas guardado: carpeta local, USB y nube, incluidas versiones anteriores y papelera del proveedor. No borres respaldos de producción ni archivos WAL/SHM para intentar reparar una base.
+7. Ejecuta Verificar datos y cobros. Haz un piloto en paralelo con el control actual: compara alumnos, mensualidades, recibos, egresos y cierre de caja antes de depender solo de Aula. Prueba la impresión y restauración en un equipo de prueba.
+
+Aula - Pruebas trabaja en una carpeta temporal separada. Nunca utiliza la carpeta real ni exporta un respaldo para mezclarlo con producción; al cerrar la última ventana se elimina la sesión temporal. En producción no existe Vaciar registros. La desinstalación conserva tu carpeta de datos: reinstalar no equivale a empezar en cero.

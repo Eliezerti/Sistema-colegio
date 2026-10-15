@@ -1,5 +1,12 @@
 # Historial de cambios
 
+## Mensualidades y administración mínima · esquema 12
+
+- Retiro de Personal y Nómina: API, interfaz, documentos, módulos y cuatro tablas. Egresos simplificados sin empleado ni horarios; importes y correlativos existentes conservados.
+- Migración con copia previa verificada, reconstrucción transaccional de expenses, cinco cortes reales y cadena de bitácora original conservada. Restauración y conversión de respaldos antiguos migran únicamente la copia privada antes de publicarla.
+- Instalación en cero: identidad genérica, sin usuarios o datos precargados, pisos cero y primeros R-/E-/AL- en 1. Plantilla sin personas de ejemplo; modo Pruebas separado. Vaciar registros retirado de producción.
+- README, inventario, guías y Puesta en producción actualizados; guías y recursos de Personal eliminados. Se conservan A1–A5, cifrado, sesiones, bitácora, respaldos y cobros. B3/B4 pendientes. Linux: 291 en 158,530 s, 288 correctas y tres nativas omitidas; normal/--demo/--roster PASS. Windows pendiente. Las primeras revisiones detectaron aserciones de funciones retiradas, pisos ahora presentes en cero y diferencias de cabecera por WAL; se corrigieron las pruebas al contrato nuevo sin desactivar WAL/FULL ni omitir controles.
+
 ## Comprobante · ORIGINAL y COPIA, márgenes y firmas · 1.0.62 verificada
 
 - Media carta individual de 396 × 612 puntos con márgenes cercanos a 5 mm, contenido más arriba y pie junto al contenido. Zona para firma ampliada.
