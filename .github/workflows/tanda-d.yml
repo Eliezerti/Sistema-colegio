@@ -20,7 +20,6 @@ jobs:
     timeout-minutes: 40
     env:
       GH_TOKEN: ${{ github.token }}
-      AULA_RECEIPT_REPORT_DIR: ${{ runner.temp }}/aula-recibo-native
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -60,6 +59,8 @@ jobs:
         shell: pwsh
         run: ./packaging/scan_windows.ps1 -Path dist
       - name: Instalación, ventanas e impresión nativa
+        env:
+          AULA_RECEIPT_REPORT_DIR: ${{ runner.temp }}/aula-recibo-native
         shell: pwsh
         run: ./packaging/test_installer.ps1 -Version '1.0.68' *>&1 | Tee-Object -FilePath tanda-installer.log
       - name: Instalación en cero, actualización publicada y otra cuenta real

@@ -64,3 +64,5 @@ Cortes de procesos reales: cobro (test_system), respaldo SQLite y publicación c
 Primera suite conjunta D1–D6: 299 pruebas en 171,540 s, un fallo y un error. El control nuevo de login usaba una vía de escritura que no satisfacía la prueba de sincronización Windows; se reutiliza atomic_json, ya probado. La prueba de fallo del segundo destino se actualiza para exigir conservación byte a byte de todas las copias anteriores, incluidos los niveles nuevos. Repetición específica: siete correctas en 8,076 s. Los tres recorridos de navegador de esta ronda pasaron. Repetición completa y Windows pendientes.
 
 La guía Pruebas físicas detalla corte eléctrico, impresora y restauración en otra PC. No se presentan como ejecutados desde un runner.
+
+Primer arranque del flujo Windows 38760139693: rechazado antes de crear un trabajo. actionlint confirmó en tanda-d.yml:23 que runner.temp no se permite en env del trabajo. La variable se mueve al paso nativo que la utiliza, donde ese contexto sí está disponible. No se llegó a compilar ni a probar el producto en ese intento.
