@@ -9,7 +9,7 @@ Una instalación nueva comienza como «Mi colegio», sin registros ni usuarios p
 - [Puesta en producción](docs/puesta-en-produccion.md): instalar, configurar, importar y hacer el piloto.
 - [Importar alumnos](docs/guia-importacion.md): plantilla vacía, validación e importación revisada.
 - [Mantenimiento](docs/mantenimiento.md): operación diaria, respaldo, actualización y recuperación.
-- [Comprobantes](docs/comprobante-media-carta.md): media carta vertical y ORIGINAL/COPIA en carta horizontal, al 100 %.
+- [Comprobantes](docs/comprobante-media-carta.md): media carta vertical y ORIGINAL/COPIA en carta horizontal, con impresión normal.
 - [Archivo de la institución](docs/archivo-institucion.md): conservar historia y revisar un borrado permitido.
 
 ## Consulta y reportes
@@ -20,7 +20,7 @@ Para mirar un respaldo desde otra PC utiliza [Abrir copia en solo lectura](docs/
 
 ## Protección y recuperación
 
-Las copias nuevas externas y descargadas están cifradas. El segundo destino conserva 90 frecuentes, 60 diarias y 24 mensuales. Los cierres escolares permanentes no se eliminan automáticamente. Se recuerda probar una copia externa después de 35 días. Guarda por separado la contraseña, la recuperación del respaldo y la recuperación de BitLocker.
+Las copias nuevas externas y descargadas están cifradas. El segundo destino conserva 90 frecuentes, 60 diarias y 24 mensuales. Los cierres escolares permanentes no se eliminan automáticamente. Se recuerda probar una copia externa después de 35 días. El aviso se puede ocultar por 7 días en ese navegador, sin ocultar errores de respaldo. Una prueba externa correcta actualiza el aviso inmediatamente. Guarda por separado la contraseña, la recuperación del respaldo y la recuperación de BitLocker.
 
 Consulta las guías de [cifrado](docs/cifrado-respaldos.md), [restauración segura](docs/restauracion-segura.md), [sesiones](docs/sesiones-acceso.md) y [bitácora](docs/bitacora.md). Si otros intentos bloquean un ingreso, Administración puede generar un código local de un uso desde Inicio de Windows, con su contraseña actual. El límite contra fuerza bruta se conserva.
 

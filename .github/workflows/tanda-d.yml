@@ -38,9 +38,9 @@ jobs:
       - name: Inventario anterior y dependencias fijadas
         shell: pwsh
         run: ./packaging/inventory_previous.ps1
-      - name: Suite completa y compilación 1.0.68
+      - name: Suite completa y compilación 1.0.69
         shell: pwsh
-        run: ./packaging/build_windows.ps1 -Version '1.0.68' *>&1 | Tee-Object -FilePath tanda-build.log
+        run: ./packaging/build_windows.ps1 -Version '1.0.69' *>&1 | Tee-Object -FilePath tanda-build.log
       - name: Tres recorridos de navegador
         shell: pwsh
         run: |
@@ -62,10 +62,10 @@ jobs:
         env:
           AULA_RECEIPT_REPORT_DIR: ${{ runner.temp }}/aula-recibo-native
         shell: pwsh
-        run: ./packaging/test_installer.ps1 -Version '1.0.68' *>&1 | Tee-Object -FilePath tanda-installer.log
+        run: ./packaging/test_installer.ps1 -Version '1.0.69' *>&1 | Tee-Object -FilePath tanda-installer.log
       - name: Instalación en cero, actualización publicada y otra cuenta real
         shell: pwsh
-        run: ./packaging/test_b1_windows.ps1 -Version '1.0.68' *>&1 | Tee-Object -FilePath tanda-upgrade.log
+        run: ./packaging/test_b1_windows.ps1 -Version '1.0.69' *>&1 | Tee-Object -FilePath tanda-upgrade.log
       - name: Evidencia de PDF e impresión
         shell: pwsh
         run: |
@@ -88,6 +88,6 @@ jobs:
       - name: Entregar solo el instalador validado
         uses: actions/upload-artifact@v4
         with:
-          name: Aula-1.0.68-validado
-          path: dist/Aula-Colegio-Instalador-1.0.68.exe
+          name: Aula-1.0.69-validado
+          path: dist/Aula-Colegio-Instalador-1.0.69.exe
           if-no-files-found: error
