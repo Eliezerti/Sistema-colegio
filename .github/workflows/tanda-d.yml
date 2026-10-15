@@ -47,9 +47,9 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Falló navegador Pruebas.' }
           python tests/run_browser.py --roster *>&1 | Tee-Object -FilePath tanda-roster.log
           if ($LASTEXITCODE -ne 0) { throw 'Falló navegador matrículas.' }
-      - name: Suite completa y compilación 1.0.69
+      - name: Suite completa y compilación 1.0.70
         shell: pwsh
-        run: ./packaging/build_windows.ps1 -Version '1.0.69' *>&1 | Tee-Object -FilePath tanda-build.log
+        run: ./packaging/build_windows.ps1 -Version '1.0.70' *>&1 | Tee-Object -FilePath tanda-build.log
       - name: Medición HTTP de seis cargas
         shell: pwsh
         run: |
@@ -62,10 +62,10 @@ jobs:
         env:
           AULA_RECEIPT_REPORT_DIR: ${{ runner.temp }}/aula-recibo-native
         shell: pwsh
-        run: ./packaging/test_installer.ps1 -Version '1.0.69' *>&1 | Tee-Object -FilePath tanda-installer.log
+        run: ./packaging/test_installer.ps1 -Version '1.0.70' *>&1 | Tee-Object -FilePath tanda-installer.log
       - name: Instalación en cero, actualización publicada y otra cuenta real
         shell: pwsh
-        run: ./packaging/test_b1_windows.ps1 -Version '1.0.69' *>&1 | Tee-Object -FilePath tanda-upgrade.log
+        run: ./packaging/test_b1_windows.ps1 -Version '1.0.70' *>&1 | Tee-Object -FilePath tanda-upgrade.log
       - name: Evidencia de PDF e impresión
         shell: pwsh
         run: |
@@ -88,6 +88,6 @@ jobs:
       - name: Entregar solo el instalador validado
         uses: actions/upload-artifact@v4
         with:
-          name: Aula-1.0.69-validado
-          path: dist/Aula-Colegio-Instalador-1.0.69.exe
+          name: Aula-1.0.70-validado
+          path: dist/Aula-Colegio-Instalador-1.0.70.exe
           if-no-files-found: error

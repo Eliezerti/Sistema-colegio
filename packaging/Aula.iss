@@ -46,6 +46,7 @@ Source: "..\docs\comprobante-media-carta.html"; DestDir: "{app}\docs"; Flags: ig
 Source: "..\docs\consulta-copias.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "..\docs\configuracion.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "..\docs\guia-importacion.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\limpieza-cobros-prueba.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "..\docs\mantenimiento.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "..\docs\proteccion-reloj.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "..\docs\proteccion-respaldos.html"; DestDir: "{app}\docs"; Flags: ignoreversion

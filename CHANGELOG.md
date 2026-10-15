@@ -1,3 +1,11 @@
+# Preparar recibos de producción · 1.0.70
+
+- Herramienta local excepcional `--clear-trial-payments`, sin botón ni API de borrado. Requiere Aula cerrado, Administración, frase de confirmación, motivo y respaldo cifrado verificado. Se permite una sola vez en esa base.
+- Retira cobros ficticios y sus aplicaciones; conserva alumnos, cargos, egresos y configuración. El piso de recibos queda en cero y el primer recibo es R-000001. Conserva la cadena de bitácora y registra la limpieza y el respaldo previo. Sin migración de esquema.
+- Se detiene ante cierres o documentos financieros emitidos, restauración pendiente, errores de integridad, reloj bloqueado, respaldo fallido o cambios posteriores a la revisión.
+- Pruebas nuevas: conservación, respaldo descifrable, primer pago real de prueba R-000001, autorización y seis terminaciones reales del proceso. El instalador comprueba también la operación dentro del EXE con datos ficticios.
+- Validación completa en curso. B3 sigue pendiente. [Guía](docs/limpieza-cobros-prueba.md).
+
 # Ajustes de comprobantes y recordatorio · 1.0.69
 
 - Más espacio entre las secciones del comprobante, conservando media carta vertical y ORIGINAL/COPIA en carta horizontal, sin alterar pagos ni correlativos. Impresión con la configuración normal del diálogo, sin exigir escala 100 %.
