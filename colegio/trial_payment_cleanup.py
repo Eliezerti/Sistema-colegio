@@ -27,8 +27,9 @@ def inspect(db):
     if db.execute('PRAGMA user_version').fetchone()[0]!=SCHEMA_VERSION:
         raise ValidationError('Actualiza Aula antes de preparar los recibos. Esta herramienta no migra bases.')
     require(db)
-    if db.execute('PRAGMA integrity_check').fetchone()[0]!='ok' or db.execute('PRAGMA foreign_key_check').fetchall():
-        raise ValidationError('La base tiene errores. No se borraron cobros.')
+    from .maintenance import review_database
+    if not review_database(db)['ok']:
+        raise ValidationError('Verificar datos y cobros detectó errores. No se borraron cobros.')
     if db.execute('SELECT 1 FROM settings WHERE key=?',(MARKER,)).fetchone():
         raise ValidationError('Esta base ya preparó sus recibos para producción. No se permite repetir la limpieza.')
     for table,label in (('cash_closures','cierres de caja'),('guardian_documents','estados de cuenta o solvencias emitidos'),

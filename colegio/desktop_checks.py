@@ -190,6 +190,8 @@ def trial_cleanup(directory):
         confirmation=CONFIRMATION,trial_only=True,reason='Preparación ficticia antes de producción')
     assert probe_backup(result['backup']['path'],'FICTICIO-limpieza-respaldo-2026')['payments']==1
     with closing(connect(path)) as db,db:
+        from .maintenance import review_database
+        assert review_database(db)['ok']
         assert next_record_id(db,'payments')==1 and local_status(db)['ok']
         assert db.execute('SELECT COUNT(*) FROM students').fetchone()[0]==1
         assert record_payment(db,dict(student_id=1,amount='10',currency='USD',method='Efectivo',paid_on=today,request_key='ficticio-produccion'),1)['id']==1

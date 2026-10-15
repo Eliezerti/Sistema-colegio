@@ -59,6 +59,8 @@ class TrialPaymentCleanupTests(unittest.TestCase):
             self.assertEqual(next_record_id(db,'payments'),1)
             self.assertEqual(db.execute("SELECT value FROM settings WHERE key='id_floor_payments'").fetchone()[0],'0')
             self.assertEqual(other_floors,list(db.execute("SELECT key,value FROM settings WHERE key LIKE 'id_floor_%' AND key!='id_floor_payments'")))
+            from colegio.maintenance import review_database
+            self.assertTrue(review_database(db)['ok'])
             self.assertTrue(local_status(db)['ok']);self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
             self.assertEqual(db.execute('PRAGMA foreign_key_check').fetchall(),[])
             self.assertEqual(sum(row['amount']-row['paid'] for row in db.execute(BALANCES)),expected)
