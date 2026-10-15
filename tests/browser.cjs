@@ -159,8 +159,17 @@ function printedTextLayout(pdf){
     await settingsTab('Identidad y calendario');
     await page.screenshot({path:scratch('aula-settings-identity-tabs.png')});
     await settingsTab('Protección y mantenimiento');
+    // Model a completed same-disk diagnostic explicitly. Windows obtains it
+    // asynchronously; the real runner may still report an unknown disk here.
+    await page.route('**/api/backup-status',async route=>{
+      const response=await route.fetch(),status=await response.json();
+      status.alerts=status.alerts.filter(alert=>!['same_disk','disk_unknown'].includes(alert.code));
+      status.alerts.push({code:'same_disk',message:'Las copias están en el mismo disco físico.'});
+      await route.fulfill({response,json:status});
+    });
     await page.evaluate(()=>checkDay());
     assert.match(await page.locator('#backup-alerts').innerText(),/mismo disco/);
+    await page.unroute('**/api/backup-status');
     await page.evaluate(()=>refresh());
     assert.equal(await page.locator('#backup-alerts .backup-persistent').count(),0);
     await click('backup-cloud-revoke');

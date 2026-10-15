@@ -19,7 +19,7 @@ Las tres omisiones son DPAPI, mutex/enfoque de ventanas y revisión de restaurac
 
 La primera prueba de navegador todavía buscaba el aviso de nube en su ubicación anterior; la siguiente esperaba entrar directamente después de recargar, sin confirmar la tasa. Se corrigieron las comprobaciones al recorrido real sin modificar las protecciones; el recorrido completo posterior pasó. La primera ejecución Windows se canceló al reemplazarla por esa corrección de pruebas.
 
-Windows, ejecución 38789842262: suite y compilación correctas; navegador detenido al recibir tarde el mensaje de consola de un 401 esperado durante un cierre de sesión intencional. Se corrigió la sincronización de la prueba para esperar tanto la respuesta real como su evento de consola, sin cambiar sesiones ni ampliar los errores ignorados. Nueva validación completa pendiente.
+Windows, ejecución 38789842262: suite y compilación correctas; navegador detenido al recibir tarde el mensaje de consola de un 401 esperado durante un cierre de sesión intencional. Se corrigió la sincronización de la prueba para esperar tanto la respuesta real como su evento de consola, sin cambiar sesiones ni ampliar los errores ignorados. La ejecución 38791792309 repitió correctamente suite y compilación, pero otro paso del navegador suponía completado el diagnóstico asíncrono del disco físico. Se explicitó ese diagnóstico simulado para comprobar que el aviso de mismo disco nunca se oculta, conservando las pruebas del diagnóstico real en la suite. Los navegadores pasan a ejecutarse antes de compilar para detectar antes estas condiciones; no se omite ningún control. Nueva validación completa pendiente.
 
 ## Evidencia de implementación
 
