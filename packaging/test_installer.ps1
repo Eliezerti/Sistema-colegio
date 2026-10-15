@@ -54,6 +54,9 @@ try {
     Execute-Checked $Executable @('--self-test')
     Execute-Checked $Executable @('--self-test-demo')
     Execute-Checked $Executable @('--self-test-copy')
+    $CleanupCheck = @(Get-Content "$env:TEMP/AulaColegio-Compilacion/logs/*.log" | Where-Object { $_ -like 'PASS LIMPIEZA:*' })
+    if ($CleanupCheck.Count -lt 1) { throw 'No se comprobó la limpieza de cobros ficticios en el ejecutable instalado.' }
+    $CleanupCheck | ForEach-Object { Write-Host $_ }
     $CopyCheck = @(Get-Content "$env:TEMP/AulaColegio-Compilacion/logs/*.log" | Where-Object { $_ -like 'PASS COPIA:*' })
     if ($CopyCheck.Count -lt 1) { throw 'No se verificó la consulta nativa ni su limpieza temporal.' }
     $CopyCheck | ForEach-Object { Write-Host $_ }

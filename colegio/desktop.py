@@ -353,6 +353,9 @@ def self_test(demo=False):
             assert probe_backup(cipher,recovery,'recovery')['integrity']=='ok'
             launch_window(host.url,host=host,demo=demo,storage=host.directory/'webview',smoke=True)
         if demo and disposable.exists():raise RuntimeError('No se eliminaron los datos de prueba al cerrar la ventana.')
+        if not demo:
+            from .desktop_checks import trial_cleanup
+            trial_cleanup(temp)
 
 
 def self_test_copy():
@@ -384,7 +387,7 @@ def self_test_copy():
 def main():
     parser=argparse.ArgumentParser(description='Aplicación de escritorio del colegio.')
     actions=parser.add_mutually_exclusive_group()
-    for name in ('demo','view-copy','configure','unlock-login','restore','reset-password','data-folder','test-backup','self-test','self-test-demo','self-test-copy'):
+    for name in ('clear-trial-payments','demo','view-copy','configure','unlock-login','restore','reset-password','data-folder','test-backup','self-test','self-test-demo','self-test-copy'):
         actions.add_argument('--'+name,action='store_true')
     args=parser.parse_args()
     directory=None
@@ -413,6 +416,11 @@ def main():
             probe_dialog();return
         directory=data_directory();setup_logging(directory)
         if args.data_folder:directory.mkdir(parents=True,exist_ok=True);os.startfile(directory);return
+        if args.clear_trial_payments:
+            current=read_desktop_config(directory)
+            if current and current['mode']=='client':raise ValueError('Esta operación se realiza en la PC principal del colegio.')
+            from .trial_payment_cleanup import dialog
+            dialog(directory);return
         if args.restore or args.reset_password:
             current=read_desktop_config(directory)
             if current and current['mode']=='client':raise ValueError('Esta computadora se conecta al colegio. La recuperación se hace en la PC principal.')

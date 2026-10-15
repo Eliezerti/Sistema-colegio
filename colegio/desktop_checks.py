@@ -163,3 +163,34 @@ def renderer(window, directory):
     if not found.is_set() or selected:
         raise RuntimeError('No se comprobó el selector de archivos de la ventana Windows.')
     print('PASS B2: PDF administrativo, impresión PDF nativa WebView2 y selector Windows abierto/cancelado.')
+
+
+def trial_cleanup(directory):
+    """Bundled-executable smoke, strictly inside its disposable self-test directory."""
+    from contextlib import closing
+    from .db import initialize,connect,hash_password,record_payment,local_today,next_record_id
+    from .clock_guard import ClockGuard
+    from .backup_keys import prepare,confirm
+    from .audit_chain import local_status
+    from .trial_payment_cleanup import preview,clear,CONFIRMATION
+    from .backup_inspection import probe_backup
+    folder=Path(directory)/'limpieza-ficticia';path=folder/'colegio.sqlite3'
+    initialize(path);ClockGuard(path).require()
+    pending,recovery=prepare(folder,'FICTICIO-limpieza-respaldo-2026');confirm(folder,pending)
+    today=local_today().isoformat();year=local_today().year
+    with closing(connect(path)) as db,db:
+        db.execute("INSERT INTO users VALUES(1,'admin-ficticio','Prueba local',?,'admin')",(hash_password('FICTICIO-clave-prueba-2026'),))
+        db.execute("INSERT INTO guardians(id,name,document) VALUES(1,'Representante ficticio','PRUEBA-V-1')")
+        db.execute("INSERT INTO grades(id,name) VALUES(1,'Grado ficticio')")
+        db.execute("INSERT INTO students(id,name,document,birth_date,guardian_id,grade_id,school_year,monthly_fee,discount,status,enrollment_start,enrollment_end) VALUES(1,'Alumno ficticio','PRUEBA-A-1','2015-01-01',1,1,?,10000,0,'active',?,?)",(year,f'{year}-01-01',f'{year}-12-31'))
+        db.execute("INSERT INTO charges(student_id,period,concept,amount,due_date) VALUES(1,?,'Concepto ficticio',10000,?)",(today[:7],today))
+        record_payment(db,dict(student_id=1,amount='10',currency='USD',method='Efectivo',paid_on=today,request_key='ficticio-antes'),1)
+    review=preview(folder)
+    result=clear(folder,username='admin-ficticio',password='FICTICIO-clave-prueba-2026',preview_hash=review['preview_hash'],
+        confirmation=CONFIRMATION,trial_only=True,reason='Preparación ficticia antes de producción')
+    assert probe_backup(result['backup']['path'],'FICTICIO-limpieza-respaldo-2026')['payments']==1
+    with closing(connect(path)) as db,db:
+        assert next_record_id(db,'payments')==1 and local_status(db)['ok']
+        assert db.execute('SELECT COUNT(*) FROM students').fetchone()[0]==1
+        assert record_payment(db,dict(student_id=1,amount='10',currency='USD',method='Efectivo',paid_on=today,request_key='ficticio-produccion'),1)['id']==1
+    print('PASS LIMPIEZA: ejecutable instalado, respaldo cifrado verificable, alumno conservado, bitácora válida y primer recibo R-000001.',flush=True)
