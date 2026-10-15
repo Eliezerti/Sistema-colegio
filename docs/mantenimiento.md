@@ -148,7 +148,7 @@ Todas las copias nuevas del segundo destino siguen cifradas. Aula conserva las �
 
 Antes de confirmar un pase de año revisado se crea una copia cifrada permanente del estado de cierre, en backups/cierres-permanentes y también en el segundo destino cuando está configurado. Esta copia no se elimina automáticamente. Si no puede crearse o copiarse al destino configurado, no se confirma el pase. El modo Pruebas no publica cierres ni respaldos reales. Configura el cifrado antes del pase de año.
 
-Cada mes usa Probar respaldo con una copia tomada del USB o de la nube. Marca que seleccionaste una copia externa; Aula registra la comprobación correcta, pero no puede verificar que el navegador tomó el archivo de una nube. Tras más de 35 días aparece un recordatorio que no bloquea el trabajo. Una contraseña errónea o una copia corrupta no lo reinician.
+Cada mes usa Probar respaldo con una copia tomada del USB o de la nube. Marca que seleccionaste una copia externa; Aula registra la comprobación correcta, pero no puede verificar que el navegador tomó el archivo de una nube. Tras más de 35 días aparece un recordatorio que no bloquea el trabajo. Puedes elegir «Ocultar por 7 días» en ese navegador; esto no registra una prueba ni oculta errores de respaldo. La prueba externa correcta actualiza el aviso inmediatamente. Si no marcas la casilla de copia externa, el resultado explica cómo reiniciar el plazo. Una contraseña errónea o una copia corrupta no lo reinician.
 
 ## Cierre mensual
 

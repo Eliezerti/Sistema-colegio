@@ -28,6 +28,6 @@ El esquema sigue en 12. No se reinician correlativos existentes ni se cambian im
 
 ## Validación
 
-Las [pruebas físicas del colegio](docs/pruebas-fisicas.md) requieren tu equipo: corte eléctrico, impresora y otra PC. La evidencia técnica de la tanda se conserva [en el repositorio](https://github.com/Eliezerti/Sistema-colegio/blob/tanda-d/docs/tanda-d.md), fuera del instalador. Firma digital y publicación de huellas están fuera de esta tanda.
+Las [pruebas físicas del colegio](docs/pruebas-fisicas.md) requieren tu equipo: corte eléctrico, impresora y otra PC. La evidencia técnica de la tanda se conserva [en el repositorio](https://github.com/Eliezerti/Sistema-colegio/blob/tanda-d/docs/tanda-d.md), fuera del instalador. Los [ajustes 1.0.69](docs/ajustes-1.0.69.md) documentan el recordatorio y la impresión normal. Firma digital y publicación de huellas están fuera de esta tanda.
 
 Comandos de referencia: `python -m unittest discover -s tests -v`, `python tests/run_browser.py`, `python tests/run_browser.py --demo` y `python tests/run_browser.py --roster`.

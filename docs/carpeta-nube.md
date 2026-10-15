@@ -10,7 +10,7 @@ Drive puede aparecer como una unidad virtual, por ejemplo Google Drive (E:). Esa
 4. Revisa la ruta y marca «Revisé la subida de una copia reciente y esta carpeta está configurada para sincronizarse con la nube».
 5. Pulsa Confirmar carpeta de nube.
 
-Si solo estaba el aviso de disco desconocido, se sustituye por «Carpeta de nube declarada por administración · Aula no comprueba la subida». No se concede acceso a tu cuenta ni se verifica la nube automáticamente.
+Si solo estaba el aviso de disco desconocido, desaparece. La declaración y sus límites se consultan en Protección y mantenimiento; no se repiten en todas las pantallas. No se concede acceso a tu cuenta ni se verifica la nube automáticamente.
 
 ## Límites y protección
 
