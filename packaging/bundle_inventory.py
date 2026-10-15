@@ -34,6 +34,10 @@ def main():
     print('B2 TAMANO ' + str(report['total_bytes']))
     if args.verify:
         from bundle_rules import blocked_module, keep_data
+        forbidden = [f['path'] for f in report['files'] if Path(f['path']).suffix.lower() in ('.sqlite3','.sqlite','.db','.aulabak')]
+        if forbidden: raise RuntimeError('El instalador contiene bases o respaldos: '+str(forbidden))
+        for name in ('colegio.salary','colegio.staff_access','colegio.reset_records'):
+            if name in report['pyz_modules']: raise RuntimeError('Módulo retirado en el instalador: '+name)
         unexpected = [m for m in report['pyz_modules'] if blocked_module(m)]
         required = {'colegio.server', 'colegio.desktop', 'sqlite3', 'tkinter', 'cryptography',
                     'webview.platforms.edgechromium', 'webview.platforms.winforms'}

@@ -128,3 +128,10 @@ Type: files; Name: "{app}\_internal\webview\platforms\cocoa.py"
 Type: files; Name: "{app}\_internal\webview\platforms\gtk.py"
 Type: files; Name: "{app}\_internal\webview\platforms\mshtml.py"
 Type: files; Name: "{app}\_internal\webview\platforms\qt.py"
+
+; Removed staff guides and module sources only.
+Type: files; Name: "{app}\docs\privilegios-personal.html"
+Type: files; Name: "{app}\docs\privilegios-personal.md"
+Type: files; Name: "{app}\_internal\colegio\salary.py"
+Type: files; Name: "{app}\_internal\colegio\staff_access.py"
+Type: files; Name: "{app}\_internal\colegio\reset_records.py"

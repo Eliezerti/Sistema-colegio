@@ -49,7 +49,7 @@ const fs = require('node:fs');
     const file = await download;
     assert.ok(fs.readFileSync(await file.path()).subarray(0,5).equals(Buffer.from('%PDF-')));
     await click('close');
-    for (const id of ['dashboard','students','guardians','grades','billing','payments','cash','arrears','employees','expenses','reports','settings']) {
+    for (const id of ['dashboard','students','guardians','grades','billing','payments','cash','arrears','expenses','reports','settings']) {
       await nav(id); await fit(`Phone section ${id} fits`);
     }
     await page.setViewportSize({width:320,height:740}); await fit('Small phone fits');

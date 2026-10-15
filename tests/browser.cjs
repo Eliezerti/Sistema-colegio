@@ -36,22 +36,13 @@ function printedTextLayout(pdf){
   const fill=async (name,value)=>page.locator(`dialog[open] [name="${name}"]`).fill(value);
   const submit=async()=>{await page.locator('dialog[open] button[type="submit"]').click();await page.waitForFunction(()=>!document.querySelector('dialog').open);};
   const nav=async id=>{if(page.viewportSize().width>700)await page.waitForFunction(()=>!document.querySelector('.sidebar')?.inert);if(await page.locator('.sidebar').evaluate(el=>el.inert))await click('mobile-menu');await page.locator(`.nav-button[data-id="${id}"]`).click();};
-  const assertStaffPrivacy=async role=>{
+  const assertRetired=async role=>{
     const data=await page.evaluate(async()=>await(await fetch('/api/state')).json());
     assert.equal(data.user.role,role);
-    assert.ok(data.employees.length>0);
-    for(const employee of data.employees)for(const key of ['bank','bank_account','account_type','account_holder','holder_document'])assert.equal(key in employee,false);
-    for(const plan of data.payroll_plans)assert.equal('lines' in plan,false);
-    await nav('employees');
-    assert.equal(await page.locator('#page-content th').filter({hasText:'Banco / cuenta'}).count(),0);
-    assert.equal(await page.locator('[data-action="payroll-document"]').count(),0);
-    assert.equal(await page.locator('[data-action="payroll"]').count(),role==='cashier'?1:0);
-    await click('directory-report');await page.locator('dialog[open] .directory-report').waitFor();
-    assert.equal(await page.locator('dialog[open] th').filter({hasText:'Banco / cuenta'}).count(),0);
-    assert.doesNotMatch(await page.locator('dialog[open] .directory-report').innerText(),/01020000000012345678/);
-    await page.locator('dialog[open] [data-action="close"]').first().click();
+    for(const key of ['employees','positions','payroll_plans'])assert.equal(key in data,false);
+    assert.equal(await page.locator('.nav-button[data-id="employees"]').count(),0);
     await nav('expenses');
-    assert.equal(await page.locator('[data-action="salary-document"], [data-action="salary-receipt"]').count(),0);
+    assert.equal(await page.locator('[data-action="salary-document"],[data-action="salary-receipt"]').count(),0);
   };
   try {
     await page.goto(process.env.AULA_TEST_URL||'http://127.0.0.1:8765');
@@ -112,7 +103,7 @@ function printedTextLayout(pdf){
     await page.getByLabel('Razón social / nombre legal').fill('Colegio Los Cedros, C.A.');
     await page.getByLabel('RIF del colegio').fill('J-12345678-9');
     await page.getByLabel('Domicilio fiscal',{exact:true}).fill('Dirección fiscal de prueba');
-    await page.locator('#school-logo-file').setInputFiles('static/logo-colegio-v1.png');
+    await page.locator('#school-logo-file').setInputFiles('static/aula-app.png');
     await page.waitForFunction(()=>document.querySelector('input[name=logo]').value.startsWith('data:image/png;base64,'));
     await page.getByLabel('Nombre del colegio').fill('Colegio Los Cedros');
     await page.locator('form[data-endpoint="settings"] button[type="submit"]').click();
@@ -299,16 +290,10 @@ function printedTextLayout(pdf){
     await page.locator('#page-content').getByText('Sofía Pérez',{exact:true}).waitFor();
     await click('collection');const balanceState=await page.evaluate(async()=>await(await fetch('/api/state')).json());assert.ok((await page.locator('#collection-text').inputValue()).includes(new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(balanceState.students[0].overdue/100)));await page.locator('dialog[open] [data-action="close"]').first().click();
     await click('account');await click('followup');await fill('note','Representante contactado; acordó abonar esta semana.');await submit();
-    await nav('employees');await click('positions');await fill('name','Docente');await submit();await click('employee');await fill('name','José Docente');await fill('document','V-87654321');await page.locator('dialog[open] [name="position_id"]').selectOption({label:'Docente'});await fill('bank','Banco Prueba');await fill('bank_account','01020000000012345678');await fill('salary','100');await submit();
-    await click('payroll-plan');assert.match(await page.locator('#payroll-total').innerText(),/10.000,00/);await page.locator('[data-payroll-employee]').fill('120');await page.locator('dialog[open] button[type="submit"]').click();await page.locator('dialog[open] .receipt-number').waitFor();assert.match(await page.locator('dialog[open] .receipt').innerText(),/12.000,00/);const payrollDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await payrollDownload).saveAs('/tmp/aula-payroll.pdf');await page.screenshot({path:'/tmp/aula-payroll.png',fullPage:true});await page.locator('dialog[open] [data-action="close"]').first().click();
-    await click('payroll');assert.equal(await page.locator('dialog[open] [name="currency"]').inputValue(),'VES');await fill('amount','25');
-    await fill('period_start',current.today.slice(0,7)+'-01');await fill('period_end',current.today);await fill('entry_time','07:00');await fill('exit_time','13:00');
-    await page.locator('dialog[open] button[type="submit"]').click();await page.locator('dialog[open] .salary-document').waitFor();
-    assert.match(await page.locator('dialog[open] .receipt').innerText(),/Recibí conforme/);assert.match(await page.locator('dialog[open] .receipt').innerText(),/07:00/);
-    const salaryDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await salaryDownload).saveAs('/tmp/aula-salary-receipt.pdf');
-    await page.screenshot({path:'/tmp/aula-salary-receipt.png',fullPage:true});await page.locator('dialog[open] [data-action="close"]').first().click();
-    await nav('expenses');await click('salary-document');await page.locator('dialog[open] .salary-document').waitFor();await page.locator('dialog[open] [data-action="close"]').first().click();
-    for(const kind of ['students','guardians','employees']){
+    await nav('expenses');await click('expense');
+    assert.equal(await page.locator('dialog[open] [name="employee_id"],dialog[open] [name="period_start"],dialog[open] [name="entry_time"]').count(),0);
+    await fill('concept','Gasto operativo');await fill('amount','25');await submit();
+    for(const kind of ['students','guardians']){
       await nav(kind);await click('directory-report');await page.locator('dialog[open] .directory-report').waitFor();
       assert.match(await page.locator('dialog[open] .directory-report').innerText(),/J-12345678-9/);
       assert.equal(await page.locator('dialog[open] .directory-report .school-emblem img').count(),1);
@@ -438,7 +423,7 @@ function printedTextLayout(pdf){
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'Mobile page overflow');
     await page.setViewportSize({width:1440,height:1050});
     await nav('archive');await page.getByRole('heading',{name:'Archivo de la institución',exact:true}).waitFor();
-    assert.equal(await page.locator('[data-action="archive-kind"]').count(),3);
+    assert.equal(await page.locator('[data-action="archive-kind"]').count(),2);
     await page.screenshot({path:'/tmp/aula-archivo-institucion.png',fullPage:true});
     await page.locator('[data-action="archive-review"]').first().click();
     assert.match(await page.locator('dialog[open]').innerText(),/Un saldo de \$0|saldo sea \$0/);
@@ -452,7 +437,6 @@ function printedTextLayout(pdf){
     await fill('reason','Borrar ficha ficticia sin movimientos');await fill('password','Prueba-segura-2026');await fill('confirmation','BORRAR FICHA');await submit();
     const archiveState=await page.evaluate(async()=>await(await fetch('/api/state')).json());
     assert.equal(archiveState.guardians.some(g=>g.document==='V-ficha-vacia'),false);
-    await page.locator('[data-action="archive-kind"][data-id="employee"]').click();assert.match(await page.locator('#page-content').innerText(),/Docente|Profesor/);
     await apiPost('users',{name:'Usuario Caja',username:'caja',password:'Caja-segura-2026',role:'cashier'});
     await click('logout');await page.locator('.auth-form').getByLabel('Usuario',{exact:true}).fill('caja');await page.locator('.auth-form').getByLabel(/^Contraseña/).fill('Caja-segura-2026');
     await page.getByRole('button',{name:'Iniciar sesión'}).click();await page.locator('.gate-card .backup-persistent').waitFor();
@@ -461,7 +445,7 @@ function printedTextLayout(pdf){
     assert.equal(await warning.locator('button').count(),0,'Caja cannot change configuration from the warning');
     assert.equal(await page.locator('.nav-button[data-id="archive"]').count(),0);
     await nav('students');await page.locator('#show-archived').check();assert.equal(await warning.isVisible(),true);
-    await assertStaffPrivacy('cashier');
+    await assertRetired('cashier');
     await click('logout');await page.locator('.auth-form').getByLabel('Usuario',{exact:true}).fill('admin');await page.locator('.auth-form').getByLabel(/^Contraseña/).fill('Prueba-segura-2026');
     await page.getByRole('button',{name:'Iniciar sesión'}).click();await page.getByRole('button',{name:'Confirmar tasa y entrar'}).click();await page.locator('.layout').waitFor();
     await nav('settings');await settingsTab('Usuarios y acceso');await click('user');await fill('name','Usuario Consulta');await fill('username','consulta');await fill('password','Consulta-segura');await page.locator('dialog[open] [name="role"]').selectOption('reader');await submit();
@@ -470,19 +454,15 @@ function printedTextLayout(pdf){
     assert.equal(await page.locator('.nav-button[data-id="archive"]').count(),0);
     assert.equal(await warning.count(),0,'Consulta does not receive the Administrator/Caja banner');
     assert.equal(await page.locator('[data-action="payment"]').count(),0);
-    await assertStaffPrivacy('reader');
+    await assertRetired('reader');
     await click('logout');await page.locator('.auth-form').getByLabel('Usuario',{exact:true}).fill('admin');await page.locator('.auth-form').getByLabel(/^Contraseña/).fill('Prueba-segura-2026');
     await page.getByRole('button',{name:'Iniciar sesión'}).click();await page.getByRole('button',{name:'Confirmar tasa y entrar'}).click();await page.locator('.layout').waitFor();
     await require('./session_browser.cjs')(page,expectedSessionError);
-    await nav('settings');await settingsTab('Protección y mantenimiento');await page.locator('.reset-settings summary').click();await click('reset-review');
-    await page.locator('form[data-endpoint="reset-records"]').waitFor();await fill('password','Prueba-segura-2026');await fill('confirmation','VACIAR REGISTROS');
-    await page.locator('dialog[open] input[type="checkbox"]').check();await page.locator('dialog[open] button[type="submit"]').click();
-    await page.locator('.auth-form').waitFor();await page.locator('.auth-form').getByLabel('Usuario',{exact:true}).fill('admin');await page.locator('.auth-form').getByLabel(/^Contraseña/).fill('Prueba-segura-2026');
-    await page.getByRole('button',{name:'Iniciar sesión'}).click();await page.getByLabel('Bolívares por 1 USD').fill('100');await page.getByRole('button',{name:'Confirmar tasa y entrar'}).click();await page.locator('.layout').waitFor();
-    const cleaned=await page.evaluate(async()=>await(await fetch('/api/state')).json());assert.deepEqual(cleaned.students,[]);assert.deepEqual(cleaned.payments,[]);assert.deepEqual(cleaned.employees,[]);
-    assert.ok(cleaned.audit.some(a=>a.action==='reset_records'));assert.equal(cleaned.audit_status.ok,true);
-    assert.equal(cleaned.users.length,3);assert.equal(cleaned.settings.rif,'J-12345678-9');
+    await nav('settings');await settingsTab('Protección y mantenimiento');
+    assert.equal(await page.locator('[data-action="reset-review"],.reset-settings').count(),0);
+    const finalState=await page.evaluate(async()=>await(await fetch('/api/state')).json());
+    assert.equal(finalState.audit_status.ok,true);assert.ok(finalState.students.length>0);
     assert.deepEqual(errors,[]);
-    console.log('PASS: fiscal settings, PNG logo, fiscal letterheads and printing, daily rate checkpoint and reopening, guardian search, live discount, automatic student code, enrollment PDF, automatic arrears without manual monthly generation, BCV payment and receipt PDF, arrears, job catalogue, banks, consolidated payroll PDF and VES expense, filtered directory PDFs and printing, daily payments/arrears PDF, reports, family account and solvency PDFs, CSV preview and import, cash close and reopening, backup status, thermal tickets, bulk promotion and archived PDF, payment plan, responsive layout, read-only role.');
+    console.log('PASS: fiscal settings, PNG logo, fiscal letterheads and printing, daily rate checkpoint and reopening, guardian search, live discount, automatic student code, enrollment PDF, automatic arrears without manual monthly generation, BCV payment and receipt PDF, arrears, simplified expense, filtered directory PDFs and printing, daily payments/arrears PDF, reports, family account and solvency PDFs, CSV preview and import, cash close and reopening, backup status, thermal tickets, bulk promotion and archived PDF, payment plan, responsive layout, read-only role.');
   }finally{await browser.close();fs.rmSync(cloudFolder,{recursive:true,force:true});}
 })().catch(error=>{console.error(error);process.exitCode=1;});

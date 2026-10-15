@@ -146,7 +146,7 @@ class PrivateNetworkSystemTests(unittest.TestCase):
         state,_=self.remote('state',cookie=cookie);self.assertEqual(state['user']['role'],'reader')
         self.remote('payments',self.payment(),cookie=cookie,csrf=csrf,status=403)
         self.remote('settings',state['settings'],cookie=cookie,csrf=csrf,status=403)
-        self.remote('reset-preview',cookie=cookie,status=403)
+        self.remote('reset-preview',cookie=cookie,status=410)
 
     def test_two_cashiers_share_balance_and_keep_distinct_operators_and_retries(self):
         users=[]

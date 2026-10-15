@@ -72,7 +72,7 @@ class DesktopTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             with DesktopHost(temp,port=0) as host:
                 connection=http.client.HTTPConnection('127.0.0.1',host.server.server_port,timeout=5)
-                for route,expected in (('/',b'<title>'),('/logo-colegio-v1.png',b'\x89PNG'),('/app.js',b'async function api')):
+                for route,expected in (('/',b'<title>'),('/aula-app.png',b'\x89PNG'),('/app.js',b'async function api')):
                     connection.request('GET',route);response=connection.getresponse()
                     self.assertEqual(response.status,200);self.assertIn(expected,response.read())
                 connection.close()
@@ -111,13 +111,13 @@ class DesktopTests(unittest.TestCase):
                 self.assertEqual(settings['institution_type'],INSTITUTION_TYPE)
                 self.assertEqual(settings['legal_name'],'')
                 db.executemany('UPDATE settings SET value=? WHERE key=?',[(v,k) for k,v in SCHOOL_PROFILE.items()])
-                db.execute("UPDATE settings SET value='ALEJANDRO VON HUMBOLDT' WHERE key='school_name'")
+                db.execute("UPDATE settings SET value='Identidad configurada' WHERE key='school_name'")
                 db.execute("DELETE FROM settings WHERE key='institution_type'")
                 legacy_fixture(db)
                 db.execute('PRAGMA user_version=6')
             initialize(path)
             with closing(connect(path)) as db,db:
-                self.assertEqual(dict(db.execute('SELECT key,value FROM settings'))['school_name'],SCHOOL_NAME)
+                self.assertEqual(dict(db.execute('SELECT key,value FROM settings'))['school_name'],'Identidad configurada')
                 db.execute("UPDATE settings SET value='Nombre editado por administración' WHERE key='school_name'")
                 db.execute("UPDATE settings SET value='Tipo editado' WHERE key='institution_type'")
             initialize(path)

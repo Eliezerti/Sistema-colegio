@@ -52,7 +52,7 @@ class FinancialInvariantTests(unittest.TestCase):
             db.execute("INSERT INTO guardians(id,name,document) VALUES(5,'Ficticio','V-cinco')")
         result = next(r for r in sequence_review(db) if r['table'] == 'guardians')
         self.assertEqual(result['gaps'], [{'from': 2, 'to': 4}])
-        with db: db.execute("INSERT INTO settings VALUES('id_floor_guardians','4')")
+        with db: db.execute("UPDATE settings SET value='4' WHERE key='id_floor_guardians'")
         self.assertTrue(next(r for r in sequence_review(db) if r['table'] == 'guardians')['ok'])
         with db: db.execute("UPDATE settings SET value='dañado' WHERE key='id_floor_guardians'")
         result = next(r for r in sequence_review(db) if r['table'] == 'guardians')

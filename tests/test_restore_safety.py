@@ -69,14 +69,14 @@ class RestoreSafetyTests(unittest.TestCase):
         with closing(connect(self.target)) as db,db:
             db.execute("UPDATE payments SET voided=1,void_reason='Anulación ficticia' WHERE id=1")
             for i,table in enumerate(SEQUENCES):
-                db.execute('INSERT INTO settings VALUES(?,?)',('id_floor_'+table,str(10+i)))
+                db.execute('INSERT OR REPLACE INTO settings VALUES(?,?)',('id_floor_'+table,str(10+i)))
         review=preview_restore(self.backup,self.directory)
         self.assertEqual(review['comparison']['payment_changes'],2)
         self.assertIsNone(review['backup']['created_at'])
         self.assertTrue(any(d['action']=='Anulación se revierte' for d in review['comparison']['details']))
         approved_restore(self.backup,self.directory)
         with closing(connect(self.target)) as db:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],11)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],12)
             for i,table in enumerate(SEQUENCES):self.assertEqual(next_record_id(db,table),11+i)
             event=json.loads(db.execute("SELECT details FROM audit WHERE action='restore-backup'").fetchone()[0])
             self.assertEqual(event['payment_changes'],2)
@@ -95,10 +95,9 @@ class RestoreSafetyTests(unittest.TestCase):
         self.current();self.second_payment()
         with closing(connect(self.target)) as db,db:
             db.execute("UPDATE users SET password='PASSWORD-DO-NOT-EXPORT' WHERE id=1")
-            db.execute("INSERT INTO employees(id,name,document,position,salary,status,bank_account) VALUES(1,'Docente ficticio','V-EMP','Docente',10000,'active','01020000000098765432')")
-            db.execute("""INSERT INTO expenses(id,concept,category,amount,spent_on,employee_id,created_by,
+            db.execute("""INSERT INTO expenses(id,concept,category,amount,spent_on,created_by,
                          currency,received_amount,exchange_rate,method,reference)
-                         VALUES(1,'Gasto ficticio','Operación',200,'2025-09-19',1,1,'VES',20000,'100','Transferencia','EG-REF')""")
+                         VALUES(1,'Gasto ficticio','Operación',200,'2025-09-19',1,'VES',20000,'100','Transferencia','EG-REF')""")
         approved_restore(self.backup,self.directory)
         event=last_restore(self.directory)
         self.assertEqual(len(event['reports']),2)

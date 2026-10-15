@@ -1,6 +1,6 @@
 import re
 import unittest
-from colegio.branding import SCHOOL_PROFILE
+from tests.fictional_identity import SCHOOL_PROFILE
 from colegio.documents import render_pdf, receipt_student_details
 
 
@@ -64,7 +64,7 @@ class ReceiptLayoutTests(unittest.TestCase):
                 data['payment']['guardian_address']='Calle 48, sector Centro, Barquismeto.'
                 pdf=render_pdf('receipt',data,'half-letter')
                 for value in (b'/MediaBox [0 0 396 612]',b'/Count 1 ',b'USD 10,00',
-                              b'Firma del representante',b'Registrado por:',b'RIF: J-50835934-8'):
+                              b'Firma del representante',b'Registrado por:',b'RIF: J-12345678-9'):
                     self.assertTrue(value in pdf,f'Falta en el recibo media carta: {value!r}')
 
     def test_default_half_letter_keeps_three_concepts_balance_reference_and_notes_on_one_page(self):

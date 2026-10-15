@@ -16,7 +16,6 @@ from colegio.db import connect, initialize, audit, hash_password, generate_month
 from colegio.audit_chain import (AuditUnavailable, controls, local_status, portable_status,
                                  migrate, append, load, adopt_restored, trigger_definitions, atomic)
 from colegio.maintenance import review_database
-from colegio.reset_records import reset_preview, reset_records
 from colegio.storage import consistent_backup
 from colegio.restore import last_restore
 from tests.restore_helpers import approved_restore
@@ -203,17 +202,20 @@ class AuditChainTests(unittest.TestCase):
                 self.assertNotIn(secret, text)
             self.assertIn('visible', text)
 
-    def test_reset_preserves_original_audit_and_adds_reviewed_operation(self):
-        with closing(connect(self.path)) as db:
-            before = [tuple(r) for r in db.execute('SELECT * FROM audit')]
-            preview = reset_preview(db)
-            with db:
-                reset_records(db, dict(preview, password='Una-clave-segura'), {'id': 1, 'role':'admin'})
-        with closing(connect(self.path)) as db:
-            after = [tuple(r) for r in db.execute('SELECT * FROM audit ORDER BY id')]
-            self.assertEqual(after[:len(before)], before)
-            self.assertTrue(db.execute("SELECT 1 FROM audit WHERE action='reset_records'").fetchone())
-            self.assertTrue(local_status(db)['ok'])
+    def test_retired_reset_cannot_erase_original_audit(self):
+        from tests.test_system import SystemTests
+        f=SystemTests();f.setUp()
+        try:
+            with closing(connect(f.path)) as db:
+                before=[tuple(r) for r in db.execute('SELECT * FROM audit ORDER BY id')]
+                links=[tuple(r) for r in db.execute('SELECT * FROM audit_links ORDER BY audit_id')]
+            f.request('reset-records', {'confirmation':'VACIAR REGISTROS','password':'Una-clave-segura'},status=410)
+            f.request('reset-preview',status=410)
+            with closing(connect(f.path)) as db:
+                self.assertEqual([tuple(r) for r in db.execute('SELECT * FROM audit ORDER BY id')],before)
+                self.assertEqual([tuple(r) for r in db.execute('SELECT * FROM audit_links ORDER BY audit_id')],links)
+                self.assertTrue(local_status(db)['ok'])
+        finally:f.tearDown()
 
     def test_restore_crosslinks_current_branch_and_preserves_original_snapshot(self):
         old = self.path.parent/'vieja.sqlite3';consistent_backup(self.path, old)

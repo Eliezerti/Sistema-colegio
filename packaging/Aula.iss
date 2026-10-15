@@ -63,6 +63,7 @@ Name: "{userstartup}\Aula - Administración escolar"; Filename: "{app}\Aula.exe"
 
 Name: "{group}\Guía para importar alumnos"; Filename: "{app}\docs\guia-importacion.html"
 Name: "{group}\Manual de mantenimiento"; Filename: "{app}\docs\mantenimiento.html"
+Name: "{group}\Puesta en producción"; Filename: "{app}\docs\puesta-en-produccion.html"
 
 [Run]
 Filename: "{tmp}\MicrosoftEdgeWebview2Setup.exe"; Parameters: "/silent /install"; StatusMsg: "Preparando el componente de ventanas de Microsoft..."; Flags: waituntilterminated; Check: NeedsWebView2

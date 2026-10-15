@@ -17,10 +17,7 @@ def directory_state():
                 for i, name, grade, archived in [(1, 'Alumno Uno', 1, 0), (2, 'Alumno Dos', 2, 0),
                                                 (3, 'Alumno Archivado', 1, 1)]],
             'guardians': [dict(id=1, name='Ana Pérez', document='V-123', phone='04121234567',
-                              email='ana@example.test', address='Dirección de prueba', archived=0)],
-            'employees': [dict(id=1, name='Docente Uno', document='V-456', phone='04129876543',
-                position='Docente', bank='Banco de prueba', bank_account='01020000000012345678',
-                salary=12000, status='active')]}
+                              email='ana@example.test', address='Dirección de prueba', archived=0)]}
 
 
 class DirectoryReportsTests(unittest.TestCase):
@@ -34,10 +31,9 @@ class DirectoryReportsTests(unittest.TestCase):
         self.assertEqual(directory_report(data, 'students', {'archived': ['1']})['count'], 3)
         self.assertEqual(directory_report(data, 'students', {'search': ['AL-000002']})['count'], 1)
         self.assertEqual(directory_report(data, 'students', {'search': ['inexistente']})['count'], 0)
-        self.assertEqual(directory_report(data, 'employees', {'search': ['docente']})['count'], 1)
         self.assertEqual(data['students'][0]['monthly_fee'], 10000)
 
-    def test_guardian_children_and_employee_bank_account_keep_all_digits(self):
+    def test_guardian_children_and_directory_pdf_keep_all_rows(self):
         data = directory_state()
         data['students'][1]['status']='inactive'
         guardian = directory_report(data, 'guardians', {})
@@ -45,10 +41,7 @@ class DirectoryReportsTests(unittest.TestCase):
         self.assertIn('Alumno Dos · Primero A (Inactivo)', guardian['lines'][0][-1])
         self.assertIn('Alumno Archivado · Primero A (Inactivo · Archivado)', guardian['lines'][0][-1])
         self.assertTrue(b'Inactivo' in directory_pdf(guardian),'Estado inactivo visible en PDF')
-        employee = directory_report(data, 'employees', {})
-        self.assertIn('01020000000012345678', employee['lines'][0][4])
-        self.assertEqual(employee['lines'][0][5], 'USD 120,00')
-        for kind in ('students', 'guardians', 'employees'):
+        for kind in ('students', 'guardians'):
             report = directory_report(data, kind, {})
             self.assertEqual(sum(report['widths']), 758)
             self.assertEqual(len(report['headings']), len(report['lines'][0]))

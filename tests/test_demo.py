@@ -68,7 +68,7 @@ class DemoProcessTests(unittest.TestCase):
         self.assertEqual(session['user']['role'],'admin')
         self.request('confirm-rate',{'rate_date':local_today().isoformat(),'rate':'100'})
         state=self.request('state');self.path=Path(state['backup']['data_path'])
-        self.assertEqual(state['students'],[]);self.assertEqual(state['employees'],[]);self.assertEqual(state['payments'],[])
+        self.assertEqual(state['students'],[]);self.assertEqual(state['payments'],[])
         self.assertTrue(self.path.is_relative_to(self.temporary))
         return state
 
@@ -85,24 +85,15 @@ class DemoProcessTests(unittest.TestCase):
         kind=response.getheader('Content-Type');connection.close()
         return json.loads(payload) if 'application/json' in kind else payload
 
-    def add_salary(self):
-        position=self.request('positions',{'name':'Docente'})['id']
-        employee=self.request('employees',{'name':'Empleado de prueba','document':'V-123','position_id':position,'salary':'120'})['id']
-        on=local_today().isoformat()
-        return self.request('expenses',dict(employee_id=employee,category='Nómina',concept='Sueldo de prueba',
-            spent_on=on,amount='12000',currency='VES',method='Transferencia',period_start=on[:7]+'-01',
-            period_end=on,entry_time='07:00',exit_time='13:00'))
+    def add_expense(self):
+        return self.request('expenses',dict(category='Operación',concept='Gasto temporal',
+            spent_on=local_today().isoformat(),amount='10',currency='USD',method='Efectivo'))
 
-    def test_admin_salary_is_isolated_marked_and_deleted_on_explicit_close(self):
-        state=self.start();payment=self.add_salary();folder=self.path.parent
-        receipt=self.request('salary-receipt/'+str(payment['salary_receipt_id']))
-        self.assertTrue(receipt['demo']);self.assertTrue(receipt['school']['legal_name'].startswith('PRUEBA SIN VALIDEZ'))
-        pdf=self.request('salary-receipt/'+str(payment['salary_receipt_id'])+'.pdf')
-        self.assertTrue(pdf.startswith(b'%PDF'));self.assertIn(b'PRUEBA SIN VALIDEZ',pdf)
+    def test_admin_expense_is_isolated_and_deleted_on_explicit_close(self):
+        self.start();self.add_expense();folder=self.path.parent
         self.request('backup',status=403)
-        self.request('reset-preview',status=403)
-        self.request('reset-records',{},status=400)
-        self.request('settings',{**state['settings'],'backup_directory':str(self.real)},status=400)
+        self.request('reset-preview',status=410)
+        self.request('reset-records',{},status=410)
         self.assertFalse((folder/'backups').exists())
         self.request('demo-exit',{})
         self.assertEqual(self.process.wait(timeout=8),0);self.assertFalse(folder.exists())
@@ -122,7 +113,7 @@ class DemoProcessTests(unittest.TestCase):
         self.assertEqual(self.real_data.read_bytes(),b'DATOS REALES: NO MODIFICAR')
 
     def test_forced_kill_is_cleaned_before_the_next_empty_session(self):
-        self.start();self.add_salary();abandoned=self.path.parent
+        self.start();self.add_expense();abandoned=self.path.parent
         self.process.kill();self.process.wait(timeout=5)
         self.assertTrue(abandoned.exists())
         self.start();self.assertFalse(abandoned.exists());self.assertEqual(self.request('state')['expenses'],[])

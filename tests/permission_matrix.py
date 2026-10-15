@@ -11,16 +11,16 @@ WRITERS = ('admin', 'cashier')
 
 GET_ALL = ('session', 'session-status', 'clock-status', 'rate-gate', 'state', 'cash-preview',
            'backup-status', 'daily-report', 'daily-report.pdf', 'health', 'export')
-GET_ADMIN = ('audit', 'audit.csv', 'audit.pdf', 'reset-preview', 'import-template', 'import-guide',
+GET_ADMIN = ('audit', 'audit.csv', 'audit.pdf', 'import-template', 'import-guide',
              'backup', 'maintenance-review')
-POST_ADMIN = ('settings', 'backup-directory', 'grades', 'guardians', 'students', 'employees',
-              'users', 'password', 'void-payment', 'void-expense', 'cancel-charge', 'positions',
-              'payroll-plans', 'salary-receipts', 'import-roster', 'reopen-cash', 'transition-year',
+POST_ADMIN = ('settings', 'backup-directory', 'grades', 'guardians', 'students',
+              'users', 'password', 'void-payment', 'void-expense', 'cancel-charge',
+                'import-roster', 'reopen-cash', 'transition-year',
               'cancel-plan', 'correct-billing-start', 'archive-student', 'archive-guardian',
-              'restore-student', 'restore-guardian', 'delete-grade', 'archive-employee',
-              'restore-employee', 'delete-unused-record', 'clock-confirm', 'session-preferences',
+              'restore-student', 'restore-guardian', 'delete-grade',
+               'delete-unused-record', 'clock-confirm', 'session-preferences',
               'recovery-notice-ack', 'crypto-prepare', 'crypto-confirm', 'crypto-unlock',
-              'probe-backup', 'export-encrypted-backup', 'backup-now', 'backup-cloud-declare', 'reset-records')
+              'probe-backup', 'export-encrypted-backup', 'backup-now', 'backup-cloud-declare', )
 POST_WRITERS = ('generate', 'payments', 'collections', 'rates', 'expenses', 'charges', 'close-cash',
                 'guardian-documents', 'payment-plans')
 
@@ -33,16 +33,13 @@ def cases():
     for route in GET_ALL: add('GET', route, (*ALL, 'anonymous') if route=='session' else ALL, 200)
     for route in GET_ADMIN: add('GET', route, ADMIN, 200)
     add('GET', 'year-roster?year=2020', ADMIN, 200)
-    for kind in ('students', 'guardians', 'employees'):
+    for kind in ('students', 'guardians'):
         for extension in ('', '.pdf'):
             add('GET', 'directory/'+kind+extension, ALL, 200, 'directory/')
     for kind in ('enrollment', 'receipt', 'payment-plan', 'year-transition', 'guardian-document', 'cash-close'):
         for extension in ('', '.pdf'):
             add('GET', kind+'/0'+extension, ALL, 400, kind+'/')
     add('GET', 'guardian-account/0', ALL, 400, 'guardian-account/')
-    for kind in ('payroll-plan', 'salary-receipt'):
-        for extension in ('', '.pdf'):
-            add('GET', kind+'/0'+extension, ADMIN, 400, kind+'/')
     add('GET', 'archive-preview/student/0', ADMIN, 400, 'archive-preview/')
     for kind in ('students', 'payments', 'expenses'):
         add('GET', 'export?type='+kind, ALL, 200, 'export')
@@ -66,6 +63,8 @@ def endpoint_inventory():
     source = Path(__file__).resolve().parents[1]/'colegio/server.py'
     discovered = set(DIRECTORY_ACTIONS) | set(ARCHIVE_ACTIONS)
     tree = ast.parse(source.read_text(encoding='utf-8'))
+    # Tombstones have their own HTTP/profile/nonmutation contract in test_staff_retirement.
+    tree.body = [node for node in tree.body if not isinstance(node, ast.FunctionDef) or node.name != 'retired_route']
     def strings(node):
         if isinstance(node, ast.Constant) and isinstance(node.value, str): return {node.value}
         if isinstance(node, (ast.Tuple, ast.List, ast.Set)):
