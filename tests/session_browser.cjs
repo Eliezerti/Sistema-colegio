@@ -13,9 +13,15 @@ module.exports=async function checkSessions(page,expected){
   const expire=async()=>{
     // Revoke at the real server; the Python tests separately advance monotonic
     // time to prove inactivity. Accelerate only the visual countdown here.
+    await page.waitForFunction(()=>!sessionCheckPending);
     expected.active=true;
+    const denied=page.waitForResponse(response=>response.url().endsWith('/api/session-status')&&response.status()===401);
+    const deniedConsole=page.waitForEvent('console',{predicate:message=>message.type()==='error'&&message.location().url.endsWith('/api/session-status')&&message.text().includes('401 (Unauthorized)')});
     await page.evaluate(async()=>{await api('logout',{});sessionDeadline=performance.now()-1;sessionTick();});
     await page.locator('.session-lock-note').waitFor();
+    // Chromium can deliver its console event after rendering the locked view.
+    // Match the real rejected response and its console event before ending the expectation.
+    await Promise.all([denied,deniedConsole]);
     expected.active=false;
   };
   await page.locator('.nav-button[data-id="settings"]').click();
