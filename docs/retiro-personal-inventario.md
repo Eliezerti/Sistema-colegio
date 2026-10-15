@@ -97,3 +97,6 @@ Instalador y validación nativa de Windows pendientes. La impresora física del 
 
 
 Ronda sobre el código definitivo `54186b2`: **291 en 159,888 s, 288 correctas y tres exclusivas de Windows omitidas**; normal, --demo y --roster PASS. La guía Puesta en producción se renderizó con Chromium del sistema y se comprobó con pypdf: **una página A4**. La primera compilación Windows 38678162507 fue cancelada antes de terminar para incorporar las últimas correcciones de textos; no se ofrece como validación. Ejecución final: [38678340162](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38678340162), aún pendiente.
+
+
+Primera validación Windows completa, intento 1.0.65 (`54186b2`): **291 correctas en 548,575 s, sin omisiones**. Instalación básica, ventanas, bandeja, conservación, impresión de media carta y ambas copias al 100 % y Defender antes/después correctos. La fase B1 se detuvo antes de comprobar la instalación en cero porque la ejecución directa de `tests/windows_upgrade.py` no encontraba el paquete `tests` al importar `zero_install`. No se publicó instalador. Se añade la raíz del repositorio a la ruta del verificador y se comprueba su ejecución directa con Python aislado; el programa no cambia. Repetición completa: [38679528930](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38679528930), pendiente.
