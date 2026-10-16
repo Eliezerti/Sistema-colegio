@@ -12,7 +12,7 @@ Una instalación nueva comienza como «Mi colegio», sin registros ni usuarios p
 - [Comprobantes](docs/comprobante-media-carta.md): media carta vertical y ORIGINAL/COPIA en carta horizontal, con impresión normal.
 - [Archivo de la institución](docs/archivo-institucion.md): conservar historia y revisar un borrado permitido.
 
-Para la limpieza excepcional y única de cobros ficticios antes de producción, consulta [Empezar recibos en R-000001](docs/limpieza-cobros-prueba.md). No reemplaces la carpeta de datos ni uses esta operación con pagos reales.
+Para la limpieza excepcional y única de cobros ficticios, estados de cuenta, solvencias y cierres de prueba antes de producción, consulta [Empezar recibos en R-000001](docs/limpieza-cobros-prueba.md). No reemplaces la carpeta de datos ni uses esta operación con pagos reales.
 
 ## Consulta y reportes
 

@@ -1,3 +1,10 @@
+# Cobros y documentos financieros de prueba · 1.0.71 · 16/10/2026
+
+- Con autorización explícita, la limpieza única incluye estados de cuenta, solvencias y cierres de caja de prueba, junto con cobros y recibos. La revisión muestra sus cantidades y exige confirmar también esos documentos.
+- Se conservan alumnos, representantes, todas las cuentas de acceso, cargos, egresos, configuración, constancias y pases de año. Solo se admiten documentos de representante identificados como estado de cuenta o solvencia; cualquier otro tipo detiene la operación.
+- Respaldo cifrado verificado y transacción única, con bitácora íntegra. Se mantienen los bloqueos de reloj, restauración pendiente, cambios de datos y autorización. Sin migración; B3 sigue pendiente.
+- Seis pruebas específicas correctas, incluidos siete cortes reales del proceso. Validación completa en curso. [Guía](docs/limpieza-cobros-prueba.md).
+
 # Preparar recibos de producción · 1.0.70
 
 - Herramienta local excepcional `--clear-trial-payments`, sin botón ni API de borrado. Requiere Aula cerrado, Administración, frase de confirmación, motivo y respaldo cifrado verificado. Se permite una sola vez en esa base.
