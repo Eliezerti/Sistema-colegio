@@ -2,7 +2,7 @@
 const $ = (s, root = document) => root.querySelector(s);
 const app = $('#app'), modal = $('#modal');
 let state, session, page = 'dashboard', filters = {}, reportFrom = '', reportTo = '';
-let publicSchool = {};
+let publicSchool = {}, setupToday, readOnlyInfo;
 let receiptPaper = 'half-letter';
 const paymentMethods=['Efectivo','Transferencia','Pago móvil','Tarjeta','Otro'];
 let demoMode = false, demoToken = '', demoTimer;
@@ -92,13 +92,20 @@ function toast(text, failure = false) {
 async function boot() {
   try {
     const result = await api('session');
-    session = result.user; publicSchool = result.school || {};
+    readOnlyInfo=result.read_only;setupToday=result.today; session = result.user; publicSchool = result.school || {};
+    if(readOnlyInfo){
+      let banner=$('#readonly-banner');if(!banner){banner=document.createElement('div');banner.id='readonly-banner';document.body.prepend(banner);}
+      banner.textContent=readOnlyInfo.message;document.body.classList.add('readonly-copy');
+      if(!session){app.innerHTML='<div class="loading"><h2>La consulta terminó</h2><p>Abre la copia nuevamente desde Windows para continuar.</p></div>';return;}
+      await sessionCheck();await refresh();return;
+    }
     configureDemo(result);
     if (!session) { settingsSection='identity';settingsDrafts={};auth(result.needs_setup); return; }
     await sessionCheck();await openRateGate();
   } catch (error) { app.innerHTML = `<div class="loading"><h2>No se pudo abrir Aula</h2><p>${esc(error.message)}</p>${btn('Reintentar','boot')}</div>`; }
 }
 async function openRateGate() {
+  if(readOnlyInfo){await refresh();return;}
   const clock=await api('clock-status');if(clock.blocked){await openClockGate(clock);return;}
   const gate = await api('rate-gate'); publicSchool = gate.school || publicSchool;
   gateBackup=gate.backup;gateRole=gate.role;
@@ -122,11 +129,12 @@ async function checkedPrint(report=false){
   if(report)printReport();else window.print();
 }
 function auth(setup) {
+  if(readOnlyInfo){app.innerHTML='<div class="loading"><h2>La consulta terminó</h2><p>Abre la copia nuevamente desde Windows para continuar.</p></div>';return;}
   if(demoMode){demoAuth();return;}
   state=undefined;modal.close();$('#print-area').replaceChildren();
-  app.innerHTML = `<div class="auth-screen"><section class="auth-story"><div class="brand">${schoolLogo(publicSchool)}<div><small>${esc(publicSchool.institution_type||'Administración escolar')}</small><b>${esc(publicSchool.school_name||'Aula')}</b><small>Administración escolar</small></div></div><h1>Tu colegio,<br>con las cuentas<br><em>en orden.</em></h1><p>Alumnos, mensualidades y cobranza en un mismo lugar. Pensado para el día a día de tu colegio en Venezuela.</p><p>${icon('shield')} Datos locales · USD y bolívares</p></section><section class="auth-form"><div class="eyebrow">${setup ? 'Empecemos' : 'Bienvenido de nuevo'}</div><h2>${setup ? 'Configura tu administrador' : 'Entrar a tu colegio'}</h2><p>${setup ? 'Esta cuenta gestionará el colegio y podrá crear usuarios de caja y consulta.' : 'Ingresa tus datos para continuar con la administración.'}</p><form data-endpoint="${setup ? 'setup' : 'login'}">${setup ? field('Nombre del colegio','school_name','','text','required maxlength="200" autocomplete="organization"')+field('Nombre del administrador','name','','text','required maxlength="200" autocomplete="name"') : ''}${field('Usuario','username','','text','required maxlength="80" autocomplete="username"')}${field('Contraseña','password','','password',`required ${setup ? 'minlength="10"' : ''} maxlength="256" autocomplete="${setup ? 'new-password' : 'current-password'}"`,setup ? 'Como mínimo 10 caracteres. Guárdala en un lugar seguro.' : '')}<div class="error" role="alert"></div><button class="btn primary" type="submit">${setup ? 'Crear mi cuenta' : 'Iniciar sesión'} ${icon('arrow')}</button></form><p class="recovery-link">${btn('Olvidé mi usuario o contraseña','recovery-help','ghost')}</p><div class="auth-note">Los datos se guardan en esta PC y puedes trabajar sin internet. La tasa BCV se registra manualmente por fecha. Usa siempre la misma cuenta de Windows.</div></section></div>`;
+  app.innerHTML = `<div class="auth-screen"><section class="auth-story"><div class="brand">${schoolLogo(publicSchool)}<div><small>${esc(publicSchool.institution_type||'Administración escolar')}</small><b>${esc(publicSchool.school_name||'Aula')}</b><small>Administración escolar</small></div></div><h1>Tu colegio,<br>con las cuentas<br><em>en orden.</em></h1><p>Alumnos, mensualidades y cobranza en un mismo lugar. Pensado para el día a día de tu colegio en Venezuela.</p><p>${icon('shield')} Datos locales · USD y bolívares</p></section><section class="auth-form"><div class="eyebrow">${setup ? 'Empecemos' : 'Bienvenido de nuevo'}</div><h2>${setup ? 'Configura tu administrador' : 'Entrar a tu colegio'}</h2><p>${setup ? 'Esta cuenta gestionará el colegio y podrá crear usuarios de caja y consulta.' : 'Ingresa tus datos para continuar con la administración.'}</p><form data-endpoint="${setup ? 'setup' : 'login'}">${setup ? field('Nombre del colegio','school_name','','text','required maxlength="200" autocomplete="organization"')+field('Año de inicio del ciclo escolar','school_year',Number(setupToday.slice(0,4))-(Number(setupToday.slice(5,7))<9),'number','required min="2000" max="2100"','Ejemplo: 2027 corresponde al ciclo 2027–2028.')+select('Mes de inicio del ciclo','start_month',Array.from({length:12},(_,i)=>[i+1,new Date(2020,i,1).toLocaleDateString('es-VE',{month:'long'})]),9)+field('Día de vencimiento mensual','due_day',10,'number','required min="1" max="31"','En meses cortos se utiliza el último día.')+field('Nombre del administrador','name','','text','required maxlength="200" autocomplete="name"') : ''}${field('Usuario','username','','text','required maxlength="80" autocomplete="username"')}${field('Contraseña','password','','password',`required ${setup ? 'minlength="10"' : ''} maxlength="256" autocomplete="${setup ? 'new-password' : 'current-password'}"`,setup ? 'Como mínimo 10 caracteres. Guárdala en un lugar seguro.' : '')}${setup?'':`<details><summary>Acceso bloqueado por intentos</summary><p class="hint">En esta PC abre Inicio → Aula → Desbloquear acceso local. Genera un código con tu contraseña actual y úsalo aquí antes de dos minutos.</p>${field('Código de acceso local','local_unlock_code','','password','maxlength="32" autocomplete="off"')}</details>`}<div class="error" role="alert"></div><button class="btn primary" type="submit">${setup ? 'Crear mi cuenta' : 'Iniciar sesión'} ${icon('arrow')}</button></form><p class="recovery-link">${btn('Olvidé mi usuario o contraseña','recovery-help','ghost')}</p><div class="auth-note">Los datos se guardan en esta PC y puedes trabajar sin internet. La tasa BCV se registra manualmente por fecha. Usa siempre la misma cuenta de Windows.</div></section></div>`;
 }
-async function refresh(savedEndpoint) { rememberSettingsDrafts(savedEndpoint);state = await api('state'); auditView=null; render(); }
+async function refresh(savedEndpoint) { rememberSettingsDrafts(savedEndpoint);state = await api(page==='dashboard'?'state':'state?history=1'); auditView=null; render(); }
 const navItems = [['dashboard','Resumen','dashboard'],['students','Alumnos y matrículas','students'],['guardians','Representantes','guardians'],['grades','Grados y secciones','grades'],['billing','Mensualidades y cargos','billing'],['payments','Caja y cobros','payments'],['cash','Cierre de caja','payments'],['arrears','Morosidad','arrears'],['expenses','Egresos','expenses'],['archive','Archivo de la institución','students'],['reports','Reportes','reports'],['settings','Configuración','settings']];
 function render() {
   if (!state) return;
@@ -236,7 +244,7 @@ function reportsPage() {
   reportFrom ||= state.today.slice(0,7)+'-01'; reportTo ||= state.today;
   const payments=state.payments.filter(p=>!p.voided&&p.paid_on>=reportFrom&&p.paid_on<=reportTo), expenses=state.expenses.filter(e=>!e.voided&&e.spent_on>=reportFrom&&e.spent_on<=reportTo);
   const income=payments.reduce((a,p)=>a+p.amount,0), out=expenses.reduce((a,e)=>a+e.amount,0);
-  return heading('Reportes administrativos','Consulta el flujo de caja y descarga los libros completos en CSV.',btn(`${icon('download')} Reporte diario PDF`,'daily-report','primary')+btn('Cierre de caja diario','nav','','cash')+btn(`${icon('print')} Imprimir resumen`,'print-report'))+`<div class="card"><div class="toolbar">${field('Desde','report-from',reportFrom,'date','id="report-from"')}${field('Hasta','report-to',reportTo,'date','id="report-to"')}<span class="table-count">${payments.length} cobros · ${expenses.length} egresos válidos</span></div></div><div class="stats">${stat('Ingresos del período',usd(income),'Equivalente USD','payments','featured')}${stat('Egresos del período',usd(out),'Equivalente USD','expenses')}${stat('Balance del período',usd(income-out),'Ingresos menos egresos','reports')}${stat('Deuda vencida actual',usd(state.summary.overdue),'Corte de hoy, independiente del filtro','arrears','alert')}</div><div class="grid-two">${card('Cobros por método',`<div class="card-body">${paymentMethods.map(method=>`<div class="list-line"><span>${method}</span><b>${usd(payments.filter(p=>p.method===method).reduce((t,p)=>t+p.amount,0))}</b></div>`).join('')}<div class="list-line"><span>Recibido en dólares <small>Importe original, sin conversión</small></span><b>${usd(payments.filter(p=>p.currency==='USD').reduce((t,p)=>t+p.received_amount,0))}</b></div><div class="list-line"><span>Recibido en bolívares <small>Importe original, sin conversión</small></span><b>${bs(payments.filter(p=>p.currency==='VES').reduce((t,p)=>t+p.received_amount,0))}</b></div><p class="hint">El equivalente USD usa la tasa conservada en cada operación; sumar bolívares no cambia los saldos históricos.</p></div>`)}${card('Exportación de libros',`<div class="card-body"><p class="muted">Descargas completas para abrir en Excel. Incluyen operaciones anuladas identificadas como tales.</p><div class="list-line"><span>Morosidad actual</span>${exportBtn('arrears','Descargar')}</div><div class="list-line"><span>Historial de pagos y tasas</span>${exportBtn('payments','Descargar')}</div><div class="list-line"><span>Alumnos y saldos</span>${exportBtn('students','Descargar')}</div><div class="list-line"><span>Egresos</span>${exportBtn('expenses','Descargar')}</div></div>`)}</div>`;
+  return heading('Reportes administrativos','Consulta el flujo de caja y descarga los libros completos en CSV.',btn(`${icon('download')} Reporte diario PDF`,'daily-report','primary')+btn('Cierre de caja diario','nav','','cash')+btn(`${icon('print')} Imprimir resumen`,'print-report'))+`<div class="card"><div class="toolbar">${field('Desde','report-from',reportFrom,'date','id="report-from"')}${field('Hasta','report-to',reportTo,'date','id="report-to"')}<span class="table-count">${payments.length} cobros · ${expenses.length} egresos válidos</span></div></div><div class="stats">${stat('Ingresos del período',usd(income),'Equivalente USD','payments','featured')}${stat('Egresos del período',usd(out),'Equivalente USD','expenses')}${stat('Balance del período',usd(income-out),'Ingresos menos egresos','reports')}${stat('Deuda vencida actual',usd(state.summary.overdue),'Corte de hoy, independiente del filtro','arrears','alert')}</div><div class="grid-two">${card('Cobros por método',`<div class="card-body">${paymentMethods.map(method=>`<div class="list-line"><span>${method}</span><b>${usd(payments.filter(p=>p.method===method).reduce((t,p)=>t+p.amount,0))}</b></div>`).join('')}<div class="list-line"><span>Recibido en dólares <small>Importe original, sin conversión</small></span><b>${usd(payments.filter(p=>p.currency==='USD').reduce((t,p)=>t+p.received_amount,0))}</b></div><div class="list-line"><span>Recibido en bolívares <small>Importe original, sin conversión</small></span><b>${bs(payments.filter(p=>p.currency==='VES').reduce((t,p)=>t+p.received_amount,0))}</b></div><p class="hint">El equivalente USD usa la tasa conservada en cada operación; sumar bolívares no cambia los saldos históricos.</p></div>`)}${card('Cierre mensual',`<div class="card-body">${field('Mes del cierre','closing_month',state.today.slice(0,7),'month',`id="closing-month" max="${state.today.slice(0,7)}"`)}<p class="hint">Monedas, métodos, egresos, saldos, pendiente por grado y anulaciones del mes. Sin datos personales de alumnos.</p>${btn('PDF mensual','monthly-pdf')}${btn('CSV mensual','monthly-csv')}</div>`)}${card('Exportación de libros',`<div class="card-body"><p class="muted">Descargas completas para abrir en Excel. Incluyen operaciones anuladas identificadas como tales.</p><div class="list-line"><span>Morosidad actual</span>${exportBtn('arrears','Descargar')}</div><div class="list-line"><span>Historial de pagos y tasas</span>${exportBtn('payments','Descargar')}</div><div class="list-line"><span>Alumnos y saldos</span>${exportBtn('students','Descargar')}</div><div class="list-line"><span>Egresos</span>${exportBtn('expenses','Descargar')}</div></div>`)}</div>`;
 }
 const settingsSections = [
   ['identity','Identidad y calendario','settings'],
@@ -287,7 +295,7 @@ function settingsPage(){
     settingsSections.map(([id])=>`<section class="settings-panel" id="settings-panel-${id}" role="tabpanel" aria-labelledby="settings-tab-${id}" ${settingsSection!==id?'hidden':''}>${panels[id]}</section>`).join('');
 }
 function settingsIdentity(s){
-  return card('Identidad y calendario',`<form class="card-body" data-endpoint="settings"><h3>Datos que aparecerán en los documentos</h3><p class="hint">Cada documento conserva la identidad que tenía al emitirse.</p><div class="form-grid">${field('Nombre del colegio','school_name',s.school_name,'text','required maxlength="200"')}${field('Tipo de institución','institution_type',s.institution_type||'','text','maxlength="100"')}${field('Razón social / nombre legal','legal_name',s.legal_name,'text','maxlength="200"')}${field('RIF del colegio','rif',s.rif,'text','maxlength="100"')}${textarea('Domicilio fiscal','fiscal_address',s.fiscal_address,500)}${field('Dirección de contacto','address',s.address,'text','maxlength="500"')}${field('Teléfono','phone',s.phone,'tel','maxlength="100"')}${field('Correo','email',s.email,'email','maxlength="200"')}${field('Sitio web','website',s.website,'text','maxlength="200"')}<div class="field full logo-editor"><div id="logo-preview">${schoolLogo(s)}</div><label>Logo del colegio · PNG o JPG<input id="school-logo-file" type="file" accept="image/png,image/jpeg"><small>Se ajusta sobre fondo blanco y se guarda en la base y sus respaldos.</small></label><input type="hidden" name="logo" value="${esc(s.logo||'')}">${btn('Quitar logo','remove-logo','small')}</div></div><details class="settings-disclosure"><summary>Calendario y reglas de mensualidades</summary><div class="form-grid">${field('Año de inicio del ciclo escolar','school_year',s.school_year,'number','required min="2000" max="2100"','2026 significa 2026–2027.')}${select('Mes de inicio del ciclo','start_month',Array.from({length:12},(_,i)=>[i+1,new Date(2020,i,1).toLocaleDateString('es-VE',{month:'long'})]),s.start_month)}${field('Día de vencimiento mensual','due_day',s.due_day,'number','required min="1" max="31"','En meses cortos se utiliza el último día.')}</div><p class="hint">Se cobra el mes completo, sin prorrateo por días. Los meses hasta hoy se generan automáticamente para matrículas activas. Las becas se aplican a cargos nuevos; los cargos existentes conservan su importe. El mes de inicio no se cambia con alumnos registrados. El cambio de año se hace en Alumnos → Pase de año / grados.</p></details><div class="error" role="alert"></div><div class="form-actions"><button class="btn primary" type="submit">Guardar cambios del colegio</button></div></form>`);
+  return card('Identidad y calendario',`<form class="card-body" data-endpoint="settings"><h3>Datos que aparecerán en los documentos</h3><p class="hint">Cada documento conserva la identidad que tenía al emitirse.</p><div class="form-grid">${field('Nombre del colegio','school_name',s.school_name,'text','required maxlength="200"')}${field('Tipo de institución','institution_type',s.institution_type||'','text','maxlength="100"')}${field('Razón social / nombre legal','legal_name',s.legal_name,'text','maxlength="200"')}${field('RIF del colegio','rif',s.rif,'text','maxlength="100"')}${textarea('Domicilio fiscal','fiscal_address',s.fiscal_address,500)}${field('Dirección de contacto','address',s.address,'text','maxlength="500"')}${field('Teléfono','phone',s.phone,'tel','maxlength="100"')}${field('Correo','email',s.email,'email','maxlength="200"')}${field('Sitio web','website',s.website,'text','maxlength="200"')}<div class="field full logo-editor"><div id="logo-preview">${schoolLogo(s)}</div><label>Logo del colegio · PNG o JPG<input id="school-logo-file" type="file" accept="image/png,image/jpeg"><small>Se ajusta sobre fondo blanco y se guarda en la base y sus respaldos.</small></label><input type="hidden" name="logo" value="${esc(s.logo||'')}">${btn('Quitar logo','remove-logo','small')}</div></div><details class="settings-disclosure"><summary>Calendario y reglas de mensualidades</summary><div class="form-grid">${field('Año de inicio del ciclo escolar','school_year',s.school_year,'number','required min="2000" max="2100"','Indica el año en que comienza el ciclo escolar.')}${select('Mes de inicio del ciclo','start_month',Array.from({length:12},(_,i)=>[i+1,new Date(2020,i,1).toLocaleDateString('es-VE',{month:'long'})]),s.start_month)}${field('Día de vencimiento mensual','due_day',s.due_day,'number','required min="1" max="31"','En meses cortos se utiliza el último día.')}</div><p class="hint">Se cobra el mes completo, sin prorrateo por días. Los meses hasta hoy se generan automáticamente para matrículas activas. Las becas se aplican a cargos nuevos; los cargos existentes conservan su importe. El mes de inicio no se cambia con alumnos registrados. El cambio de año se hace en Alumnos → Pase de año / grados.</p></details><div class="error" role="alert"></div><div class="form-actions"><button class="btn primary" type="submit">Guardar cambios del colegio</button></div></form>`);
 }
 function settingsMaintenance(s){
   const destination=card('Segunda copia de seguridad · USB o carpeta de Drive',
@@ -462,7 +470,7 @@ function setReceiptPaper(paper) {
   const link=modal.querySelector('.document-actions a[download]');
   if(link){const url=new URL(link.href);url.searchParams.set('paper',receiptPaper);link.href=url.pathname+url.search;}
   const help=$('#receipt-paper-help');
-  if(help)help.textContent=receiptPaper==='letter-pair'?'Original para el representante y copia para el colegio, con el mismo número R-, en carta horizontal. Escala 100 %, sin ajustar. Desactiva encabezados y pies del navegador; ambas copias dejan espacio para firmar.':receiptPaper.startsWith('ticket-')?'Ticket de '+receiptPaper.slice(-2)+' mm. Selecciona la impresora térmica y usa escala 100 %. La impresión depende del controlador instalado en Windows.':receiptPaper==='half-letter'?'13,97 × 21,59 cm. Selecciona media carta o una hoja carta con escala 100 % (tamaño real), sin ajustar ni ampliar. Sin encabezados ni pies del navegador. Para dos copias en una hoja, elige Carta horizontal · 2 copias verticales.':'A4 vertical. Recomendado para muchos conceptos u observaciones extensas.';
+  if(help)help.textContent=receiptPaper==='letter-pair'?'Original para el representante y copia para el colegio, con el mismo número R-, en carta horizontal. Usa la configuración normal de impresión. Desactiva encabezados y pies del navegador; ambas copias dejan espacio para firmar.':receiptPaper.startsWith('ticket-')?'Ticket de '+receiptPaper.slice(-2)+' mm. Selecciona la impresora térmica y usa escala 100 %. La impresión depende del controlador instalado en Windows.':receiptPaper==='half-letter'?'13,97 × 21,59 cm. Selecciona media carta o una hoja carta y usa la configuración normal de impresión. Sin encabezados ni pies del navegador. Para dos copias en una hoja, elige Carta horizontal · 2 copias verticales.':'A4 vertical. Recomendado para muchos conceptos u observaciones extensas.';
 }
 function showDocument(title,path,markup) {
   showModal(title,'Documento listo para descargar o imprimir.',documentActions(path)+markup);modal.classList.toggle('document-modal',markup.includes('payment-receipt'));$('#print-area').innerHTML=markup;
@@ -492,6 +500,7 @@ document.addEventListener('click',async event=>{
   const target=event.target.closest('[data-action]');if(!target)return;
   const {action,id}=target.dataset;
   try {
+    if(state&&!state.history_loaded&&!['nav','boot','logout','close','mobile-menu','mobile-menu-close'].includes(action)){state=await api('state?history=1');}
     switch(action) {
       case 'clock-check':await openClockGate();break;
       case 'windows-protection-help':windowsProtectionHelp();break;
@@ -502,13 +511,13 @@ document.addEventListener('click',async event=>{
       case 'delete-unused-review':{const [kind,target]=id.split(':');await openUnusedDelete(kind,target);break;}
       case 'settings-section':selectSettingsSection(id);break;
       case 'open-maintenance':rememberSettingsDrafts();page='settings';settingsSection='maintenance';render();break;
-      case 'nav':rememberSettingsDrafts();page=id;filters={};render();break;
+      case 'nav':rememberSettingsDrafts();page=id;filters={};await refresh();break;
       case 'close':modal.close();break;
       case 'boot':await boot();break;
       case 'demo-exit':await closeDemo();break;
       case 'logout':await api('logout',{});forgetSessionDraft();modal.close();await boot();break;
       case 'recovery-notice-ack':await acknowledgeRecoveryNotice();break;
-      case 'year-transition':openYearTransition();break;case 'load-year':await loadYear();break;case 'preview-year':await previewYear();break;case 'confirm-year':await confirmYear();break;case 'year-document':await yearDocument(id);break;case 'payment-plan':openPaymentPlan(id);break;case 'plan-document':await planDocument(id);break;case 'cancel-plan':openVoid('cancel-plan',id);break;case 'import-roster':openImport();break;case 'import-guide':await openImportGuide();break;case 'recovery-help':recoveryHelp();break;case 'crypto-open':openCryptoSetup();break;case 'crypto-prepare':await prepareCrypto();break;case 'crypto-confirm':await confirmCrypto();break;case 'crypto-unlock':await unlockCrypto();break;case 'crypto-print':printRecovery();break;case 'download-encrypted-backup':await downloadEncryptedBackup();break;case 'convert-backup':await convertBackup();break;case 'probe-backup':openProbeBackup();break;case 'run-probe-backup':await runProbeBackup();break;case 'maintenance-help':maintenanceHelp();break;case 'maintenance-review':await maintenanceReview();break;case 'audit-filter':await filterAudit();break;case 'audit-pdf':await exportAudit('pdf');break;case 'audit-csv':await exportAudit('csv');break;case 'backup-now':await backupNow();break;case 'remove-logo':{const form=target.closest('form');form.elements.logo.value='';$('#logo-preview',form).innerHTML=schoolLogo({});break;}case 'preview-import':await previewImport();break;case 'confirm-import':await confirmImport();break;case 'guardian-account':await guardianAccount(id);break;case 'issue-account':await issueGuardian(id,'account');break;case 'issue-solvency':await issueGuardian(id,'solvency');break;case 'guardian-document':await guardianDocument(id);break;case 'open-cash':await openCash();break;case 'cash-document':await cashDocument(id);break;case 'reopen-cash':openVoid('reopen-cash',id);break;case 'guardian':openGuardian(id);break;case 'grade':openGrade(id);break;case 'student':openStudent(id);break;
+      case 'year-transition':openYearTransition();break;case 'load-year':await loadYear();break;case 'preview-year':await previewYear();break;case 'confirm-year':await confirmYear();break;case 'year-document':await yearDocument(id);break;case 'payment-plan':openPaymentPlan(id);break;case 'plan-document':await planDocument(id);break;case 'cancel-plan':openVoid('cancel-plan',id);break;case 'import-roster':openImport();break;case 'import-guide':await openImportGuide();break;case 'recovery-help':recoveryHelp();break;case 'crypto-open':openCryptoSetup();break;case 'crypto-prepare':await prepareCrypto();break;case 'crypto-confirm':await confirmCrypto();break;case 'crypto-unlock':await unlockCrypto();break;case 'crypto-print':printRecovery();break;case 'download-encrypted-backup':await downloadEncryptedBackup();break;case 'convert-backup':await convertBackup();break;case 'snooze-backup-reminder':snoozeBackupReminder();break;case 'probe-backup':openProbeBackup();break;case 'run-probe-backup':await runProbeBackup();break;case 'maintenance-help':maintenanceHelp();break;case 'maintenance-review':await maintenanceReview();break;case 'audit-filter':await filterAudit();break;case 'audit-pdf':await exportAudit('pdf');break;case 'audit-csv':await exportAudit('csv');break;case 'backup-now':await backupNow();break;case 'remove-logo':{const form=target.closest('form');form.elements.logo.value='';$('#logo-preview',form).innerHTML=schoolLogo({});break;}case 'preview-import':await previewImport();break;case 'confirm-import':await confirmImport();break;case 'guardian-account':await guardianAccount(id);break;case 'issue-account':await issueGuardian(id,'account');break;case 'issue-solvency':await issueGuardian(id,'solvency');break;case 'guardian-document':await guardianDocument(id);break;case 'open-cash':await openCash();break;case 'cash-document':await cashDocument(id);break;case 'reopen-cash':openVoid('reopen-cash',id);break;case 'guardian':openGuardian(id);break;case 'grade':openGrade(id);break;case 'student':openStudent(id);break;
       case 'enrollment':await enrollmentDocument(id);break;case 'payment':openPayment(id);break;case 'expense':openExpense();break;
       case 'charge':openCharge(id);break;case 'generate':openGenerate();break;
       case 'rates':openRates();break;case 'account':account(id);break;case 'collection':collection(id);break;case 'followup':openFollowup(id);break;
@@ -516,6 +525,7 @@ document.addEventListener('click',async event=>{
       case 'correct-billing':openBillingCorrection(id);break;
       case 'void-payment':case 'void-expense':case 'cancel-charge':openVoid(action,id);break;
       case 'user':openUser();break;case 'password':openPassword(id);break;case 'receipt':await receipt(id);break;
+      case 'monthly-pdf':case 'monthly-csv':{const month=$('#closing-month').value;if(!month)throw new Error('Selecciona el mes.');await binaryBackup('monthly-report.'+(action==='monthly-pdf'?'pdf':'csv')+'?month='+encodeURIComponent(month));break;}
       case 'daily-report':await openDailyReport();break;case 'directory-report':await openDirectoryReport(id);break;case 'print-receipt':await checkedPrint();break;case 'print-report':await checkedPrint(true);break;
       case 'export-students':openStudentExport();break;
       case 'copy-collection':await navigator.clipboard.writeText($('#collection-text').value);toast('Aviso copiado.');break;
@@ -563,6 +573,7 @@ document.addEventListener('submit',async event=>{
 });
 document.addEventListener('input',event=>{
   const el=event.target;
+  if(el.name==='school_year'&&el.closest('form[data-endpoint="setup"]'))el.dataset.manual='true';
   if(el.id==='collection-text'){const link=$('#wa-collection');if(link){const url=new URL(link.href);url.searchParams.set('text',el.value);link.href=url.href;}}
   if(el.id==='plan-count'){buildPlanRows();return;}
   if(el.closest('form[data-endpoint="correct-billing-start"]')&&el.name==='billing_start')updateBillingCorrection();
@@ -575,6 +586,10 @@ document.addEventListener('input',event=>{
   if(el.closest('form[data-endpoint="payments"], form[data-endpoint="expenses"]'))updateConversion();
 });
 document.addEventListener('change',event=>{
+  const calendarForm=event.target.closest('form[data-endpoint="setup"]');
+  if(calendarForm&&event.target.name==='start_month'&&!calendarForm.elements.school_year.dataset.manual){
+    calendarForm.elements.school_year.value=Number(setupToday.slice(0,4))-(Number(setupToday.slice(5,7))<Number(event.target.value));
+  }
   if(event.target.id==='roster-file'){rosterFile=rosterPreview=undefined;$('#roster-preview').innerHTML='';}
 
   if(event.target.closest('form[data-endpoint="expenses"]')&&event.target.name==='category')
@@ -598,6 +613,7 @@ document.addEventListener('change',event=>{
 modal.addEventListener('click',event=>{if(event.target===modal){const r=modal.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)modal.close();}});
 modal.addEventListener('close',()=>{if(!modal.open){$('#modal-content').replaceChildren();if(modal.dataset.recoveryPrint){$('#print-area').replaceChildren();delete modal.dataset.recoveryPrint;}}});
 async function checkDay() {
+  if(readOnlyInfo)return;
   if(!session||document.hidden)return;
   try {
     const gate=await api('rate-gate');
@@ -628,12 +644,23 @@ function backupLabel(){
   const minutes=Math.max(0,Math.floor((Date.now()-Date.parse(b.local_at))/60000));
   return 'Último respaldo '+(minutes<1?'hace menos de un minuto':minutes<60?`hace ${minutes} min`:minutes<1440?`hace ${Math.floor(minutes/60)} h`:`hace ${Math.floor(minutes/1440)} días`);
 }
+function backupReminderHidden(now=Date.now()){
+  try{const saved=JSON.parse(localStorage.getItem('aula-backup-reminder-snooze')||'null');
+    return saved&&Number.isFinite(saved.at)&&now>=saved.at&&now-saved.at<7*86400000;
+  }catch{return false;}
+}
+function snoozeBackupReminder(){
+  try{localStorage.setItem('aula-backup-reminder-snooze',JSON.stringify({at:Date.now()}));}
+  catch{throw new Error('No se pudo guardar la preferencia en este navegador.');}
+  updateBackupWarnings();toast('Recordatorio oculto durante 7 días en este navegador. Los avisos de errores siguen activos.');
+}
 function backupProblem(){
   const b=state?.backup||gateBackup||{},role=state?.user.role||gateRole;
   if(demoMode||!['admin','cashier'].includes(role))return '';
-  if(!b.alerts?.length)return (b.cloud_declared?'<p class="hint backup-cloud-status">Carpeta de nube declarada por administración · Aula no comprueba la subida. Revisa la sincronización en Drive u otro servicio.</p>':'')+(b.secondary_at?`<p class="hint backup-encryption-status">${esc(externalEncryptionLabel(b))}</p>`:'');
+  const reminder=b.external_probe_reminder?.due&&!backupReminderHidden()?`<p class="hint backup-probe-reminder">${esc(b.external_probe_reminder.message)} ${role==='admin'&&state?btn('Probar respaldo','probe-backup','small'):''} ${btn('Ocultar por 7 días','snooze-backup-reminder','small')}</p>`:'';
+  if(!b.alerts?.length)return reminder; // El estado detallado se consulta en Protección y mantenimiento.
   const action=role==='admin'&&state?btn('Revisar en Configuración','open-maintenance','small'):'<p class="backup-next-step">Pide al administrador que revise las copias de seguridad.</p>';
-  return `<section class="notice backup-warning backup-persistent" role="alert" aria-label="Aviso de respaldos">${icon('shield')}<div><b>Revisa la protección de tus respaldos</b><ul>${b.alerts.map(a=>`<li>${esc(a.message)}</li>`).join('')}</ul><p class="hint">Aula confirma la escritura en la carpeta, no la subida a Drive u otra nube. Revisa la sincronización en su aplicación.</p><p class="hint backup-encryption-status">${esc(externalEncryptionLabel(b))}</p>${action}</div></section>`;
+  return reminder+`<section class="notice backup-warning backup-persistent" role="alert" aria-label="Aviso de respaldos">${icon('shield')}<div><b>Revisa la protección de tus respaldos</b><ul>${b.alerts.map(a=>`<li>${esc(a.message)}</li>`).join('')}</ul><p class="hint">Aula confirma la escritura en la carpeta, no la subida a Drive u otra nube. Revisa la sincronización en su aplicación.</p><p class="hint backup-encryption-status">${esc(externalEncryptionLabel(b))}</p>${action}</div></section>`;
 }
 function updateBackupWarnings(){
   const host=$('#backup-alerts');if(!host)return;
@@ -794,6 +821,7 @@ async function planDocument(id){
 
 function isoDay(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;}
 function dashboardActivity(){
+  if(state.dashboard&&!state.history_loaded)return {due:state.dashboard.due,newDebtors:{length:state.dashboard.new_debtors},paid:[]};
   const today=state.today,end=new Date(today+'T12:00:00'),start=new Date(today+'T12:00:00');end.setDate(end.getDate()+6);start.setDate(start.getDate()-7);
   const due=state.charges.filter(c=>c.balance>0&&c.due_date>=today&&c.due_date<=isoDay(end)).sort((a,b)=>a.due_date.localeCompare(b.due_date)||a.id-b.id);
   const newDebtors=state.students.filter(s=>{const overdue=state.charges.filter(c=>c.student_id===s.id&&c.overdue);return overdue.length&&overdue.every(c=>c.due_date>=isoDay(start));});
@@ -801,15 +829,18 @@ function dashboardActivity(){
   return {due,newDebtors,paid};
 }
 function dashboardOverview({due,newDebtors,paid}){
-  const s=state.summary,amount=paid.reduce((sum,p)=>sum+p.amount,0);
-  const dollars=paid.filter(p=>p.currency==='USD').reduce((sum,p)=>sum+p.received_amount,0);
-  const bolivars=paid.filter(p=>p.currency==='VES').reduce((sum,p)=>sum+p.received_amount,0);
+  const s=state.summary,amount=state.dashboard&&!state.history_loaded?state.dashboard.income:paid.reduce((sum,p)=>sum+p.amount,0);
+  const paidCount=state.dashboard&&!state.history_loaded?state.dashboard.payment_count:paid.length;
+  const dueCount=state.dashboard&&!state.history_loaded?state.dashboard.due_count:due.length;
+  const dueTotal=state.dashboard&&!state.history_loaded?state.dashboard.due_total:due.reduce((sum,c)=>sum+c.balance,0);
+  const dollars=state.dashboard&&!state.history_loaded?state.dashboard.dollars:paid.filter(p=>p.currency==='USD').reduce((sum,p)=>sum+p.received_amount,0);
+  const bolivars=state.dashboard&&!state.history_loaded?state.dashboard.bolivars:paid.filter(p=>p.currency==='VES').reduce((sum,p)=>sum+p.received_amount,0);
   return `<section class="dashboard-overview" aria-label="Resumen de cobros y deudas">
     <div class="dashboard-main-metrics">
       <div class="dashboard-collected">
         <div class="dashboard-metric-label">${icon('payments')}<h2>Cobrado hoy</h2><span class="dashboard-today-tag">Hoy</span></div>
         <div class="dashboard-amount" id="dashboard-today">${usd(amount)}</div>
-        <p class="dashboard-unit">Equivalente en USD · ${paid.length} ${paid.length===1?'cobro':'cobros'}</p>
+        <p class="dashboard-unit">Equivalente en USD · ${paidCount} ${paidCount===1?'cobro':'cobros'}</p>
         <p class="dashboard-received">Recibido: <b>${usd(dollars)}</b> y <b>${bs(bolivars)}</b></p>
       </div>
       <div class="dashboard-overdue">
@@ -827,7 +858,7 @@ function dashboardOverview({due,newDebtors,paid}){
   </section>
   <div class="dashboard-alerts" aria-label="Seguimiento de la semana">
     <button type="button" class="dashboard-alert" data-action="nav" data-id="billing">
-      ${icon('clock')}<span><b>Vencen en los próximos 7 días</b><small>${due.length ? `${due.length} ${due.length===1?'cargo pendiente':'cargos pendientes'} · ${usd(due.reduce((sum,c)=>sum+c.balance,0))} USD` : 'Sin vencimientos pendientes esta semana'}</small></span>${icon('arrow')}
+      ${icon('clock')}<span><b>Vencen en los próximos 7 días</b><small>${dueCount ? `${dueCount} ${dueCount===1?'cargo pendiente':'cargos pendientes'} · ${usd(dueTotal)} USD` : 'Sin vencimientos pendientes esta semana'}</small></span>${icon('arrow')}
     </button>
     <button type="button" class="dashboard-alert" data-action="nav" data-id="arrears" title="Alumnos cuya primera deuda actualmente vencida corresponde a los últimos 7 días">
       ${icon('arrears')}<span><b>Morosos nuevos</b><small>${newDebtors.length ? `${newDebtors.length} ${newDebtors.length===1?'alumno nuevo':'alumnos nuevos'} en mora en los últimos 7 días` : 'Sin nuevos alumnos en mora en los últimos 7 días'}</small></span>${icon('arrow')}
@@ -896,7 +927,7 @@ document.addEventListener('change',async event=>{
 });
 
 function openProbeBackup(){
-  showModal('Probar respaldo','Revisión en una copia temporal. No restaura ni genera mensualidades.',`<p>Selecciona una copia .aulabak o una antigua .sqlite3. El original no se modifica. Convertir crea otra copia cifrada y conserva el archivo anterior.</p><label class="field">Respaldo<input id="probe-backup-file" type="file" accept=".sqlite3,.aulabak"></label><div class="form-grid">${select('Abrir copia con','probe_kind',[['password','Contraseña del respaldo'],['recovery','Clave de recuperación']],'password')}${field('Contraseña o clave de la copia seleccionada','probe_credential','','password','autocomplete="off" maxlength="256"','Déjala vacía si seleccionaste un respaldo antiguo sin cifrar.')} </div><p class="hint">Hasta 32 MB aquí. Para una copia mayor, usa Probar respaldo desde Inicio de Windows.</p><div class="actions">${btn('Comprobar copia','run-probe-backup','primary')}${demoMode?'':btn('Convertir y descargar cifrado','convert-backup')}</div><div id="probe-result" role="status"></div>`);
+  showModal('Probar respaldo','Revisión en una copia temporal. No restaura ni genera mensualidades.',`<p>Selecciona una copia .aulabak o una antigua .sqlite3. El original no se modifica. Convertir crea otra copia cifrada y conserva el archivo anterior.</p><label class="field">Respaldo<input id="probe-backup-file" type="file" accept=".sqlite3,.aulabak"></label><div class="form-grid">${select('Abrir copia con','probe_kind',[['password','Contraseña del respaldo'],['recovery','Clave de recuperación']],'password')}${field('Contraseña o clave de la copia seleccionada','probe_credential','','password','autocomplete="off" maxlength="256"','Déjala vacía si seleccionaste un respaldo antiguo sin cifrar.')} </div><p class="hint">Hasta 32 MB aquí. Para una copia mayor, usa Probar respaldo desde Inicio de Windows.</p><div class="actions">${btn('Comprobar copia','run-probe-backup','primary')}${demoMode?'':btn('Convertir y descargar cifrado','convert-backup')}</div><label class="confirm-check"><input type="checkbox" id="probe-external"> Seleccioné una copia del segundo destino, USB o nube.</label><div id="probe-result" role="status"></div>`);
 }
 function externalEncryptionLabel(b){
   if(!b?.secondary_at)return 'Última copia externa: sin copia confirmada.';
@@ -958,8 +989,10 @@ async function runProbeBackup(){
   const button=$('[data-action="run-probe-backup"]',modal);button.disabled=true;
   try{
     const content=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result.split(',')[1]);reader.onerror=()=>reject(new Error('No se pudo leer la copia.'));reader.readAsDataURL(file);});
-    const s=await api('probe-backup',{content,credential:modal.querySelector('[name=probe_credential]').value,credential_kind:modal.querySelector('[name=probe_kind]').value});
-    $('#probe-result').innerHTML=`<h3>Respaldo comprobado</h3><p>Integridad y referencias correctas · esquema ${s.schema}.</p><p>${esc(s.audit?.message||'Bitácora antigua sin cadena de huellas.')}</p><p>${s.students} alumnos · ${s.payments} pagos (${s.voided_payments} anulados).</p><p>Último recibo: ${s.last_payment?esc(s.last_payment.receipt)+' · '+dateLabel(s.last_payment.paid_on):'Sin pagos'}.</p><p>Saldo pendiente registrado: <b>${usd(s.balance_usd)}</b>.</p><p class="hint">${esc(s.creation_note)} No se modificaron ni restauraron datos. ${s.unencrypted?'Advertencia: respaldo antiguo sin cifrar.':'Cifrado autenticado y comprobado.'}</p>`;
+    const external=$('#probe-external').checked;
+    const s=await api('probe-backup',{content,external_copy:external,credential:modal.querySelector('[name=probe_credential]').value,credential_kind:modal.querySelector('[name=probe_kind]').value});
+    state.backup=await api('backup-status');updateBackupWarnings();
+    $('#probe-result').innerHTML=`<h3>Respaldo comprobado</h3><p>${external?'Prueba externa registrada. El recordatorio se reiniciará a los 35 días.':'Para reiniciar el recordatorio, marca que seleccionaste una copia del USB o la nube y vuelve a probarla.'}</p><p>Integridad y referencias correctas · esquema ${s.schema}.</p><p>${esc(s.audit?.message||'Bitácora antigua sin cadena de huellas.')}</p><p>${s.students} alumnos · ${s.payments} pagos (${s.voided_payments} anulados).</p><p>Último recibo: ${s.last_payment?esc(s.last_payment.receipt)+' · '+dateLabel(s.last_payment.paid_on):'Sin pagos'}.</p><p>Saldo pendiente registrado: <b>${usd(s.balance_usd)}</b>.</p><p class="hint">${esc(s.creation_note)} No se modificaron ni restauraron datos. ${s.unencrypted?'Advertencia: respaldo antiguo sin cifrar.':'Cifrado autenticado y comprobado.'}</p>`;
   }catch(error){$('#probe-result').innerHTML=`<p class="text-red">${esc(error.message)}</p>`;}finally{button.disabled=false;}
 }
 

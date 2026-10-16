@@ -128,7 +128,7 @@ def renderer(window, directory):
             core = form.browser.webview.CoreWebView2
             settings = core.Environment.CreatePrintSettings()
             settings.PageWidth, settings.PageHeight = width, height
-            settings.ScaleFactor = 1.0
+            # Escala predeterminada de WebView2; no se impone al usuario.
             settings.MarginTop = settings.MarginBottom = 0
             settings.MarginLeft = settings.MarginRight = 0
             settings.ShouldPrintBackgrounds = True
@@ -147,7 +147,7 @@ def renderer(window, directory):
             raise RuntimeError('WebView2 cambió las dimensiones físicas del comprobante.')
         if len(re.findall(rb'/Type\s*/Page\b', printed)) != 1:
             raise RuntimeError('WebView2 añadió páginas al comprobante.')
-        print(f'PASS RECIBO: WebView2 {name}, {width * 72:g} x {height * 72:g} puntos, una página, escala 100 %.')
+        print(f'PASS RECIBO: WebView2 {name}, {width * 72:g} x {height * 72:g} puntos, una página, escala predeterminada.')
     window.evaluate_js("setReceiptPaper('half-letter')")
     if os.environ.get('AULA_RECEIPT_REPORT_DIR'):
         evidence = Path(os.environ['AULA_RECEIPT_REPORT_DIR'])
@@ -163,3 +163,43 @@ def renderer(window, directory):
     if not found.is_set() or selected:
         raise RuntimeError('No se comprobó el selector de archivos de la ventana Windows.')
     print('PASS B2: PDF administrativo, impresión PDF nativa WebView2 y selector Windows abierto/cancelado.')
+
+
+def trial_cleanup(directory):
+    """Bundled-executable smoke, strictly inside its disposable self-test directory."""
+    from contextlib import closing
+    from .db import initialize,connect,hash_password,record_payment,local_today,next_record_id
+    from .clock_guard import ClockGuard
+    from .backup_keys import prepare,confirm
+    from .audit_chain import local_status
+    from .trial_payment_cleanup import preview,clear,CONFIRMATION
+    from .backup_inspection import probe_backup
+    folder=Path(directory)/'limpieza-ficticia';path=folder/'colegio.sqlite3'
+    initialize(path);ClockGuard(path).require()
+    pending,recovery=prepare(folder,'FICTICIO-limpieza-respaldo-2026');confirm(folder,pending)
+    today=local_today().isoformat();year=local_today().year
+    with closing(connect(path)) as db,db:
+        db.execute("INSERT INTO users VALUES(1,'admin-ficticio','Prueba local',?,'admin')",(hash_password('FICTICIO-clave-prueba-2026'),))
+        db.execute("INSERT INTO guardians(id,name,document) VALUES(1,'Representante ficticio','PRUEBA-V-1')")
+        db.execute("INSERT INTO grades(id,name) VALUES(1,'Grado ficticio')")
+        db.execute("INSERT INTO students(id,name,document,birth_date,guardian_id,grade_id,school_year,monthly_fee,discount,status,enrollment_start,enrollment_end) VALUES(1,'Alumno ficticio','PRUEBA-A-1','2015-01-01',1,1,?,10000,0,'active',?,?)",(year,f'{year}-01-01',f'{year}-12-31'))
+        db.execute("INSERT INTO charges(student_id,period,concept,amount,due_date) VALUES(1,?,'Concepto ficticio',10000,?)",(today[:7],today))
+        record_payment(db,dict(student_id=1,amount='10',currency='USD',method='Efectivo',paid_on=today,request_key='ficticio-antes'),1)
+    with closing(connect(path)) as db,db:
+        for kind in ('account','solvency'):
+            db.execute('INSERT INTO guardian_documents(snapshot_json,created_at,created_by) VALUES(?,?,1)',(json.dumps({'kind':kind}),today))
+        db.execute("INSERT INTO cash_closures(closed_on,snapshot_json,created_at,created_by) VALUES(?,'{}',?,1)",(today,today))
+    review=preview(folder)
+    result=clear(folder,username='admin-ficticio',password='FICTICIO-clave-prueba-2026',preview_hash=review['preview_hash'],
+        confirmation=CONFIRMATION,trial_only=True,documents_confirmed=True,reason='Preparación ficticia antes de producción')
+    assert probe_backup(result['backup']['path'],'FICTICIO-limpieza-respaldo-2026')['payments']==1
+    with closing(connect(path)) as db,db:
+        from .maintenance import review_database
+        assert review_database(db)['ok']
+        assert next_record_id(db,'payments')==1 and local_status(db)['ok']
+        assert db.execute('SELECT COUNT(*) FROM students').fetchone()[0]==1
+        assert db.execute('SELECT COUNT(*) FROM users').fetchone()[0]==1
+        assert db.execute('SELECT COUNT(*) FROM guardian_documents').fetchone()[0]==0
+        assert db.execute('SELECT COUNT(*) FROM cash_closures').fetchone()[0]==0
+        assert record_payment(db,dict(student_id=1,amount='10',currency='USD',method='Efectivo',paid_on=today,request_key='ficticio-produccion'),1)['id']==1
+    print('PASS LIMPIEZA: ejecutable instalado, respaldo cifrado verificable, documentos de prueba retirados, alumno y usuario conservados, bitácora válida y primer recibo R-000001.',flush=True)

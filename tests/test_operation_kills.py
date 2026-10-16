@@ -131,3 +131,39 @@ if stage=='after_commit':pause()
                     self.assertTrue(local_status(db)['ok'])
                     events = [json.loads(r[0]) for r in db.execute("SELECT details FROM audit WHERE action='delete-unused-record'")]
                     self.assertEqual(any(e['id']==target for e in events), stage=='after_commit')
+
+    def test_encrypted_tier_process_kills_leave_previous_or_complete_copy(self):
+        from colegio.backup_crypto import MAGIC
+        root=self.f.path.parent
+        source=root/'cipher-source.aulabak';destination=root/'cipher-published.aulabak'
+        old=MAGIC+b'previous-complete-ciphertext';new=MAGIC+b'new-complete-ciphertext'*10000
+        source.write_bytes(new)
+        script=r'''
+import sys,time
+from pathlib import Path
+import colegio.backup_tiers as tiers
+stage=sys.argv[3];marker=Path(sys.argv[4])
+def pause():
+ marker.write_text(stage)
+ while True:time.sleep(.02)
+original_copy=tiers.shutil.copyfile
+original_replace=tiers.os.replace
+def copy(source,target):
+ if stage=='during_copy':
+  with open(source,'rb') as saved,open(target,'wb') as output:output.write(saved.read(64));output.flush()
+  pause()
+ return original_copy(source,target)
+def replace(source,target):
+ if stage=='before_publish':pause()
+ result=original_replace(source,target)
+ if stage=='after_publish':pause()
+ return result
+tiers.shutil.copyfile=copy;tiers.os.replace=replace
+tiers.copy_cipher(sys.argv[1],sys.argv[2])
+'''
+        for stage in ('during_copy','before_publish','after_publish'):
+            with self.subTest(stage=stage):
+                destination.write_bytes(old);marker=root/('tier-kill-'+stage)
+                kill_at(self,script,[source,destination,stage],marker)
+                self.assertEqual(destination.read_bytes(),new if stage=='after_publish' else old)
+                self.assertEqual(source.read_bytes(),new)

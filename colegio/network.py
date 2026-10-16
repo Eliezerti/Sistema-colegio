@@ -1,4 +1,4 @@
-"""Explicit HTTPS origin for a private Tailscale Serve proxy to the loopback server."""
+"""Local Host/Origin protection and explicit rejection of retired remote access."""
 import argparse
 import json
 import re
@@ -26,7 +26,9 @@ def private_origin(value):
 
 class PrivateAccess:
     def __init__(self, origin=''):
-        self.origin=private_origin(origin) if origin else ''
+        if origin:
+            raise ValueError('El acceso privado fue retirado. Usa Aula en esta PC o el escritorio remoto de Windows.')
+        self.origin=''
         self.hostname=urlsplit(self.origin).hostname if self.origin else ''
 
     def remote_host(self, host):
@@ -61,30 +63,11 @@ def load_config(path):
 
 
 def save_config(directory, origin):
-    origin=private_origin(origin)
-    path=Path(directory)/'red.json'
-    path.parent.mkdir(parents=True,exist_ok=True)
-    temporary=path.with_suffix('.tmp')
-    temporary.write_text(json.dumps({'version':1,'remote_origin':origin},ensure_ascii=False),encoding='utf-8')
-    temporary.replace(path)
-    return path
+    raise ValueError('El acceso privado fue retirado. Usa el escritorio remoto de Windows.')
 
 
 def main():
-    parser=argparse.ArgumentParser(description='Configura el enlace privado para el servidor del colegio.')
-    parser.add_argument('--data-dir',required=True)
-    parser.add_argument('--origin')
-    args=parser.parse_args()
-    print('Ejecuta esta configuración solo en la PC principal del colegio.')
-    print('Instala Tailscale y configura Tailscale Serve; copia su enlace https://equipo.red.ts.net.')
-    origin=args.origin if args.origin is not None else input('Enlace HTTPS privado del colegio: ')
-    try:
-        path=save_config(args.data_dir,origin)
-    except (OSError,ValueError) as error:
-        raise SystemExit(str(error))
-    print(f'Configuración guardada: {path}')
-    print('Cierra Aula y abre Iniciar-Red.bat. Los usuarios y los datos del colegio se conservan.')
-    print('En todas las laptops, conecta Tailscale y abre: '+private_origin(origin))
+    raise SystemExit('El acceso privado fue retirado. Usa el escritorio remoto de Windows.')
 
 
 if __name__=='__main__':

@@ -11,8 +11,16 @@ $Service = Get-Service WinDefend -ErrorAction Stop
 if ($Service.Status -ne 'Running') {
     Start-Service WinDefend -ErrorAction Stop
 }
-$Status = Get-MpComputerStatus
+# A newly started hosted service can report disabled until its engine initializes.
+# Wait for real enabled status; this never skips scanning or weakens preferences.
+$DefenderReadyBy = [DateTime]::UtcNow.AddSeconds(60)
+do {
+    $Status = Get-MpComputerStatus
+    if ($Status.AMServiceEnabled -and $Status.AntivirusEnabled) { break }
+    Start-Sleep -Seconds 3
+} while ([DateTime]::UtcNow -lt $DefenderReadyBy)
 if (-not $Status.AMServiceEnabled -or -not $Status.AntivirusEnabled) {
+    $Status | Select-Object AMRunningMode, AMServiceEnabled, AntivirusEnabled, RealTimeProtectionEnabled | Format-List | Out-String | Write-Host
     throw 'Microsoft Defender no está activo. No se ha verificado el archivo y no se publicará.'
 }
 try {

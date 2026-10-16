@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .demo import DemoWorkspace
-from .network import private_origin, load_config, save_config
+from .network import private_origin
 from .server import ROOT, open_school
 from .storage import DataLock
 from .branding import SCHOOL_NAME
@@ -73,15 +73,15 @@ def read_desktop_config(directory):
 
 
 def write_desktop_config(directory,mode,origin=''):
-    if mode not in ('primary','client'):raise ValueError('Selecciona el tipo de computadora.')
+    if mode != 'primary' or origin:
+        raise ValueError('El acceso privado fue retirado. Usa el escritorio remoto de Windows.')
     origin=private_origin(origin) if origin else ''
     if mode=='client' and not origin:raise ValueError('Indica el enlace privado del colegio para conectarte.')
     directory=Path(directory);directory.mkdir(parents=True,exist_ok=True)
     # Never change the role/link while this PC is serving its real database.
     with DataLock(directory):
         if mode=='primary':
-            if origin:save_config(directory,origin)
-            else:(directory/'red.json').unlink(missing_ok=True)
+            (directory/'red.json').unlink(missing_ok=True)
         value={'version':1,'mode':mode,'remote_url':origin if mode=='client' else ''}
         path=directory/'escritorio.json';temporary=path.with_suffix('.tmp')
         temporary.write_text(json.dumps(value,ensure_ascii=False),encoding='utf-8');temporary.replace(path)
@@ -89,33 +89,10 @@ def write_desktop_config(directory,mode,origin=''):
 
 
 def configure(directory):
-    import tkinter as tk
-    from tkinter import ttk, messagebox
-    try:current=read_desktop_config(directory) or {'mode':'primary','remote_url':''}
-    except ValueError:current={'mode':'primary','remote_url':''}
-    origin=current['remote_url']
-    if current['mode']=='primary' and (Path(directory)/'red.json').exists():
-        try:origin=load_config(Path(directory)/'red.json')
-        except ValueError:origin=''
-    root=tk.Tk();root.title('Configurar Aula');root.resizable(False,False)
-    body=ttk.Frame(root,padding=24);body.pack(fill='both',expand=True)
-    ttk.Label(body,text=TITLE,font=('Segoe UI',14,'bold'),wraplength=490).pack(anchor='w',pady=(0,15))
-    ttk.Label(body,text='¿Cómo usarás esta computadora?',font=('Segoe UI',11,'bold')).pack(anchor='w')
-    mode=tk.StringVar(value=current['mode']);url=tk.StringVar(value=origin);result=[]
-    ttk.Radiobutton(body,text='PC principal · aquí se guardan los datos del colegio',variable=mode,value='primary').pack(anchor='w',pady=8)
-    ttk.Radiobutton(body,text='Conectarme al colegio · desde una laptop o desde casa',variable=mode,value='client').pack(anchor='w',pady=(0,16))
-    ttk.Label(body,text='Enlace privado del colegio · HTTPS').pack(anchor='w')
-    ttk.Entry(body,textvariable=url,width=65).pack(fill='x',pady=6)
-    ttk.Label(body,text='En la PC principal puedes dejarlo vacío para uso local.\nPara compartirlo, configura Tailscale Serve y copia su enlace.\nLas otras computadoras deben tener Tailscale conectado.',wraplength=490).pack(anchor='w',pady=(0,18))
-    def save():
-        try:result.append(write_desktop_config(directory,mode.get(),url.get().strip()))
-        except (ValueError,RuntimeError,OSError) as error:messagebox.showerror('Revisa la configuración',str(error),parent=root);return
-        root.destroy()
-    buttons=ttk.Frame(body);buttons.pack(fill='x')
-    ttk.Button(buttons,text='Cancelar',command=root.destroy).pack(side='left')
-    ttk.Button(buttons,text='Guardar configuración',command=save).pack(side='right')
-    root.mainloop()
-    return result[0] if result else None
+    from tkinter import messagebox
+    messagebox.showinfo('Aula · uso local',
+        'Aula funciona en esta PC. Configura el colegio dentro de Aula. '
+        'Para soporte utiliza el escritorio remoto de Windows.')
 
 
 class DesktopHost:
@@ -128,7 +105,7 @@ class DesktopHost:
     def __enter__(self):
         try:
             directory=Path(self.stack.enter_context(DemoWorkspace(self.demo_root))) if self.demo else self.directory
-            origin=load_config(directory/'red.json') if not self.demo and (directory/'red.json').exists() else ''
+            origin=''
             self.server=self.stack.enter_context(open_school(directory/'colegio.sqlite3',self.port,self.demo,origin))
             self.server.daemon_threads=False
             self.directory=directory
@@ -182,6 +159,19 @@ def probe_dialog():
         credentials=backup_credentials_dialog(root,file)
         if credentials is False:return
         s=probe_backup(file,*credentials);last=s['last_payment']
+        if messagebox.askyesno('Copia externa',
+                '¿Deseas registrar esta comprobación como prueba de una copia externa en la base local de esta PC?',parent=root):
+            database=data_directory()/'colegio.sqlite3'
+            if not database.is_file():raise ValueError('La copia está verificada; esta PC no tiene base local donde registrar el recordatorio.')
+            from contextlib import closing
+            from .db import connect,audit
+            from .audit_chain import require
+            from .clock_guard import get_clock
+            from .backup_probe_record import record
+            with closing(connect(database)) as db,db:
+                require(db);get_clock(database).require()
+                audit(db,None,'external_backup_tested',{'sha256':s['sha256'],'external_declared':True,'source':'Windows local'})
+            record(database,s['sha256'])
         protection='Advertencia: respaldo antiguo sin cifrar.' if s['unencrypted'] else 'Cifrado autenticado y comprobado.'
         messagebox.showinfo('Respaldo comprobado','Integridad y referencias: correctas.\nEsquema: '+str(s['schema'])+'\nAlumnos: '+str(s['students'])+'\nPagos: '+str(s['payments'])+'\nÚltimo recibo: '+(last['receipt']+' · '+last['paid_on'] if last else 'Sin pagos')+'\nSaldo pendiente USD: '+f"{s['balance_usd']/100:.2f}"+'\n\n'+s['creation_note']+'\n'+s.get('audit',{}).get('message','Bitácora antigua sin cadena de huellas.')+'\n'+protection+' No se modificó ni se restauró ninguna base.',parent=root)
     finally:root.destroy()
@@ -270,11 +260,11 @@ def tray_icon(window,quit_app):
     return icon
 
 
-def launch_window(url,*,host=None,demo=False,storage=None,smoke=False):
+def launch_window(url,*,host=None,demo=False,storage=None,smoke=False,read_only=False):
     import webview
     from webview.menu import Menu,MenuAction
     webview.settings['ALLOW_DOWNLOADS']=True
-    window=webview.create_window(('PRUEBAS · ' if demo else '')+TITLE,url,width=1280,height=820,min_size=(860,600),hidden=smoke)
+    window=webview.create_window(('SOLO LECTURA · ' if read_only else 'PRUEBAS · ' if demo else '')+TITLE,url,width=1280,height=820,min_size=(860,600),hidden=smoke)
     force_close=threading.Event();tray=None
     def quit_app():
         if force_close.is_set():return
@@ -293,7 +283,7 @@ def launch_window(url,*,host=None,demo=False,storage=None,smoke=False):
             try:
                 # Exercise the real Windows renderer, bundled JS and image.
                 for _ in range(100):
-                    ready=window.evaluate_js("Boolean(document.querySelector('form') && document.querySelector('.brand img,.brand .school-placeholder') && typeof api==='function')")
+                    ready=window.evaluate_js("Boolean(document.querySelector('.layout') && document.querySelector('#readonly-banner') && state?.read_only && state?.user.role==='reader')" if read_only else "Boolean(document.querySelector('form') && document.querySelector('.brand img,.brand .school-placeholder') && typeof api==='function')")
                     if ready:break
                     time.sleep(.1)
                 if not ready:raise RuntimeError('La interfaz de escritorio no cargó el formulario, logo y JavaScript.')
@@ -310,7 +300,7 @@ def launch_window(url,*,host=None,demo=False,storage=None,smoke=False):
                     if not host.thread.is_alive():raise RuntimeError('El servidor se detuvo al ocultar la ventana.')
                 if not demo:
                     from .desktop_checks import renderer
-                    renderer(window, host.directory)
+                    renderer(window, Path(storage).parent if read_only else host.directory)
                 smoke_result.append(True)
             except Exception:logging.exception('Windows desktop smoke failed')
             finally:force_close.set();window.destroy()
@@ -320,7 +310,7 @@ def launch_window(url,*,host=None,demo=False,storage=None,smoke=False):
     smoke_result=[]
     try:
         menu=[Menu('Colegio',[MenuAction('Salir y cerrar Aula',quit_app)])]
-        webview.start(monitor,gui='edgechromium',private_mode=demo or smoke,storage_path=str(storage) if storage else None,menu=menu)
+        webview.start(monitor,gui='edgechromium',private_mode=demo or smoke or read_only,storage_path=str(storage) if storage else None,menu=menu)
     finally:
         force_close.set()
         if tray:tray.stop()
@@ -363,26 +353,92 @@ def self_test(demo=False):
             assert probe_backup(cipher,recovery,'recovery')['integrity']=='ok'
             launch_window(host.url,host=host,demo=demo,storage=host.directory/'webview',smoke=True)
         if demo and disposable.exists():raise RuntimeError('No se eliminaron los datos de prueba al cerrar la ventana.')
+        if not demo:
+            from .desktop_checks import trial_cleanup
+            trial_cleanup(temp)
+
+
+def self_test_copy():
+    from .db import initialize
+    from .storage import consistent_backup
+    from .read_only import open_copy
+    from .backup_keys import prepare,confirm
+    from .backup_export import write_encrypted
+    setup_logging(Path(tempfile.gettempdir())/'AulaColegio-Compilacion')
+    with tempfile.TemporaryDirectory(prefix='aula-windows-copy-smoke-') as temp:
+        directory=Path(temp);source=directory/'origen.sqlite3';initialize(source)
+        snapshot=directory/'snapshot.sqlite3';consistent_backup(source,snapshot)
+        keys=directory/'keys';password='FICTICIO-consulta-nativa-2026'
+        pending,_=prepare(keys,password);confirm(keys,pending)
+        cipher=directory/'copia.aulabak';write_encrypted(snapshot,cipher,keys)
+        original=cipher.read_bytes()
+        with open_copy(cipher,password) as server:
+            disposable=Path(server.db_path).parent
+            thread=threading.Thread(target=server.serve_forever);thread.start()
+            try:
+                launch_window(f'http://127.0.0.1:{server.server_port}/?view_token={server.launch}',
+                    storage=disposable/'webview',smoke=True,read_only=True)
+            finally:server.shutdown();thread.join()
+        assert not disposable.exists(),'La consulta nativa dejó el temporal abierto.'
+        assert cipher.read_bytes()==original,'La consulta cambió el archivo de origen.'
+    print('PASS COPIA: WebView2 real, copia cifrada, aviso permanente, perfil Consulta y temporal eliminado.',flush=True)
 
 
 def main():
     parser=argparse.ArgumentParser(description='Aplicación de escritorio del colegio.')
     actions=parser.add_mutually_exclusive_group()
-    for name in ('demo','configure','restore','reset-password','data-folder','test-backup','self-test','self-test-demo'):
+    for name in ('clear-trial-payments','demo','view-copy','configure','unlock-login','restore','reset-password','data-folder','test-backup','self-test','self-test-demo','self-test-copy'):
         actions.add_argument('--'+name,action='store_true')
     args=parser.parse_args()
     directory=None
     try:
+        if args.self_test_copy:
+            self_test_copy();return
         if args.self_test or args.self_test_demo:
             self_test(demo=args.self_test_demo);return
+        if args.view_copy:
+            from tkinter import Tk,filedialog
+            from .read_only import open_copy
+            root=Tk();root.withdraw()
+            try:
+                source=filedialog.askopenfilename(parent=root,title='Abrir copia en solo lectura',filetypes=[('Respaldo de Aula','*.aulabak *.sqlite3')])
+                if not source:return
+                credentials=backup_credentials_dialog(root,source)
+                if credentials is False:return
+            finally:root.destroy()
+            with open_copy(source,*credentials) as server:
+                thread=threading.Thread(target=server.serve_forever);thread.start()
+                try:launch_window(f'http://127.0.0.1:{server.server_port}/?view_token={server.launch}',
+                    storage=Path(server.db_path).parent/'webview',read_only=True)
+                finally:server.shutdown();thread.join()
+            return
         if args.test_backup:
             probe_dialog();return
         directory=data_directory();setup_logging(directory)
         if args.data_folder:directory.mkdir(parents=True,exist_ok=True);os.startfile(directory);return
+        if args.clear_trial_payments:
+            current=read_desktop_config(directory)
+            if current and current['mode']=='client':raise ValueError('Esta operación se realiza en la PC principal del colegio.')
+            from .trial_payment_cleanup import dialog
+            dialog(directory);return
         if args.restore or args.reset_password:
             current=read_desktop_config(directory)
             if current and current['mode']=='client':raise ValueError('Esta computadora se conecta al colegio. La recuperación se hace en la PC principal.')
             recovery(directory,'restore' if args.restore else 'password');return
+        if args.unlock_login:
+            from tkinter import Tk, simpledialog, messagebox
+            from .local_login import issue
+            root=Tk();root.withdraw()
+            try:
+                username=simpledialog.askstring('Desbloquear acceso local','Usuario de Administración:',parent=root)
+                if not username:return
+                password=simpledialog.askstring('Desbloquear acceso local','Contraseña actual:',show='*',parent=root)
+                if password is None:return
+                code=issue(directory,username,password)
+                simpledialog.askstring('Código válido por dos minutos',
+                    'Copia este código en el login de Aula. Se usa una sola vez:',initialvalue=code,parent=root)
+            finally:root.destroy()
+            return
         if args.configure:configure(directory);return
         demo=args.demo
         with WindowsInstance(demo) as first:
@@ -392,12 +448,12 @@ def main():
                 # A fresh desktop install works on this PC without a network wizard.
                 config=write_desktop_config(directory,'primary')
             if config['mode']=='client':
-                launch_window(config['remote_url'],storage=directory/'webview-cliente');return
+                raise ValueError('Esta PC tenía acceso privado. Abre Aula en la PC del colegio mediante el escritorio remoto de Windows. No se creó una base local.')
             with DesktopHost(directory,demo=demo) as host:
                 launch_window(host.url,host=host,demo=demo,storage=host.directory/'webview')
     except (Exception,SystemExit) as error:
         logging.exception('No se pudo iniciar o completar la operación de escritorio')
-        if args.self_test or args.self_test_demo:raise
+        if args.self_test or args.self_test_demo or args.self_test_copy:raise
         import tkinter as tk
         from tkinter import messagebox
         root=tk.Tk();root.withdraw()

@@ -1,3 +1,4 @@
+const {scratch}=require('./browser_paths.cjs');
 // Optional end-to-end validation. Requires Playwright and Chromium.
 // Run only against a NEW temporary data directory: creates fictional records.
 const {chromium} = require('playwright');
@@ -25,7 +26,7 @@ function printedTextLayout(pdf){
   const page=await context.newPage(), errors=[];
   let expectedProbeError=false,probeErrors=0;
   const expectedSessionError={active:false};
-  const cloudFolder=fs.mkdtempSync('/tmp/aula-cloud-browser-');
+  const cloudFolder=fs.mkdtempSync(scratch('aula-cloud-browser-'));
   page.on('pageerror',error=>errors.push(error.message));
   page.on('console',msg=>{if(msg.type()==='error'){
     if(expectedSessionError.active&&msg.location().url.endsWith('/api/session-status')&&msg.text().includes('401 (Unauthorized)')){}
@@ -35,9 +36,9 @@ function printedTextLayout(pdf){
   const click=async action=>page.locator(`[data-action="${action}"]`).first().click();
   const fill=async (name,value)=>page.locator(`dialog[open] [name="${name}"]`).fill(value);
   const submit=async()=>{await page.locator('dialog[open] button[type="submit"]').click();await page.waitForFunction(()=>!document.querySelector('dialog').open);};
-  const nav=async id=>{if(page.viewportSize().width>700)await page.waitForFunction(()=>!document.querySelector('.sidebar')?.inert);if(await page.locator('.sidebar').evaluate(el=>el.inert))await click('mobile-menu');await page.locator(`.nav-button[data-id="${id}"]`).click();};
+  const nav=async id=>{if(page.viewportSize().width>700)await page.waitForFunction(()=>!document.querySelector('.sidebar')?.inert);if(await page.locator('.sidebar').evaluate(el=>el.inert))await click('mobile-menu');await page.locator(`.nav-button[data-id="${id}"]`).click();await page.locator(`.nav-button.active[data-id="${id}"]`).waitFor();};
   const assertRetired=async role=>{
-    const data=await page.evaluate(async()=>await(await fetch('/api/state')).json());
+    const data=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());
     assert.equal(data.user.role,role);
     for(const key of ['employees','positions','payroll_plans'])assert.equal(key in data,false);
     assert.equal(await page.locator('.nav-button[data-id="employees"]').count(),0);
@@ -47,6 +48,15 @@ function printedTextLayout(pdf){
   try {
     await page.goto(process.env.AULA_TEST_URL||'http://127.0.0.1:8765');
     await page.locator('.brand .school-placeholder').waitFor();
+    // First-start calendar follows the server's Venezuelan date and chosen start month.
+    await page.evaluate(()=>{setupToday='2027-01-15';auth(true);});
+    assert.equal(await page.locator('.auth-form [name="school_year"]').inputValue(),'2026');
+    await page.locator('.auth-form [name="start_month"]').selectOption('1');
+    assert.equal(await page.locator('.auth-form [name="school_year"]').inputValue(),'2027');
+    await page.locator('.auth-form [name="school_year"]').fill('2025');
+    await page.locator('.auth-form [name="start_month"]').selectOption('9');
+    assert.equal(await page.locator('.auth-form [name="school_year"]').inputValue(),'2025');
+    await page.evaluate(async()=>{setupToday=(await api('session')).today;auth(true);});
     await page.getByLabel('Nombre del colegio',{exact:true}).fill('Colegio de prueba');
     await page.getByLabel('Nombre del administrador').fill('María Administradora');
     await page.getByLabel('Usuario',{exact:true}).fill('admin');
@@ -92,9 +102,9 @@ function printedTextLayout(pdf){
     await page.locator('[data-action="audit-filter"]').click();
     await page.waitForFunction(()=>auditView?.entries.length>0);
     const auditDownload=page.waitForEvent('download');await page.locator('[data-action="audit-csv"]').click();
-    await(await auditDownload).saveAs('/tmp/aula-audit.csv');assert.match(fs.readFileSync('/tmp/aula-audit.csv','utf8'),/setup/);
+    await(await auditDownload).saveAs(scratch('aula-audit.csv'));assert.match(fs.readFileSync(scratch('aula-audit.csv'),'utf8'),/setup/);
     const auditPdfDownload=page.waitForEvent('download');await page.locator('[data-action="audit-pdf"]').click();
-    await(await auditPdfDownload).saveAs('/tmp/aula-audit.pdf');assert.ok(fs.readFileSync('/tmp/aula-audit.pdf').subarray(0,4).equals(Buffer.from('%PDF')));
+    await(await auditPdfDownload).saveAs(scratch('aula-audit.pdf'));assert.ok(fs.readFileSync(scratch('aula-audit.pdf')).subarray(0,4).equals(Buffer.from('%PDF')));
     await page.getByRole('tab',{name:'Bitácora',exact:true}).press('Home');
     assert.equal(await page.getByRole('tab',{name:'Identidad y calendario',exact:true}).getAttribute('aria-selected'),'true');
     assert.equal(await page.getByLabel('Nombre del colegio').inputValue(),'Borrador de identidad');
@@ -111,7 +121,7 @@ function printedTextLayout(pdf){
     assert.equal((await page.evaluate(()=>api('state'))).settings.backup_directory,'','Identity must not save the destination draft');
     // Simulate only the physical-disk diagnostic of a virtual Drive unit.
     // Declaration, authorization and audit use the real server.
-    await page.route('**/api/state',async route=>{
+    await page.route('**/api/state*',async route=>{
       const response=await route.fetch();const data=await response.json();
       data.backup.protection.disk_relation={status:'unknown'};
       data.backup.alerts=data.backup.alerts.filter(a=>!['same_disk','disk_unknown'].includes(a.code));
@@ -133,7 +143,7 @@ function printedTextLayout(pdf){
     assert.equal(await page.locator('#crypto-recovery').count(),0);
     assert.equal(await page.locator('#print-area').innerText(),'','Recovery print must be removed after confirmation');
     assert.equal(await page.evaluate(()=>JSON.stringify(localStorage).includes('FICTICIO-respaldo-navegador-2026')),false);
-    await page.screenshot({path:'/tmp/aula-cifrado-configuracion.png',fullPage:true});
+    await page.screenshot({path:scratch('aula-cifrado-configuracion.png'),fullPage:true});
     assert.equal(await page.getByLabel('Ruta completa de la carpeta de copias').inputValue(),cloudFolder,'Saving identity must keep the destination draft');
     await page.getByLabel('Ruta completa de la carpeta de copias').fill(cloudFolder);
     await page.locator('form[data-endpoint="backup-directory"] button[type="submit"]').click();
@@ -142,14 +152,24 @@ function printedTextLayout(pdf){
     await click('backup-cloud-declare');
     await page.locator('dialog[open] input[name="reviewed"]').check();await submit();
     assert.equal(await page.locator('#backup-alerts .backup-persistent').count(),0);
-    assert.match(await page.locator('#backup-alerts .backup-cloud-status').innerText(),/Aula no comprueba la subida/);
+    assert.equal(await page.locator('#backup-alerts .backup-cloud-status').count(),0);
+    assert.match(await page.locator('#protection-status').innerText(),/Aula no comprueba si los archivos llegaron a la nube/);
     await page.evaluate(()=>window.scrollTo(0,0));
-    await page.screenshot({path:'/tmp/aula-settings-maintenance-tabs.png'});
+    await page.screenshot({path:scratch('aula-settings-maintenance-tabs.png')});
     await settingsTab('Identidad y calendario');
-    await page.screenshot({path:'/tmp/aula-settings-identity-tabs.png'});
+    await page.screenshot({path:scratch('aula-settings-identity-tabs.png')});
     await settingsTab('Protección y mantenimiento');
+    // Model a completed same-disk diagnostic explicitly. Windows obtains it
+    // asynchronously; the real runner may still report an unknown disk here.
+    await page.route('**/api/backup-status',async route=>{
+      const response=await route.fetch(),status=await response.json();
+      status.alerts=status.alerts.filter(alert=>!['same_disk','disk_unknown'].includes(alert.code));
+      status.alerts.push({code:'same_disk',message:'Las copias están en el mismo disco físico.'});
+      await route.fulfill({response,json:status});
+    });
     await page.evaluate(()=>checkDay());
     assert.match(await page.locator('#backup-alerts').innerText(),/mismo disco/);
+    await page.unroute('**/api/backup-status');
     await page.evaluate(()=>refresh());
     assert.equal(await page.locator('#backup-alerts .backup-persistent').count(),0);
     await click('backup-cloud-revoke');
@@ -158,14 +178,14 @@ function printedTextLayout(pdf){
     await page.getByLabel('Ruta completa de la carpeta de copias').fill('');
     await page.locator('form[data-endpoint="backup-directory"] button[type="submit"]').click();
     await page.waitForFunction(()=>!state.backup.secondary_directory);
-    await page.unroute('**/api/state');
-    const current=await page.evaluate(async()=>await(await fetch('/api/state')).json());
+    await page.unroute('**/api/state*');
+    const current=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());
     const year=Number(current.settings.school_year), month=String(Number(current.settings.start_month)).padStart(2,'0');
     await nav('grades');await click('grade');await fill('name','Primaria · Sección A');await submit();
     await nav('guardians');await click('guardian');await fill('name','Ana Pérez');await fill('document','V-12345678');await fill('phone','04121234567');await submit();
-    await nav('students');await click('student');assert.equal(await page.locator('dialog[open] [name="billing_start"]').inputValue(),current.today.slice(0,7));await fill('billing_start',`${year}-${month}`);await fill('name','Sofía Pérez');await fill('birth_date','2015-02-10');await fill('monthly_fee','50');await fill('discount','10');assert.match(await page.locator('#tuition-preview').innerText(),/45,00/);await fill('guardian_search','12345678');await page.locator('dialog[open] [name="guardian_id"]').selectOption({label:'V-12345678 · Ana Pérez'});await fill('enrollment_start',`${year}-${month}-01`);await page.locator('dialog[open] button[type="submit"]').click();await page.locator('dialog[open] .receipt-number').waitFor();assert.match(await page.locator('dialog[open] .receipt').innerText(),/AL-000001/);const enrollmentDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();const enrollmentPdf=await enrollmentDownload;await enrollmentPdf.saveAs('/tmp/aula-enrollment.pdf');await page.locator('dialog[open] [data-action="close"]').first().click();
+    await nav('students');await click('student');assert.equal(await page.locator('dialog[open] [name="billing_start"]').inputValue(),current.today.slice(0,7));await fill('billing_start',`${year}-${month}`);await fill('name','Sofía Pérez');await fill('birth_date','2015-02-10');await fill('monthly_fee','50');await fill('discount','10');assert.match(await page.locator('#tuition-preview').innerText(),/45,00/);await fill('guardian_search','12345678');await page.locator('dialog[open] [name="guardian_id"]').selectOption({label:'V-12345678 · Ana Pérez'});await fill('enrollment_start',`${year}-${month}-01`);await page.locator('dialog[open] button[type="submit"]').click();await page.locator('dialog[open] .receipt-number').waitFor();assert.match(await page.locator('dialog[open] .receipt').innerText(),/AL-000001/);const enrollmentDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();const enrollmentPdf=await enrollmentDownload;await enrollmentPdf.saveAs(scratch('aula-enrollment.pdf'));await page.locator('dialog[open] [data-action="close"]').first().click();
     await nav('billing');
-    const automatic=await page.evaluate(async()=>await(await fetch('/api/state')).json());
+    const automatic=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());
     const expectedMonths=(Number(current.today.slice(0,4))-year)*12+Number(current.today.slice(5,7))-Number(month)+1;
     assert.equal(automatic.charges.length,expectedMonths,'Enrollment must create elapsed monthly fees without clicking generate');
     assert.equal(automatic.students[0].balance,4500*expectedMonths);
@@ -182,7 +202,7 @@ function printedTextLayout(pdf){
     assert.match(await page.locator('dialog[open] .receipt-balance').innerText(),/Abono recibido/);
     assert.match(await page.locator('dialog[open] .receipt-balance').innerText(),/Saldo pendiente del alumno/);
     assert.ok(await page.locator('dialog[open] .receipt-charges th').nth(2).evaluate(el=>el.getBoundingClientRect().width)>90,'Applied amount must remain readable');
-    await page.screenshot({path:'/tmp/aula-new-receipt.png',fullPage:true});
+    await page.screenshot({path:scratch('aula-new-receipt.png'),fullPage:true});
     assert.match(await page.locator('dialog[open] .receipt-parties section').nth(1).innerText(),/Sofía Pérez.*Primaria · Sección A/);
     // Mock only the receipt response: never create another payment to check old snapshots.
     for(const internalCode of ['AL-000001',null,'',undefined]){
@@ -210,23 +230,23 @@ function printedTextLayout(pdf){
     assert.equal(await page.locator('dialog[open] .school-emblem img').evaluate(img=>img.complete&&img.naturalWidth>0),true);
     assert.equal(await page.locator('#receipt-paper').inputValue(),'half-letter');
     assert.equal(await page.locator('#print-area .receipt-half-letter').count(),1);
-    const halfDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await halfDownload).saveAs('/tmp/aula-half-letter.pdf');
-    assert.ok(fs.readFileSync('/tmp/aula-half-letter.pdf').includes(Buffer.from('/MediaBox [0 0 396 612]')));
-    assert.ok(fs.readFileSync('/tmp/aula-half-letter.pdf').includes(Buffer.from('/Count 1 ')));
-    assert.equal(fs.readFileSync('/tmp/aula-half-letter.pdf').includes(Buffer.from('AL-000001')),false);
+    const halfDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await halfDownload).saveAs(scratch('aula-half-letter.pdf'));
+    assert.ok(fs.readFileSync(scratch('aula-half-letter.pdf')).includes(Buffer.from('/MediaBox [0 0 396 612]')));
+    assert.ok(fs.readFileSync(scratch('aula-half-letter.pdf')).includes(Buffer.from('/Count 1 ')));
+    assert.equal(fs.readFileSync(scratch('aula-half-letter.pdf')).includes(Buffer.from('AL-000001')),false);
 
     await page.locator('#receipt-paper').selectOption('ticket-80');
-    const ticketDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await ticketDownload).saveAs('/tmp/aula-ticket-80.pdf');
-    assert.ok(fs.readFileSync('/tmp/aula-ticket-80.pdf').includes(Buffer.from('/MediaBox [0 0 226.772 ')));
+    const ticketDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await ticketDownload).saveAs(scratch('aula-ticket-80.pdf'));
+    assert.ok(fs.readFileSync(scratch('aula-ticket-80.pdf')).includes(Buffer.from('/MediaBox [0 0 226.772 ')));
     await page.locator('#receipt-paper').selectOption('ticket-58');
-    const smallTicketDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await smallTicketDownload).saveAs('/tmp/aula-ticket-58.pdf');
-    assert.ok(fs.readFileSync('/tmp/aula-ticket-58.pdf').includes(Buffer.from('/MediaBox [0 0 164.409 ')));
+    const smallTicketDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await smallTicketDownload).saveAs(scratch('aula-ticket-58.pdf'));
+    assert.ok(fs.readFileSync(scratch('aula-ticket-58.pdf')).includes(Buffer.from('/MediaBox [0 0 164.409 ')));
     await page.locator('#receipt-paper').selectOption('half-letter');
     const printViewport=page.viewportSize();
     await page.setViewportSize({width:528,height:816});
     await page.emulateMedia({media:'print'});
-    await page.pdf({path:'/tmp/aula-print-half-letter.pdf',preferCSSPageSize:true,printBackground:true});
-    const halfPrint=fs.readFileSync('/tmp/aula-print-half-letter.pdf').toString('latin1');
+    await page.pdf({path:scratch('aula-print-half-letter.pdf'),preferCSSPageSize:true,printBackground:true});
+    const halfPrint=fs.readFileSync(scratch('aula-print-half-letter.pdf')).toString('latin1');
     assert.match(halfPrint,/\/MediaBox\s*\[0 0 396 612\]/);
     assert.equal((halfPrint.match(/\/Type\s*\/Page\b/g)||[]).length,1);
     const halfBounds=await page.locator('#print-area .payment-receipt').boundingBox();
@@ -234,8 +254,8 @@ function printedTextLayout(pdf){
     assert.ok(halfBounds.height<=816,'Receipt fits in half a letter sheet without clipping');
     const letterStyle=await page.addStyleTag({content:'@page receipt-half-letter{size:letter;margin:0}'});
     await page.setViewportSize({width:816,height:1056});
-    await page.pdf({path:'/tmp/aula-print-half-on-letter.pdf',preferCSSPageSize:true,printBackground:true,scale:1});
-    const letterPrint=fs.readFileSync('/tmp/aula-print-half-on-letter.pdf').toString('latin1');
+    await page.pdf({path:scratch('aula-print-half-on-letter.pdf'),preferCSSPageSize:true,printBackground:true,scale:1});
+    const letterPrint=fs.readFileSync(scratch('aula-print-half-on-letter.pdf')).toString('latin1');
     assert.match(letterPrint,/\/MediaBox\s*\[0 0 612 792\]/);
     assert.equal((letterPrint.match(/\/Type\s*\/Page\b/g)||[]).length,1);
     const letterBounds=await page.locator('#print-area .payment-receipt').boundingBox();
@@ -250,11 +270,11 @@ function printedTextLayout(pdf){
     assert.equal(await page.locator('#print-area .receipt-print-pair>.payment-receipt').count(),2);
     assert.equal(await page.locator('#print-area .receipt-copy-label').nth(0).innerText(),'ORIGINAL');
     assert.equal(await page.locator('#print-area .receipt-copy-label').nth(1).innerText(),'COPIA');
-    const pairDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await pairDownload).saveAs('/tmp/aula-letter-pair.pdf');
-    assert.ok(fs.readFileSync('/tmp/aula-letter-pair.pdf').includes(Buffer.from('/MediaBox [0 0 792 612]')));
+    const pairDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await pairDownload).saveAs(scratch('aula-letter-pair.pdf'));
+    assert.ok(fs.readFileSync(scratch('aula-letter-pair.pdf')).includes(Buffer.from('/MediaBox [0 0 792 612]')));
     await page.emulateMedia({media:'print'});
-    await page.pdf({path:'/tmp/aula-print-letter-pair.pdf',preferCSSPageSize:true,printBackground:true,scale:1});
-    const pairPrint=fs.readFileSync('/tmp/aula-print-letter-pair.pdf').toString('latin1');
+    await page.pdf({path:scratch('aula-print-letter-pair.pdf'),preferCSSPageSize:true,printBackground:true,scale:1});
+    const pairPrint=fs.readFileSync(scratch('aula-print-letter-pair.pdf')).toString('latin1');
     assert.match(pairPrint,/\/MediaBox\s*\[0 0 792 612\]/);
     assert.equal((pairPrint.match(/\/Type\s*\/Page\b/g)||[]).length,1);
     const copies=page.locator('#print-area .receipt-print-pair>.payment-receipt');
@@ -275,20 +295,20 @@ function printedTextLayout(pdf){
     assert.equal(await page.locator('#print-area .receipt-half-letter').count(),0);
     assert.match(await page.getByRole('link',{name:'Descargar PDF'}).getAttribute('href'),/paper=a4/);
     await page.emulateMedia({media:'print'});
-    await page.pdf({path:'/tmp/aula-print-receipt.pdf',format:'A4',printBackground:true});
+    await page.pdf({path:scratch('aula-print-receipt.pdf'),format:'A4',printBackground:true});
     await page.emulateMedia({media:'screen'});
     await page.setViewportSize({width:390,height:844});
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'Receipt mobile overflow');
     assert.equal(await page.locator('dialog[open] .school-emblem img').isVisible(),true);
     await page.setViewportSize({width:1440,height:1050});
-    const receiptDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await receiptDownload).saveAs('/tmp/aula-receipt.pdf');await page.screenshot({path:'/tmp/aula-receipt.png',fullPage:true});
+    const receiptDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await receiptDownload).saveAs(scratch('aula-receipt.pdf'));await page.screenshot({path:scratch('aula-receipt.png'),fullPage:true});
     await page.locator('dialog[open] [data-action="close"]').first().click();
     await click('payment');await fill('amount','5');
     await page.locator('dialog[open]').getByRole('button',{name:'Cancelar',exact:true}).click();
-    assert.equal(await page.evaluate(async()=> (await(await fetch('/api/state')).json()).payments.length),1,'Cancel must not submit a payment');
+    assert.equal(await page.evaluate(async()=> (await(await fetch('/api/state?history=1')).json()).payments.length),1,'Cancel must not submit a payment');
     await nav('arrears');
     await page.locator('#page-content').getByText('Sofía Pérez',{exact:true}).waitFor();
-    await click('collection');const balanceState=await page.evaluate(async()=>await(await fetch('/api/state')).json());assert.ok((await page.locator('#collection-text').inputValue()).includes(new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(balanceState.students[0].overdue/100)));await page.locator('dialog[open] [data-action="close"]').first().click();
+    await click('collection');const balanceState=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());assert.ok((await page.locator('#collection-text').inputValue()).includes(new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(balanceState.students[0].overdue/100)));await page.locator('dialog[open] [data-action="close"]').first().click();
     await click('account');await click('followup');await fill('note','Representante contactado; acordó abonar esta semana.');await submit();
     await nav('expenses');await click('expense');
     assert.equal(await page.locator('dialog[open] [name="employee_id"],dialog[open] [name="period_start"],dialog[open] [name="entry_time"]').count(),0);
@@ -298,8 +318,8 @@ function printedTextLayout(pdf){
       assert.match(await page.locator('dialog[open] .directory-report').innerText(),/J-12345678-9/);
       assert.equal(await page.locator('dialog[open] .directory-report .school-emblem img').count(),1);
       const download=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();
-      const saved='/tmp/aula-listado-'+kind+'.pdf';await(await download).saveAs(saved);assert.ok(fs.readFileSync(saved).subarray(0,8).toString().startsWith('%PDF-1.4'));
-      await page.screenshot({path:'/tmp/aula-listado-'+kind+'.png',fullPage:true});
+      const saved=scratch('aula-listado-')+kind+'.pdf';await(await download).saveAs(saved);assert.ok(fs.readFileSync(saved).subarray(0,8).toString().startsWith('%PDF-1.4'));
+      await page.screenshot({path:scratch('aula-listado-')+kind+'.png',fullPage:true});
       await page.evaluate(()=>{window.aulaPrintCalls=0;window.print=()=>{window.aulaPrintCalls++;};});await click('print-receipt');await page.waitForFunction(()=>window.aulaPrintCalls===1);assert.equal(await page.evaluate(()=>window.aulaPrintCalls),1);
       assert.match(await page.locator('#print-area').textContent(),/J-12345678-9/);
       await page.emulateMedia({media:'print'});assert.equal(await page.locator('#print-area .directory-report').isVisible(),true);await page.emulateMedia({media:'screen'});
@@ -314,8 +334,8 @@ function printedTextLayout(pdf){
     await click('daily-report');await page.locator('dialog[open] .daily-report').waitFor();
     const daily=await page.evaluate(async()=>await(await fetch('/api/daily-report')).json());assert.ok(daily.payment_count>0);assert.ok(daily.overdue_usd>0);
     assert.match(await page.locator('dialog[open] .daily-report').innerText(),/Cobros del día/);assert.match(await page.locator('dialog[open] .daily-report').innerText(),/Morosidad actual/);
-    const dailyDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await dailyDownload).saveAs('/tmp/aula-reporte-diario.pdf');
-    await page.screenshot({path:'/tmp/aula-reporte-diario.png',fullPage:true});await click('print-receipt');assert.equal(await page.locator('#print-area .daily-report').count(),1);
+    const dailyDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await dailyDownload).saveAs(scratch('aula-reporte-diario.pdf'));
+    await page.screenshot({path:scratch('aula-reporte-diario.png'),fullPage:true});await click('print-receipt');assert.equal(await page.locator('#print-area .daily-report').count(),1);
     await page.locator('dialog[open] [data-action="close"]').first().click();
     await page.evaluate(()=>window.print=()=>{});await click('print-report');
     assert.match(await page.locator('#print-area').textContent(),/J-12345678-9/);
@@ -324,7 +344,7 @@ function printedTextLayout(pdf){
     await nav('guardians');await click('guardian-account');
     assert.match(await page.locator('dialog[open] .modal-body').innerText(),/Saldo familiar USD/);
     await click('issue-account');await page.locator('dialog[open] .receipt-number').waitFor();
-    const familyDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await familyDownload).saveAs('/tmp/aula-family-account.pdf');
+    const familyDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await familyDownload).saveAs(scratch('aula-family-account.pdf'));
     await page.locator('dialog[open] [data-action="close"]').first().click();
     await nav('payments');await click('payment');await click('full-payment');
     await page.locator('dialog[open] button[type="submit"]').click();await page.locator('dialog[open] .receipt-number').waitFor();
@@ -332,7 +352,7 @@ function printedTextLayout(pdf){
     await page.locator('dialog[open] [data-action="close"]').first().click();
     await nav('guardians');await click('guardian-account');await click('issue-solvency');await page.locator('dialog[open] .receipt-number').waitFor();
     assert.match(await page.locator('dialog[open] .receipt').innerText(),/CONSTANCIA DE SOLVENCIA/);
-    const solvencyDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await solvencyDownload).saveAs('/tmp/aula-solvency.pdf');
+    const solvencyDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await solvencyDownload).saveAs(scratch('aula-solvency.pdf'));
     await page.locator('dialog[open] [data-action="close"]').first().click();
     await nav('students');await click('import-roster');
     await click('import-guide');await page.getByRole('heading',{name:'Cómo llenar la plantilla de alumnos'}).waitFor();assert.match(await page.locator('.modal-body').innerText(),/representante_cedula/);await page.locator('dialog[open] [data-action="import-roster"]').click();
@@ -340,9 +360,9 @@ function printedTextLayout(pdf){
     const imported=['Beatriz Representante','V-999','04120009999','','','Mateo Importado','','2016-01-01','Primaria · Sección A',String(year),'50','10',`${year}-${month}-01`,`${year+1}-08-31`,'activo','Prueba de importación'];
     await page.locator('#roster-file').setInputFiles({name:'alumnos.csv',mimeType:'text/csv',buffer:Buffer.from(header+imported.join(';')+'\n')});
     await click('preview-import');await page.getByText('Sin errores de validación.',{exact:false}).waitFor();
-    assert.equal(await page.evaluate(async()=> (await(await fetch('/api/state')).json()).students.length),1,'Preview must not save');
+    assert.equal(await page.evaluate(async()=> (await(await fetch('/api/state?history=1')).json()).students.length),1,'Preview must not save');
     await page.locator('#import-reviewed').check();await click('confirm-import');await page.locator('#page-content').getByText('Mateo Importado',{exact:true}).waitFor();
-    assert.equal(await page.evaluate(async()=> (await(await fetch('/api/state')).json()).students.length),2);
+    assert.equal(await page.evaluate(async()=> (await(await fetch('/api/state?history=1')).json()).students.length),2);
     await nav('cash');await click('open-cash');await page.locator('form[data-endpoint="close-cash"]').waitFor();
     assert.match(await page.locator('dialog[open]').innerText(),/No es el saldo de la cuenta bancaria/);
     assert.equal(await page.getByLabel('Efectivo inicial en caja · Bs',{exact:true}).count(),1);
@@ -350,25 +370,45 @@ function printedTextLayout(pdf){
     await page.locator('dialog[open] .receipt-number').waitFor();
     assert.match(await page.locator('dialog[open] .receipt').innerText(),/Arqueo de efectivo/);
     assert.match(await page.locator('dialog[open] .receipt').innerText(),/Pago móvil/);
-    const closeDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await closeDownload).saveAs('/tmp/aula-cash-close.pdf');
-    await page.screenshot({path:'/tmp/aula-cash-close.png',fullPage:true});
+    const closeDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await closeDownload).saveAs(scratch('aula-cash-close.pdf'));
+    await page.screenshot({path:scratch('aula-cash-close.png'),fullPage:true});
     await page.locator('dialog[open] [data-action="close"]').first().click();
     await click('reopen-cash');await fill('reason','Revisión de prueba');await submit();
     await nav('settings');await settingsTab('Protección y mantenimiento');assert.match(await page.locator('.data-path').innerText(),/colegio.sqlite3/);
+    // Posponer solo el recordatorio; los errores reales conservan su aviso.
+    await page.evaluate(()=>{localStorage.removeItem('aula-backup-reminder-snooze');updateBackupWarnings();});
+    await page.locator('#backup-alerts [data-action="snooze-backup-reminder"]').click();
+    assert.equal(await page.locator('#backup-alerts .backup-probe-reminder').count(),0);
+    assert.equal(await page.evaluate(()=>backupReminderHidden(Date.now()+8*86400000)),false);
+    assert.equal(await page.evaluate(()=>backupReminderHidden(0)),false);
+    assert.equal(await page.evaluate(()=>{const backup=state.backup;try{state.backup={...backup,alerts:[{message:'Falla ficticia de respaldo'}]};return backupProblem().includes('Falla ficticia de respaldo');}finally{state.backup=backup;}}),true,'Posponer no oculta errores reales');
+
+    await page.reload();await page.locator('form[data-endpoint="confirm-rate"]').waitFor();
+    assert.equal(await page.locator('#backup-alerts .backup-probe-reminder').count(),0);
+    await page.getByRole('button',{name:'Confirmar tasa y entrar'}).click();await page.locator('.layout').waitFor();
+    assert.equal(await page.locator('#backup-alerts .backup-probe-reminder').count(),0);
+    await nav('settings');await settingsTab('Protección y mantenimiento');
     const probeSource=await page.evaluate(async()=>Array.from(new Uint8Array(await(await fetch('/api/backup')).arrayBuffer())));
-    const probeBefore=await page.evaluate(async()=>await(await fetch('/api/state')).json());
+    const probeBefore=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());
     await click('probe-backup');await page.locator('#probe-backup-file').setInputFiles({name:'respaldo.aulabak',mimeType:'application/octet-stream',buffer:Buffer.from(probeSource)});
     await page.getByLabel('Contraseña o clave de la copia seleccionada').fill('FICTICIO-respaldo-navegador-2026');
     await click('run-probe-backup');await page.getByRole('heading',{name:'Respaldo comprobado',exact:true}).waitFor();
     assert.match(await page.locator('#probe-result').innerText(),/No se modificaron ni restauraron datos/);
-    await page.screenshot({path:'/tmp/aula-probar-respaldo.png',fullPage:true});
-    const probeAfter=await page.evaluate(async()=>await(await fetch('/api/state')).json());
+    assert.equal(await page.evaluate(()=>state.backup.external_probe_reminder.due),true,'Una copia no declarada externa no reinicia el plazo');
+    await page.locator('#probe-external').check();
+    await page.evaluate(()=>localStorage.removeItem('aula-backup-reminder-snooze'));
+    await click('run-probe-backup');await page.getByText('Prueba externa registrada.',{exact:false}).waitFor();
+    assert.equal(await page.locator('#backup-alerts .backup-probe-reminder').count(),0);
+    assert.equal(await page.evaluate(()=>state.backup.external_probe_reminder.due),false);
+
+    await page.screenshot({path:scratch('aula-probar-respaldo.png'),fullPage:true});
+    const probeAfter=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());
     assert.deepEqual(probeBefore.payments,probeAfter.payments);assert.deepEqual(probeBefore.charges,probeAfter.charges);
     await page.locator('[name=probe_kind]').selectOption('recovery');
     await page.getByLabel('Contraseña o clave de la copia seleccionada').fill(recoveryKey);await click('run-probe-backup');await page.getByRole('heading',{name:'Respaldo comprobado',exact:true}).waitFor();
     assert.match(await page.locator('#probe-result').innerText(),/Cifrado autenticado/);
-    const cipherDownload=page.waitForEvent('download');await click('convert-backup');const converted=await cipherDownload;await converted.saveAs('/tmp/aula-respaldo-convertido.aulabak');
-    assert.equal(fs.readFileSync('/tmp/aula-respaldo-convertido.aulabak').subarray(0,8).toString(),'AULABK01');
+    const cipherDownload=page.waitForEvent('download');await click('convert-backup');const converted=await cipherDownload;await converted.saveAs(scratch('aula-respaldo-convertido.aulabak'));
+    assert.equal(fs.readFileSync(scratch('aula-respaldo-convertido.aulabak')).subarray(0,8).toString(),'AULABK01');
     expectedProbeError=true;
     await page.locator('#probe-backup-file').setInputFiles({name:'dañado.sqlite3',mimeType:'application/octet-stream',buffer:Buffer.from('broken')});await click('run-probe-backup');await page.locator('#probe-result .text-red').waitFor();
     assert.equal(probeErrors,1,'Only the intentional invalid-backup response may return 400');expectedProbeError=false;
@@ -379,23 +419,23 @@ function printedTextLayout(pdf){
     assert.match(await page.locator('.backup-status').innerText(),/Último respaldo/);
 
     await click('maintenance-review');await page.getByText('Comprobaciones correctas',{exact:true}).waitFor();await page.locator('dialog[open] [data-action="close"]').first().click();
-    await page.screenshot({path:'/tmp/aula-new-settings.png',fullPage:true});
+    await page.screenshot({path:scratch('aula-new-settings.png'),fullPage:true});
     // A past academic year provides a realistic promotion scenario without changing fixture dates.
     const apiPost=async(path,data)=>page.evaluate(async({path,data})=>{const session=await(await fetch('/api/session')).json();const r=await fetch('/api/'+path,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':session.user.csrf},body:JSON.stringify(data)});if(!r.ok)throw new Error(await r.text());return r.json();},{path,data});
-    const latest=await page.evaluate(async()=>await(await fetch('/api/state')).json()),guardianId=latest.guardians.find(g=>g.name==='Ana Pérez').id,gradeId=latest.grades[0].id;
+    const latest=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json()),guardianId=latest.guardians.find(g=>g.name==='Ana Pérez').id,gradeId=latest.grades[0].id;
     const older=year-1,pastStudent={name:'Promoción Prueba',document:'A-PROMO',birth_date:'2015-01-01',guardian_id:guardianId,grade_id:gradeId,school_year:older,monthly_fee:'50',discount:'0',billing_start:`${older}-${month}`,enrollment_start:`${older}-${month}-01`,enrollment_end:`${year}-08-31`,status:'active'};
     await apiPost('students',pastStudent);
     await nav('students');await page.reload();await page.getByRole('button',{name:'Confirmar tasa y entrar'}).click();await page.locator('.layout').waitFor();
     await nav('grades');await click('grade');await fill('name','Segundo · Sección A');await submit();
     await nav('students');await click('year-transition');await page.locator('#source-year').fill(String(older));await click('load-year');
     await page.locator('[data-map-grade]').selectOption({label:'Segundo · Sección A'});await click('preview-year');await page.locator('#year-reviewed').waitFor();
-    assert.match(await page.locator('#year-preview').innerText(),/Promoción Prueba/);await page.screenshot({path:'/tmp/aula-year-preview.png',fullPage:true});
+    assert.match(await page.locator('#year-preview').innerText(),/Promoción Prueba/);await page.screenshot({path:scratch('aula-year-preview.png'),fullPage:true});
     await page.locator('#year-reviewed').check();await click('confirm-year');await page.locator('dialog[open] .receipt-number').waitFor();
-    const promotionDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await promotionDownload).saveAs('/tmp/aula-year-transition.pdf');
+    const promotionDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await promotionDownload).saveAs(scratch('aula-year-transition.pdf'));
     await page.locator('dialog[open] [data-action="close"]').first().click();
     await nav('arrears');const promoRow=page.locator('#page-content tr').filter({hasText:'Promoción Prueba'});await promoRow.locator('[data-action="payment-plan"]').click();
     await page.locator('dialog[open] button[type="submit"]').click();await page.locator('dialog[open] .receipt-number').waitFor();
-    const planDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await planDownload).saveAs('/tmp/aula-payment-plan.pdf');
+    const planDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await planDownload).saveAs(scratch('aula-payment-plan.pdf'));
     assert.match(await page.locator('dialog[open] .modal-body').innerText(),/Cumplimiento actual/);
     await page.locator('dialog[open] [data-action="close"]').first().click();
     await nav('dashboard');
@@ -415,16 +455,16 @@ function printedTextLayout(pdf){
     await page.locator('.clock-gate [name="reviewed"]').check();await page.getByRole('button',{name:'Confirmar fecha y hora',exact:true}).click();
     await page.locator('form[data-endpoint="confirm-rate"]').waitFor();await page.unroute('**/api/clock-confirm');
     await page.getByRole('button',{name:'Confirmar tasa y entrar'}).click();await page.locator('.layout').waitFor();
-    fs.mkdirSync('/tmp/aula-artifacts',{recursive:true});
+    fs.mkdirSync(scratch('aula-artifacts'),{recursive:true});
     await page.evaluate(()=>document.querySelector('#toast').className='');
-    await page.screenshot({path:'/tmp/aula-artifacts/dashboard.png',fullPage:true});
+    await page.screenshot({path:scratch('aula-artifacts/dashboard.png'),fullPage:true});
     await page.setViewportSize({width:390,height:844});
-    await page.screenshot({path:'/tmp/aula-artifacts/mobile.png',fullPage:true});
+    await page.screenshot({path:scratch('aula-artifacts/mobile.png'),fullPage:true});
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'Mobile page overflow');
     await page.setViewportSize({width:1440,height:1050});
     await nav('archive');await page.getByRole('heading',{name:'Archivo de la institución',exact:true}).waitFor();
     assert.equal(await page.locator('[data-action="archive-kind"]').count(),2);
-    await page.screenshot({path:'/tmp/aula-archivo-institucion.png',fullPage:true});
+    await page.screenshot({path:scratch('aula-archivo-institucion.png'),fullPage:true});
     await page.locator('[data-action="archive-review"]').first().click();
     assert.match(await page.locator('dialog[open]').innerText(),/Un saldo de \$0|saldo sea \$0/);
     assert.equal(await page.locator('dialog[open] [data-action="delete-unused-review"]').count(),0);
@@ -435,7 +475,7 @@ function printedTextLayout(pdf){
     await click('archive-review');await click('archive-guardian');await fill('reason','Ficha de prueba sin alumnos');await fill('confirmation','ARCHIVAR');await submit();
     await click('archive-review');await click('delete-unused-review');
     await fill('reason','Borrar ficha ficticia sin movimientos');await fill('password','Prueba-segura-2026');await fill('confirmation','BORRAR FICHA');await submit();
-    const archiveState=await page.evaluate(async()=>await(await fetch('/api/state')).json());
+    const archiveState=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());
     assert.equal(archiveState.guardians.some(g=>g.document==='V-ficha-vacia'),false);
     await apiPost('users',{name:'Usuario Caja',username:'caja',password:'Caja-segura-2026',role:'cashier'});
     await click('logout');await page.locator('.auth-form').getByLabel('Usuario',{exact:true}).fill('caja');await page.locator('.auth-form').getByLabel(/^Contraseña/).fill('Caja-segura-2026');
@@ -460,7 +500,7 @@ function printedTextLayout(pdf){
     await require('./session_browser.cjs')(page,expectedSessionError);
     await nav('settings');await settingsTab('Protección y mantenimiento');
     assert.equal(await page.locator('[data-action="reset-review"],.reset-settings').count(),0);
-    const finalState=await page.evaluate(async()=>await(await fetch('/api/state')).json());
+    const finalState=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());
     assert.equal(finalState.audit_status.ok,true);assert.ok(finalState.students.length>0);
     assert.deepEqual(errors,[]);
     console.log('PASS: fiscal settings, PNG logo, fiscal letterheads and printing, daily rate checkpoint and reopening, guardian search, live discount, automatic student code, enrollment PDF, automatic arrears without manual monthly generation, BCV payment and receipt PDF, arrears, simplified expense, filtered directory PDFs and printing, daily payments/arrears PDF, reports, family account and solvency PDFs, CSV preview and import, cash close and reopening, backup status, thermal tickets, bulk promotion and archived PDF, payment plan, responsive layout, read-only role.');

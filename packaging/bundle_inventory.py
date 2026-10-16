@@ -39,7 +39,7 @@ def main():
         for name in ('colegio.salary','colegio.staff_access','colegio.reset_records'):
             if name in report['pyz_modules']: raise RuntimeError('Módulo retirado en el instalador: '+name)
         unexpected = [m for m in report['pyz_modules'] if blocked_module(m)]
-        required = {'colegio.server', 'colegio.desktop', 'sqlite3', 'tkinter', 'cryptography',
+        required = {'colegio.trial_payment_cleanup', 'colegio.server', 'colegio.desktop', 'sqlite3', 'tkinter', 'cryptography',
                     'webview.platforms.edgechromium', 'webview.platforms.winforms'}
         missing = required - set(report['pyz_modules'])
         unwanted = [f['path'] for f in report['files'] if not keep_data(f['path'])]

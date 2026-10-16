@@ -37,13 +37,10 @@ class DesktopTests(unittest.TestCase):
     def test_default_path_matches_existing_windows_data_and_client_config_never_creates_db(self):
         with tempfile.TemporaryDirectory() as temp,patch.dict(os.environ,{'LOCALAPPDATA':temp}):
             directory=data_directory();self.assertEqual(directory,Path(temp)/'AulaColegio')
-            config=write_desktop_config(directory,'client','https://colegio.red.ts.net')
-            self.assertEqual(read_desktop_config(directory),config)
-            self.assertFalse((directory/'colegio.sqlite3').exists())
-            self.assertFalse((directory/'red.json').exists())
-            for url in ('http://colegio.red.ts.net','https://public.example',''):
+            for url in ('https://colegio.red.ts.net','http://colegio.red.ts.net',''):
                 with self.assertRaises(ValueError):write_desktop_config(directory,'client',url)
-            self.assertEqual(read_desktop_config(directory),config)
+            self.assertFalse((directory/'colegio.sqlite3').exists())
+            self.assertIsNone(read_desktop_config(directory))
 
     def test_network_configuration_preserves_records_and_cannot_change_while_serving(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -52,9 +49,9 @@ class DesktopTests(unittest.TestCase):
                 db.execute('INSERT INTO users(name,username,password,role) VALUES(?,?,?,?)',
                            ('Directora','admin',hash_password('Una-clave-segura'),'admin'))
                 db.execute("INSERT INTO guardians(name,document) VALUES('Representante real','V-222')")
-            write_desktop_config(directory,'primary','https://colegio.red.ts.net')
+            write_desktop_config(directory,'primary')
             with DesktopHost(directory,port=0) as host:
-                self.assertEqual(host.server.access.origin,'https://colegio.red.ts.net')
+                self.assertEqual(host.server.access.origin,'')
                 self.assertFalse(host.server.daemon_threads)
                 with self.assertRaises(RuntimeError):write_desktop_config(directory,'primary','')
                 with self.assertRaises(RuntimeError):DataLock(directory)
@@ -81,7 +78,8 @@ class DesktopTests(unittest.TestCase):
     def test_demo_closes_and_deletes_its_data_without_touching_real_records_or_profiles(self):
         with tempfile.TemporaryDirectory() as temp:
             directory=Path(temp)/'AulaColegio';directory.mkdir();path=directory/'colegio.sqlite3';path.write_bytes(b'no modificar')
-            write_desktop_config(directory,'client','https://colegio.red.ts.net')
+            (directory/'escritorio.json').write_text(json.dumps({'version':1,'mode':'client',
+                'remote_url':'https://colegio.red.ts.net'}))
             with patch('tempfile.gettempdir',return_value=temp):
                 with DesktopHost(directory,demo=True,port=0) as host:
                     disposable=host.directory

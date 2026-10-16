@@ -56,15 +56,19 @@ def retired_route(endpoint):
 
 
 def snapshot(db, user):
-    owns_transaction = not db.in_transaction
+    read_only=getattr(db,'read_only',False)
+    owns_transaction = not db.in_transaction and not read_only
     if owns_transaction:
         db.execute('BEGIN IMMEDIATE')
-    integrity = audit_status(db)
-    if integrity['ok']:
+    if read_only:
+        from .audit_chain import portable_status
+        integrity=portable_status(db)
+    else:integrity = audit_status(db)
+    if integrity['ok'] and not read_only:
         synchronize_monthly_charges(db)
     if owns_transaction:
         db.commit()
-    settings = dict(db.execute('SELECT key,value FROM settings'))
+    settings = {k:v for k,v in db.execute('SELECT key,value FROM settings') if not k.startswith('id_floor_')}
     students = rows(db, '''SELECT s.*,g.name AS guardian_name,g.phone AS guardian_phone,g.email AS guardian_email,
       gr.name AS grade_name FROM students s JOIN guardians g ON g.id=s.guardian_id
       JOIN grades gr ON gr.id=s.grade_id ORDER BY s.name''')
@@ -273,7 +277,7 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
                   'status': data.get('status', 'active'), 'notes': str(data.get('notes', ''))[:2000]}
         if not data.get('id'):
             fields.update(id=next_id, student_code=code, archived=int(bool(import_archived)))
-        settings = dict(db.execute('SELECT key,value FROM settings'))
+        settings = {k:v for k,v in db.execute('SELECT key,value FROM settings') if not k.startswith('id_floor_')}
         academic_start = date(fields['school_year'], int(settings['start_month']), 1).isoformat()
         academic_end = date(fields['school_year'] + 1, int(settings['start_month']), 1).isoformat()
         fields['enrollment_start'] = valid_date(data.get('enrollment_start') or academic_start)
@@ -353,6 +357,11 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
         on = valid_date(data.get('spent_on'))
         if on > local_today().isoformat():
             raise ValidationError('La fecha del egreso no puede ser futura.')
+        import unicodedata
+        category = required(data, 'category')
+        normalized = ''.join(c for c in unicodedata.normalize('NFKD', category) if not unicodedata.combining(c)).strip().casefold()
+        if normalized == 'nomina':
+            raise ValidationError('La categoría Nómina fue retirada. Usa Operación u Otro para un egreso nuevo.')
         amount, currency, received, rate = convert_received(db, data, on)
         fields = {'concept': required(data, 'concept'), 'category': required(data, 'category'), 'amount': amount,
                   'spent_on': on, 'reference': str(data.get('reference', ''))[:200],
@@ -383,7 +392,7 @@ class SchoolServer(ThreadingHTTPServer):
         from .restore_journal import PENDING, fail_closed
         if (Path(db_path).parent/PENDING).exists(): raise fail_closed()
         if address[0]!='127.0.0.1':
-            raise ValueError('Aula escucha solo en 127.0.0.1. Usa Tailscale Serve para compartir el acceso privado.')
+            raise ValueError('Aula escucha solo en 127.0.0.1. Usa el escritorio remoto de Windows.')
         if demo and remote_origin:
             raise ValueError('El modo de prueba no admite acceso remoto a la base del colegio.')
         self.access=PrivateAccess(remote_origin)
@@ -399,6 +408,9 @@ class SchoolServer(ThreadingHTTPServer):
         self.protection = ProtectionMonitor(Path(db_path).parent)
         self.sessions = Sessions()
         self.login_limiter = LoginLimiter()
+        from .local_login import begin_instance
+        self.login_instance = begin_instance(Path(db_path).parent)
+        self.local_login_check = threading.BoundedSemaphore(1)
         # Tokens from older versions or another process have no trusted monotonic
         # lifetime. Authentication state is disposable; financial records are untouched.
         with closing(connect(db_path)) as auth_db, auth_db:
@@ -477,6 +489,8 @@ class SchoolServer(ThreadingHTTPServer):
         status['protection'] = protection
         from .backup_keys import status as crypto_status
         status['crypto']=crypto_status(Path(self.db_path).parent)
+        from .backup_probe_record import reminder
+        status['external_probe_reminder']=reminder(self.db_path)
         return status
 
     def make_backup(self):
@@ -541,6 +555,8 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def session(self, db):
+        if getattr(self.server,'read_only',False):
+            return self.server.view_session(self.headers.get('Cookie',''))
         token = ''
         for part in self.headers.get('Cookie', '').split(';'):
             if part.strip().startswith(self.server.cookie_name+'='):
@@ -570,6 +586,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
             url = urlsplit(self.path)
             endpoint = url.path.removeprefix('/api/')
+            read_only=getattr(self.server,'read_only',False)
+            if read_only and post and endpoint not in ('session-activity','logout'):
+                raise PermissionError('Copia de solo lectura: no se permiten cambios, tasas, cobros ni respaldos.')
             if not post and not url.path.startswith('/api/'):
                 assets = {'/': 'index.html', '/app.js': 'app.js', '/session.js': 'session.js', '/style.css': 'style.css', '/favicon.svg': 'favicon.svg',
                           '/'+LOGO_FILE: LOGO_FILE, '/responsive.js': 'responsive.js'}
@@ -580,12 +599,18 @@ class Handler(BaseHTTPRequestHandler):
                 content_type = mimetypes.guess_type(file.name)[0] or 'application/octet-stream'
                 if content_type.startswith('text/') or content_type in ('application/javascript','image/svg+xml'):
                     content_type += '; charset=utf-8'
-                self.respond(200, file.read_bytes(), content_type)
+                extra=None
+                if read_only and url.path=='/' and parse_qs(url.query).get('view_token'):
+                    token=self.server.accept_launch(parse_qs(url.query)['view_token'][0])
+                    extra={'Set-Cookie':f'{self.server.cookie_name}={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200','Location':'/'}
+                    self.respond(303,b'',content_type,extra)
+                    return
+                self.respond(200, file.read_bytes(), content_type,extra)
                 return
             if retired_route(endpoint):
                 self.respond(410, {'error': 'Esta función fue retirada de Aula.'})
                 return
-            db = connect(self.server.db_path)
+            db = self.server.connect_view() if read_only else connect(self.server.db_path)
             if post:
                 if not self.server.access.allowed_origin(host,self.headers.get('Origin'),self.server.server_port):
                     raise PermissionError('Origen no permitido.')
@@ -596,7 +621,7 @@ class Handler(BaseHTTPRequestHandler):
                 data = json.loads(self.rfile.read(length))
                 if not isinstance(data, dict):
                     raise ValidationError('Se esperaba un objeto JSON.')
-                db.execute('BEGIN IMMEDIATE')
+                if not read_only:db.execute('BEGIN IMMEDIATE')
             if post and endpoint == 'demo-presence':
                 if not self.server.demo:
                     raise PermissionError('Esta instalación no está en modo prueba.')
@@ -607,11 +632,23 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(200, {'ok': True})
                 return
             user = self.session(db)
-            needs_setup = not db.execute('SELECT 1 FROM users LIMIT 1').fetchone()
+            needs_setup = not read_only and not db.execute('SELECT 1 FROM users LIMIT 1').fetchone()
+            if read_only and post:
+                if not self.server.access.allowed_origin(host,self.headers.get('Origin'),self.server.server_port):
+                    raise PermissionError('Origen no permitido.')
+                if not user or not secrets.compare_digest(self.headers.get('X-CSRF-Token',''),user['csrf']):
+                    raise PermissionError('Sesión inválida de la copia.')
+                if endpoint=='logout':
+                    self.server.sessions.revoke(user['token'])
+                    self.respond(200,{'ok':True})
+                else:
+                    self.respond(200,self.server.sessions.touch(user['token'],idle_minutes(db)))
+                return
             if not post and endpoint == 'session':
-                self.respond(200, {'needs_setup': needs_setup, 'user': {k:v for k,v in user.items() if k != 'token'} if user else None,
+                self.respond(200, {'needs_setup': needs_setup, 'today': local_today().isoformat(), 'user': {k:v for k,v in user.items() if k != 'token'} if user else None,
                                    'school': {k:v for k,v in db.execute('SELECT key,value FROM settings') if k in ('school_name','institution_type','logo')},
-                                   'demo': self.server.demo, 'demo_token': self.server.demo_token})
+                                   'demo': self.server.demo, 'demo_token': getattr(self.server,'demo_token',''),
+                                   'read_only':self.server.read_only_info if read_only else None})
                 return
             if post and endpoint in ('setup', 'login', 'demo-login'):
                 if endpoint == 'demo-login':
@@ -621,6 +658,12 @@ class Handler(BaseHTTPRequestHandler):
                 elif endpoint == 'setup':
                     if not needs_setup:
                         raise ValidationError('El administrador ya está configurado.')
+                    start = integer(data.get('start_month', 9), 1, 12)
+                    due = integer(data.get('due_day', 10), 1, 31)
+                    today = local_today()
+                    year = integer(data.get('school_year', today.year - (today.month < start)), 2000, 2100)
+                    db.executemany('UPDATE settings SET value=? WHERE key=?',
+                                   [(str(year),'school_year'),(str(start),'start_month'),(str(due),'due_day')])
                     result = db.execute('INSERT INTO users(username,name,password,role) VALUES(?,?,?,?)',
                                         (required(data, 'username', 80).lower(), required(data, 'name'), hash_password(data.get('password')), 'admin'))
                     user_id = result.lastrowid
@@ -630,12 +673,17 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     username = required(data, 'username', 80).strip().lower()
                     origin = self.client_address[0]
-                    wait = self.server.login_limiter.wait(origin, username)
+                    from .local_login import consume
+                    with self.server.login_limiter.lock:
+                        local_unlock = consume(Path(self.server.db_path).parent, self.server.login_instance,
+                                               username, data.get('local_unlock_code'))
+                    wait = 0 if local_unlock else self.server.login_limiter.wait(origin, username)
                     if wait:
                         self.respond(429, {'error': f'Demasiados intentos para esta cuenta. Espera {wait} segundos.',
                                            'retry_after': wait}, extra={'Retry-After': str(wait)})
                         return
-                    if not self.server.login_limiter.checks.acquire(blocking=False):
+                    checks = self.server.local_login_check if local_unlock else self.server.login_limiter.checks
+                    if not checks.acquire(blocking=False):
                         self.respond(429, {'error': 'Se están comprobando otros accesos. Intenta nuevamente en un segundo.',
                                            'retry_after': 1}, extra={'Retry-After': '1'})
                         return
@@ -644,12 +692,17 @@ class Handler(BaseHTTPRequestHandler):
                         password = data.get('password', '')
                         valid = isinstance(password, str) and len(password) <= 256 and found and check_password(password, found['password'])
                     finally:
-                        self.server.login_limiter.checks.release()
+                        checks.release()
                     if not valid:
                         self.server.login_limiter.failure(origin, username)
                         self.respond(401, {'error': 'Usuario o contraseña incorrectos.'})
                         return
                     user_id = found['id']
+                    if local_unlock:
+                        if found['role'] != 'admin':
+                            raise PermissionError('El código local corresponde a Administración.')
+                        require_audit(db)
+                        audit(db, user_id, 'local_login_unlocked', {'username': username, 'source': 'Windows local'})
                     self.server.login_limiter.success(origin, username)
                 token, csrf = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
                 minutes = idle_minutes(db)
@@ -668,7 +721,10 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(401, {'error': 'Tu sesión terminó. Inicia sesión para continuar.', 'session_expired': True})
                 return
             db.audit_user = user['id']
-            integrity = audit_status(db)
+            if read_only:
+                from .audit_chain import portable_status
+                integrity=portable_status(db)
+            else:integrity = audit_status(db)
             if post and endpoint not in ('logout','session-activity','demo-exit','probe-backup','export-encrypted-backup','backup-now'):
                 require_audit(db)
             if endpoint in ('session-status', 'session-activity', 'session-preferences', 'recovery-notice-ack'):
@@ -767,7 +823,14 @@ class Handler(BaseHTTPRequestHandler):
                                     result=output.read_bytes()
                         except (ValueError,sqlite3.Error) as error:
                             raise ValidationError(str(error) if isinstance(error,ValueError) else 'El archivo está dañado o no es un respaldo SQLite de Aula.') from None
-                    if endpoint=='probe-backup':self.respond(200,result)
+                    if endpoint=='probe-backup':
+                        if data.get('external_copy') is True and not self.server.demo:
+                            require_audit(db)
+                            audit(db,user['id'],'external_backup_tested',{'sha256':result['sha256'],'external_declared':True})
+                            self.server.clock.require();db.commit()
+                            from .backup_probe_record import record
+                            record(self.server.db_path,result['sha256'])
+                        self.respond(200,result)
                     else:self.respond(200,result,'application/octet-stream',{'Content-Disposition':'attachment; filename="respaldo-convertido.aulabak"'})
                     return
                 if endpoint == 'demo-exit':
@@ -816,7 +879,16 @@ class Handler(BaseHTTPRequestHandler):
                     if (endpoint in DIRECTORY_ACTIONS or endpoint=='correct-billing-start' or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True)) and user['role']=='admin':
                         status=self.server.make_backup()
                         if status.get('local_error'): raise ValidationError('No se puede realizar la operación sin completar primero un respaldo local.')
+                    permanent=None
+                    if endpoint=='transition-year' and data.get('preview') is not True and user['role']=='admin' and not self.server.demo:
+                        review=transition_year(db,dict(data,preview=True),user,
+                            lambda db,endpoint,data,user:mutate(db,endpoint,data,user,synchronize=False))
+                        if review['errors'] or data.get('confirmed_hash')!=review['hash']:
+                            raise ValidationError('Revisa la vista previa del pase de año antes de confirmar.')
+                        from .backup_tiers import preserve_year
+                        with self.server.backup_lock:permanent=preserve_year(self.server.db_path,review['source_year'])
                     result = mutate(db, endpoint, data, user, demo=self.server.demo)
+                    if permanent:result['permanent_backup']=permanent
                 if endpoint not in ('logout','demo-exit'):
                     self.server.clock.require()
                 db.commit()
@@ -829,9 +901,14 @@ class Handler(BaseHTTPRequestHandler):
             public_user = {k:v for k,v in user.items() if k not in ('token', 'csrf')}
             if endpoint == 'state':
                 result=snapshot(db, public_user)
+                result['history_loaded']=True
+                if parse_qs(url.query).get('history') != ['1']:
+                    from .state_view import principal
+                    result=principal(result)
                 result['backup']=self.server.backup_status()
                 result['demo']=self.server.demo
                 result['access']=self.server.access.snapshot()
+                result['read_only']=self.server.read_only_info if read_only else None
                 self.respond(200, result)
             elif endpoint in ('audit', 'audit.csv', 'audit.pdf'):
                 if user['role'] != 'admin': raise PermissionError('Solo Administración puede consultar o exportar la bitácora.')
@@ -860,6 +937,15 @@ class Handler(BaseHTTPRequestHandler):
                 self.respond(200,cash_summary(db,parse_qs(url.query).get('date',[local_today().isoformat()])[0]))
             elif endpoint=='backup-status':
                 self.respond(200,self.server.backup_status())
+            elif endpoint in ('monthly-report','monthly-report.pdf','monthly-report.csv'):
+                from .monthly_report import report as monthly_report, pdf_bytes as monthly_pdf, csv_bytes as monthly_csv
+                document=monthly_report(db,snapshot(db,user),parse_qs(url.query).get('month',[local_today().strftime('%Y-%m')])[0])
+                if endpoint=='monthly-report':self.respond(200,document)
+                else:
+                    pdf=endpoint.endswith('.pdf')
+                    self.respond(200,monthly_pdf(document) if pdf else monthly_csv(document),
+                        'application/pdf' if pdf else 'text/csv; charset=utf-8',
+                        {'Content-Disposition':f'attachment; filename="cierre-mensual-{document["period"]}.{"pdf" if pdf else "csv"}"'})
             elif endpoint in ('daily-report', 'daily-report.pdf'):
                 report_state = snapshot(db, user)
                 people = {}
@@ -1039,6 +1125,8 @@ class Handler(BaseHTTPRequestHandler):
 @contextmanager
 def open_school(path, port, demo=False, remote_origin=''):
     """Own the data lock and resources for both CLI and desktop lifetimes."""
+    if remote_origin:
+        raise ValueError('El acceso privado fue retirado. Usa el escritorio remoto de Windows.')
     path=Path(path)
     with DataLock(path.parent):
         from .restore_journal import finish_pending
@@ -1108,6 +1196,8 @@ def main():
     access.add_argument('--remote-origin',help='Enlace HTTPS privado de Tailscale Serve.')
     access.add_argument('--network-config',help='Archivo red.json creado por Configurar-Red.bat.')
     args = parser.parse_args()
+    if args.remote_origin is not None or args.network_config is not None:
+        parser.error('El acceso privado fue retirado. Usa el escritorio remoto de Windows.')
     if args.demo and args.data_dir is not None:
         parser.error('--demo no admite --data-dir: nunca se abre una base existente en modo prueba.')
     if args.demo and (args.remote_origin is not None or args.network_config is not None):

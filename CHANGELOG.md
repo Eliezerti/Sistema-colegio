@@ -1,3 +1,43 @@
+# Cobros y documentos financieros de prueba · 1.0.71 · 16/10/2026
+
+- Con autorización explícita, la limpieza única incluye estados de cuenta, solvencias y cierres de caja de prueba, junto con cobros y recibos. La revisión muestra sus cantidades y exige confirmar también esos documentos.
+- Se conservan alumnos, representantes, todas las cuentas de acceso, cargos, egresos, configuración, constancias y pases de año. Solo se admiten documentos de representante identificados como estado de cuenta o solvencia; cualquier otro tipo detiene la operación.
+- Respaldo cifrado verificado y transacción única, con bitácora íntegra. Se mantienen los bloqueos de reloj, restauración pendiente, cambios de datos y autorización. Sin migración; B3 sigue pendiente.
+- Validación: Linux, 307 (304 correctas y 3 exclusivas de Windows omitidas); Windows Server 2022, 307 correctas sin omisiones. Tres navegadores correctos en ambos. Siete cortes reales, limpieza ampliada dentro del EXE instalado, actualización, otra cuenta, PDF y Defender correctos. [Guía](docs/limpieza-cobros-prueba.md) · [Evidencia](docs/interno/validacion-1.0.71.md).
+
+# Preparar recibos de producción · 1.0.70
+
+- Herramienta local excepcional `--clear-trial-payments`, sin botón ni API de borrado. Requiere Aula cerrado, Administración, frase de confirmación, motivo y respaldo cifrado verificado. Se permite una sola vez en esa base.
+- Retira cobros ficticios y sus aplicaciones; conserva alumnos, cargos, egresos y configuración. El piso de recibos queda en cero y el primer recibo es R-000001. Conserva la cadena de bitácora y registra la limpieza y el respaldo previo. Sin migración de esquema.
+- Se detiene ante cierres o documentos financieros emitidos, restauración pendiente, errores de integridad, reloj bloqueado, respaldo fallido o cambios posteriores a la revisión.
+- Pruebas nuevas: conservación, respaldo descifrable, primer pago real de prueba R-000001, autorización y seis terminaciones reales del proceso. El instalador comprueba también la operación dentro del EXE con datos ficticios.
+- Validación completa: Linux, 306 (303 correctas y 3 nativas omitidas); Windows Server 2022, 306 correctas sin omisiones. Tres navegadores correctos en ambos; limpieza cifrada desde el EXE instalado, actualización, otra cuenta, PDF y Defender correctos. B3 sigue pendiente. [Guía](docs/limpieza-cobros-prueba.md) · [Evidencia](docs/interno/validacion-1.0.70.md).
+
+# Ajustes de comprobantes y recordatorio · 1.0.69
+
+- Más espacio entre las secciones del comprobante, conservando media carta vertical y ORIGINAL/COPIA en carta horizontal, sin alterar pagos ni correlativos. Impresión con la configuración normal del diálogo, sin exigir escala 100 %.
+- Probar una copia externa actualiza inmediatamente el recordatorio. Si no se marca como externa, el resultado explica cómo reiniciar el plazo.
+- Opción «Ocultar por 7 días» para el recordatorio en ese navegador. Los errores de respaldo siguen visibles; el estado detallado de cifrado y nube se consulta en Protección y mantenimiento.
+- Validación: Linux, 301 pruebas (298 correctas y 3 nativas omitidas); Windows Server 2022, 301 correctas sin omisiones. Tres navegadores correctos en ambos. Instalación, actualización, otra cuenta, Defender y PDF/impresión WebView2 correctos. [Resultados y descarga](docs/ajustes-1.0.69.md).
+
+# Tanda D · 1.0.68 · 15/10/2026
+
+Validación Windows Server 2022 completa: 301 correctas, tres navegadores, instalación/actualización/otra cuenta, consulta cifrada e impresión nativa correctas. Linux: 301, con tres exclusivas de Windows omitidas; tres navegadores correctos. Objetivo principal con 800 alumnos y tres ciclos alcanzado: 7.334 bytes y 0,399 s en Windows. [Entrega y evidencia](docs/tanda-d.md).
+
+- D7: consulta cifrada en ventana WebView2 real y cierre explícito de fixtures; actualización nativa desde 1.0.67, portabilidad cifrada en otra cuenta Windows, cortes reales durante publicación por niveles y guía de pruebas físicas.
+
+- D6: morosidad por grado en reporte diario y cierre mensual PDF/CSV con monedas y métodos separados, egresos, saldo, pendiente y anulaciones de bitácora, sin datos personales de alumnos.
+
+- D5: abrir respaldos cifrados o antiguos en consulta aislada; SQLite inmutable, escrituras bloqueadas en servidor, sesión en memoria y temporal eliminado al cerrar.
+
+- D4: niveles cifrados de 60 copias diarias y 24 mensuales, cierres escolares permanentes y recordatorio de prueba externa después de 35 días.
+
+- D3: estado principal acotado con totales íntegros; historial bajo demanda y medición HTTP reproducible de 500/800 alumnos con uno, dos y tres años.
+
+- D2: recuperación local durante un bloqueo de login, con contraseña de Administración, código de un uso, vencimiento monotónico y bitácora; el limitador de fuerza bruta se conserva.
+
+- D1: año sugerido actualizado al elegir el mes inicial, sin reemplazar una elección manual; documentación interna fuera del instalador y limpieza de copias antiguas; correlativos privados; calendario explícito al crear el administrador; rechazo de Nómina en egresos nuevos sin alterar históricos; retiro del acceso privado, conservando acceso local y sus protecciones. Sin migración.
+
 # Historial de cambios
 
 ## Mensualidades y administración mínima · esquema 12

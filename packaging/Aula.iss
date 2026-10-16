@@ -38,7 +38,23 @@ Source: "..\dist\Aula\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs 
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\build\MicrosoftEdgeWebview2Setup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 
-Source: "..\docs\*.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\alcance-legal.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\archivo-institucion.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\carpeta-nube.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\cifrado-respaldos.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\comprobante-media-carta.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\consulta-copias.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\configuracion.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\guia-importacion.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\limpieza-cobros-prueba.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\mantenimiento.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\proteccion-reloj.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\proteccion-respaldos.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\pruebas-fisicas.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\puesta-en-produccion.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\restauracion-segura.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\sesiones-acceso.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\bitacora.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 
 [InstallDelete]
 #include "retired-files.iss"
@@ -53,8 +69,10 @@ Type: files; Name: "{userstartup}\Aula Colegio.lnk"
 Name: "{group}\Aula - Administración escolar"; Filename: "{app}\Aula.exe"
 Name: "{group}\Aula - Pruebas"; Filename: "{app}\Aula.exe"; Parameters: "--demo"
 Name: "{group}\Configurar Aula"; Filename: "{app}\Aula.exe"; Parameters: "--configure"
+Name: "{group}\Abrir copia en solo lectura"; Filename: "{app}\Aula.exe"; Parameters: "--view-copy"
 Name: "{group}\Probar respaldo"; Filename: "{app}\Aula.exe"; Parameters: "--test-backup"
 Name: "{group}\Restaurar respaldo"; Filename: "{app}\Aula.exe"; Parameters: "--restore"
+Name: "{group}\Desbloquear acceso local"; Filename: "{app}\Aula.exe"; Parameters: "--unlock-login"
 Name: "{group}\Recuperar clave del administrador"; Filename: "{app}\Aula.exe"; Parameters: "--reset-password"
 Name: "{group}\Abrir carpeta de datos"; Filename: "{app}\Aula.exe"; Parameters: "--data-folder"
 Name: "{userdesktop}\Aula - Administración escolar"; Filename: "{app}\Aula.exe"; Tasks: desktopicon

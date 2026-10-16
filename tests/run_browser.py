@@ -43,6 +43,7 @@ def main():
                         time.sleep(0.1)
                 if not ready:
                     raise RuntimeError('El servidor no inició dentro del tiempo esperado.')
+                runtime_env['AULA_TEST_PYTHON'] = sys.executable
                 runtime_env['AULA_TEST_URL'] = f'http://127.0.0.1:{port}'
                 script = 'tests/roster_browser.cjs' if args.roster else 'tests/directory_browser.cjs' if args.directory else 'tests/demo_browser.cjs' if args.demo else 'tests/responsive_browser.cjs' if args.responsive else 'tests/browser.cjs'
                 result = subprocess.run(['node', script], cwd=root, env=runtime_env)
@@ -52,6 +53,8 @@ def main():
                     if server.wait(timeout=10)!=0:raise RuntimeError('El servidor de prueba no cerró correctamente.')
                     if list((Path(temp)/'AulaColegio-Pruebas').glob('prueba-*')):
                         raise RuntimeError('No se eliminaron los registros temporales al cerrar la última pestaña.')
+                if result.returncode==0 and not any((args.demo,args.responsive,args.directory,args.roster)):
+                    return subprocess.run([sys.executable,'tests/run_viewer_browser.py'],cwd=root,env=runtime_env).returncode
                 return result.returncode
             finally:
                 server.terminate()

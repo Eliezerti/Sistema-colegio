@@ -1,3 +1,4 @@
+const {scratch}=require('./browser_paths.cjs');
 // Called by the normal browser suite, with fictional admin/caja/consulta users.
 const assert=require('node:assert/strict');
 module.exports=async function checkSessions(page,expected){
@@ -12,9 +13,15 @@ module.exports=async function checkSessions(page,expected){
   const expire=async()=>{
     // Revoke at the real server; the Python tests separately advance monotonic
     // time to prove inactivity. Accelerate only the visual countdown here.
+    await page.waitForFunction(()=>!sessionCheckPending);
     expected.active=true;
+    const denied=page.waitForResponse(response=>response.url().endsWith('/api/session-status')&&response.status()===401);
+    const deniedConsole=page.waitForEvent('console',{predicate:message=>message.type()==='error'&&message.location().url.endsWith('/api/session-status')&&message.text().includes('401 (Unauthorized)')});
     await page.evaluate(async()=>{await api('logout',{});sessionDeadline=performance.now()-1;sessionTick();});
     await page.locator('.session-lock-note').waitFor();
+    // Chromium can deliver its console event after rendering the locked view.
+    // Match the real rejected response and its console event before ending the expectation.
+    await Promise.all([denied,deniedConsole]);
     expected.active=false;
   };
   await page.locator('.nav-button[data-id="settings"]').click();
@@ -35,7 +42,7 @@ module.exports=async function checkSessions(page,expected){
   assert.equal(pulses,0,'Automatic queries never renew the session');
   await page.evaluate(()=>{sessionDeadline=performance.now()+45000;sessionCheckedAt=performance.now();sessionTick();});
   await page.locator('#session-warning[open]').waitFor();
-  await page.screenshot({path:'/tmp/aula-aviso-sesion.png'});
+  await page.screenshot({path:scratch('aula-aviso-sesion.png')});
   assert.match(await page.locator('#session-countdown').innerText(),/segundos/);
   await page.keyboard.press('Escape');assert.equal(await page.locator('#session-warning').evaluate(node=>node.open),true);
   await page.locator('#session-continue').click();
@@ -44,7 +51,7 @@ module.exports=async function checkSessions(page,expected){
   assert.equal(await page.locator('#modal [name="name"]').inputValue(),'Borrador ficticio de recuperación');
   const before=await page.evaluate(async()=>await api('state'));
   await expire();
-  await page.screenshot({path:'/tmp/aula-cierre-sesion.png'});
+  await page.screenshot({path:scratch('aula-cierre-sesion.png')});
   assert.equal(await page.locator('#modal-content').innerText(),'');
   assert.equal(await page.locator('#print-area').innerText(),'');
   assert.equal(await page.locator('.layout').count(),0,'Data must be hidden after expiration');

@@ -6,6 +6,8 @@ $History = Join-Path $env:RUNNER_TEMP 'Aula-B1-Historico'
 New-Item -ItemType Directory -Force $History | Out-Null
 gh release download desktop-1.0.13 --dir $History --pattern 'Aula-Colegio-Instalador-1.0.13.exe*'
 if ($LASTEXITCODE -ne 0) { throw 'No se descargó la versión realmente publicada.' }
+gh release download desktop-1.0.67 --dir $History --pattern 'Aula-Colegio-Instalador-1.0.67.exe'
+if ($LASTEXITCODE -ne 0) { throw 'No se descargó el instalador anterior 1.0.67 auditado.' }
 $Old = Join-Path $History 'Aula-Colegio-Instalador-1.0.13.exe'
 if ((Get-FileHash $Old -Algorithm SHA256).Hash.ToLowerInvariant() -ne '9714be7b6edaa03eab71a247c51219de6c425b5cd72d3b7fb7f1fbe23ab08d3c') { throw 'La huella histórica no coincide.' }
 ./packaging/scan_windows.ps1 -Path $History -ReportDir (Join-Path $env:RUNNER_TEMP 'defender-b1-historical')
@@ -17,7 +19,10 @@ $Shared = Join-Path $env:PUBLIC $Name
 New-Item -ItemType Directory $Shared | Out-Null
 Set-Content (Join-Path $Shared 'disposable-b1-only.txt') 'Solo datos ficticios B1'
 Copy-Item "dist/Aula-Colegio-Instalador-$Version.exe" (Join-Path $Shared 'installer.exe')
-Copy-Item tests/windows_upgrade.py,tests/windows_other_account.py $Shared
+Copy-Item tests/windows_upgrade.py,tests/windows_other_account.py,tests/windows_portability.py $Shared
+Copy-Item colegio (Join-Path $Shared 'colegio') -Recurse
+python tests/create_portable_fixture.py --output $Shared
+if ($LASTEXITCODE -ne 0) { throw 'No se creó la copia cifrada portátil ficticia.' }
 @'
 param([string]$Python,[string]$Root,[string]$Sid)
 $ErrorActionPreference='Stop'

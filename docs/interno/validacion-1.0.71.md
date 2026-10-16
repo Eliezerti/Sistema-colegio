@@ -1,0 +1,17 @@
+# Validación 1.0.71
+
+El bloqueo visto en 1.0.70 estaba en `colegio/trial_payment_cleanup.py:35`: rechazaba cualquier documento de representante o cierre emitido. El usuario autorizó expresamente retirar estados de cuenta, solvencias y cierres de caja de prueba, junto con cobros y recibos, conservando alumnos, representantes y personal. La versión ya no tiene Personal/Nómina; se conservan todas las cuentas de acceso. No se migra ni se retira personal mediante esta herramienta.
+
+La ampliación inicial no llegó a ejecutarse: la revisión automática exigió autorización específica de los documentos financieros. Después de la confirmación expresa del usuario, se implementó el alcance autorizado. No se modificó la base del usuario.
+
+La revisión identifica solo tipos account y solvency; un tipo desconocido o ilegible detiene el proceso. Se exige documents_confirmed=True además de la confirmación de cobros, contraseña de Administración y motivo. Una única transacción retira guardian_documents, cash_closures, allocations y payments, reinicia únicamente el piso de pagos y revoca sesiones. Los usuarios, fichas, cargos, egresos, constancias, convenios y pases de año permanecen intactos. Se conserva el respaldo cifrado verificado y la cadena original de bitácora.
+
+Pruebas específicas: 6 correctas en 11,177 s. Fixture con 2 pagos, estado de cuenta, solvencia, cierre, tres cuentas de acceso y pase de año. Se verifican conservación de tablas protegidas, recuperación de documentos y usuarios desde el respaldo cifrado, Verificar datos sin errores y primer recibo id 1. Siete terminaciones reales: después del respaldo, documentos, aplicaciones, pagos, contador, antes y después del commit; todas dejan estado completo o intacto y cadena válida.
+
+Totales: ingresos 32,50 → 0 por la limpieza autorizada; egresos 7,25 → 7,25; cargos iguales y pendiente aumenta exactamente en los pagos retirados. Sin cambios en los cálculos de la operación normal.
+
+Linux: `python -m unittest discover -s tests -v`, 307 pruebas en 177,561 s; 304 correctas y 3 exclusivas de Windows omitidas (DPAPI, mutex/enfoque y revisión Tk de restauración). Los navegadores normal, --demo y --roster pasaron. Revisión de código `cfbad62`. [Windows Server 2022, ejecución 38963579514](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38963579514): 307 pruebas correctas en 519,732 s, sin omisiones. Navegadores normal, --demo y --roster correctos. Todas las etapas de la ejecución terminaron correctamente.
+
+El EXE instalado probó la limpieza con estado de cuenta, solvencia y cierre ficticios: documentos retirados, alumno y usuario conservados, respaldo cifrado descifrable, cadena válida y primer recibo R-000001. Instalación en cero, actualización publicada 1.0.67 → 1.0.71, otra cuenta de Windows, consulta cifrada y desinstalación conservando datos: correctas. PDF/impresión nativa y Defender antes y después: correctos.
+
+[Instalador 1.0.71](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38963579514/artifacts/12075130082) · [PDF y registros](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38963579514/artifacts/12074980353). El ZIP de entrega contiene el EXE validado, sin archivos de huellas. La impresora física y la aplicación sobre los datos del usuario no se ejecutaron: requieren su equipo y confirmación local. La impresora física y la limpieza sobre la base del usuario requieren su PC y confirmación local.

@@ -81,25 +81,11 @@ Si el personal solo necesita ver pagos y morosidad, utiliza un PDF diario: no ha
 
 El envío es manual desde tu correo; Aula genera el documento, pero no lo envía automáticamente. Mantén los respaldos completos como protección de los datos; un PDF no permite recuperar toda la base ni modificar registros. Si necesitan registrar cobros desde el colegio, un reporte no reemplaza el acceso a la base principal.
 
-## Llevar tus datos a otra PC para mostrar Aula
+## Consultar desde otra PC
 
-1. En la PC donde estás cargando los datos, entra como administrador y abre Configuración → Crear respaldo ahora. Después pulsa Descargar copia y guarda el archivo `colegio-AAAA-MM-DD.aulabak` en un USB. La descarga es una copia completa y consistente; no copies la base activa de la carpeta de datos.
-2. Lleva también el instalador de Aula. En el colegio instala la misma versión o una más reciente, con la cuenta de Windows que usarán en esa PC. No abras el respaldo con una versión anterior.
-3. Cierra Aula completamente en la PC del colegio, incluida la bandeja junto al reloj. Desde Inicio de Windows abre Restaurar respaldo, selecciona el `.aulabak` del USB, escribe la contraseña o recuperación y confirma lo indicado en la comparación A1. Esto reemplaza los datos que hubiera en esa PC; no fusiona bases. Si ya hay datos importantes allí, descarga primero una copia de ellos.
-4. Abre Aula e inicia sesión con el usuario y la contraseña de Aula que ya usas en tu PC. El respaldo lleva alumnos, representantes, cargos, pagos, recibos, usuarios, logo y configuración guardados en la base.
-5. Confirma la tasa del día; compara la cantidad de alumnos, un saldo conocido y el último recibo. Ejecuta Configuración → Verificar datos y cobros. Revisa también la segunda carpeta de respaldos: la ruta de tu PC puede no existir en la del colegio; configura el USB o destino que tenga esa computadora.
-6. Las dos instalaciones son independientes. Un cobro o edición en el colegio no aparecerá en casa automáticamente. Para usar esta etapa en una sola PC, decide cuál será la base principal y realiza allí los cambios reales. Llevar después otra copia reemplaza la base completa; no combina cambios de ambas computadoras.
+Descarga una copia cifrada de la base principal y llévala a la otra PC. Usa Inicio → Aula → Abrir copia en solo lectura, con contraseña o recuperación. El aviso permanente identifica la copia. No restaures una base solo para mirarla: la consulta temporal no puede mezclarse con los datos reales ni registrar cobros.
 
-### Enviar un respaldo por correo cada 2 o 3 días
-
-Si la PC de casa es la base principal, crea allí un usuario **Consulta** para el colegio en Configuración → Usuarios antes de descargar el respaldo. En casa se registran los cambios reales; en el colegio consultan la copia recibida, con información hasta la fecha de ese respaldo.
-
-- **Desde casa:** Crear respaldo ahora → Descargar copia → adjuntar el `.aulabak` cifrado al correo e indicar su fecha. Si el correo no admite esa extensión, envíalo comprimido en ZIP. Si supera su límite de tamaño, utiliza un USB o un enlace privado a la copia.
-- **En el colegio:** descargar y extraer el ZIP si corresponde → guardar un respaldo de la base actual → cerrar Aula completamente → Inicio de Windows → Restaurar respaldo → seleccionar la copia recibida → escribir RESTAURAR → abrir Aula, confirmar tasa y comprobar alumnos, saldos y último recibo → entrar con el usuario Consulta.
-- No necesitan reinstalar el programa en cada envío. El respaldo actualiza datos; el instalador actualiza el programa. El colegio debe tener la misma versión o una más reciente que la usada para generar la copia.
-- Si registran un cobro, matrícula o edición en el colegio, la próxima restauración lo reemplazaría. Este procedimiento no sirve para trabajar con modificaciones reales simultáneas en ambas computadoras. Mantén también la copia anterior por si hay que revisar una diferencia.
-
-Para demostrar operaciones ficticias utiliza Aula - Pruebas. Ese perfil comienza vacío y se elimina al cerrar; no reutiliza ni altera la base real restaurada.
+Si necesitas trasladar la operación real a otra PC, haz un respaldo verificado, cierra Aula por completo y utiliza Restaurar respaldo en la nueva carpeta de datos. La restauración reemplaza toda la base y no fusiona cambios de dos computadoras. Decide cuál será la PC principal y registra allí los movimientos reales. Consulta las guías de restauración y puesta en producción.
 
 ## Recuperar usuarios y contraseñas
 
@@ -141,7 +127,7 @@ En producción no existe Vaciar registros. Para practicar abre Aula - Pruebas y 
 8. Marca la casilla y pulsa Confirmar importación. Se carga todo el lote; si hay errores no se guarda ninguna fila. No lo importes dos veces.
 9. Para el documento presentable, usa PDF / Imprimir en Alumnos o Representantes. El PDF de representantes identifica el estado de cada alumno.
 
-El CSV antiguo de nueve columnas no contiene la información necesaria: vuelve a exportar desde la versión nueva. Si abres CSV en Excel y ofrece quitar ceros iniciales, elige No convertir. Para llevar toda la base real a la PC del colegio usa respaldo y restauración, no Excel. La importación tampoco traslada personal ni representantes que no tengan alumnos vinculados.
+El CSV antiguo de nueve columnas no contiene la información necesaria: vuelve a exportar desde la versión nueva. Si abres CSV en Excel y ofrece quitar ceros iniciales, elige No convertir. Para llevar toda la base real a la PC del colegio usa respaldo y restauración, no Excel. La importación no traslada representantes que no tengan alumnos vinculados.
 
 
 La segunda carpeta se compara con el disco de la base: si comparte disco, aparece un aviso propio aunque la copia esté recién escrita. Si no se puede determinar, se indica. En Windows se comparan unidades y particiones; unidades distintas pueden compartir disco físico. En otros sistemas solo se confirma el mismo sistema de archivos; no se supone independencia entre volúmenes. El almacenamiento virtual y las carpetas de nube requieren comprobar su protección real. Aula no verifica la subida a la nube.
@@ -155,3 +141,15 @@ Cierre tras 15 minutos sin actividad, configurable entre 5 y 60 en Usuarios y ac
 ## Control de la bitácora · A4
 
 Verificar datos y cobros comprueba ahora la cadena de la bitácora y su control separado. Las rutas de vaciado están retiradas y no pueden borrar esta historia. Se conservan sin borrado automático las copias antes-bitacora y antes-restauracion, sus originales y los informes. Dependen de BitLocker y permisos locales. [Migración, reversión y límites](bitacora.md).
+
+## Cuánto se conserva en el segundo destino
+
+Todas las copias nuevas del segundo destino siguen cifradas. Aula conserva las últimas 90 copias frecuentes, hasta 60 copias diarias y 24 mensuales. Se guarda la primera copia verificada de cada día y de cada mes; las frecuentes contienen el movimiento posterior. Al superar cada límite se retiran únicamente las más antiguas de ese mismo nivel, por orden de publicación comprobado. Si el inventario está dañado, no se autoriza borrar copias. Los archivos manuales y permanentes no participan en esta rotación.
+
+Antes de confirmar un pase de año revisado se crea una copia cifrada permanente del estado de cierre, en backups/cierres-permanentes y también en el segundo destino cuando está configurado. Esta copia no se elimina automáticamente. Si no puede crearse o copiarse al destino configurado, no se confirma el pase. El modo Pruebas no publica cierres ni respaldos reales. Configura el cifrado antes del pase de año.
+
+Cada mes usa Probar respaldo con una copia tomada del USB o de la nube. Marca que seleccionaste una copia externa; Aula registra la comprobación correcta, pero no puede verificar que el navegador tomó el archivo de una nube. Tras más de 35 días aparece un recordatorio que no bloquea el trabajo. Puedes elegir «Ocultar por 7 días» en ese navegador; esto no registra una prueba ni oculta errores de respaldo. La prueba externa correcta actualiza el aviso inmediatamente. Si no marcas la casilla de copia externa, el resultado explica cómo reiniciar el plazo. Una contraseña errónea o una copia corrupta no lo reinician.
+
+## Cierre mensual
+
+En Reportes elige el mes y descarga PDF mensual o CSV mensual. Revisa cobros y egresos por moneda y método, saldo previo y saldo al cierre, pendiente por grado y anulaciones hechas en ese mes. El saldo suma operaciones válidas: no sustituye el conteo físico de efectivo. El pendiente se calcula con los saldos actuales de los cargos que vencen hasta el cierre; no es una foto histórica congelada. Las anulaciones se ubican por la fecha registrada en la bitácora. El informe mensual no incluye datos personales de alumnos. El reporte diario mantiene el detalle y añade un resumen de morosidad por grado.

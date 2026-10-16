@@ -492,7 +492,7 @@ class HalfLetterReceiptPDF(ReceiptPDF):
             self.text(266,68,'ANULADO',8,True,'0.65 0.23 0.22')
         self.y = max(70,y+1)
         self.rule(14,self.y,368)
-        self.y += 9
+        self.y += 13
 
     def close_page(self):
         bottom = min(self.y+8,590)
@@ -530,7 +530,7 @@ class HalfLetterReceiptPDF(ReceiptPDF):
             if phone:
                 y = self.paragraph(phone,x,y,176,8,color=self.muted)
             bottom = max(bottom,y)
-        self.y = bottom
+        self.y = bottom+6
         if p.get('guardian_address'):
             self.flow('Dirección del representante: '+p['guardian_address'],8,self.muted)
             self.y += 3
@@ -559,7 +559,7 @@ class HalfLetterReceiptPDF(ReceiptPDF):
             self.text(374-text_width(value,9,True),self.y+14,value,9,True,self.ink)
             self.y += height
             self.rule(14,self.y,368)
-        self.y += 2
+        self.y += 8
 
     def payment_summary(self):
         p = self.payment
@@ -583,7 +583,7 @@ class HalfLetterReceiptPDF(ReceiptPDF):
         self.text(369-text_width(applied,9,True),top+49,applied,9,True,self.blue)
         if p['currency']=='VES':
             self.text(219,top+61,f"Tasa BCV aplicada: Bs {p['exchange_rate']} por USD",7.5,color=self.muted)
-        self.y += height+5
+        self.y += height+9
 
     def account_summary(self):
         p = self.payment
@@ -605,8 +605,8 @@ class HalfLetterReceiptPDF(ReceiptPDF):
             self.label('Observaciones',14,self.y)
             self.y += 13
             self.flow(p['notes'],8,self.muted)
-        self.ensure(61)
-        self.y += 32
+        self.ensure(65)
+        self.y += 36
         for x,label in ((14,'Firma de administración'),(206,'Firma del representante')):
             self.rule(x,self.y,176)
             self.text(x,self.y+11,label,8,color=self.muted)

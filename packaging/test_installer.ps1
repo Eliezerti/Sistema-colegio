@@ -53,11 +53,18 @@ try {
     if ($Probe.TargetPath -ne $Executable -or $Probe.Arguments -ne '--test-backup') { throw 'Probar respaldo no abre la función independiente.' }
     Execute-Checked $Executable @('--self-test')
     Execute-Checked $Executable @('--self-test-demo')
+    Execute-Checked $Executable @('--self-test-copy')
+    $CleanupCheck = @(Get-Content "$env:TEMP/AulaColegio-Compilacion/logs/*.log" | Where-Object { $_ -like 'PASS LIMPIEZA:*' })
+    if ($CleanupCheck.Count -lt 1) { throw 'No se comprobó la limpieza de cobros ficticios en el ejecutable instalado.' }
+    $CleanupCheck | ForEach-Object { Write-Host $_ }
+    $CopyCheck = @(Get-Content "$env:TEMP/AulaColegio-Compilacion/logs/*.log" | Where-Object { $_ -like 'PASS COPIA:*' })
+    if ($CopyCheck.Count -lt 1) { throw 'No se verificó la consulta nativa ni su limpieza temporal.' }
+    $CopyCheck | ForEach-Object { Write-Host $_ }
     $NativeChecks = @(Get-Content "$env:TEMP/AulaColegio-Compilacion/logs/*.log" | Where-Object { $_ -like 'PASS B2:*' })
     if (@($NativeChecks | Select-Object -Unique).Count -ne 2) { throw 'No quedaron comprobados selector, Tcl/Tk, PDF e impresión nativa.' }
     $NativeChecks | ForEach-Object { Write-Host $_ }
     $ReceiptChecks = @(Get-Content "$env:TEMP/AulaColegio-Compilacion/logs/*.log" | Where-Object { $_ -like 'PASS RECIBO:*' } | Select-Object -Unique)
-    if ($ReceiptChecks.Count -ne 3) { throw 'No se verificó el recibo vertical en media carta y carta al 100 %.' }
+    if ($ReceiptChecks.Count -ne 3) { throw 'No se verificó el recibo vertical en media carta y carta con escala predeterminada.' }
     $ReceiptChecks | ForEach-Object { Write-Host $_ }
     # Reinstall/update and uninstall must leave data and backups untouched.
     Execute-Checked $Installer $Arguments

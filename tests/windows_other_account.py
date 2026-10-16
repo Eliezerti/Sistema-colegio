@@ -24,6 +24,7 @@ def main():
     execute(root/'installer.exe','/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',f'/DIR={directory}','/TASKS=')
     assert (directory/'Aula.exe').exists()
     assert not data.exists()
+    subprocess.run([os.sys.executable,str(root/'windows_portability.py'),str(root)],check=True,timeout=120)
     session=start_and_check(directory/'Aula.exe', True)
     assert session['school']['school_name']=='Mi colegio'
     assert (data/'colegio.sqlite3').exists()
