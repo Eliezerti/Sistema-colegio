@@ -32,14 +32,18 @@ def inspect(db):
         raise ValidationError('Verificar datos y cobros detectó errores. No se borraron cobros.')
     if db.execute('SELECT 1 FROM settings WHERE key=?',(MARKER,)).fetchone():
         raise ValidationError('Esta base ya preparó sus recibos para producción. No se permite repetir la limpieza.')
-    for table,label in (('cash_closures','cierres de caja'),('guardian_documents','estados de cuenta o solvencias emitidos'),
-                        ('year_transitions','pases de año emitidos')):
-        if db.execute(f'SELECT 1 FROM {table} LIMIT 1').fetchone():
-            raise ValidationError(f'La base contiene {label}. Necesita revisión de esos documentos antes de limpiar cobros; no se cambió nada.')
+    documents={'guardian_documents':0,'cash_closures':db.execute('SELECT COUNT(*) FROM cash_closures').fetchone()[0]}
+    for row in db.execute('SELECT snapshot_json FROM guardian_documents'):
+        try:kind=json.loads(row['snapshot_json'])['kind']
+        except (ValueError,KeyError,TypeError):
+            raise ValidationError('Hay un documento de representante que no se pudo identificar. No se borró nada.') from None
+        if kind not in ('account','solvency'):
+            raise ValidationError('Hay un documento distinto de estado de cuenta o solvencia. Requiere revisión; no se borró nada.')
+        documents['guardian_documents']+=1
     count,last=db.execute('SELECT COUNT(*),COALESCE(MAX(id),0) FROM payments').fetchone()
-    if not count:raise ValidationError('No hay cobros que limpiar. No se cambió el contador.')
+    if not count and not any(documents.values()):raise ValidationError('No hay cobros ni documentos de prueba que limpiar. No se cambió el contador.')
     digest=hashlib.sha256('\n'.join(db.iterdump()).encode()).hexdigest()
-    return {'preview_hash':digest,'payments':count,'last_receipt':last,
+    return {'preview_hash':digest,'payments':count,'last_receipt':last,**documents,
             'allocations':db.execute('SELECT COUNT(*) FROM allocations').fetchone()[0],
             'applied_cents':db.execute('SELECT COALESCE(SUM(a.amount),0) FROM allocations a JOIN payments p ON p.id=a.payment_id WHERE p.voided=0').fetchone()[0]}
 
@@ -57,7 +61,7 @@ def preview(directory):
         return inspect(db)
 
 
-def clear(directory, *, username, password, preview_hash, confirmation, reason, trial_only, backup_password=None):
+def clear(directory, *, username, password, preview_hash, confirmation, reason, trial_only, backup_password=None, documents_confirmed=False):
     if confirmation!=CONFIRMATION or trial_only is not True or not isinstance(reason,str) or len(reason.strip())<10:
         raise ValidationError('Confirma que TODOS los cobros son de prueba y escribe el motivo y la frase completa.')
     path=database_path(directory)
@@ -68,6 +72,8 @@ def clear(directory, *, username, password, preview_hash, confirmation, reason, 
         if not user or not check_password(password,user['password']):
             raise ValidationError('Usuario o contraseña de Administración incorrectos.')
         before=inspect(db)
+        if (before['guardian_documents'] or before['cash_closures']) and documents_confirmed is not True:
+            raise ValidationError('Confirma también la eliminación de estados de cuenta, solvencias y cierres de caja de prueba.')
         if before['preview_hash']!=preview_hash:raise ValidationError('Los datos cambiaron. Revisa nuevamente antes de limpiar.')
         db.rollback()
         from .backup_export import write_encrypted
@@ -83,13 +89,15 @@ def clear(directory, *, username, password, preview_hash, confirmation, reason, 
             db.execute('BEGIN IMMEDIATE')
             if inspect(db)['preview_hash']!=preview_hash:
                 raise ValidationError('La base cambió durante el respaldo. No se borraron cobros.')
+            db.execute('DELETE FROM guardian_documents')
+            db.execute('DELETE FROM cash_closures');checkpoint('after_documents')
             db.execute('DELETE FROM allocations');checkpoint('after_allocations')
             db.execute('DELETE FROM payments');checkpoint('after_payments')
             db.execute("INSERT OR REPLACE INTO settings VALUES('id_floor_payments','0')")
-            db.execute('INSERT INTO settings VALUES(?,?)',(MARKER,json.dumps({'at':datetime.now(timezone.utc).isoformat(),'previous_last':before['last_receipt']})))
+            db.execute('INSERT INTO settings VALUES(?,?)',(MARKER,'1'))
             db.execute('DELETE FROM sessions');checkpoint('after_counter')
             audit(db,user['id'],'trial-payments-cleared',dict(before,reason=reason.strip(),backup=backup,
-                first_new_receipt='R-000001',trial_only=True,one_use=True))
+                first_new_receipt='R-000001',trial_only=True,one_use=True,financial_documents_confirmed=documents_confirmed))
             if db.execute('PRAGMA integrity_check').fetchone()[0]!='ok' or db.execute('PRAGMA foreign_key_check').fetchall():
                 raise ValidationError('La verificación final falló. Se conservaron los datos anteriores.')
             clock.require();checkpoint('before_commit')
@@ -104,9 +112,10 @@ def dialog(directory):
     try:
         review=preview(directory)
         message=(f"Carpeta: {Path(directory).resolve()}\n\nSe eliminarán {review['payments']} cobros, incluidos los anulados, y sus aplicaciones.\n"
-                 'Los cargos abonados volverán a quedar pendientes. Se conservan alumnos, representantes, cargos, egresos, tasas y configuración.\n\n'
+                 f"También se retirarán {review['guardian_documents']} estados de cuenta/solvencias y {review['cash_closures']} cierres de caja de prueba.\n"
+                 'Los cargos abonados volverán a quedar pendientes. Se conservan alumnos, representantes, cuentas de acceso, cargos, egresos, tasas, configuración e historial académico.\n\n'
                  'Solo para cobros de prueba, ANTES de comenzar producción. Se puede usar UNA sola vez.\n'
-                 'Se guardará un respaldo cifrado verificado y se conservará la bitácora.\n\n¿Confirmas que TODOS los cobros son de prueba?')
+                 'Se guardará un respaldo cifrado verificado y se conservará la bitácora.\n\n¿Confirmas que TODOS esos cobros, estados de cuenta, solvencias y cierres de caja son de prueba?')
         if not messagebox.askyesno('Preparar recibos para producción',message,parent=root,icon='warning'):return
         phrase=simpledialog.askstring('Confirmación',f'Escribe exactamente: {CONFIRMATION}',parent=root)
         if phrase is None:return
@@ -124,6 +133,6 @@ def dialog(directory):
             backup_password=simpledialog.askstring('Respaldo cifrado','Contraseña del respaldo para verificar la copia previa:',show='*',parent=root)
             if backup_password is None:return
         result=clear(directory,username=username,password=password,preview_hash=review['preview_hash'],
-            confirmation=phrase,reason=reason,trial_only=True,backup_password=backup_password)
+            confirmation=phrase,reason=reason,trial_only=True,backup_password=backup_password,documents_confirmed=True)
         messagebox.showinfo('Recibos preparados','El próximo recibo será R-000001. Abre Aula e inicia sesión nuevamente.\n\nRespaldo cifrado conservado en:\n'+result['backup']['path'],parent=root)
     finally:root.destroy()

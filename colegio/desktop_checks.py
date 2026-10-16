@@ -185,14 +185,21 @@ def trial_cleanup(directory):
         db.execute("INSERT INTO students(id,name,document,birth_date,guardian_id,grade_id,school_year,monthly_fee,discount,status,enrollment_start,enrollment_end) VALUES(1,'Alumno ficticio','PRUEBA-A-1','2015-01-01',1,1,?,10000,0,'active',?,?)",(year,f'{year}-01-01',f'{year}-12-31'))
         db.execute("INSERT INTO charges(student_id,period,concept,amount,due_date) VALUES(1,?,'Concepto ficticio',10000,?)",(today[:7],today))
         record_payment(db,dict(student_id=1,amount='10',currency='USD',method='Efectivo',paid_on=today,request_key='ficticio-antes'),1)
+    with closing(connect(path)) as db,db:
+        for kind in ('account','solvency'):
+            db.execute('INSERT INTO guardian_documents(snapshot_json,created_at,created_by) VALUES(?,?,1)',(json.dumps({'kind':kind}),today))
+        db.execute("INSERT INTO cash_closures(closed_on,snapshot_json,created_at,created_by) VALUES(?,'{}',?,1)",(today,today))
     review=preview(folder)
     result=clear(folder,username='admin-ficticio',password='FICTICIO-clave-prueba-2026',preview_hash=review['preview_hash'],
-        confirmation=CONFIRMATION,trial_only=True,reason='Preparación ficticia antes de producción')
+        confirmation=CONFIRMATION,trial_only=True,documents_confirmed=True,reason='Preparación ficticia antes de producción')
     assert probe_backup(result['backup']['path'],'FICTICIO-limpieza-respaldo-2026')['payments']==1
     with closing(connect(path)) as db,db:
         from .maintenance import review_database
         assert review_database(db)['ok']
         assert next_record_id(db,'payments')==1 and local_status(db)['ok']
         assert db.execute('SELECT COUNT(*) FROM students').fetchone()[0]==1
+        assert db.execute('SELECT COUNT(*) FROM users').fetchone()[0]==1
+        assert db.execute('SELECT COUNT(*) FROM guardian_documents').fetchone()[0]==0
+        assert db.execute('SELECT COUNT(*) FROM cash_closures').fetchone()[0]==0
         assert record_payment(db,dict(student_id=1,amount='10',currency='USD',method='Efectivo',paid_on=today,request_key='ficticio-produccion'),1)['id']==1
-    print('PASS LIMPIEZA: ejecutable instalado, respaldo cifrado verificable, alumno conservado, bitácora válida y primer recibo R-000001.',flush=True)
+    print('PASS LIMPIEZA: ejecutable instalado, respaldo cifrado verificable, documentos de prueba retirados, alumno y usuario conservados, bitácora válida y primer recibo R-000001.',flush=True)
