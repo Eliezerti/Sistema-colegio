@@ -10,4 +10,8 @@ Pruebas específicas: 6 correctas en 11,177 s. Fixture con 2 pagos, estado de cu
 
 Totales: ingresos 32,50 → 0 por la limpieza autorizada; egresos 7,25 → 7,25; cargos iguales y pendiente aumenta exactamente en los pagos retirados. Sin cambios en los cálculos de la operación normal.
 
-Pendientes: cuatro suites Linux/Windows e instalador compilado. La impresora física y la limpieza sobre la base del usuario requieren su PC y confirmación local.
+Linux: `python -m unittest discover -s tests -v`, 307 pruebas en 177,561 s; 304 correctas y 3 exclusivas de Windows omitidas (DPAPI, mutex/enfoque y revisión Tk de restauración). Los navegadores normal, --demo y --roster pasaron. Revisión de código `cfbad62`. [Windows Server 2022, ejecución 38963579514](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38963579514): 307 pruebas correctas en 519,732 s, sin omisiones. Navegadores normal, --demo y --roster correctos. Todas las etapas de la ejecución terminaron correctamente.
+
+El EXE instalado probó la limpieza con estado de cuenta, solvencia y cierre ficticios: documentos retirados, alumno y usuario conservados, respaldo cifrado descifrable, cadena válida y primer recibo R-000001. Instalación en cero, actualización publicada 1.0.67 → 1.0.71, otra cuenta de Windows, consulta cifrada y desinstalación conservando datos: correctas. PDF/impresión nativa y Defender antes y después: correctos.
+
+[Instalador 1.0.71](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38963579514/artifacts/12075130082) · [PDF y registros](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38963579514/artifacts/12074980353). El ZIP de entrega contiene el EXE validado, sin archivos de huellas. La impresora física y la aplicación sobre los datos del usuario no se ejecutaron: requieren su equipo y confirmación local. La impresora física y la limpieza sobre la base del usuario requieren su PC y confirmación local.

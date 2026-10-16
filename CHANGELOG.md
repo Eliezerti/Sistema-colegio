@@ -3,7 +3,7 @@
 - Con autorización explícita, la limpieza única incluye estados de cuenta, solvencias y cierres de caja de prueba, junto con cobros y recibos. La revisión muestra sus cantidades y exige confirmar también esos documentos.
 - Se conservan alumnos, representantes, todas las cuentas de acceso, cargos, egresos, configuración, constancias y pases de año. Solo se admiten documentos de representante identificados como estado de cuenta o solvencia; cualquier otro tipo detiene la operación.
 - Respaldo cifrado verificado y transacción única, con bitácora íntegra. Se mantienen los bloqueos de reloj, restauración pendiente, cambios de datos y autorización. Sin migración; B3 sigue pendiente.
-- Seis pruebas específicas correctas, incluidos siete cortes reales del proceso. Validación completa en curso. [Guía](docs/limpieza-cobros-prueba.md).
+- Validación: Linux, 307 (304 correctas y 3 exclusivas de Windows omitidas); Windows Server 2022, 307 correctas sin omisiones. Tres navegadores correctos en ambos. Siete cortes reales, limpieza ampliada dentro del EXE instalado, actualización, otra cuenta, PDF y Defender correctos. [Guía](docs/limpieza-cobros-prueba.md) · [Evidencia](docs/interno/validacion-1.0.71.md).
 
 # Preparar recibos de producción · 1.0.70
 
