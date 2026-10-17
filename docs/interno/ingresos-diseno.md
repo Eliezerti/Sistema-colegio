@@ -1,7 +1,7 @@
 # Ingresos y facturas · diseño para revisión
 
-**Estado: diseño y reglas aisladas, sin funciones nuevas habilitadas en Aula.**
-No se aplica una migración, no se cambia la versión ni se modifica una base del colegio.
+**Estado: Fase 1 integrada en esquema 13 y validada en Linux/Windows; Fase 2 en desarrollo. Fases 3–4 pendientes.**
+El inventario inicial corresponde a `ed1c5e9`; la evidencia posterior y los puntos verdes constan en `../ESTADO-NOCHE.md`. No se modifica ninguna base del colegio.
 
 ## Modelo propuesto
 
@@ -23,7 +23,7 @@ No se aplica una migración, no se cambia la versión ni se modifica una base de
 No añadir una cuenta inferida al recibo congelado. Las asociaciones nuevas pertenecen al libro de clasificación y no alteran payments, allocations ni receipt_snapshot.
 Las referencias tienen dos representaciones: original para revisión; normalizada para candidatos. Un hash de movimiento es indicio de repetición, no garantía de identidad si el banco no suministra un ID único.
 
-## Reglas probadas, todavía sin conexión al servidor
+## Reglas puras y conexión al servidor
 
 `colegio/income_rules.py` implementa validación mínima de cuentas y cuenta sugerida, cobertura de depósitos en efectivo, candidatos únicos por ambos lados, asignaciones parciales explícitas, equivalentes con tasa histórica y vista previa CSV/XLSX con mapeo.
 
@@ -34,7 +34,7 @@ Las referencias tienen dos representaciones: original para revisión; normalizad
 - Cobertura de varios recibos o depósitos: validación de asignaciones parciales, suma disponible y duplicados. La persistencia deberá resolver concurrencia dentro de BEGIN IMMEDIATE.
 - Conversión USD/VES: nunca se concilian monedas distintas automáticamente. La tasa `1` de un cobro directo USD **no es una tasa BCV**. El informe ampliado necesita la tasa BCV histórica de ese día; si falta, debe mostrar NO VERIFICADO y equivalencia desconocida, nunca inventarla.
 
-Estas pruebas no acreditan permisos HTTP, importación persistida, deduplicación entre archivos, concurrencia, conciliación cambiaria, cierre mensual ni interfaz: esas funciones siguen pendientes.
+Las pruebas puras por sí solas no acreditan integración. La Fase 1 incorpora sus pruebas HTTP, interfaz, permisos, concurrencia de depósitos y conservación de totales; la conciliación persistente sigue en desarrollo.
 
 ## Migración y recuperación: requisito antes de integrar
 
@@ -46,7 +46,7 @@ Estas pruebas no acreditan permisos HTTP, importación persistida, deduplicació
 6. Restauración de copia antigua, comparación y pérdida: incluir nombres claros para las tablas nuevas y detectar pérdida de clasificaciones/importaciones. Probar respaldo y modo consulta migran solo su temporal; no escriben en el origen.
 7. Revertir con la versión anterior y la copia previa verificada, preservando aparte cualquier dato nuevo. No ofrecer downgrade borrando tablas ni datos. No desplegar el esquema hasta validar todo el protocolo.
 
-**Nada de este protocolo de migración se da por ejecutado en esta rama.** El esquema actual sigue en 12 y las comprobaciones anteriores no sustituyen su implementación.
+**El protocolo se implementó y probó para esquema 13**: fixture publicado 1.0.71, copia cifrada previa, integridad, cadena, comparación y cinco cortes reales. La ampliación 14 de conciliación requiere su validación separada antes de declararse entregada.
 
 ## Cierre mensual y permisos pendientes de integrar
 

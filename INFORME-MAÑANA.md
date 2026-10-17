@@ -1,6 +1,6 @@
 # Informe de la mañana · ingresos y facturas
 
-**Entrega parcial de revisión. Fase 1 integrada y validada en Linux; Windows en curso. Fases 2–4 pendientes.**
+**Entrega parcial de revisión. Fase 1 integrada y validada en Linux y Windows. Fases 2–4 pendientes.**
 Rama: `autonomo/ingresos-facturas`. Punto de partida: `ed1c5e9`, Aula 1.0.71. Main, etiquetas y versión publicada intactas. Ninguna base del usuario fue abierta, limpiada o migrada.
 
 ## Qué se hizo
@@ -8,7 +8,7 @@ Rama: `autonomo/ingresos-facturas`. Punto de partida: `ed1c5e9`, Aula 1.0.71. Ma
 | Bloque | Resultado real |
 |---|---|
 | Fase 0 | Inventario, diseño y decisiones documentados; sin datos reales. |
-| Fase 1 | Cuentas editables, cuenta en cobros, asignación histórica explícita, depósitos parciales de efectivo sin doble cobertura, otros ingresos/categorías/soporte y egresos con cuenta. Interfaz, API, permisos y bitácora integrados. Migración aditiva a esquema 13, copia previa verificada y pruebas sobre código publicado 1.0.71. Linux correcto; Windows en curso. |
+| Fase 1 | Cuentas editables, cuenta en cobros, asignación histórica explícita, depósitos parciales de efectivo sin doble cobertura, otros ingresos/categorías/soporte y egresos con cuenta. Interfaz, API, permisos y bitácora integrados. Migración aditiva a esquema 13, copia previa verificada y pruebas sobre código publicado 1.0.71. Linux y Windows correctos. |
 | Fase 2 | Reglas puras CSV/XLSX, huella, referencias y propuestas; importación persistente, perfiles guardados, conciliación operativa y clasificaciones **pendientes**. |
 | Fase 3 | Cierre diario y reportes vigentes incluyen otros ingresos y traslados sin duplicar ingresos; cierre mensual protegido y relación ampliada para contador **pendientes**. |
 | Fase 4 | Editor, lotes, emisión y PDF de facturas **pendientes**; ningún número fiscal generado. |
@@ -59,7 +59,7 @@ El fallo Windows previo se corrigió en el primer intento de arreglo. No se camb
 - Primera regresión completa: 331 en 213,631 s, **15 errores**, tres omisiones nativas. No se declaró aprobada. Se corrigieron fixtures antiguos y el comportamiento de lectura ante cabecera de bitácora dañada; las escrituras siguen bloqueadas. Primer arreglo, dirigido: 57 correctas en 11,695 s; ocho pruebas de ingresos/migración correctas en 7,882 s.
 - Repetición completa Linux: **333 en 206,436 s; 330 correctas y 3 exclusivas de Windows omitidas**. Los tres navegadores terminaron con **salida 0**. El normal prueba por interfaz cuentas, categoría, otro ingreso, cuenta en cobro, depósito y anulaciones; la deuda sigue igual y el depósito no duplica ingresos. Roster inicial falló por no elegir una cuenta; se incorporó la configuración real a ese flujo y pasó la repetición.
 - Las pruebas nuevas incluyen fixture ficticio producido con el código publicado 1.0.71, conservación exacta de dinero y prefijo de cadena, copia previa cifrada abierta con contraseña y recuperación, cinco terminaciones reales del proceso, cero registros iniciales, asignación masiva atómica, concurrencia de dos solicitudes de depósito, permisos por HTTP, restauración cifrada con vínculos, revisión de datos y comparación diaria/mensual/morosidad.
-- Windows para este código: [39001990044](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39001990044), **todavía en curso al registrar este punto**. La validación Windows anterior del núcleo aislado no acredita esta integración.
+- Windows para este código: [39001990044](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39001990044), **333 correctas en 550,777 s, sin omisiones; tres navegadores correctos, salidas 0/0/0/0**. [Registros](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39001990044/artifacts/12090006489). La validación Windows anterior del núcleo aislado no acredita esta integración.
 - Logs de esta fase: `/workspace/work/noche2/phase1-unittest-fixed.log`, `phase1-browser-fixed.log`, `phase1-demo-fixed.log`, `phase1-roster-final.log`. Los fallos iniciales también se conservaron.
 
 ## Decisiones y reversión

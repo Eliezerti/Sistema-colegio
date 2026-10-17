@@ -1,6 +1,6 @@
 # Estado de trabajo nocturno
 
-**Fase 1 integrada y validada en Linux. Validación Windows en curso. Fases 2–4 pendientes.**
+**Fase 1 integrada y validada en Linux y Windows. Fase 2 en desarrollo; Fases 3–4 pendientes.**
 
 - Rama `autonomo/ingresos-facturas`; código de Fase 1: `ddba0ca9a2707f1fd9b133b4aea732d757fd1c2a`. Main, etiquetas y publicación intactos.
 - Commits: `2701023` migración; `1e003a4` servidor y reportes; `11e00dc` pruebas; `ddba0ca` interfaz.
@@ -12,12 +12,13 @@
 
 | Comando | Linux | Windows |
 |---|---|---|
-| `python -m unittest discover -s tests -v` | 333 en 206,436 s; 330 correctas y 3 nativas omitidas | En ejecución; no aprobado aún |
-| `python tests/run_browser.py` | Salida 0, incluye flujo nuevo por interfaz y copia consulta | En ejecución |
-| `python tests/run_browser.py --demo` | Salida 0 | En ejecución |
-| `python tests/run_browser.py --roster` | Salida 0 | En ejecución |
+| `python -m unittest discover -s tests -v` | 333 en 206,436 s; 330 correctas y 3 nativas omitidas | 333 correctas en 550,777 s; sin omisiones |
+| `python tests/run_browser.py` | Salida 0, incluye flujo nuevo por interfaz y copia consulta | Salida 0 |
+| `python tests/run_browser.py --demo` | Salida 0 | Salida 0 |
+| `python tests/run_browser.py --roster` | Salida 0 | Salida 0 |
 
 Windows: https://github.com/Eliezerti/Sistema-colegio/actions/runs/39001990044
+Registros: https://github.com/Eliezerti/Sistema-colegio/actions/runs/39001990044/artifacts/12090006489
 Logs Linux: `/workspace/work/noche2/phase1-*-fixed.log`, `phase1-roster-final.log`.
 
 Primera regresión ampliada: 331 en 213,631 s, 15 errores y 3 omisiones. Causas: fixtures sintéticos antiguos con tablas acompañantes nuevas, fixtures de pago sin cuenta y reapertura con cabecera local de bitácora dañada. Primer arreglo: fixtures actualizados y conservación de consulta con escrituras bloqueadas ante bitácora dañada; 57 dirigidas correctas y repetición completa correcta. Roster inicial falló por no elegir cuenta; ajustado el flujo real, sin omitir la validación. La prueba dirigida inicial de Consulta recibió 428: se confirmó la tasa diaria por el flujo vigente, sin quitar el control.
