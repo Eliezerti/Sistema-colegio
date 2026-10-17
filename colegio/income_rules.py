@@ -349,7 +349,10 @@ def parse_statement(raw, filename, profile, account):
                     for char in ref[1]:col=col*26+ord(char)-64
                     if col>50 or col in values:raise IncomeError('Columnas excesivas o celdas repetidas.')
                     kind=cell.get('t','n');value=cell.findtext('s:v','',ns)
-                    if kind=='s':value=shared[int(value)]
+                    if kind=='s':
+                        if not value.isascii() or not value.isdigit() or not 0 <= int(value) < len(shared):
+                            raise IncomeError('Índice de texto compartido inválido.')
+                        value=shared[int(value)]
                     elif kind=='inlineStr':
                         node=cell.find('s:is',ns)
                         value=''.join(node.itertext()) if node is not None else ''

@@ -172,3 +172,20 @@ class IncomeRulesTests(unittest.TestCase):
     def test_account_full_numbers_hidden_in_names_are_rejected(self):
         for data in (dict(name='Cuenta 0102-0000-0000-0000-0000'),dict(name='Cuenta',bank='0102 0000 0000 0000 0000')):
             with self.assertRaises(IncomeError):Account(3,currency='USD',**data)
+
+    def test_indexed_uniqueness_matches_bruteforce_for_varied_dates_and_accounts(self):
+        import random
+        from datetime import date,timedelta
+        rng=random.Random(20261017)
+        for case in range(40):
+            def record(prefix,n):
+                return Movement(prefix+str(n),rng.choice([1,2]),(date(2026,10,10)+timedelta(days=rng.randrange(10))).isoformat(),rng.choice([100,200]),rng.choice(['USD','VES']),rng.choice(['0001','1','2','']),rng.choice(['credit','debit']))
+            bank=[record('b',n) for n in range(20)];ledger=[record('l',n) for n in range(20)]
+            edges={b.id:[l.id for l in ledger if (b.account,b.amount,b.currency,b.direction)==(l.account,l.amount,l.currency,l.direction) and reference(b.reference) and reference(b.reference)==reference(l.reference) and abs((date.fromisoformat(b.on)-date.fromisoformat(l.on)).days)<=3] for b in bank}
+            counts={l.id:sum(l.id in matches for matches in edges.values()) for l in ledger}
+            for result in proposals(bank,ledger):
+                expected=edges[result['bank_id']]
+                with self.subTest(case=case,bank=result['bank_id']):
+                    self.assertEqual(set(result['candidates']),set(expected))
+                    self.assertEqual(result['candidate_count'],len(expected))
+                    self.assertEqual(result['unique'],len(expected)==1 and counts[expected[0]]==1)

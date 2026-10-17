@@ -16,3 +16,6 @@
 - Reglas aisladas: 14 correctas en 0,297 s; cubren cuentas, depósitos, cruces, duplicados, CSV/XLSX y lotes ambiguos de 9.600 movimientos.
 - Cuatro suites de validación final: en ejecución; resultado pendiente.
 - No se integraron Fases 1–4: no hay UI, rutas, permisos nuevos, tablas, migración ni facturas. El núcleo no se importa desde la aplicación.
+
+- Revisión adicional: 15 pruebas aisladas correctas en 0,394 s; oráculo independiente de unicidad con 40 conjuntos aleatorios y validación estricta de índices de texto Excel.
+- Benchmark del motor aislado (Linux, no HTTP/Windows): 9.600 recibos y 9.600 movimientos, 800 alumnos × 12 meses; referencias únicas 0,067575 s; referencias ambiguas 0,065099 s. No es medición de la pantalla principal ni del almacenamiento.

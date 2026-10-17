@@ -6,9 +6,9 @@ Trabajo de revisión en `autonomo/ingresos-facturas`. No publicar ni fusionar a 
 
 - `colegio/db.py:354`: cobros en centavos, moneda original, tasa original, referencia, clave idempotente y aplicaciones a cargos; el comprobante conserva su foto. No cambiar estos importes ni su numeración.
 - `colegio/server.py:162`: permisos de escritura centralizados; Consulta no escribe. `server.py:579` bloquea escrituras de copias de consulta antes de despachar rutas.
-- `colegio/administration.py`: `cash_summary`, `close_cash`, `reopen_cash` y `ensure_open_day` implementan el cierre diario. El cierre mensual nuevo debe ser adicional, no sustituirlo.
+- `colegio/administration.py:342–388`: `ensure_open_day`, `cash_summary`, `close_cash` y `reopen_cash` implementan el cierre diario. El cierre mensual nuevo debe ser adicional, no sustituirlo.
 - `colegio/monthly_report.py:16`: informe mensual actual, moneda/método, egresos y morosidad. Su resultado debe seguir idéntico; otros ingresos se mostrarán aparte para no duplicar mensualidades.
-- `colegio/documents.py`: PDF propio, fuentes incrustadas y tamaños configurados; `static/app.js:451` permite descargar e imprimir. Los recibos conservan impresión normal y tamaños actuales. La calibración al 100 % es exclusiva de futuras facturas preimpresas.
+- `colegio/documents.py:82,212,451,768`: PDF propio, fuentes incrustadas y tamaños configurados; `static/app.js:451` permite descargar e imprimir. Los recibos conservan impresión normal y tamaños actuales. La calibración al 100 % es exclusiva de futuras facturas preimpresas.
 - `colegio/audit_chain.py:369`: protecciones por tabla generadas dinámicamente; cualquier tabla nueva necesita sus disparadores antes de admitir escrituras.
 - `colegio/backup_inspection.py:69`: inspección y comparación recorren todas las tablas. No crear una base lateral que quede fuera de respaldos o restauración.
 
