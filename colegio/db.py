@@ -151,6 +151,8 @@ def initialize(path):
             migrate_bank(path)
             from .month_schema import migrate as migrate_month
             migrate_month(path)
+            from .invoice_schema import migrate as migrate_invoice
+            migrate_invoice(path)
             return
     with closing(connect(path)) as db, db:
         db.execute('PRAGMA journal_mode=WAL')
@@ -253,6 +255,8 @@ def initialize(path):
     migrate_bank(path,new=new_database)
     from .month_schema import migrate as migrate_month
     migrate_month(path,new=new_database)
+    from .invoice_schema import migrate as migrate_invoice
+    migrate_invoice(path,new=new_database)
 
 
 

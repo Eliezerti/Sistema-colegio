@@ -112,7 +112,8 @@ class AccountingTests(unittest.TestCase):
         digest=hashlib.sha256(cipher.read_bytes()).hexdigest()
         for credential,kind in ((PASSWORD,'password'),(recovery,'recovery')):
             with self.subTest(credential_kind=kind):
-                self.assertEqual(probe_backup(cipher,credential,kind)['schema'],15)
+                from colegio.branding import SCHEMA_VERSION
+                self.assertEqual(probe_backup(cipher,credential,kind)['schema'],SCHEMA_VERSION)
                 target=self.f.path.parent/('recuperado-'+kind)
                 restored=approved_restore(cipher,target,credential=credential,credential_kind=kind)
                 with closing(connect(restored)) as db:

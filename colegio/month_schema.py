@@ -30,8 +30,8 @@ def migrate(path,*,new=False):
     path=Path(path).resolve()
     with path_lock(path),closing(connect(path)) as db:
         version=db.execute('PRAGMA user_version').fetchone()[0]
-        if version>VERSION:raise ValueError('Esta base requiere una versión más reciente.')
-        if version==VERSION:verify_layout(db);local_status(db,recover=True);return
+        if version>16:raise ValueError('Esta base requiere una versión más reciente.')
+        if version in (VERSION,16):verify_layout(db);local_status(db,recover=True);return
         if version!=14:raise ValueError('Completa primero la actualización al esquema 14.')
         verify(db)
         populated=bool(db.execute('SELECT 1 FROM users LIMIT 1').fetchone() or db.execute('SELECT 1 FROM audit LIMIT 1').fetchone())

@@ -42,7 +42,7 @@ def migrate(path, *, new=False):
     with path_lock(path), closing(connect(path)) as db:
         version = db.execute('PRAGMA user_version').fetchone()[0]
         if version > VERSION:
-            if version not in (13,14,15):
+            if version not in (13,14,15,16):
                 raise ValueError('Esta base requiere una versión más reciente de Aula.')
             return
         work = path.parent / '.aula-schema-12'

@@ -19,7 +19,8 @@ class MonthSchemaTests(unittest.TestCase):
             path=self.old(d);recovery=configure(d)
             with closing(connect(path)) as db:
                 before=cash_summary(db,'2025-09-20');history=[tuple(r) for r in db.execute('SELECT * FROM audit')];payments=[tuple(r) for r in db.execute('SELECT * FROM payments')]
-            initialize(path)
+            from colegio.month_schema import migrate as month_migrate
+            month_migrate(path)
             with closing(connect(path)) as db:
                 self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],15);self.assertTrue(local_status(db)['ok']);self.assertEqual(cash_summary(db,'2025-09-20'),before)
                 self.assertEqual([tuple(r) for r in db.execute('SELECT * FROM payments')],payments);self.assertEqual([tuple(r) for r in db.execute('SELECT * FROM audit')][:len(history)],history)
