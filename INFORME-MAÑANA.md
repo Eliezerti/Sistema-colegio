@@ -1,6 +1,6 @@
 # Informe de la mañana · ingresos y facturas
 
-**Entrega parcial de revisión. Fase 1 integrada y validada en Linux y Windows. Fases 2–4 pendientes.**
+**Entrega parcial de revisión. Fase 1 integrada y validada en Linux y Windows. Conciliación integrada y validada en Linux; Windows pendiente. Cierre mensual y facturas pendientes.**
 Rama: `autonomo/ingresos-facturas`. Punto de partida: `ed1c5e9`, Aula 1.0.71. Main, etiquetas y versión publicada intactas. Ninguna base del usuario fue abierta, limpiada o migrada.
 
 ## Qué se hizo
@@ -9,7 +9,7 @@ Rama: `autonomo/ingresos-facturas`. Punto de partida: `ed1c5e9`, Aula 1.0.71. Ma
 |---|---|
 | Fase 0 | Inventario, diseño y decisiones documentados; sin datos reales. |
 | Fase 1 | Cuentas editables, cuenta en cobros, asignación histórica explícita, depósitos parciales de efectivo sin doble cobertura, otros ingresos/categorías/soporte y egresos con cuenta. Interfaz, API, permisos y bitácora integrados. Migración aditiva a esquema 13, copia previa verificada y pruebas sobre código publicado 1.0.71. Linux y Windows correctos. |
-| Fase 2 | Reglas puras CSV/XLSX, huella, referencias y propuestas; importación persistente, perfiles guardados, conciliación operativa y clasificaciones **pendientes**. |
+| Fase 2 | Importación CSV/XLSX persistente, perfiles editables, huella/usuario/fecha, duplicados/conflictos, propuestas y cruces únicos, vínculos parciales y clasificaciones con soporte. Interfaz y permisos integrados; Linux correcto, Windows pendiente. Cruces entre cuentas/monedas y depósitos con conversión pendientes. |
 | Fase 3 | Cierre diario y reportes vigentes incluyen otros ingresos y traslados sin duplicar ingresos; cierre mensual protegido y relación ampliada para contador **pendientes**. |
 | Fase 4 | Editor, lotes, emisión y PDF de facturas **pendientes**; ningún número fiscal generado. |
 
@@ -95,3 +95,15 @@ No se ejecutó instalación, actualización, desinstalación ni instalación con
 2. Cuando se habilite la importación: revisar el mapeo con un extracto real de Provincial; validar signos, centavos, referencias, fechas y duplicados. Mantenerlo confidencial; no subirlo al repositorio público.
 3. Revisar con el contador la validez del medio de emisión, datos fiscales y conceptos. Aula no se conecta a bancos ni SENIAT y no sustituye esa revisión.
 4. Antes de usar Fase 1 en producción y tras completar las demás fases: piloto separado de producción, comparación de cierre/reportes/morosidad, prueba de respaldo/restauración y permisos por perfil. Nada de esto se declara ejecutado físicamente.
+
+## Ampliación de conciliación comprobada en esta ejecución
+
+Código `e6b40ee`; esquemas 13→14 con copia privada previa verificada. Copia cifrada cuando está configurado el cifrado; si no lo está queda SQLite privado. Cinco cortes reales y reversión 13 comprobados; fixture publicado de partida 1.0.71.
+
+Linux final: **343 en 219,629 s; 340 correctas y tres nativas omitidas**. Las tres suites de navegador terminaron **salida 0**, incluido mapeo, vista previa, importación y cruce por interfaz. El primer dirigido falló por referencia de prueba repetida sin confirmar; corregido por el flujo vigente. Primera suite completa: **un fallo** de expectativa del contrato (cruce válido vacío devuelve 200, no 400); 12 dirigidas correctas tras corregirlo y suite completa correcta. Primer navegador: selector ambiguo; selector específico y repetición correcta. Logs completos conservados en `/workspace/work/noche2/phase2-*.log`.
+
+La conciliación no modifica totales, recibos ni correlativos. Se impide anular/reasignar un origen vinculado hasta retirar el vínculo con motivo. Caja y Consulta no reciben extractos. Los datos confidenciales se representan con huellas en la bitácora automática.
+
+**Límites pendientes:** cambio entre cuentas/monedas con tasa explícita y depósitos de efectivo convertidos; prueba HTTP integrada con 800 alumnos y 12 meses; extracto real de Provincial. La revisión se limita a 20.000 movimientos por lado. No se declara disponible conciliación cambiaria completa.
+
+[Guía de conciliación](docs/conciliacion-bancaria.md). La descripción anterior de Fase 2 como pendiente de integración corresponde al punto previo y queda sustituida por esta evidencia; la Fase 3 y 4 continúan pendientes.

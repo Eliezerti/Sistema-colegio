@@ -69,3 +69,17 @@ La decisión previa de conservar reglas aisladas describía el punto verde anter
 Reversión detallada y límites en `cuentas-ingresos.md`. La copia del esquema 12 procede del código publicado 1.0.71, no de cambiar un número de PRAGMA. Su manifiesto y SHA-256 verifican el fixture ficticio; se prueban contraseña y recuperación, comparación exacta y cinco terminaciones reales.
 
 La revisión automática rechazó una primera propuesta porque podía aceptar cualquier esquema futuro al saltar la migración antigua. No se ejecutó esa edición. Se sustituyó por aceptar **únicamente el esquema 13 conocido**; cualquier versión mayor sigue rechazada por ambos límites. La revisión autorizó esta alternativa. Las pruebas de consulta ante bitácora dañada conservan la disponibilidad de lectura y todos los bloqueos de escritura.
+
+## Conciliación persistente · esquema 14
+
+| Decisión | Motivo | Alternativa descartada | Cómo revertir |
+|---|---|---|---|
+| Perfiles editables y plantilla Provincial NO VERIFICADA | No existe un extracto real autorizado para contrastar | Presentar un mapeo inventado como oficial | Editar y guardar el perfil; cada importación conserva su versión del mapeo |
+| Archivo idéntico idempotente; ID bancario repetido solo se omite con contenido igual | Evitar duplicados sin ocultar correcciones bancarias | Saltar cualquier ID repetido aunque cambie el importe | Revisión externa de conflictos; no sobrescribir movimientos importados |
+| Sin ID, coincidencias de contenido requieren filas confirmadas y motivo | Dos transferencias legítimas pueden parecer iguales | Descartar o importar automáticamente el solapamiento | Revisar el archivo antes de confirmar; retirar vínculos no borra el original |
+| Cruce único en ambos lados, referencia no vacía, centavos exactos y ±3 días | Aplicar el valor seguro del encargo | Elegir el primer candidato o cruzar por importe solo | Retirar el vínculo con motivo y revisar; se conserva historia |
+| Vínculos parciales de misma cuenta y moneda; conversiones pendientes | No existe aún registro explícito de cambio entre cuentas/monedas | Usar una tasa actual o suponer que dos cuentas son la misma | Implementar operación cambiaria con tasa y fecha verificadas antes de habilitarla |
+| Datos del extracto solo Administración y huellas en bitácora | Confidencialidad sin retirar trazabilidad ni A5 | Copiar descripciones/referencias bancarias al registro de auditoría | Ampliar informes solo con permiso y prueba de privacidad; mantener originales confidenciales |
+| Migración 14 aditiva, snapshot previo 13 y conservación del punto verde 13 | Evitar tablas laterales fuera de respaldo/restauración | Guardar el banco en otro archivo no protegido | Copia previa 13 en otra carpeta con código Fase 1; para 1.0.71 usar copia 12 de la primera ampliación |
+
+El banco no se conecta por red. Cada importación conserva huella, usuario, fecha y mapeo. Los nuevos datos del extracto se incluyen en respaldos/restauración; la ampliación no modifica cobros ni fotos de recibos. Guía operativa y límites: `conciliacion-bancaria.md`.

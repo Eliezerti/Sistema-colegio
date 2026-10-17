@@ -1,6 +1,6 @@
 # Estado de trabajo nocturno
 
-**Fase 1 integrada y validada en Linux y Windows. Fase 2 en desarrollo; Fases 3–4 pendientes.**
+**Fase 1 integrada y validada en Linux y Windows. Conciliación integrada y validada en Linux; Windows pendiente. Fase 3 preparada, aún no integrada. Fase 4 pendiente.**
 
 - Rama `autonomo/ingresos-facturas`; código de Fase 1: `ddba0ca9a2707f1fd9b133b4aea732d757fd1c2a`. Main, etiquetas y publicación intactos.
 - Commits: `2701023` migración; `1e003a4` servidor y reportes; `11e00dc` pruebas; `ddba0ca` interfaz.
@@ -30,3 +30,12 @@ Primera regresión ampliada: 331 en 213,631 s, 15 errores y 3 omisiones. Causas:
 3. Fase 3: cierre mensual protegido, relación para contador y conciliación contra extracto. Después, Fase 4 completa si alcanza el uso.
 
 No existe instalador nuevo. No se hicieron instalación/actualización/desinstalación de esta rama ni impresión física. NO VERIFICADO: Provincial, formulario/calibración y confirmación fiscal. No hay aprobación pendiente.
+
+## Punto de Fase 2
+
+- Código `e6b40ee`: commits `0b5d11c` (esquema 14), `7f10cea` (servidor/confidencialidad/pruebas), `e6b40ee` (interfaz). Esquema 13 sigue siendo el punto previo de reversión, no el esquema actual de este código.
+- Cuatro suites Linux: unittest **343 en 219,629 s, 340 correctas y tres nativas omitidas**; normal, demo y roster **salida 0**. Logs `phase2-final-*.log` en `/workspace/work/noche2/`.
+- Diez pruebas nuevas de conciliación/migración, incluido proceso terminado realmente en cinco puntos y respaldo previo 13 cifrado abierto con contraseña y recuperación. Interfaz de perfil, CSV con ñ, vista previa, confirmación, cruce y totales correctos.
+- Primer dirigido: una referencia ficticia repetida sin confirmar; corregida mediante el control vigente. Primera suite completa: 343 en 219,262 s, un fallo por contrato de permisos que esperaba 400 ante cruce válido vacío; contrato corregido (200 y cero vínculos), 12 dirigidas correctas en 14,778 s y repetición completa correcta. Primer navegador falló por selector ambiguo de diálogos; selector específico y repetición correcta.
+- Perfil real Provincial **NO VERIFICADO**. Cruces entre cuentas o monedas y depósitos de efectivo con conversión: pendientes; nunca inferirlos. Conciliación integrada limitada a 20.000 movimientos por lado. No usar una prueba pura para declarar rendimiento HTTP.
+- Preparados `colegio/month_schema.py` y `colegio/accounting.py` sin importación desde el producto y todavía sin commit: Fase 3 no activa. Integrar y probar antes de incluirlos en el punto verde; descartar estos archivos propios si no se completa la fase.

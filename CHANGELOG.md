@@ -1,10 +1,11 @@
 # En desarrollo · rama autónoma, sin publicación
 
-- Fase 1: cuentas escolares con cuatro últimos dígitos, cuenta destino en cobros, asignación histórica explícita y cuentas opcionales en egresos. Los recibos y correlativos se conservan.
-- Otros ingresos con categorías y soporte; depósitos vinculados parcialmente a efectivo, sin doble cobertura ni doble ingreso. Anulaciones y permisos comprobados en el servidor.
-- Esquema 13 aditivo, sin registros precargados; copia previa verificada y reversión documentada. Fixture publicado 1.0.71, comparación financiera, cinco terminaciones reales durante migración y restauración cifrada comprobadas.
-- Linux: 333 pruebas, 330 correctas y 3 exclusivas de Windows omitidas; tres navegadores correctos. Windows: 333 correctas sin omisiones y tres navegadores correctos para este código. [Estado y evidencia](docs/ESTADO-NOCHE.md).
-- Conciliación persistente, cierre mensual nuevo y facturas siguen pendientes. Sin instalador nuevo ni publicación.
+- Fase 1: cuentas, cuenta destino, revisión histórica, otros ingresos y depósitos. Recibos, importes y correlativos originales conservados. Linux y Windows: cuatro suites correctas.
+- Conciliación persistente: perfiles editables CSV/XLSX, vista previa y huella, importaciones idempotentes, revisión de solapamientos, ID bancario conflictivo rechazado, cruce único por ambos lados y vínculos parciales. USD y Bs se revisan por cuenta y moneda originales; conversiones entre cuentas/monedas pendientes.
+- Extractos solo para Administración. La bitácora conserva identificadores y huellas sin copiar datos del extracto. Retirar vínculos/clasificaciones conserva su historia; movimientos conciliados protegidos contra anulación o reasignación.
+- Esquemas 13/14 aditivos, respaldo previo verificado, sin registros precargados. Fixture publicado 1.0.71, contraseña/recuperación, comparación y cinco cortes reales por cada migración.
+- Conciliación Linux: 343 en 219,629 s; 340 correctas y tres nativas omitidas. Tres navegadores correctos. Windows para este código en curso. [Estado](docs/ESTADO-NOCHE.md).
+- Cierre mensual protegido, relación ampliada y facturas aún pendientes. Sin instalador nuevo ni publicación.
 
 # Cobros y documentos financieros de prueba · 1.0.71 · 16/10/2026
 
