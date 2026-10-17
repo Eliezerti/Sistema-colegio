@@ -45,8 +45,8 @@ def migrate(path,*,new=False):
     path=Path(path).resolve()
     with path_lock(path),closing(connect(path)) as db:
         version=db.execute('PRAGMA user_version').fetchone()[0]
-        if version>VERSION:raise ValueError('Esta base requiere una versión más reciente.')
-        if version==VERSION:
+        if version>15:raise ValueError('Esta base requiere una versión más reciente.')
+        if version in (VERSION,15):
             verify_layout(db);local_status(db,recover=True);return
         if version!=13:raise ValueError('Completa primero la actualización al esquema 13.')
         verify(db)

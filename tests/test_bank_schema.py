@@ -3,6 +3,7 @@ from contextlib import closing
 from pathlib import Path
 import json,sqlite3,subprocess,sys,tempfile,time,unittest
 from colegio.db import initialize,connect
+from colegio.branding import SCHEMA_VERSION
 from colegio.income_schema import migrate as income_migrate
 from colegio.bank_schema import TABLES
 from colegio.audit_chain import local_status
@@ -22,7 +23,7 @@ class BankSchemaTests(unittest.TestCase):
                 payments=[tuple(r) for r in db.execute('SELECT * FROM payments')]
             initialize(path)
             with closing(connect(path)) as db:
-                self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],14);self.assertTrue(local_status(db)['ok'])
+                self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],SCHEMA_VERSION);self.assertTrue(local_status(db)['ok'])
                 self.assertEqual(cash_summary(db,'2025-09-20'),before)
                 self.assertEqual([tuple(r) for r in db.execute('SELECT * FROM payments')],payments)
                 self.assertEqual([tuple(r) for r in db.execute('SELECT * FROM audit')][:len(history)],history)
@@ -31,7 +32,7 @@ class BankSchemaTests(unittest.TestCase):
             saved=list(folder.glob('*.aulabak'));self.assertEqual(len(saved),1)
             for key,kind in ((PASSWORD,'password'),(recovery,'recovery')):
                 with staged_backup(saved[0],key,kind) as (copy,inspection,_):self.assertEqual(inspection['summary']['schema'],13)
-            self.assertEqual(probe_backup(path)['schema'],14)
+            self.assertEqual(probe_backup(path)['schema'],SCHEMA_VERSION)
     def test_actual_kill_transaction_head_recovery_and_integrity(self):
         for stage in ('backup_verified','object_3','before_commit','audit_after_commit','after_commit'):
             with self.subTest(stage=stage),tempfile.TemporaryDirectory() as d:

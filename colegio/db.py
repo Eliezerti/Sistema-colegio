@@ -149,6 +149,8 @@ def initialize(path):
             migrate_income(path)
             from .bank_schema import migrate as migrate_bank
             migrate_bank(path)
+            from .month_schema import migrate as migrate_month
+            migrate_month(path)
             return
     with closing(connect(path)) as db, db:
         db.execute('PRAGMA journal_mode=WAL')
@@ -249,6 +251,8 @@ def initialize(path):
     migrate_income(path,new=new_database)
     from .bank_schema import migrate as migrate_bank
     migrate_bank(path,new=new_database)
+    from .month_schema import migrate as migrate_month
+    migrate_month(path,new=new_database)
 
 
 
@@ -378,6 +382,8 @@ def record_payment(db, data, user_id):
         if (existing['student_id'], existing['received_amount'], existing['currency'], existing['paid_on'], existing['method'], existing['reference'], existing['notes']) != (student_id, money(data.get('amount')), data.get('currency', 'USD'), paid_on, method, reference, notes):
             raise ValidationError('La clave de pago ya se usó con otros datos.')
         return {'id': existing['id'], 'duplicate': True}
+    from .administration import ensure_open_day
+    ensure_open_day(db,paid_on)
     reference_key=''.join(reference.upper().split())
     repeated=[r['id'] for r in db.execute("SELECT id,reference FROM payments WHERE voided=0 AND reference<>''")
         if reference_key and ''.join(r['reference'].upper().split())==reference_key]

@@ -134,7 +134,7 @@ def main():
             source.backup(target)
         backup_hash = hashlib.sha256(old_backup.read_bytes()).hexdigest()
         # Upgrade monotonically: 1.0.13 -> 1.0.49 -> current. A historical
-        # executable must never open the newer schema 14 as a downgrade test.
+        # executable must never open the newer schema 15 as a downgrade test.
         previous = Path(os.environ['RUNNER_TEMP'])/'Aula-B2-Publicado'/'Aula-Colegio-Instalador-1.0.49.exe'
         assert hashlib.sha256(previous.read_bytes()).hexdigest() == '3d4846ab01e76a96c3e3dc738a1945dfde1aa0d3fb845173e7fc18cf3e0ead2b'
         execute(previous, *arguments)
@@ -155,7 +155,7 @@ def main():
         print('PASS D7: actualización real 1.0.67 → '+args.version+' conserva importes y retira guías internas.',flush=True)
         assert financial_snapshot(database, original['columns']) == original
         with closing(sqlite3.connect(database)) as db:
-            assert db.execute('PRAGMA user_version').fetchone()[0]==14
+            assert db.execute('PRAGMA user_version').fetchone()[0]==15
         assert list((data/'backups').glob('antes-bitacora-*.sqlite3'))
         subprocess.run([sys.executable, str(ROOT/'packaging/bundle_inventory.py'), str(directory),
                         '--output', str(Path(os.environ['RUNNER_TEMP'])/'aula-b2-upgraded.json'), '--verify'], check=True)
@@ -164,9 +164,9 @@ def main():
         assert financial_snapshot(database, original['columns']) == original
         assert hashlib.sha256(old_backup.read_bytes()).hexdigest() == backup_hash
         result = dict(historical='1.0.13', target=args.version, historical_sha256=digest,
-                      balance_usd_cents=original['balance'], schema=14, data_preserved=True, backup_preserved=True)
+                      balance_usd_cents=original['balance'], schema=15, data_preserved=True, backup_preserved=True)
         (Path(os.environ['RUNNER_TEMP'])/'aula-b1-upgrade.json').write_text(json.dumps(result, indent=2))
-        print('PASS B1: actualización real 1.0.13 → '+args.version+', esquema 14, saldo USD 50 y filas/recibo/respaldo conservados.', flush=True)
+        print('PASS B1: actualización real 1.0.13 → '+args.version+', esquema 15, saldo USD 50 y filas/recibo/respaldo conservados.', flush=True)
     finally:
         if data.exists():
             diagnostic = Path(os.environ['RUNNER_TEMP'])/'aula-b1-diagnostic'

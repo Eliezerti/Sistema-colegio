@@ -95,8 +95,8 @@ def migrate(path,*,new=False):
     path=Path(path).resolve()
     with path_lock(path),closing(connect(path)) as db:
         version=db.execute('PRAGMA user_version').fetchone()[0]
-        if version>14:raise ValueError('Esta base requiere una versión más reciente.')
-        if version in (VERSION,14):
+        if version>15:raise ValueError('Esta base requiere una versión más reciente.')
+        if version in (VERSION,14,15):
             verify_layout(db)
             # Preserve existing consultation when the local audit head is bad;
             # require()/SQLite guards continue to block every business write.

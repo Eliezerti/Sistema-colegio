@@ -15,7 +15,7 @@ def legacy_fixture(db):
     for name, in db.execute("SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE 'audit_%'").fetchall():
         db.execute('DROP TRIGGER "'+name+'"')
     # Only these disposable synthetic-v10 fixtures remove later companion tables.
-    for table in ('bank_classifications','reconciliation_links','bank_movements','statement_imports','statement_profiles','cash_deposit_payments','cash_deposits','other_income','expense_accounts','payment_accounts','income_categories','school_accounts'):
+    for table in ('income_annotations','accounting_closures','bank_classifications','reconciliation_links','bank_movements','statement_imports','statement_profiles','cash_deposit_payments','cash_deposits','other_income','expense_accounts','payment_accounts','income_categories','school_accounts'):
         db.execute('DROP TABLE IF EXISTS '+table)
     db.execute('DROP TABLE IF EXISTS audit_links')
     db.execute('DROP TABLE IF EXISTS audit_meta')
