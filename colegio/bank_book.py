@@ -1,6 +1,7 @@
 """Administrator-only statement import and reconciliation; original money is immutable."""
 import base64,binascii,json
-from datetime import datetime,timezone,date
+from datetime import datetime,timezone,date,timedelta
+import calendar
 from .db import ValidationError,audit,integer,required,money,valid_period,local_today
 from .income_book import account
 from .income_rules import parse_statement,Movement,proposals,allocation_plan,reference,IncomeError
@@ -28,8 +29,13 @@ def ledger(db):
         for row in db.execute(sql):
             row=dict(row);amount=row['amount'] if prefix=='D' else row['received_amount']
             result.append(dict(id=prefix+str(row['id']),account=row['account_id'],on=row[on],amount=amount,currency=row['currency'],reference=row['reference'],direction=direction,bcv_rate=row.get('bcv_rate','')))
-            if len(result)>20000:raise ValidationError('Divide la revisión por cuenta o período antes de superar 20.000 movimientos.')
+            if len(result)>200000:raise ValidationError('El historial supera 200.000 registros; requiere una revisión con filtros antes de continuar.')
     return result
+
+def window(records,month,padding):
+    valid_period(month);year,number=map(int,month.split('-'))
+    start=date(year,number,1)-timedelta(days=padding);end=date(year,number,calendar.monthrange(year,number)[1])+timedelta(days=padding)
+    return [r for r in records if start.isoformat()<=r['on']<=end.isoformat()]
 
 def movement(row):return Movement(row['id'],row['account'],row['on'],row['amount'],row['currency'],row['reference'],row['direction'])
 def banks(db):
@@ -129,10 +135,11 @@ def _action(db,endpoint,data,user):
         bs=banks(db);ls=ledger(db);ub,ul=used(db)
         if endpoint=='bank-auto':
             classified={str(r[0]) for r in db.execute('SELECT movement_id FROM bank_classifications WHERE voided=0')}
-            pending_b=[b for b in bs if not ub.get(b['id']) and b['id'] not in classified];pending_l=[l for l in ls if not ul.get(l['id'])]
+            month=valid_period(data.get('month',local_today().isoformat()[:7]))
+            pending_b=window([b for b in bs if not ub.get(b['id']) and b['id'] not in classified],month,6);pending_l=window([l for l in ls if not ul.get(l['id'])],month,3)
             links=[];bank_index={b['id']:b for b in pending_b}
             for p in proposals(map(movement,pending_b),map(movement,pending_l)):
-                if p['unique']:
+                if p['unique'] and bank_index[p['bank_id']]['on'].startswith(month):
                     # Empty references are suggestions only; they do not identify a deposit.
                     b=bank_index[p['bank_id']]
                     if reference(b['reference']):links.append(dict(movement_id=b['id'],source=p['candidates'][0],amount=f"{b['amount']//100}.{b['amount']%100:02d}"))
@@ -185,8 +192,8 @@ def report(db,user,month,*,days=7,offset=0):
     if user['role']!='admin':return result
     pending_b=[b for b in bs if b['amount']>ub.get(b['id'],0) and b['id'] not in classified]
     pending_l=[l for l in ls if l['amount']>ul.get(l['id'],0)]
-    hints=proposals(map(movement,pending_b),map(movement,pending_l));bybank={p['bank_id']:p for p in hints}
-    for b in pending_b:b.update(remaining=b['amount']-ub.get(b['id'],0),proposal=bybank[b['id']],age_days=(local_today()-date.fromisoformat(b['on'])).days)
+    hints=proposals(map(movement,window(pending_b,month,6)),map(movement,window(pending_l,month,3)));bybank={p['bank_id']:p for p in hints}
+    for b in pending_b:b.update(remaining=b['amount']-ub.get(b['id'],0),proposal=bybank.get(b['id'],dict(candidates=[],reason='Fuera del mes revisado')),age_days=(local_today()-date.fromisoformat(b['on'])).days)
     for l in pending_l:l.update(remaining=l['amount']-ul.get(l['id'],0),age_days=(local_today()-date.fromisoformat(l['on'])).days)
     differences=[]
     grouped={}

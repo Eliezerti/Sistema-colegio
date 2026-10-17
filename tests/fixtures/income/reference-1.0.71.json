@@ -1,0 +1,124 @@
+{
+  "version": "1.0.71",
+  "commit": "cfbad62338849cd2089de6fd58c1c43ee115f772",
+  "schema": 12,
+  "fictional": true,
+  "as_of": "2025-09-20",
+  "fixture_sha256": "8b75a4203143f6d6e5940d614ded769ab192b8a69b5fe50af57242231ad10537",
+  "expected": {
+    "cash": {
+      "closed_on": "2025-09-20",
+      "lines": [
+        {
+          "method": "Efectivo",
+          "currency": "USD",
+          "income": 0,
+          "expense": 1001,
+          "net": -1001,
+          "income_usd": 0,
+          "expense_usd": 1001
+        },
+        {
+          "method": "Transferencia",
+          "currency": "VES",
+          "income": 0,
+          "expense": 200000,
+          "net": -200000,
+          "income_usd": 0,
+          "expense_usd": 2000
+        }
+      ],
+      "movements": [
+        {
+          "type": "expense",
+          "id": 1,
+          "currency": "USD",
+          "received_amount": 1001,
+          "amount": 1001,
+          "method": "Efectivo",
+          "reference": "REF-1",
+          "voided": 0,
+          "exchange_rate": "100"
+        },
+        {
+          "type": "expense",
+          "id": 2,
+          "currency": "VES",
+          "received_amount": 200000,
+          "amount": 2000,
+          "method": "Transferencia",
+          "reference": "REF-2",
+          "voided": 0,
+          "exchange_rate": "100"
+        },
+        {
+          "type": "expense",
+          "id": 3,
+          "currency": "USD",
+          "received_amount": 333,
+          "amount": 333,
+          "method": "Tarjeta",
+          "reference": "REF-3",
+          "voided": 1,
+          "exchange_rate": "100"
+        }
+      ],
+      "preview_hash": "0b6def578afec085f612614201ec1b269c8271b64a97d531d10b445e538b8a55",
+      "income_usd": 0,
+      "expense_usd": 3001,
+      "active_id": null
+    },
+    "summary": {
+      "active_students": 0,
+      "pending": 0,
+      "overdue": 0,
+      "debtors": 0,
+      "income": 0,
+      "expenses": 3001,
+      "net": -3001,
+      "aging": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "daily": {
+      "payment_count": 0,
+      "debtor_count": 0,
+      "received_usd": 0,
+      "received_ves": 0,
+      "income_usd": 0,
+      "overdue_usd": 0
+    },
+    "monthly": {
+      "income_usd": 0,
+      "expenses_usd": 3001,
+      "net_usd": -3001,
+      "balances": [
+        {
+          "currency": "USD",
+          "method": "Efectivo",
+          "opening": 0,
+          "income": 0,
+          "expense": 1001,
+          "closing": -1001,
+          "income_usd": 0,
+          "expense_usd": 1001
+        },
+        {
+          "currency": "VES",
+          "method": "Transferencia",
+          "opening": 0,
+          "income": 0,
+          "expense": 200000,
+          "closing": -200000,
+          "income_usd": 0,
+          "expense_usd": 2000
+        }
+      ],
+      "pending_by_grade": [],
+      "annulments": []
+    }
+  }
+}

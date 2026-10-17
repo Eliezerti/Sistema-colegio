@@ -31,8 +31,8 @@ class BankBookTests(unittest.TestCase):
         pid=self.pay();before=self.f.request('state?history=1')['summary'];receipt=self.f.request('receipt/'+str(pid)+'.pdf')
         day=(local_today()-timedelta(days=3)).isoformat();self.imported([[day,'10.00','12','Ficticio','B1']])
         self.assertTrue(self.f.request('bank-book?month='+day[:7])['bank_pending'][0]['proposal']['unique'])
-        self.assertEqual(self.f.request('bank-auto',{})['linked'],1)
-        self.assertEqual(self.f.request('bank-auto',{})['linked'],0)
+        self.assertEqual(self.f.request('bank-auto',dict(month=day[:7]))['linked'],1)
+        self.assertEqual(self.f.request('bank-auto',dict(month=day[:7]))['linked'],0)
         self.assertEqual(self.f.request('state?history=1')['summary'],before);self.assertEqual(self.f.request('receipt/'+str(pid)+'.pdf'),receipt)
         self.f.request('void-payment',dict(id=pid,reason='Prueba ficticia de anulación'),status=400)
         self.f.request('income-assign',dict(kind='payments',ids=[pid],account_id=self.bank,reason='Prueba ficticia de reasignación'),status=400)
@@ -81,3 +81,12 @@ class BankBookTests(unittest.TestCase):
             self.f.request('logout',{});self.f.request('login',dict(username=role,password='FICTICIO-clave-segura'));self.f.csrf=self.f.request('session')['user']['csrf'];self.f.request('confirm-rate',dict(rate_date=self.on,rate='100'))
             report=self.f.request('bank-book');self.assertEqual(set(report),{'month','totals'})
             for endpoint in ('bank-profile','bank-preview','bank-import','bank-auto','bank-link','bank-classify','bank-unlink','bank-unclassify'):self.f.request(endpoint,{},status=403)
+
+    def test_auto_is_scoped_to_reviewed_month_not_entire_history(self):
+        past=(local_today().replace(day=1)-timedelta(days=1)).isoformat()
+        current=self.pay('3','NOW','now')
+        previous=self.f.request('payments',self.f.payment(amount='4',reference='PAST',key='past',paid_on=past))['id']
+        self.imported([[self.on,'3','NOW','Ficticio actual','S1'],[past,'4','PAST','Ficticio anterior','S2']])
+        self.assertEqual(self.f.request('bank-auto',dict(month=self.on[:7]))['linked'],1)
+        links=self.f.request('bank-book')['links'];self.assertEqual([r['payment_id'] for r in links],[current])
+        self.assertEqual(self.f.request('bank-auto',dict(month=past[:7]))['linked'],1)
