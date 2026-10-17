@@ -4,7 +4,7 @@
 
 Rama `autonomo/ingresos-facturas`; último código de producto `ee7a4881dec3aed662cf8aafc7b87dbe951ad75f`. Enviado `1fcebfb73967fc8de7010bb0d9fc15a2e37666b5` con el primer arreglo de prueba nativa `6b139e2` y documentación. Main intacta; sin merge, etiquetas, release ni versión final. Solo bases ficticias y temporales; ninguna base del usuario abierta o modificada.
 
-Fases 1–4 implementadas. Fases 1–3 tienen cuatro suites verdes en Linux y Windows. Fase 4 tiene las cuatro suites Linux verdes; **Windows e instalador BORRADOR en curso, no entregados todavía**.
+Fases 1–4 implementadas. Fases 1–3 tienen cuatro suites verdes en Linux y Windows. Fase 4 tiene las cuatro suites Linux y Windows verdes; **instalador BORRADOR en compilación, no entregado todavía**. El conteo/tiempo Windows y CSV final deben recuperarse al terminar el job.
 
 ## Resultados reales actuales
 
@@ -59,3 +59,10 @@ Se aísla `tests/test_restore_windows_ui.py` en un subproceso con las mismas ase
 ## Repetición enviada · 17/10/2026 11:16 Venezuela
 
 [Windows 39044266696](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39044266696), commit `1fcebfb73967fc8de7010bb0d9fc15a2e37666b5`, primera repetición tras `6b139e2`. Cuatro suites completas y solo después compilación/instalación BORRADOR. Registro observador `/workspace/work/noche4/windows-fixed1-watch.log` y `.exit`. La ejecución anterior ya terminó; no se canceló. El producto es el mismo que pasó Linux; el cambio es la vida de la prueba Tk y su diagnóstico. Resultado Windows aún desconocido al guardar.
+
+
+## Primer arreglo aprobado · 17/10/2026 11:35 Venezuela
+
+Run 39044266696, job 117429759501, commit 1fcebfb: **Cuatro suites reales de la rama = success; medición 800/12 con facturas = success; PDF independiente = success**. Aislamiento/compilación BORRADOR en curso. Todavía no hay instalador validado. Las anotaciones completas no se publicaron mientras el job está activo; no inventar conteo, segundos ni medidas Windows. Evidencia observada en `windows-facturas-etapas-correctas.json`.
+
+Recolector compatible con la versión de gh instalada: `/workspace/work/noche4/collect_windows.py`, sesión 32224. Guarda estado cada 30 s y, al terminar, anotaciones/metadatos/log completo en scratch. No usa el flag --slurp no disponible. El observador 27591 sigue activo; no se canceló ninguna prueba. Próximo: dejar terminar compilación, Defender y nativas, recuperar resultados, actualizar el informe y entregar solo BORRADOR si pasa.

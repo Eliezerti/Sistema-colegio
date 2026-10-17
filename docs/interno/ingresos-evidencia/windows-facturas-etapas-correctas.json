@@ -1,0 +1,29 @@
+{
+  "run": 39044266696,
+  "commit": "1fcebfb73967fc8de7010bb0d9fc15a2e37666b5",
+  "job": 117429759501,
+  "observed": "17/10/2026 11:35 Venezuela",
+  "steps": [
+    {
+      "conclusion": "success",
+      "name": "Cuatro suites reales de la rama",
+      "number": 6,
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "name": "Medición HTTP de ingresos con 800 alumnos y 12 meses",
+      "number": 7,
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "name": "Verificación independiente del PDF de facturas",
+      "number": 8,
+      "status": "completed"
+    }
+  ],
+  "unit_count": null,
+  "unit_seconds": null,
+  "note": "Etapas correctas observadas; cantidades, tiempos y CSV se recuperarán al terminar el job. Instalador todavía en compilación."
+}
