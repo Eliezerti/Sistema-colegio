@@ -19,3 +19,11 @@
 
 - Revisión adicional: 15 pruebas aisladas correctas en 0,394 s; oráculo independiente de unicidad con 40 conjuntos aleatorios y validación estricta de índices de texto Excel.
 - Benchmark del motor aislado (Linux, no HTTP/Windows): 9.600 recibos y 9.600 movimientos, 800 alumnos × 12 meses; referencias únicas 0,067575 s; referencias ambiguas 0,065099 s. No es medición de la pantalla principal ni del almacenamiento.
+
+## Punto de revisión guardado
+
+- Rama publicada en el origin del propietario, sin merge: `autonomo/ingresos-facturas`.
+- Commit del núcleo final: `f2c468c`; 17 pruebas aisladas correctas.
+- CI de ese commit: https://github.com/Eliezerti/Sistema-colegio/actions/runs/38996806129 (en cola/en curso; no aprobado todavía).
+- Informe de revisión: `INFORME-MAÑANA.md`. Entrega parcial explícita; Fases 1–4 siguen sin integrar.
+- Próximo bloque: cerrar resultados y después implementar Fase 1 desde el diseño, empezando por el protocolo de respaldo/migración y su fixture publicado. No habilitar primero una UI financiera sin esas garantías.
