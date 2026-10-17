@@ -1,6 +1,6 @@
 # Aula · Control de mensualidades
 
-Trabajo de revisión en `autonomo/ingresos-facturas`: [estado nocturno](docs/ESTADO-NOCHE.md) y [diseño de ingresos](docs/interno/ingresos-diseno.md). Incluye reglas aisladas con pruebas; cuentas, conciliación, cierre mensual protegido y facturas todavía no están habilitados en la aplicación. No es una versión nueva ni un instalador.
+Trabajo de revisión en `autonomo/ingresos-facturas`: [informe de la mañana](INFORME-MAÑANA.md), [estado nocturno](docs/ESTADO-NOCHE.md) y [diseño de ingresos](docs/interno/ingresos-diseno.md). Incluye reglas aisladas con pruebas; cuentas, conciliación, cierre mensual protegido y facturas todavía no están habilitados en la aplicación. No es una versión nueva ni un instalador.
 
 Aula administra alumnos, representantes, grados, mensualidades, cobros y egresos mínimos del colegio en una PC Windows. Incluye tasas BCV, descuentos, convenios, pase de año, cierre de caja, reportes, importación de matrículas y Archivo de la institución. Personal y Nómina están retirados.
 

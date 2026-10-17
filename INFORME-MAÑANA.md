@@ -17,7 +17,7 @@ Los commits `a311cfc`, `27241fc` y `f2c468c` contienen las reglas y sus pruebas.
 
 ## Pruebas reales
 
-Linux terminado; Windows todavía en ejecución. Consultar `docs/ESTADO-NOCHE.md`; este apartado se actualizará con el resultado real de Windows.
+Validación final terminada en Linux y Windows para el código `6f19357`. Los commits posteriores solo actualizan documentación; esto no convierte en completas las fases pendientes.
 
 - Línea base con restricción: 307 pruebas en 67,595 s; 118 errores de socket y 3 omisiones nativas. Falló por `PermissionError: [Errno 1] Operation not permitted` al crear el servidor local.
 - Se utilizó el mecanismo de permisos autorizado; prueba administrativa: 1 correcta en 1,012 s. Sin modificar ni omitir pruebas para evitar el bloqueo.
@@ -28,7 +28,7 @@ Linux terminado; Windows todavía en ejecución. Consultar `docs/ESTADO-NOCHE.md
 - Windows inicial ([38996806129](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38996806129)): 324 en 482,260 s, 1 error de conexión `WinError 10053` al esperar 403 en `import-roster` de una copia de consulta. Las tres suites de navegador pasaron; salidas `1/0/0/0`. No se declaró aprobado.
 - Primer arreglo `6f19357`: descarte del cuerpo rechazado, memoria acotada y plazo total 2 s; sin JSON ni conexión SQLite. Prueba dirigida: 4 correctas en 9,361 s, incluidos cuerpo grande y emisores incompletos/lentos. No se omitieron pruebas.
 - Linux del arreglo: 325 en 188,147 s; 322 correctas y 3 exclusivas de Windows omitidas. Navegador normal, demo y roster: salida 0.
-- Windows del arreglo: [38997949165](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38997949165), todavía en ejecución. No se reutiliza la validación antigua de 1.0.71 como prueba de esta rama.
+- Windows del primer arreglo, código `6f19357`: **325 correctas en 438,560 s, sin omisiones**. Navegador normal, `--demo` y `--roster`: salida 0; resumen de salidas `0/0/0/0`. [Ejecución 38997949165](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38997949165) · [Registros completos](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38997949165/artifacts/12087338899). No se reutiliza la validación antigua de 1.0.71 como prueba de esta rama.
 
 Las tres omisiones Linux son DPAPI, mutex/enfoque de ventanas Windows y revisión nativa de restauración con Tk. No se omiten por motivos funcionales.
 
@@ -42,6 +42,17 @@ Linux, Python 3.12.14; una ejecución por escenario. 800 alumnos × 12 meses, 9.
 | Referencias repetidas por mes | 0,065099 s | 0 |
 
 En grupos ambiguos se entregan hasta 50 candidatos y su cantidad real. **Esto no mide HTTP, base de datos, interfaz ni Windows**, ni demuestra el rendimiento final de la conciliación integrada.
+
+### Resumen final de las cuatro suites
+
+| Comando | Linux | Windows Server 2022 |
+|---|---|---|
+| `python -m unittest discover -s tests -v` | 325 en 188,147 s; 322 correctas y 3 nativas omitidas | 325 correctas en 438,560 s; sin omisiones |
+| `python tests/run_browser.py` | Salida 0 | Salida 0 |
+| `python tests/run_browser.py --demo` | Salida 0 | Salida 0 |
+| `python tests/run_browser.py --roster` | Salida 0 | Salida 0 |
+
+El fallo Windows previo se corrigió en el primer intento de arreglo. No se cambió ni retiró ninguna prueba existente; se añadió cobertura del transporte. La ejecución obsoleta `38996676220` fue cancelada al sustituir su código y no se contabiliza como aprobada.
 
 ## Decisiones y reversión
 

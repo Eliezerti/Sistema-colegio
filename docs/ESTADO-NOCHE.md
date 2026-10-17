@@ -1,50 +1,38 @@
 # Estado de trabajo nocturno
 
-- Rama: `autonomo/ingresos-facturas`.
-- Punto inicial verde conocido: `ed1c5e9` (Aula 1.0.71); main intacta.
-- Fase 0: inventario y diseño escritos en DECISIONES-AUTONOMAS.md.
-- Línea base: unittest en ejecución; resultados pendientes, no declarados como aprobados.
-- Fases 1–4: pendientes de implementación y validación. No se aplicaron migraciones a datos del usuario.
-- No hay instalador nuevo, publicación ni etiqueta.
+**Entrega parcial comprobada. Fases 1–4 pendientes de integración.**
 
-## Avance de reglas aisladas
+- Rama: `autonomo/ingresos-facturas`; origen `ed1c5e9` (1.0.71). Main y versiones publicadas intactas.
+- Código final validado: `6f19357e990ce49ed84d0f96f3d5891262cbeafb`. Los commits posteriores solo actualizan documentación.
+- Fase 0 completada: inventario, decisiones y diseño en `DECISIONES-AUTONOMAS.md` y `interno/ingresos-diseno.md`.
+- Núcleo aislado: cuentas, sugerencias, depósitos, CSV/XLSX y candidatos/asignaciones de conciliación; 17 pruebas propias. Sin rutas, interfaz, persistencia ni nuevas tablas. No se importa desde la aplicación.
+- Arreglo real adicional: rechazo HTTP 403 en copias de consulta; descarta el cuerpo con memoria/plazo acotados, sin analizar JSON ni abrir SQLite. Protecciones y archivo fuente intactos.
+- Ninguna base del usuario fue abierta o modificada. Esquema 12; recibos, cálculos y correlativos conservados. No se generó instalador ni se trabajó en firma digital.
 
-- Fase 0 completada: inventario, decisiones y diseño ampliado en `docs/interno/ingresos-diseno.md`.
-- Línea base autorizada: 307 pruebas en 180,169 s, 304 correctas y 3 exclusivas de Windows omitidas. Tres navegadores: salida 0.
-- Ejecución restringida previa: 307 en 67,595 s; 118 errores por sockets bloqueados y 3 omisiones; conservada como resultado fallido, no se modificaron pruebas para ocultarlo.
-- Prueba administrativa repetida con permiso de sockets: 1 correcta en 1,012 s.
-- Reglas aisladas: 14 correctas en 0,297 s; cubren cuentas, depósitos, cruces, duplicados, CSV/XLSX y lotes ambiguos de 9.600 movimientos.
-- Cuatro suites de validación final: en ejecución; resultado pendiente.
-- No se integraron Fases 1–4: no hay UI, rutas, permisos nuevos, tablas, migración ni facturas. El núcleo no se importa desde la aplicación.
+## Validación final real
 
-- Revisión adicional: 15 pruebas aisladas correctas en 0,394 s; oráculo independiente de unicidad con 40 conjuntos aleatorios y validación estricta de índices de texto Excel.
-- Benchmark del motor aislado (Linux, no HTTP/Windows): 9.600 recibos y 9.600 movimientos, 800 alumnos × 12 meses; referencias únicas 0,067575 s; referencias ambiguas 0,065099 s. No es medición de la pantalla principal ni del almacenamiento.
+| Suite | Linux | Windows Server 2022 |
+|---|---|---|
+| unittest completo | 325 en 188,147 s; 322 correctas y 3 nativas omitidas | 325 correctas en 438,560 s; sin omisiones |
+| Navegador normal | Salida 0 | Salida 0 |
+| Navegador --demo | Salida 0 | Salida 0 |
+| Navegador --roster | Salida 0 | Salida 0 |
 
-## Punto de revisión guardado
+Windows: https://github.com/Eliezerti/Sistema-colegio/actions/runs/38997949165
+Registros: https://github.com/Eliezerti/Sistema-colegio/actions/runs/38997949165/artifacts/12087338899
+Logs Linux y desarrollo: `/workspace/work/noche/`.
 
-- Rama publicada en el origin del propietario, sin merge: `autonomo/ingresos-facturas`.
-- Commit del núcleo final: `f2c468c`; 17 pruebas aisladas correctas.
-- CI de ese commit: https://github.com/Eliezerti/Sistema-colegio/actions/runs/38996806129 (en cola/en curso; no aprobado todavía).
-- Informe de revisión: `INFORME-MAÑANA.md`. Entrega parcial explícita; Fases 1–4 siguen sin integrar.
-- Próximo bloque: cerrar resultados y después implementar Fase 1 desde el diseño, empezando por el protocolo de respaldo/migración y su fixture publicado. No habilitar primero una UI financiera sin esas garantías.
+## Fallos conservados
 
-## Regresión final Linux
+- Primera línea base restringida: 118 errores de sockets y 3 omisiones. Repetida con el mecanismo de permisos autorizado, sin alterar pruebas; prueba administrativa correcta y línea base completa correcta.
+- Windows `38996806129`: 324 en 482,260 s, 1 error WinError 10053 al esperar 403 en import-roster de una copia. Tres navegadores correctos. Corregido en el primer intento (`6f19357`); prueba dirigida de cuatro casos correcta y luego cuatro suites completas correctas en ambos sistemas.
+- `38996676220`: ejecución obsoleta cancelada por cambio de código; no cuenta como validación.
 
-- Código `f2c468c`: 324 pruebas en 173,620 s; 321 correctas y 3 exclusivas de Windows omitidas. Sin fallos.
-- Tres navegadores: salida 0. Servidor, interfaz y sus pruebas no cambiaron; el núcleo nuevo no está conectado a ellos.
-- CI anterior `38996676220` sustituido y cancelado por cambio de código; no cuenta como validación. La ejecución válida será `38996806129`, aún en curso.
+## Reanudación
 
-## Fallo Windows observado y primer arreglo
+1. Leer `INFORME-MAÑANA.md` y decisiones; no asumir fases entregadas por tener pruebas de reglas puras.
+2. Implementar Fase 1: protocolo de respaldo cifrado previo reversible, fixture publicado 1.0.71, migración aditiva y terminación real del proceso; verificar integridad, referencias, cadena y totales exactos.
+3. Integrar catálogo, cuenta en cobros, revisión/asignación histórica, depósitos, otros ingresos y cuentas en egresos; permisos HTTP y bitácora. Cuatro suites antes de declarar la fase completa.
+4. Continuar conciliación persistida y cierre mensual, después facturas/editor. Se mantiene la autonomía autorizada; no hay una aprobación pendiente.
 
-- Ejecución `38996806129`: 324 pruebas en 482,260 s, 1 error (`WinError 10053`, rechazo POST `import-roster` en modo consulta); tres navegadores correctos, salidas `1/0/0/0`. No se declaró aprobada.
-- Evidencia: `tests/test_read_only_copy.py:62`, rechazo anterior en `colegio/server.py:591` antes de consumir el cuerpo. Posible cierre TCP con datos pendientes; no se observó una escritura en la copia.
-- Primer arreglo: `Handler.discard_rejected_body`, antes de devolver 403. Descarta bytes por fragmentos, máximo 46 MB y plazo total 2 s; nunca analiza JSON ni abre la base. Cuerpos inválidos siguen bloqueados.
-- Prueba dirigida real: 4 correctas en 9,361 s; cuerpo de 200 KB no JSON, emisores incompleto y lento, 403, sin conexión SQLite y copia intacta.
-- Pendiente repetir las cuatro suites Linux y Windows del arreglo. Máximo dos intentos de corrección; se lleva uno, sin omitir pruebas.
-
-## Cierre Linux del primer arreglo
-
-- Código `6f19357`: 325 pruebas en 188,147 s, 322 correctas y 3 exclusivas de Windows omitidas.
-- Navegadores normal/demo/roster: salidas 0/0/0.
-- Windows pendiente: https://github.com/Eliezerti/Sistema-colegio/actions/runs/38997949165
-- Se conserva el fallo anterior `38996806129` en el informe, sin confundirlo con una validación correcta. No se han tocado cálculos, recibos, correlativos ni esquema.
+NO VERIFICADO: perfil real Provincial, formulario/calibración física y confirmación fiscal. No se hicieron instalación/actualización/desinstalación de esta rama ni impresión física: no existe instalador nuevo ni módulo de facturas integrado.

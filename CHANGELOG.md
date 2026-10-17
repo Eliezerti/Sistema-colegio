@@ -259,4 +259,6 @@ Validación del seguimiento: 161 descubiertas en Linux (160 correctas, una exclu
 
 ## Corrección de validación en la rama autónoma
 
+- Validación final del código `6f19357`: Linux 325 (322 correctas y 3 nativas omitidas); Windows 325 correctas sin omisiones. Tres navegadores correctos en ambos. El error de conexión Windows previo quedó registrado y se resolvió en el primer arreglo. [Informe completo](INFORME-MAÑANA.md). La integración de Fases 1–4 continúa pendiente.
+
 - El rechazo de escrituras en copias de consulta descarta el cuerpo HTTP con límite de tamaño y plazo total de dos segundos, sin analizar JSON ni abrir SQLite. Evita cerrar con datos pendientes antes de entregar el 403 en Windows. Incluye pruebas con cuerpo grande y emisores incompletos/lentos; el bloqueo del servidor y la inmutabilidad se conservan.
