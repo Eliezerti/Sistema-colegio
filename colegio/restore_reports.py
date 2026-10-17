@@ -6,6 +6,7 @@ from .backup_inspection import fingerprint
 from .documents import AdministrativePDF, amount
 
 TABLE_LABELS = {
+    'statement_profiles':'Perfiles de extractos','statement_imports':'Importaciones de extractos','bank_movements':'Movimientos bancarios','reconciliation_links':'Vínculos de conciliación','bank_classifications':'Clasificaciones bancarias',
     'school_accounts':'Cuentas del colegio','payment_accounts':'Cuentas de cobros','expense_accounts':'Cuentas de egresos',
     'income_categories':'Categorías de otros ingresos','other_income':'Otros ingresos','cash_deposits':'Depósitos de efectivo',
     'cash_deposit_payments':'Cobertura de depósitos',

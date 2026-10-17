@@ -219,6 +219,8 @@ class AuditConnection(sqlite3.Connection):
                     return 0
             changes = {k: {'anterior': old.get(k), 'nuevo': new[k]} for k in new
                        if new[k] != old.get(k) and k not in SECRET_FIELDS}
+            if table in ('bank_movements','statement_imports','bank_classifications') and changes:
+                changes = {'huella_del_registro': {'anterior': digest(old), 'nuevo': digest(new)}}
             changes = sanitize(changes)
             if changes:
                 self._edits.append({'tabla': table, 'registro': new.get('id', new.get('key', new.get('rate_date'))),

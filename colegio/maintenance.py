@@ -62,6 +62,18 @@ def review_database(db):
             ('La diferencia de un depósito no coincide con sus aplicaciones.',"""SELECT d.id FROM cash_deposits d LEFT JOIN cash_deposit_payments a ON a.deposit_id=d.id
                 GROUP BY d.id HAVING d.difference<>d.amount-COALESCE(SUM(a.amount),0) LIMIT 1"""),
         )
+    if db.execute("SELECT 1 FROM sqlite_master WHERE name='reconciliation_links'").fetchone():
+        checks += (("Los vínculos superan el importe bancario.","""SELECT b.id FROM bank_movements b JOIN reconciliation_links l ON l.movement_id=b.id WHERE l.voided=0 GROUP BY b.id HAVING SUM(l.amount)>b.amount LIMIT 1"""),
+            ("Una clasificación activa está repetida.","""SELECT movement_id FROM bank_classifications WHERE voided=0 GROUP BY movement_id HAVING COUNT(*)>1 LIMIT 1"""),
+            ("Un movimiento clasificado conserva vínculos activos.","""SELECT c.id FROM bank_classifications c JOIN reconciliation_links l ON l.movement_id=c.movement_id WHERE c.voided=0 AND l.voided=0 LIMIT 1"""))
+        for column,table,join,account,amount,direction in (
+                ('payment_id','payments','JOIN payment_accounts a ON a.payment_id=p.id','a.account_id','p.received_amount','credit'),
+                ('expense_id','expenses','JOIN expense_accounts a ON a.expense_id=p.id','a.account_id','p.received_amount','debit'),
+                ('other_id','other_income','','p.account_id','p.received_amount','credit'),
+                ('deposit_id','cash_deposits','','p.account_id','p.amount','credit')):
+            checks += (("Un vínculo bancario no coincide con moneda, cuenta, sentido o estado.",
+                "SELECT l.id FROM reconciliation_links l JOIN bank_movements b ON b.id=l.movement_id JOIN "+table+" p ON p.id=l."+column+" "+join+" WHERE l.voided=0 AND (p.voided=1 OR b.currency<>p.currency OR b.account_id<>"+account+" OR b.direction<>'"+direction+"') LIMIT 1"),
+                ("La conciliación supera el importe del libro.","SELECT p.id FROM "+table+" p JOIN reconciliation_links l ON l."+column+"=p.id WHERE l.voided=0 GROUP BY p.id HAVING SUM(l.amount)>"+amount+" LIMIT 1"))
     for message,sql in checks:
         if db.execute(sql).fetchone(): errors.append(message)
     payments = db.execute('SELECT COALESCE(SUM(amount),0) FROM payments WHERE voided=0').fetchone()[0]

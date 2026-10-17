@@ -10,10 +10,10 @@ ADMIN = ('admin',)
 WRITERS = ('admin', 'cashier')
 
 GET_ALL = ('session', 'session-status', 'clock-status', 'rate-gate', 'state', 'cash-preview',
-           'backup-status', 'income-book', 'daily-report', 'daily-report.pdf', 'monthly-report','monthly-report.pdf','monthly-report.csv', 'health', 'export')
+           'backup-status', 'bank-book','income-book', 'daily-report', 'daily-report.pdf', 'monthly-report','monthly-report.pdf','monthly-report.csv', 'health', 'export')
 GET_ADMIN = ('audit', 'audit.csv', 'audit.pdf', 'import-template', 'import-guide',
              'backup', 'maintenance-review')
-POST_ADMIN = ('income-account','income-category','income-assign','income-other','income-void-other','income-void-deposit','settings', 'backup-directory', 'grades', 'guardians', 'students',
+POST_ADMIN = ('bank-profile','bank-preview','bank-import','bank-link','bank-auto','bank-unlink','bank-classify','bank-unclassify','income-account','income-category','income-assign','income-other','income-void-other','income-void-deposit','settings', 'backup-directory', 'grades', 'guardians', 'students',
               'users', 'password', 'void-payment', 'void-expense', 'cancel-charge',
                 'import-roster', 'reopen-cash', 'transition-year',
               'cancel-plan', 'correct-billing-start', 'archive-student', 'archive-guardian',
@@ -44,7 +44,7 @@ def cases():
     for kind in ('students', 'payments', 'expenses'):
         add('GET', 'export?type='+kind, ALL, 200, 'export')
     for route in POST_ADMIN:
-        add('POST', route, ADMIN, 200 if route in ('backup-now','crypto-unlock') else 400,
+        add('POST', route, ADMIN, 200 if route in ('backup-now','crypto-unlock','bank-auto') else 400,
             body={'password':'FICTICIO-respaldo-seguro-2026'} if route=='crypto-unlock' else None)
     for route in POST_WRITERS: add('POST', route, WRITERS, 400)
     add('POST', 'confirm-rate', ALL, 400)
@@ -62,7 +62,8 @@ def endpoint_inventory():
     from colegio.server import DIRECTORY_ACTIONS, ARCHIVE_ACTIONS
     source = Path(__file__).resolve().parents[1]/'colegio/server.py'
     from colegio.income_book import ACTIONS as INCOME_ACTIONS
-    discovered = set(DIRECTORY_ACTIONS) | set(ARCHIVE_ACTIONS) | set(INCOME_ACTIONS)
+    from colegio.bank_book import ACTIONS as BANK_ACTIONS
+    discovered = set(BANK_ACTIONS) | set(DIRECTORY_ACTIONS) | set(ARCHIVE_ACTIONS) | set(INCOME_ACTIONS)
     tree = ast.parse(source.read_text(encoding='utf-8'))
     # Tombstones have their own HTTP/profile/nonmutation contract in test_staff_retirement.
     tree.body = [node for node in tree.body if not isinstance(node, ast.FunctionDef) or node.name != 'retired_route']

@@ -122,6 +122,8 @@ def _action(db,endpoint,data,user):
             identifier=integer(value,1,2147483647);row=db.execute('SELECT * FROM '+kind+' WHERE id=?',(identifier,)).fetchone()
             if not row or row['voided']:raise ValidationError('Hay un movimiento inexistente o anulado.')
             ensure_open_day(db,row[date_key])
+            from .bank_book import unchanged
+            unchanged(db,'P' if kind=='payments' else 'E',identifier)
             if not chosen.active or chosen.currency!=row['currency']:raise ValidationError('Revisa moneda y cuenta activa.')
             if row['method']!='No especificado':destination(chosen,row['currency'],row['method'])
             db.execute('INSERT INTO '+target+'('+column+',account_id,bcv_rate) VALUES(?,?,?) ON CONFLICT('+column+') DO UPDATE SET account_id=excluded.account_id',
@@ -169,7 +171,9 @@ def _action(db,endpoint,data,user):
         identifier=integer(data.get('id'),1,2147483647);reason=required(data,'reason',500)
         row=db.execute('SELECT * FROM '+table+' WHERE id=?',(identifier,)).fetchone()
         if not row or row['voided'] or len(reason)<10:raise ValidationError('Revisa el movimiento y explica la anulación con al menos diez caracteres.')
-        ensure_open_day(db,row[column]);db.execute('UPDATE '+table+' SET voided=1,void_reason=? WHERE id=?',(reason,identifier))
+        ensure_open_day(db,row[column])
+        from .bank_book import unchanged
+        unchanged(db,'O' if table=='other_income' else 'D',identifier);db.execute('UPDATE '+table+' SET voided=1,void_reason=? WHERE id=?',(reason,identifier))
         audit(db,uid,endpoint,dict(id=identifier,reason=reason));return {'saved':True}
     raise ValidationError('Operación desconocida del libro de ingresos.')
 

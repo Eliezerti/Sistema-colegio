@@ -170,6 +170,8 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
     db.audit_user = uid
     from .income_book import ACTIONS as INCOME_ACTIONS,action as income_action
     if endpoint in INCOME_ACTIONS:return income_action(db,endpoint,data,user)
+    from .bank_book import ACTIONS as BANK_ACTIONS,action as bank_action
+    if endpoint in BANK_ACTIONS:return bank_action(db,endpoint,data,user)
     admin_paths = {'settings','backup-directory','grades','guardians','students','users','password','void-payment','void-expense','cancel-charge','import-roster','reopen-cash','transition-year','cancel-plan','correct-billing-start'} | DIRECTORY_ACTIONS | ARCHIVE_ACTIONS
     if user['role'] == 'reader' or (endpoint in admin_paths and user['role'] != 'admin'):
         raise PermissionError('Tu perfil no permite esta operación.')
@@ -205,6 +207,8 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
         table,column=('payments','paid_on') if endpoint=='void-payment' else ('expenses','spent_on')
         prior=db.execute(f'SELECT {column} FROM {table} WHERE id=?',(data.get('id'),)).fetchone()
         if prior: ensure_open_day(db,prior[0])
+        from .bank_book import unchanged
+        unchanged(db,'P' if endpoint=='void-payment' else 'E',integer(data.get('id'),1,2147483647))
     if endpoint == 'generate':
         return generate_month(db, data, uid)
     if endpoint == 'payments':
@@ -660,7 +664,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not self.server.access.allowed_origin(host,self.headers.get('Origin'),self.server.server_port):
                     raise PermissionError('Origen no permitido.')
                 length = int(self.headers.get('Content-Length', '0'))
-                maximum=46_000_000 if endpoint in ('probe-backup','export-encrypted-backup') else 3_000_000 if endpoint in ('import-roster','transition-year','settings') else 65536
+                maximum=46_000_000 if endpoint in ('probe-backup','export-encrypted-backup') else 3_000_000 if endpoint in ('import-roster','transition-year','settings','bank-preview','bank-import') else 65536
                 if not 0 < length <= maximum or 'application/json' not in self.headers.get('Content-Type', ''):
                     raise ValidationError('Envía un objeto JSON válido (máximo 64 KB).')
                 data = json.loads(self.rfile.read(length))
@@ -938,7 +942,8 @@ class Handler(BaseHTTPRequestHandler):
                     self.server.clock.require()
                 db.commit()
                 from .income_book import ACTIONS as INCOME_ACTIONS
-                if endpoint in INCOME_ACTIONS or endpoint in DIRECTORY_ACTIONS or endpoint in ARCHIVE_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','expenses','void-payment','void-expense','close-cash','reopen-cash','settings','backup-directory','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
+                from .bank_book import ACTIONS as BANK_ACTIONS
+                if endpoint in BANK_ACTIONS or endpoint in INCOME_ACTIONS or endpoint in DIRECTORY_ACTIONS or endpoint in ARCHIVE_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','expenses','void-payment','void-expense','close-cash','reopen-cash','settings','backup-directory','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
                     status=self.server.make_backup()
                     if status.get('local_error') or status.get('secondary_error'):
                         result['backup_warning']=status.get('local_error') or status.get('secondary_error')
@@ -956,6 +961,10 @@ class Handler(BaseHTTPRequestHandler):
                 result['access']=self.server.access.snapshot()
                 result['read_only']=self.server.read_only_info if read_only else None
                 self.respond(200, result)
+            elif endpoint=='bank-book':
+                from .bank_book import report as bank_report
+                query=parse_qs(url.query)
+                self.respond(200,bank_report(db,public_user,query.get('month',[local_today().isoformat()[:7]])[0],days=query.get('days',['7'])[0],offset=query.get('offset',['0'])[0]))
             elif endpoint=='income-book':
                 from .income_book import report as income_report
                 query=parse_qs(url.query)
