@@ -77,3 +77,53 @@ class AccountingTests(unittest.TestCase):
         self.f.request('month-reopen',dict(id=cid,reason='Revisión ficticia sin movimientos'))
         self.assertEqual(self.f.request('state?history=1')['summary'],before)
         self.assertEqual(self.f.request('monthly-report?month='+self.period)['summaries'],monthly['summaries']);self.assertEqual(self.f.request('daily-report')['summaries'],daily['summaries'])
+
+    def test_closed_reconciled_book_restores_and_opens_without_origin_keyring(self):
+        """Combined new records survive portable recovery, not only empty schemas."""
+        import hashlib,sqlite3,tempfile
+        from pathlib import Path
+        from tests.test_bank_book import BankBookTests
+        from tests.crypto_helpers import configure,PASSWORD
+        from tests.restore_helpers import approved_restore
+        from colegio.accounting import report
+        from colegio.audit_chain import local_status
+        from colegio.backup_export import write_encrypted
+        from colegio.backup_inspection import probe_backup
+        from colegio.maintenance import review_database
+        from colegio.read_only import open_copy
+        from colegio.income_schema import TABLES as income_tables
+        from colegio.bank_schema import TABLES as bank_tables
+        from colegio.month_schema import TABLES as month_tables
+        pid,_=self.pay()
+        b=BankBookTests();b.f=self.f;b.on=self.on;b.bank=self.bank
+        b.profile=dict(delimiter=';',encoding='utf-8-sig',decimal='.',date_format='%Y-%m-%d',columns=dict(date='Fecha',amount='Importe',reference='Referencia',description='Descripción',bank_id='ID'))
+        b.imported([[self.on,'10','FICTICIO-month','Ficticio conciliado','PORTABLE-1'],[self.on,'2','APORTE','Ficticio clasificado','PORTABLE-2']])
+        self.assertEqual(self.f.request('bank-auto',{})['linked'],1)
+        self.f.request('bank-classify',dict(movement_id=2,category='Préstamo o aporte',support='Soporte ficticio',reason='Clasificación ficticia para recuperación'))
+        self.f.request('month-annotation',dict(source='P'+str(pid),special_taxpayer=True,foreign_currency=False))
+        self.close();saved=self.report()
+        with closing(connect(self.f.path)) as db:
+            expected={table:[tuple(r) for r in db.execute('SELECT * FROM '+table)] for table in (*income_tables,*bank_tables,*month_tables)}
+        # Independent, disposable keyring disappears before either credential is used.
+        cipher=self.f.path.parent/'portable-closed-book.aulabak'
+        with tempfile.TemporaryDirectory(prefix='aula-claves-ficticias-') as keys:
+            recovery=configure(keys);write_encrypted(self.f.path,cipher,keys)
+        self.assertFalse(Path(keys).exists())
+        digest=hashlib.sha256(cipher.read_bytes()).hexdigest()
+        for credential,kind in ((PASSWORD,'password'),(recovery,'recovery')):
+            with self.subTest(credential_kind=kind):
+                self.assertEqual(probe_backup(cipher,credential,kind)['schema'],15)
+                target=self.f.path.parent/('recuperado-'+kind)
+                restored=approved_restore(cipher,target,credential=credential,credential_kind=kind)
+                with closing(connect(restored)) as db:
+                    self.assertEqual(report(db,self.period),saved)
+                    for table,rows in expected.items():self.assertEqual([tuple(r) for r in db.execute('SELECT * FROM '+table)],rows,table)
+                    self.assertTrue(local_status(db)['ok']);self.assertTrue(review_database(db)['ok'])
+                    self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok');self.assertFalse(db.execute('PRAGMA foreign_key_check').fetchone())
+                with open_copy(cipher,credential,kind) as viewer:
+                    with closing(viewer.connect_view()) as db:
+                        self.assertEqual(report(db,self.period),saved)
+                        self.assertEqual(db.execute('SELECT COUNT(*) FROM reconciliation_links WHERE voided=0').fetchone()[0],1)
+                        with self.assertRaises(sqlite3.OperationalError):db.execute('DELETE FROM accounting_closures')
+                    temporary=Path(viewer.db_path).parent
+                self.assertFalse(temporary.exists());self.assertEqual(hashlib.sha256(cipher.read_bytes()).hexdigest(),digest)
