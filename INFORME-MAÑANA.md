@@ -13,7 +13,7 @@ Rama: `autonomo/ingresos-facturas`. Punto de partida: `ed1c5e9`, Aula 1.0.71. Ma
 | Fase 3 | Diseño de cierre protegido y relación para contador. No hay cierre mensual nuevo ni relación ampliada. Los reportes y cierres actuales no cambian. **Pendiente.** |
 | Fase 4 | Solo diseño, sin editor, emisión, lotes, numeración fiscal ni PDF nuevo. **Pendiente.** |
 
-Los commits `a311cfc`, `27241fc` y `f2c468c` contienen las reglas y sus pruebas. El módulo nuevo no se importa desde el servidor, escritorio ni interfaz. No se declara ningún flujo financiero nuevo como disponible.
+Los commits `a311cfc`, `27241fc` y `f2c468c` contienen las reglas y sus pruebas. El commit `6f19357` corrige además un fallo de transporte del rechazo HTTP observado en la validación real de Windows, sin habilitar escrituras ni abrir SQLite. El módulo nuevo no se importa desde el servidor, escritorio ni interfaz. No se declara ningún flujo financiero nuevo como disponible.
 
 ## Pruebas reales
 
@@ -25,7 +25,10 @@ Linux terminado; Windows todavía en ejecución. Consultar `docs/ESTADO-NOCHE.md
 - Primera regresión ampliada: 321 en 179,995 s; 318 correctas y 3 nativas omitidas. Tres navegadores: salida 0.
 - Núcleo final aislado: 17 correctas en 0,326 s. Incluye oráculo independiente con 40 conjuntos de movimientos, cobertura parcial, ambigüedad por ambos lados, duplicados, ceros, tasas/redondeos, importaciones corruptas, fórmulas, vínculos externos y expansión de texto compartido Excel.
 - Regresión Linux del código final `f2c468c`: 324 en 173,620 s; 321 correctas y 3 nativas omitidas.
-- Windows: flujo de revisión sin compilación ni publicación; resultado final pendiente de actualizar. No se reutiliza la validación antigua de 1.0.71 como prueba de esta rama.
+- Windows inicial ([38996806129](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38996806129)): 324 en 482,260 s, 1 error de conexión `WinError 10053` al esperar 403 en `import-roster` de una copia de consulta. Las tres suites de navegador pasaron; salidas `1/0/0/0`. No se declaró aprobado.
+- Primer arreglo `6f19357`: descarte del cuerpo rechazado, memoria acotada y plazo total 2 s; sin JSON ni conexión SQLite. Prueba dirigida: 4 correctas en 9,361 s, incluidos cuerpo grande y emisores incompletos/lentos. No se omitieron pruebas.
+- Linux del arreglo: 325 en 188,147 s; 322 correctas y 3 exclusivas de Windows omitidas. Navegador normal, demo y roster: salida 0.
+- Windows del arreglo: [38997949165](https://github.com/Eliezerti/Sistema-colegio/actions/runs/38997949165), todavía en ejecución. No se reutiliza la validación antigua de 1.0.71 como prueba de esta rama.
 
 Las tres omisiones Linux son DPAPI, mutex/enfoque de ventanas Windows y revisión nativa de restauración con Tk. No se omiten por motivos funcionales.
 
@@ -59,6 +62,8 @@ Faltan específicamente: tablas/migración y fixture 1.0.71; respaldo previo cif
 Las suites actuales prueban los mecanismos vigentes de restauración, consulta, bitácora, instalación en cero y comparación de totales. No acreditan los flujos nuevos que todavía no existen. La matriz de permisos, totales y migración del libro nuevo debe incorporarse antes de habilitarlo.
 
 ## Instalador
+
+No se ejecutó instalación, actualización, desinstalación ni instalación con otra cuenta de Windows de esta rama: no existe un instalador nuevo. Las suites nativas no sustituyen esas comprobaciones.
 
 **No se generó instalador, borrador ni final. No hay enlace ni SHA-256 de instalador nuevo.** No se trabajó en firma digital ni certificados. El flujo nuevo de Windows solo ejecuta pruebas; no modifica el empaquetado de otras tandas.
 

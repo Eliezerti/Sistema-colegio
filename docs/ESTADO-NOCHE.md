@@ -41,3 +41,10 @@
 - Primer arreglo: `Handler.discard_rejected_body`, antes de devolver 403. Descarta bytes por fragmentos, máximo 46 MB y plazo total 2 s; nunca analiza JSON ni abre la base. Cuerpos inválidos siguen bloqueados.
 - Prueba dirigida real: 4 correctas en 9,361 s; cuerpo de 200 KB no JSON, emisores incompleto y lento, 403, sin conexión SQLite y copia intacta.
 - Pendiente repetir las cuatro suites Linux y Windows del arreglo. Máximo dos intentos de corrección; se lleva uno, sin omitir pruebas.
+
+## Cierre Linux del primer arreglo
+
+- Código `6f19357`: 325 pruebas en 188,147 s, 322 correctas y 3 exclusivas de Windows omitidas.
+- Navegadores normal/demo/roster: salidas 0/0/0.
+- Windows pendiente: https://github.com/Eliezerti/Sistema-colegio/actions/runs/38997949165
+- Se conserva el fallo anterior `38996806129` en el informe, sin confundirlo con una validación correcta. No se han tocado cálculos, recibos, correlativos ni esquema.
