@@ -2,7 +2,7 @@
 
 ## Punto actual · 17/10/2026
 
-Rama `autonomo/ingresos-facturas`; último código enviado `ee7a4881dec3aed662cf8aafc7b87dbe951ad75f`. `f9997f1` añade solamente seguimiento y evidencia. Main intacta; sin merge, etiquetas, release ni versión final. Solo bases ficticias y temporales; ninguna base del usuario abierta o modificada.
+Rama `autonomo/ingresos-facturas`; último código de producto `ee7a4881dec3aed662cf8aafc7b87dbe951ad75f`. Enviado `1fcebfb73967fc8de7010bb0d9fc15a2e37666b5` con el primer arreglo de prueba nativa `6b139e2` y documentación. Main intacta; sin merge, etiquetas, release ni versión final. Solo bases ficticias y temporales; ninguna base del usuario abierta o modificada.
 
 Fases 1–4 implementadas. Fases 1–3 tienen cuatro suites verdes en Linux y Windows. Fase 4 tiene las cuatro suites Linux verdes; **Windows e instalador BORRADOR en curso, no entregados todavía**.
 
@@ -54,3 +54,8 @@ La revisión automática alcanzó su límite de uso y una consulta GitHub no se 
 El registro completo de 39042799764 se recuperó por `gh run view --log-failed` (permitido), pese a que el ZIP de artefactos fue rechazado por el host prohibido sa1. Causa exacta: `Tcl_AsyncDelete: async handler deleted by the wrong thread`, durante un test de sistema posterior a la prueba Tk. No hubo resumen ni traceback Python: no declarar 379 correctas en Windows.
 
 Se aísla `tests/test_restore_windows_ui.py` en un subproceso con las mismas aserciones reales y recogida de ciclos en el hilo de Tk. El padre exige salida 0 y resumen de un test; no se omite la prueba. No cambia código de producto. Primer intento de arreglo. Se activa faulthandler y se corrigen límites/orden de anotaciones para que un cierre nativo conserve su final. Linux: prueba nativa omitida como antes; resumen/fragmentos del publicador comprobados. Enviar y repetir las cuatro suites Windows antes de construir BORRADOR. Evidencia `windows-facturas-primer-fallo.json`.
+
+
+## Repetición enviada · 17/10/2026 11:16 Venezuela
+
+[Windows 39044266696](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39044266696), commit `1fcebfb73967fc8de7010bb0d9fc15a2e37666b5`, primera repetición tras `6b139e2`. Cuatro suites completas y solo después compilación/instalación BORRADOR. Registro observador `/workspace/work/noche4/windows-fixed1-watch.log` y `.exit`. La ejecución anterior ya terminó; no se canceló. El producto es el mismo que pasó Linux; el cambio es la vida de la prueba Tk y su diagnóstico. Resultado Windows aún desconocido al guardar.
