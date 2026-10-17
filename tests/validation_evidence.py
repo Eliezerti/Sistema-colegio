@@ -30,9 +30,15 @@ def main():
         print(command('notice','Resultados reales de las cuatro suites',json.dumps(actual,ensure_ascii=False)))
         for name,code in zip(names,args.results):
             if code:
-                for number,section in enumerate(failure_sections(content[name],name=='unittest'),1):
-                    chunks=[section[n:n+6000] for n in range(0,len(section),6000)] or ['No hay texto de error; revisar el artefacto.']
-                    for part,chunk in enumerate(chunks,1):print(command('error',f'{name} fallo {number}, parte {part} de {len(chunks)}',chunk))
+                sections=failure_sections(content[name],name=='unittest')
+                if name=='unittest' and actual['unit']['tests'] is None:
+                    # Native aborts have no unittest footer. Publish the end
+                    # first; GitHub limits annotations per step and to 4 KB.
+                    tail=ANSI.sub('',content[name])[-12000:]
+                    sections=[tail]
+                for number,section in enumerate(sections,1):
+                    chunks=[section[n:n+3000] for n in range(0,len(section),3000)] or ['No hay texto de error; revisar el artefacto.']
+                    for part,chunk in enumerate(chunks,1):print(command('error',f'{name} fallo {number} parte {part} de {len(chunks)}',chunk))
     if args.performance:
         with open(args.performance,encoding='utf-8-sig',newline='') as file:
             for row in csv.DictReader(file):print(command('notice','Medición HTTP real',json.dumps(row,ensure_ascii=False)))

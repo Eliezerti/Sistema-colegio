@@ -20,6 +20,7 @@ jobs:
     timeout-minutes: 55
     env:
       PYTHONUTF8: '1'
+      PYTHONFAULTHANDLER: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
