@@ -12,12 +12,12 @@ Consulta ve resúmenes, sin soporte ni datos bancarios del catálogo. No escribe
 
 ## Actualización y reversión
 
-Esta rama agrega siete tablas (esquema 13); no reconstruye ni borra tablas anteriores. Antes de la primera actualización de una base existente verifica integridad, claves foráneas y cadena, y crea una copia consistente en `.aula-migrations/schema-13/`, dentro de su carpeta de datos. El manifiesto JSON identifica esquema y copia. Si el cifrado ya está configurado y desbloqueado, la copia queda cifrada y verificada; si está configurado pero bloqueado, la actualización no continúa. Sin cifrado configurado queda una copia SQLite privada: protégela junto con la carpeta de datos. No se presenta como respaldo externo cifrado ni se elimina automáticamente.
+La primera ampliación de esta rama agrega siete tablas (esquema 13); no reconstruye ni borra tablas anteriores. Antes de la primera actualización de una base existente verifica integridad, claves foráneas y cadena, y crea una copia consistente en `.aula-migrations/schema-13/`, dentro de su carpeta de datos. El manifiesto JSON identifica esquema y copia. Si el cifrado ya está configurado y desbloqueado, la copia queda cifrada y verificada; si está configurado pero bloqueado, la actualización no continúa. Sin cifrado configurado queda una copia SQLite privada: protégela junto con la carpeta de datos. No se presenta como respaldo externo cifrado ni se elimina automáticamente.
 
 Para revertir, cierra Aula y conserva **toda la carpeta actual**, incluidos registros nuevos. Con la versión anterior compatible, restaura la copia previa en **otra carpeta de datos vacía**, usando contraseña o recuperación si está cifrada. Verifica datos y totales antes de usarla. La copia previa no contiene operaciones posteriores; volver a ella no las incorpora. No abras el esquema 13 con un ejecutable antiguo ni sobrescribas la carpeta original.
 
 La limpieza excepcional de cobros de prueba se bloquea si hay clasificaciones o registros del nuevo libro; requiere una revisión específica, no una eliminación automática de esos datos.
 
-## Alcance pendiente
+## Bloques posteriores
 
-La importación y conciliación bancaria persistentes, el cierre mensual protegido y las facturas preimpresas todavía no forman parte de esta fase. Provincial, formulario real, calibración física y confirmación fiscal: **NO VERIFICADO**. Aula no se conecta a bancos ni al SENIAT ni calcula IVA o IGTF.
+La [conciliación bancaria](conciliacion-bancaria.md) y el [cierre mensual](control-ingresos-cierre-mensual.md) tienen sus propias guías. Sus ampliaciones son los esquemas 14 y 15, también aditivos y con copia previa. Las facturas y las conversiones entre cuentas o monedas siguen pendientes. Provincial, formulario real, calibración física y confirmación fiscal: **NO VERIFICADO**. Aula no se conecta a bancos ni al SENIAT ni calcula IVA o IGTF.

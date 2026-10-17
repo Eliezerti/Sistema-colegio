@@ -20,11 +20,11 @@ Para agrupaciones, registra vínculos revisados con Banco ID, Libro ID e importe
 
 Las listas muestran banco sin recibo/egreso, libro sin depósito, diferencias de importe y pendientes con antigüedad editable. Los depósitos no explicados se clasifican con soporte: mensualidad no registrada, otro ingreso, entre cuentas propias, préstamo/aporte, reintegro u otro. **Clasificar no crea un cobro ni reduce una deuda**. Si falta registrar la mensualidad, haz el registro correcto y luego retira la clasificación con motivo antes de vincularlo.
 
-Un registro conciliado no se anula ni se reasigna de cuenta sin retirar primero su vínculo con motivo. Retirar mantiene el historial. Los días de caja cerrada requieren reapertura administrativa antes de cambiar el libro. El cierre mensual protegido corresponde a la Fase 3; no lo reemplaza esta pantalla.
+Un registro conciliado no se anula ni se reasigna de cuenta sin retirar primero su vínculo con motivo. Retirar mantiene el historial. Los días de caja cerrada requieren reapertura administrativa antes de cambiar el libro. El cierre mensual protegido se gestiona en la relación para el contador, al final de Control de ingresos. También requiere reapertura antes de modificar el libro de un mes cerrado.
 
 ## Límites y reversión
 
-La revisión integrada admite hasta 20.000 registros por lado; no se declara validada con historiales mayores. Las pantallas muestran hasta 100 filas por listado y páginas. El próximo informe para contador debe separar diferencias contra el extracto de ingresos y traslados.
+Los candidatos de una revisión mensual admiten hasta 20.000 registros por lado. El historial del libro tiene un límite de seguridad de 200.000 registros; no se declara validado a esa escala. Se midieron 800 alumnos con 12 y 36 meses en Linux. Las pantallas muestran hasta 100 filas por listado y páginas. El próximo informe para contador debe separar diferencias contra el extracto de ingresos y traslados.
 
 La ampliación usa esquema 14 aditivo, con copia previa verificada del esquema 13 en `.aula-migrations/schema-14/`. Si el cifrado está configurado, exige que esté desbloqueado y publica copia cifrada verificada; sin configuración queda copia privada SQLite. Conserva la carpeta actual y sus registros nuevos. Para revertir solo esta fase usa la copia 13 y el código de Fase 1 en otra carpeta vacía. Para volver a 1.0.71 usa la copia 12 de `schema-13/`. No sobrescribas la carpeta original ni abras una base nueva con una versión antigua.
 

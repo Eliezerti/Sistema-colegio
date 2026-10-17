@@ -83,3 +83,23 @@ La revisión automática rechazó una primera propuesta porque podía aceptar cu
 | Migración 14 aditiva, snapshot previo 13 y conservación del punto verde 13 | Evitar tablas laterales fuera de respaldo/restauración | Guardar el banco en otro archivo no protegido | Copia previa 13 en otra carpeta con código Fase 1; para 1.0.71 usar copia 12 de la primera ampliación |
 
 El banco no se conecta por red. Cada importación conserva huella, usuario, fecha y mapeo. Los nuevos datos del extracto se incluyen en respaldos/restauración; la ampliación no modifica cobros ni fotos de recibos. Guía operativa y límites: `conciliacion-bancaria.md`.
+
+## Fase 3 · integración y validación posterior
+
+Los estados previos de este archivo describen puntos históricos, no restricciones para continuar. Se integró el cierre mensual en `52ac0f4`, `efd2b9f`, `784cc86` y `2d3af09`; la aprobación de sus pruebas finales se registra en ESTADO-NOCHE.md.
+
+| Decisión | Motivo | Alternativa descartada | Cómo revertir |
+|---|---|---|---|
+| Esquema 15 aditivo y foto mensual conservada | Mantener historia y permitir reabrir sin borrar cierres | Cambiar los cobros para representar un cierre | Copia previa 14 y código de Fase 2 en otra carpeta; conservar íntegra la carpeta 15 y sus operaciones posteriores |
+| Guardia mensual central en servidor y cobro directo | Bloquear también peticiones que eviten la interfaz; permitir solo el reintento ya confirmado | Ocultar botones como única protección | Reapertura administrativa con motivo; no retirar el guardia ni editar un cierre a mano |
+| Opciones fiscales informativas por ingreso | El encargo prohíbe calcular IVA/IGTF | Inferir impuestos o tratar un recibo como factura | Desmarcar antes del cierre, o reabrir con motivo para corregir; nunca alterar el comprobante original |
+| Tasas conservadas; equivalencia faltante NO VERIFICADA | La tasa 1 de un pago USD no es BCV | Usar la tasa de hoy en el historial | Registrar la operación correcta con soporte antes del cierre; no inventar equivalencias ni cambiar fotos cerradas |
+| Candidatos acotados al mes, con vecinos para comprobar competencia | Evitar que el historial de varios años bloquee la revisión o que se cruce otro mes sin revisarlo | Conciliar toda la historia al pulsar el botón del mes actual | Elegir otro mes; los vínculos se retiran con motivo y conservan historia |
+| Congelar datetime solo dentro de la prueba de referencia | Un import tardío retenía un Mock de local_today y contaminaba otra prueba | Relajar la prohibición de movimientos futuros | Revertir el arreglo solo si se conserva otra prueba equivalente de aislamiento; no modificar la regla del producto |
+| LF obligatorio en el JSON de referencia | Un checkout con autocrlf cambia los bytes y rompe la huella | Ignorar la huella o normalizar cualquier cambio antes de verificar | Regenerar una referencia independiente y su manifiesto con procedencia; no aceptar cambios sin explicación |
+| Evidencia CI adicional en anotaciones | El host del artefacto del fallo no está autorizado y los logs no se recuperaron | Eludir el proxy o inventar cuál suite falló | Conservar artefactos y leer las anotaciones de cada nueva ejecución por la API permitida |
+| Mantener Fase 4 sin iniciar y sin instalador | Priorizar el núcleo probado; no entregar un emisor fiscal incompleto | Presentar un PDF genérico como editor y emisión terminados | Implementar el bloque completo con migración y pruebas propias; no hay aprobación pendiente |
+
+La reversión 15→14 requiere la copia en `.aula-migrations/schema-15/` y el código de Fase 2, en una carpeta vacía separada. Para regresar a 1.0.71 se usa la copia 12 de `schema-13/`. No abrir un esquema mayor con un ejecutable antiguo ni sobrescribir la carpeta actual. Si había cifrado configurado, la copia previa se cifra y verifica; si estaba bloqueado, no migra. Sin cifrado configurado queda copia SQLite privada, que no se presenta como respaldo cifrado externo.
+
+La plantilla Provincial, el formulario real, la calibración y la revisión fiscal siguen NO VERIFICADOS. La falta de medidas no se usa como supuesto bloqueo técnico: el encargo permite una versión genérica, pero ese bloque aún no fue implementado. Compilar desde la rama es posible; no se alega que deba hacerse desde main.

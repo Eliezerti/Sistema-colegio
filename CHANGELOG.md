@@ -1,11 +1,12 @@
 # En desarrollo · rama autónoma, sin publicación
 
-- Fase 1: cuentas, cuenta destino, revisión histórica, otros ingresos y depósitos. Recibos, importes y correlativos originales conservados. Linux y Windows: cuatro suites correctas.
-- Conciliación persistente: perfiles editables CSV/XLSX, vista previa y huella, importaciones idempotentes, revisión de solapamientos, ID bancario conflictivo rechazado, cruce único por ambos lados y vínculos parciales. USD y Bs se revisan por cuenta y moneda originales; conversiones entre cuentas/monedas pendientes.
-- Extractos solo para Administración. La bitácora conserva identificadores y huellas sin copiar datos del extracto. Retirar vínculos/clasificaciones conserva su historia; movimientos conciliados protegidos contra anulación o reasignación.
-- Esquemas 13/14 aditivos, respaldo previo verificado, sin registros precargados. Fixture publicado 1.0.71, contraseña/recuperación, comparación y cinco cortes reales por cada migración.
-- Conciliación Linux: 343 en 219,629 s; 340 correctas y tres nativas omitidas. Tres navegadores correctos. Windows para este código en curso. [Estado](docs/ESTADO-NOCHE.md).
-- Cierre mensual protegido, relación ampliada y facturas aún pendientes. Sin instalador nuevo ni publicación.
+- Cuentas escolares, cuenta destino, revisión histórica, otros ingresos y depósitos. Los recibos originales y correlativos se conservan. Fase 1: cuatro suites correctas en Linux y Windows.
+- Importación CSV/XLSX con perfiles editables, huella/usuario/fecha, duplicados y conflictos, cruces únicos y parciales, clasificaciones y acceso al extracto solo por Administración. Fase 2: cuatro suites correctas en ambos sistemas. Conversión entre cuentas/monedas pendiente.
+- Cierre mensual integrado: foto conservada, bloqueo de movimientos por servidor, reapertura administrativa con motivo y relación CSV/PDF para contador. Sin datos personales de menores ni cálculo de impuestos; opciones fiscales solo informativas. En validación final, todavía no declarado aprobado en Windows.
+- Conciliación automática limitada al mes revisado y candidatos vecinos, conservando unicidad en ambos lados. Medición HTTP con 800 alumnos, 12 y 36 meses; resultados en el informe, sin confundir reglas puras con rendimiento del servidor.
+- Esquemas 13→14→15 aditivos, copia previa verificada y cinco cortes reales por transición, fixture publicado 1.0.71 y referencia independiente de caja/reportes/morosidad. Instalación nueva vacía.
+- Corregido el aislamiento de fecha de la referencia; el rechazo real de movimientos futuros permanece. Archivo de referencia fijado a LF para conservar su huella en Windows, sin omitir la comprobación.
+- Facturas/editor e instalador nuevos no entregados. Sin publicación ni firma digital. [Estado y evidencia](docs/ESTADO-NOCHE.md).
 
 # Cobros y documentos financieros de prueba · 1.0.71 · 16/10/2026
 

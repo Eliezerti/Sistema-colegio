@@ -1,6 +1,6 @@
 # Ingresos y facturas · diseño para revisión
 
-**Estado: Fase 1 integrada en esquema 13 y validada en Linux/Windows; Fase 2 en desarrollo. Fases 3–4 pendientes.**
+**Estado: núcleo de Fases 1–3 integrado, esquema 15. Fases 1/2 validadas en Linux y Windows; Fase 3 con cuatro suites Linux correctas y validación Windows final pendiente. Facturas y conversión entre cuentas/monedas pendientes.**
 El inventario inicial corresponde a `ed1c5e9`; la evidencia posterior y los puntos verdes constan en `../ESTADO-NOCHE.md`. No se modifica ninguna base del colegio.
 
 ## Modelo propuesto
@@ -18,7 +18,8 @@ El inventario inicial corresponde a `ed1c5e9`; la evidencia posterior y los punt
 | bank_movements | id, importación, cuenta, fecha, crédito/débito, moneda, importe, referencia original, descripción, ID bancario y huella canónica |
 | reconciliation_links | movimiento y tipo de fuente/ID, importes originales en ambos lados, tasa y fecha de conversión explícitas cuando difieran monedas, usuario, motivo |
 | bank_classifications | movimiento, categoría de explicación, soporte, motivo, usuario; historia de correcciones |
-| accounting_months | período único, resumen congelado y huella, cerrado_por/fecha; reaperturas con motivo e historia |
+| accounting_closures | id, período con un solo cierre activo, resumen congelado y huella, responsable/fecha; reaperturas con motivo e historia |
+| income_annotations | recibo u otro ingreso, sujeto especial y divisas; solo informativo |
 
 No añadir una cuenta inferida al recibo congelado. Las asociaciones nuevas pertenecen al libro de clasificación y no alteran payments, allocations ni receipt_snapshot.
 Las referencias tienen dos representaciones: original para revisión; normalizada para candidatos. Un hash de movimiento es indicio de repetición, no garantía de identidad si el banco no suministra un ID único.
@@ -34,7 +35,7 @@ Las referencias tienen dos representaciones: original para revisión; normalizad
 - Cobertura de varios recibos o depósitos: validación de asignaciones parciales, suma disponible y duplicados. La persistencia deberá resolver concurrencia dentro de BEGIN IMMEDIATE.
 - Conversión USD/VES: nunca se concilian monedas distintas automáticamente. La tasa `1` de un cobro directo USD **no es una tasa BCV**. El informe ampliado necesita la tasa BCV histórica de ese día; si falta, debe mostrar NO VERIFICADO y equivalencia desconocida, nunca inventarla.
 
-Las pruebas puras por sí solas no acreditan integración. La Fase 1 incorpora sus pruebas HTTP, interfaz, permisos, concurrencia de depósitos y conservación de totales; la conciliación persistente sigue en desarrollo.
+Las pruebas puras por sí solas no acreditan integración. La Fase 1 incorpora sus pruebas HTTP, interfaz, permisos, concurrencia de depósitos y conservación de totales; la conciliación persistente y el cierre mensual ya tienen interfaz y pruebas de integración.
 
 ## Migración y recuperación: requisito antes de integrar
 
@@ -46,13 +47,15 @@ Las pruebas puras por sí solas no acreditan integración. La Fase 1 incorpora s
 6. Restauración de copia antigua, comparación y pérdida: incluir nombres claros para las tablas nuevas y detectar pérdida de clasificaciones/importaciones. Probar respaldo y modo consulta migran solo su temporal; no escriben en el origen.
 7. Revertir con la versión anterior y la copia previa verificada, preservando aparte cualquier dato nuevo. No ofrecer downgrade borrando tablas ni datos. No desplegar el esquema hasta validar todo el protocolo.
 
-**El protocolo se implementó y probó para esquema 13**: fixture publicado 1.0.71, copia cifrada previa, integridad, cadena, comparación y cinco cortes reales. La ampliación 14 de conciliación requiere su validación separada antes de declararse entregada.
+**El protocolo se implementó y probó en las transiciones 12→13→14→15**: fixture publicado 1.0.71, copias previas verificadas, contraseña y recuperación, integridad, cadena, comparación y cinco cortes reales por transición. Sin cifrado configurado la copia previa queda privada en SQLite; no se presenta como cifrada. Los resultados de cada plataforma constan en ESTADO-NOCHE.md.
 
-## Cierre mensual y permisos pendientes de integrar
+## Cierre mensual y permisos integrados
 
-El guardia mensual debe ejecutarse antes de sincronizar o mutar cualquier registro del período. Hay que cubrir creación/anulación de cobros, egresos, otros ingresos, depósitos, asignación de cuentas, importación, conciliación y facturas; también rutas indirectas y herramientas locales. Un reintento idempotente ya confirmado no crea otro movimiento. La consulta de una copia no generará mensualidades.
+La protección mensual se ejecuta en el servidor mediante el guardia de fecha del libro; cubre cobros, egresos, otros ingresos, depósitos, asignación histórica e importación/conciliación. El cobro directo también consulta ese guardia. Un reintento ya confirmado no crea otro recibo. El cierre conserva una foto y su huella; la reapertura administrativa mantiene el historial. No se cambió la generación de mensualidades ni el motor de cargos. Las copias de consulta siguen sin generar mensualidades ni escribir.
 
-Administración configura cuentas y categorías, importa, clasifica, concilia, asigna históricos, cierra y reabre meses. Caja elige cuenta en un cobro nuevo y registra depósitos; emite facturas solo cuando exista el módulo completo. Consulta ve informes; no recibe extractos crudos ni modifica registros. Las políticas deben comprobarse por HTTP y perfiles, además de la validación de dominio.
+La relación para contador no contiene datos personales de menores. Factura es una columna vacía y explícitamente pendiente; aún no hay rutas ni emisión de facturas que validar. Se conserva el diseño de ese bloque, sin presentarlo como implementado.
+
+Administración configura cuentas y categorías, importa, clasifica, concilia, asigna históricos, cierra y reabre meses. Caja elige cuenta en un cobro nuevo y registra depósitos; emite facturas solo cuando exista el módulo completo. Consulta ve informes; no recibe extractos crudos ni modifica registros. Las políticas cuentan con la matriz HTTP por perfiles; Consulta y Caja no reciben extractos. El soporte es texto/ubicación, sin adjuntos.
 
 La relación para contador amplía el libro, pero no redefine silenciosamente los totales actuales. Separar mensualidades, otros ingresos, transferencias entre cuentas y depósitos de efectivo; estos últimos no son un segundo ingreso. Exportaciones con BOM y neutralización de fórmulas. Sin documentos ni fechas de nacimiento de menores.
 
@@ -62,7 +65,7 @@ Separar lotes, rangos, hojas, plantillas versionadas, perfiles de impresora y fa
 
 Plantilla inicial SIN CALIBRAR, fondo solo de pantalla y prueba, margen mínimo 5 mm. Cada campo y variable validados, largo y detalles nunca truncados sin aviso. Media carta vertical 396 × 612 pt; en carta, marco superior/inferior con coordenadas físicas verificadas. La impresión de facturas al 100 % es independiente de la configuración normal de los recibos existentes.
 
-La implementación y las pruebas de lotes, concurrencia, editor, PDF, calibración e impresión física están pendientes. No se presenta un PDF genérico como formulario aprobado por SENIAT.
+La implementación y las pruebas de lotes, concurrencia de emisión, editor, PDF de facturas, calibración e impresión física están pendientes. No se presenta un PDF genérico como formulario aprobado por SENIAT.
 
 ## Riesgos concretos que la integración debe resolver
 

@@ -1,0 +1,14 @@
+# Control de ingresos y cierre mensual
+
+**Rama de revisión. No usar como emisión de facturas.** Aula no se conecta al banco ni al SENIAT y no calcula IVA o IGTF. Los comprobantes actuales conservan sus importes y números.
+
+1. **Preparar cuentas.** Administración configura las cuentas del colegio por moneda y Caja efectivo. Guarda solo cuatro últimos dígitos. Revisa los cobros antiguos sin cuenta y asígnalos con motivo. No se clasifican automáticamente.
+2. **Registrar.** Caja elige la cuenta destino en cada cobro. Para efectivo depositado registra planilla, soporte y recibos cubiertos; es un traslado, no otro ingreso. Administración registra otros ingresos con categoría y soporte. Los egresos pueden llevar cuenta. El soporte es una descripción o ubicación, no un archivo adjunto.
+3. **Conciliar.** Administración importa el extracto con su mapeo revisado, comprueba la vista previa y confirma. Provincial es una plantilla genérica **NO VERIFICADA**. Repetir el mismo archivo no duplica movimientos. El cruce automático actúa en el mes seleccionado, exige cuenta, moneda, referencia, centavos exactos y fecha a ±3 días, y comprueba unicidad en ambos lados. Los demás casos se revisan; se permiten vínculos parciales. No se supone una conversión entre monedas.
+4. **Revisar el mes.** Examina banco sin recibo/egreso, libro sin depósito, diferencias, pendientes antiguos, cuentas sin asignar y tasas históricas faltantes. Clasificar no registra una mensualidad ni reduce una deuda. Si falta una tasa, la equivalencia dice **NO VERIFICADO**: no usa la de hoy. «Sujeto pasivo especial» y «Pagado en divisas» son opciones informativas.
+5. **Entregar y cerrar.** Descarga la relación CSV con BOM para Excel y el PDF para el contador. Incluyen conceptos, cuentas, métodos, referencias, moneda original, tasas conservadas y diferencias contra el extracto; sin documentos ni fechas de nacimiento de menores. Factura queda vacía hasta completar ese módulo. Compara con caja y reportes. Confirma expresamente los pendientes antes de cerrar.
+6. **Corregir después.** El cierre conserva una foto del informe. El servidor bloquea nuevos cobros, anulaciones y cambios del libro de ese mes. Repetir un pago ya confirmado no crea otro recibo. Solo Administración reabre con motivo, conservando el cierre anterior. Revisa, exporta y cierra de nuevo tras corregir.
+
+Los respaldos incluyen cuentas, movimientos, vínculos y cierres; los externos nuevos siguen cifrados. Prueba una copia externa con contraseña o recuperación. Conserva el extracto original confidencial por separado: no lo subas al repositorio ni a una captura pública.
+
+**Pendiente:** conversión entre cuentas/monedas y depósitos de efectivo convertidos; formulario de facturas, calibración física y revisión fiscal. No hay instalador de esta rama. Primero haz el piloto con datos ficticios, separado de producción.
