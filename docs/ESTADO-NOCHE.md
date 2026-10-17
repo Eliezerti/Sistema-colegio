@@ -1,41 +1,27 @@
 # Estado de trabajo nocturno
 
-**Fase 1 integrada y validada en Linux y Windows. Conciliación integrada y validada en Linux; Windows pendiente. Fase 3 preparada, aún no integrada. Fase 4 pendiente.**
+**Núcleo de Fases 1–3 integrado. Fase 3 aún no aprobada en Windows. Fase 4 y conciliación con conversión pendientes.**
 
-- Rama `autonomo/ingresos-facturas`; código de Fase 1: `ddba0ca9a2707f1fd9b133b4aea732d757fd1c2a`. Main, etiquetas y publicación intactos.
-- Commits: `2701023` migración; `1e003a4` servidor y reportes; `11e00dc` pruebas; `ddba0ca` interfaz.
-- Fase 0 documentada. Fase 1: catálogo, cuenta destino, asignación histórica, otros ingresos/categorías, depósitos parciales, egresos con cuenta, permisos y bitácora. [Guía](cuentas-ingresos.md).
-- Esquema 13 aditivo; copia previa verificada (cifrada cuando está configurado), fixture real del código publicado 1.0.71 con datos ficticios, integridad/cadena y cinco cortes reales comprobados. Ninguna base del usuario abierta o modificada.
-- Los recibos originales, importes y correlativos se conservan. Los depósitos no duplican ingresos. Instalación nueva con siete tablas nuevas vacías.
+- Rama: `autonomo/ingresos-facturas`. Código del núcleo: `2d3af092dec8f25bd8442ae859777f4686bbebd5`. Sin merge, etiquetas ni publicación; main intacta.
+- Fase 1: cuentas escolares, cuenta en cobros/egresos, revisión explícita de históricos, otros ingresos y depósitos parciales de efectivo. Linux 333 (tres nativas omitidas) y tres navegadores correctos. Windows 333 correctas, sin omisiones y tres navegadores correctos: [39001990044](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39001990044).
+- Fase 2: importación CSV/XLSX con perfiles, huella/usuario/fecha, duplicados, cruces únicos y parciales, clasificaciones y privacidad. Linux 343 (tres nativas omitidas) y tres navegadores correctos. Windows 343 correctas en 446,056 s y tres navegadores correctos: [39003181236](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39003181236).
+- Fase 3 integrada: cierre mensual con foto conservada, bloqueo del servidor, reapertura motivada, opciones informativas sin impuestos y relación CSV/PDF para contador. Commits `52ac0f4`, `efd2b9f`, `784cc86`, `2d3af09`. Esquema 15 aditivo. Cada transición 12→13→14→15 tiene copia previa verificada y cinco terminaciones reales del proceso. Instalación nueva vacía.
+- Linux anterior: 351 en 233,656 s, tres nativas omitidas; tres navegadores correctos. La referencia independiente adicional pasó sola (1 en 0,077 s). La repetición completa de 352 no pudo recuperarse tras reiniciarse el entorno; **no se declara aprobada**.
+- Windows Fase 3 [39004156877](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39004156877): **falló** el paso de cuatro suites. No conocemos todavía qué comandos fallaron: descarga del artefacto bloqueada por política de red (host de almacenamiento no permitido), y `gh run view --log` no devolvió contenido. Rendimiento Windows no ejecutado porque depende de ese paso.
 
-## Resultados reales de esta fase
+## Reanudación del 17 de octubre
 
-| Comando | Linux | Windows |
-|---|---|---|
-| `python -m unittest discover -s tests -v` | 333 en 206,436 s; 330 correctas y 3 nativas omitidas | 333 correctas en 550,777 s; sin omisiones |
-| `python tests/run_browser.py` | Salida 0, incluye flujo nuevo por interfaz y copia consulta | Salida 0 |
-| `python tests/run_browser.py --demo` | Salida 0 | Salida 0 |
-| `python tests/run_browser.py --roster` | Salida 0 | Salida 0 |
+El entorno volvió a la copia inicial `a5b5aed`, sin registros locales anteriores. Se recuperó del remoto el commit `2d3af09`, sin rehacer ni perder el código enviado. El bloqueo anterior de revisión automática por límite de uso dejó de impedir el mecanismo autorizado después de reanudar. No se eludió ese mecanismo ni la política de red.
 
-Windows: https://github.com/Eliezerti/Sistema-colegio/actions/runs/39001990044
-Registros: https://github.com/Eliezerti/Sistema-colegio/actions/runs/39001990044/artifacts/12090006489
-Logs Linux: `/workspace/work/noche2/phase1-*-fixed.log`, `phase1-roster-final.log`.
+Reproducción local: 8 dirigidas, una falla real; la referencia importaba tardíamente un módulo mientras `db.local_today` era un Mock de 2025. Ese módulo conservaba la fecha y rechazaba un ingreso ficticio actual como futuro. Primer arreglo: congelar la fuente datetime solo dentro de la prueba, manteniendo la función original; comprobar que el reloj no queda contaminado. **8 correctas en 9,207 s**. La protección real contra fechas futuras no se modificó.
 
-Primera regresión ampliada: 331 en 213,631 s, 15 errores y 3 omisiones. Causas: fixtures sintéticos antiguos con tablas acompañantes nuevas, fixtures de pago sin cuenta y reapertura con cabecera local de bitácora dañada. Primer arreglo: fixtures actualizados y conservación de consulta con escrituras bloqueadas ante bitácora dañada; 57 dirigidas correctas y repetición completa correcta. Roster inicial falló por no elegir cuenta; ajustado el flujo real, sin omitir la validación. La prueba dirigida inicial de Consulta recibió 428: se confirmó la tasa diaria por el flujo vigente, sin quitar el control.
+Se agrega evidencia de CI en anotaciones de GitHub: salidas reales, conteo, duración y traceback completo por partes. Así los nuevos resultados se pueden revisar sin descargar el artefacto bloqueado. No se presenta como corrección confirmada del fallo Windows hasta ejecutar la nueva validación. La referencia de importes sigue producida por código publicado de 1.0.71; no se cambian sus valores para hacer pasar pruebas.
 
-## Próximo bloque
+## Lo siguiente
 
-1. Recoger resultado y logs Windows; actualizar informe y pruebas reales. No reutilizar el resultado anterior del núcleo aislado como validación de Fase 1.
-2. Fase 2: importaciones y perfiles persistidos, duplicados entre archivos, conciliación y clasificaciones. Las reglas puras existen; no constituyen el flujo operativo.
-3. Fase 3: cierre mensual protegido, relación para contador y conciliación contra extracto. Después, Fase 4 completa si alcanza el uso.
+1. Ejecutar nuevamente las cuatro suites Linux en este entorno, con el primer arreglo de aislamiento.
+2. Consultar las anotaciones de la nueva validación Windows. Si falla, leer la causa concreta; máximo dos intentos de arreglo por prueba, luego revertir Fase 3 al punto verde de Fase 2 y registrar el resultado.
+3. Actualizar README, CHANGELOG e INFORME-MAÑANA.md con el estado definitivo, evitando descripciones antiguas que aún dicen Fase 3 pendiente de integración.
+4. Conservar fuera del núcleo la Fase 4: editor, lotes, emisión y numeración fiscal no implementados. Conversión entre cuentas o monedas y depósitos de efectivo convertidos también pendiente; nunca inferir una tasa.
 
-No existe instalador nuevo. No se hicieron instalación/actualización/desinstalación de esta rama ni impresión física. NO VERIFICADO: Provincial, formulario/calibración y confirmación fiscal. No hay aprobación pendiente.
-
-## Punto de Fase 2
-
-- Código `e6b40ee`: commits `0b5d11c` (esquema 14), `7f10cea` (servidor/confidencialidad/pruebas), `e6b40ee` (interfaz). Esquema 13 sigue siendo el punto previo de reversión, no el esquema actual de este código.
-- Cuatro suites Linux: unittest **343 en 219,629 s, 340 correctas y tres nativas omitidas**; normal, demo y roster **salida 0**. Logs `phase2-final-*.log` en `/workspace/work/noche2/`.
-- Diez pruebas nuevas de conciliación/migración, incluido proceso terminado realmente en cinco puntos y respaldo previo 13 cifrado abierto con contraseña y recuperación. Interfaz de perfil, CSV con ñ, vista previa, confirmación, cruce y totales correctos.
-- Primer dirigido: una referencia ficticia repetida sin confirmar; corregida mediante el control vigente. Primera suite completa: 343 en 219,262 s, un fallo por contrato de permisos que esperaba 400 ante cruce válido vacío; contrato corregido (200 y cero vínculos), 12 dirigidas correctas en 14,778 s y repetición completa correcta. Primer navegador falló por selector ambiguo de diálogos; selector específico y repetición correcta.
-- Perfil real Provincial **NO VERIFICADO**. Cruces entre cuentas o monedas y depósitos de efectivo con conversión: pendientes; nunca inferirlos. Conciliación integrada limitada a 20.000 movimientos por lado. No usar una prueba pura para declarar rendimiento HTTP.
-- Preparados `colegio/month_schema.py` y `colegio/accounting.py` sin importación desde el producto y todavía sin commit: Fase 3 no activa. Integrar y probar antes de incluirlos en el punto verde; descartar estos archivos propios si no se completa la fase.
+No existe instalador de esta rama. No se ejecutaron instalación/actualización/desinstalación ni impresión física de este código. NO VERIFICADO: extracto real de Provincial, formulario real, calibración y confirmación fiscal. No se abrió ni cambió ninguna base del usuario.

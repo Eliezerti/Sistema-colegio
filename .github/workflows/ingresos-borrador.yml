@@ -45,6 +45,8 @@ jobs:
           python tests/run_browser.py --roster 2>&1 | Tee-Object -FilePath noche-roster.log
           $roster = $LASTEXITCODE
           Write-Output "SALIDAS: unittest=$unit normal=$normal demo=$demo roster=$roster"
+          python tests/validation_evidence.py --results $unit $normal $demo $roster
+          if ($LASTEXITCODE -ne 0) { throw 'No se pudo publicar el resumen de las pruebas.' }
           if ($unit -ne 0 -or $normal -ne 0 -or $demo -ne 0 -or $roster -ne 0) {
             throw 'Falló al menos una suite. Revisa los resultados reales.'
           }
@@ -53,6 +55,8 @@ jobs:
         run: |
           python tests/benchmark_income.py --output noche-income-benchmark.csv 2>&1 | Tee-Object -FilePath noche-income-benchmark.log
           if ($LASTEXITCODE -ne 0) { throw 'Falló la medición HTTP del libro de ingresos.' }
+          python tests/validation_evidence.py --performance noche-income-benchmark.csv
+          if ($LASTEXITCODE -ne 0) { throw 'No se pudo publicar la medición.' }
       - name: Conservar registros de revisión
         if: always()
         uses: actions/upload-artifact@v4
