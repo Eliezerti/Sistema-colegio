@@ -17,13 +17,14 @@ Los commits `a311cfc`, `27241fc` y `f2c468c` contienen las reglas y sus pruebas.
 
 ## Pruebas reales
 
-Se están cerrando los resultados finales. Consultar `docs/ESTADO-NOCHE.md`; este apartado se actualizará con las salidas finales, sin asumir resultados de trabajos en curso.
+Linux terminado; Windows todavía en ejecución. Consultar `docs/ESTADO-NOCHE.md`; este apartado se actualizará con el resultado real de Windows.
 
 - Línea base con restricción: 307 pruebas en 67,595 s; 118 errores de socket y 3 omisiones nativas. Falló por `PermissionError: [Errno 1] Operation not permitted` al crear el servidor local.
 - Se utilizó el mecanismo de permisos autorizado; prueba administrativa: 1 correcta en 1,012 s. Sin modificar ni omitir pruebas para evitar el bloqueo.
 - Línea base autorizada: 307 en 180,169 s; 304 correctas y 3 nativas omitidas en Linux. Navegador normal, `--demo` y `--roster`: salida 0.
 - Primera regresión ampliada: 321 en 179,995 s; 318 correctas y 3 nativas omitidas. Tres navegadores: salida 0.
 - Núcleo final aislado: 17 correctas en 0,326 s. Incluye oráculo independiente con 40 conjuntos de movimientos, cobertura parcial, ambigüedad por ambos lados, duplicados, ceros, tasas/redondeos, importaciones corruptas, fórmulas, vínculos externos y expansión de texto compartido Excel.
+- Regresión Linux del código final `f2c468c`: 324 en 173,620 s; 321 correctas y 3 nativas omitidas.
 - Windows: flujo de revisión sin compilación ni publicación; resultado final pendiente de actualizar. No se reutiliza la validación antigua de 1.0.71 como prueba de esta rama.
 
 Las tres omisiones Linux son DPAPI, mutex/enfoque de ventanas Windows y revisión nativa de restauración con Tk. No se omiten por motivos funcionales.

@@ -32,3 +32,19 @@ Trabajo de revisión en `autonomo/ingresos-facturas`. No publicar ni fusionar a 
 ## Migración propuesta
 
 Esquema 13 aditivo; snapshot consistente, integridad, claves foráneas y cadena comprobadas antes de DDL, una transacción con disparadores y versión al final. Prueba sobre fixtures publicados, cierre/reportes idénticos, terminación real del proceso. La reversión posterior requiere la copia previa y conservar por separado cualquier dato nuevo; un ejecutable antiguo debe rechazar el esquema nuevo. No aplicar esta propuesta a una base del usuario durante el desarrollo.
+
+## Registro de decisiones de esta ejecución
+
+| Decisión | Motivo | Alternativa descartada | Cómo revertir |
+|---|---|---|---|
+| Mantener las reglas fuera de las rutas y del escritorio | La integración y la migración nuevas todavía no tienen prueba completa | Mostrar botones que aparenten conciliar o cerrar sin persistencia garantizada | Integrarlas en una fase posterior con permisos, transacciones, respaldos y pruebas; no hay datos que revertir ahora |
+| CSV y primera hoja XLSX con mapeo explícito | No existe extracto real de referencia | Suponer el formato de Provincial o adivinar separadores de miles | Ampliar perfiles versionados tras comprobar un extracto real; conservar el archivo original fuera del repositorio |
+| Posibles duplicados sin ID bancario se señalan y conservan en vista previa | Dos transferencias legítimas pueden tener contenido idéntico | Descartar ingresos por una huella de contenido repetida | Cambiar la política solo con un identificador bancario verificado y pruebas de importación entre archivos |
+| Unicidad en ambos lados; máximo 50 candidatos visibles con cantidad total | Evitar cruces ajenos y expansión excesiva de grupos ambiguos | Elegir el primer recibo por orden de consulta | Revisión explícita; el original no se altera y no existe conciliación guardada que deshacer |
+| Referencias e ID bancarios de Excel deben ser texto | Los ceros eliminados por Excel no se pueden recuperar | Rellenar ceros inventando la longitud del banco | Aceptar otras representaciones solo con perfil real verificado y advertencia; nunca inventar el original |
+| Validación Windows sin instalador | Verificar regresiones sin entregar funciones incompletas como una versión nueva | Compilar el mismo número de versión con un módulo no integrado y llamarlo entrega | Añadir compilación BORRADOR cuando el bloque operativo y sus pruebas estén completos |
+| Fases 1–4 marcadas pendientes | Solo se terminó y probó el núcleo aislado de esta ejecución | Declarar las fases completas basándose en pruebas de reglas puras | Continuar desde ESTADO-NOCHE.md; no asumir una migración ni funcionalidades que no existen |
+
+Los valores seguros del encargo para cierre, impuestos, plantillas y numeración fiscal quedan en el diseño: no son configuraciones nuevas activadas en la aplicación. No se habilitaron IVA, IGTF, acceso a bancos ni emisión fiscal.
+
+El primer envío al remoto fue rechazado por revisión automática por falta de titularidad acreditada. Se comprobó en lectura que `origin` pertenece a la cuenta autenticada y tiene permisos de administración; el repositorio es público. Tras esa comprobación, la revisión autorizó el envío de código genérico y pruebas ficticias. No se publicaron extractos ni datos del colegio. El rechazo no se eludió por otro canal.

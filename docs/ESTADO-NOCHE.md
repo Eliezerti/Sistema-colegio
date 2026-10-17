@@ -27,3 +27,9 @@
 - CI de ese commit: https://github.com/Eliezerti/Sistema-colegio/actions/runs/38996806129 (en cola/en curso; no aprobado todavía).
 - Informe de revisión: `INFORME-MAÑANA.md`. Entrega parcial explícita; Fases 1–4 siguen sin integrar.
 - Próximo bloque: cerrar resultados y después implementar Fase 1 desde el diseño, empezando por el protocolo de respaldo/migración y su fixture publicado. No habilitar primero una UI financiera sin esas garantías.
+
+## Regresión final Linux
+
+- Código `f2c468c`: 324 pruebas en 173,620 s; 321 correctas y 3 exclusivas de Windows omitidas. Sin fallos.
+- Tres navegadores: salida 0. Servidor, interfaz y sus pruebas no cambiaron; el núcleo nuevo no está conectado a ellos.
+- CI anterior `38996676220` sustituido y cancelado por cambio de código; no cuenta como validación. La ejecución válida será `38996806129`, aún en curso.
