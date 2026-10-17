@@ -1,5 +1,6 @@
 # Windows x64 only, WebView2. Tcl/Tk is required by recovery tools.
 from pathlib import Path
+import os
 import sys
 from PyInstaller.utils.hooks import collect_all
 
@@ -12,7 +13,8 @@ datas = [item for item in datas if keep_data(item[1] + '/' + Path(item[0]).name)
 binaries = [item for item in binaries if keep_data(item[1] + '/' + Path(item[0]).name)]
 hidden = [name for name in hidden if not blocked_module(name)]
 
-a = Analysis([str(root / 'desktop_entry.py')], pathex=[str(root)], binaries=binaries,
+entry = root / 'packaging/review_entry.py' if os.environ.get('AULA_REVIEW_BUILD') == '1' else root / 'desktop_entry.py'
+a = Analysis([str(entry)], pathex=[str(root)], binaries=binaries,
              datas=datas + [(str(root / 'static'), 'static'), (str(root / 'colegio/fonts'), 'colegio/fonts')],
              hiddenimports=hidden + ['pystray._win32'], excludes=list(EXCLUDED),
              hookspath=[], runtime_hooks=[], noarchive=False)

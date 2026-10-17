@@ -1,4 +1,4 @@
-name: Ingresos · revisión sin instalador
+name: Ingresos · revisión y BORRADOR aislado
 on:
   push:
     branches: [autonomo/ingresos-facturas]
@@ -7,6 +7,7 @@ on:
       - 'colegio/**'
       - 'static/**'
       - 'tests/**'
+      - 'packaging/**'
       - '.github/workflows/ingresos-borrador.yml'
 permissions:
   contents: read
@@ -16,7 +17,7 @@ concurrency:
 jobs:
   windows:
     runs-on: windows-2022
-    timeout-minutes: 30
+    timeout-minutes: 55
     env:
       PYTHONUTF8: '1'
     steps:
@@ -56,10 +57,43 @@ jobs:
       - name: Medición HTTP de ingresos con 800 alumnos y 12 meses
         shell: pwsh
         run: |
-          python tests/benchmark_income.py --output noche-income-benchmark.csv 2>&1 | Tee-Object -FilePath noche-income-benchmark.log
+          python tests/benchmark_income.py --with-invoices --output noche-income-benchmark.csv 2>&1 | Tee-Object -FilePath noche-income-benchmark.log
           if ($LASTEXITCODE -ne 0) { throw 'Falló la medición HTTP del libro de ingresos.' }
           python tests/validation_evidence.py --performance noche-income-benchmark.csv
           if ($LASTEXITCODE -ne 0) { throw 'No se pudo publicar la medición.' }
+      - name: Verificación independiente del PDF de facturas
+        shell: pwsh
+        run: |
+          python -m pip install pypdf==6.10.0 PyMuPDF==1.26.6
+          if ($LASTEXITCODE -ne 0) { throw 'No se instalaron los verificadores independientes.' }
+          python tests/verify_invoice_pdfs.py 2>&1 | Tee-Object -FilePath noche-invoice-pdf.log
+          if ($LASTEXITCODE -ne 0) { throw 'Fallaron dimensiones o coordenadas del PDF.' }
+          Write-Output '::notice title=PDF de facturas::Dos pruebas independientes correctas: una página, dimensiones, coordenadas, acentos, desplazamiento y carta superior/inferior.'
+      - name: Verificar aislamiento y compilar BORRADOR sin publicar
+        shell: pwsh
+        run: |
+          python tests/verify_review_build.py 2>&1 | Tee-Object -FilePath noche-review-entry.log
+          if ($LASTEXITCODE -ne 0) { throw 'Falló el aislamiento de la carpeta de revisión.' }
+          ./packaging/build_windows.ps1 -Version '1.0.72-borrador.${{ github.run_number }}' -Review *>&1 | Tee-Object -FilePath noche-build.log
+      - name: Defender, instalación separada y conservación de carpetas
+        shell: pwsh
+        run: |
+          ./packaging/scan_windows.ps1 -Path dist
+          ./packaging/test_review_installer.ps1 -Version '1.0.72-borrador.${{ github.run_number }}' *>&1 | Tee-Object -FilePath noche-installer.log
+          ./packaging/scan_windows.ps1 -Path dist -ReportDir '${{ runner.temp }}/defender-review-after'
+          python -m pip install pypdf==6.10.0 PyMuPDF==1.26.6
+          python tests/verify_receipt_prints.py '${{ runner.temp }}/aula-recibo-native' 2>&1 | Tee-Object -FilePath noche-native-receipts.log
+          if ($LASTEXITCODE -ne 0) { throw 'Falló la evidencia independiente de los comprobantes nativos.' }
+        env:
+          AULA_RECEIPT_REPORT_DIR: ${{ runner.temp }}/aula-recibo-native
+      - name: Conservar instalador BORRADOR solo si pasó Windows
+        uses: actions/upload-artifact@v4
+        with:
+          name: Aula-BORRADOR-ingresos-facturas
+          path: |
+            dist/Aula-Colegio-Instalador-*-borrador.*.exe
+            dist/Aula-Colegio-Instalador-*-borrador.*.exe.sha256
+          if-no-files-found: error
       - name: Conservar registros de revisión
         if: always()
         uses: actions/upload-artifact@v4
