@@ -8,7 +8,9 @@
 - Corregido el aislamiento de fecha de la referencia; el rechazo real de movimientos futuros permanece. Archivo de referencia fijado a LF para conservar su huella en Windows, sin omitir la comprobación.
 - Otros ingresos en Caja efectivo no aparecen como pendientes bancarios imposibles de cruzar; conservan sus totales en caja y reportes. Con el cifrado bloqueado se rechaza la migración antes de crear su carpeta o copia de reversión.
 - Recuperación compuesta probada: libro conciliado y mes cerrado, contraseña y clave de recuperación sin el almacén original, integridad, cadena y consulta inmutable.
-- Facturas/editor e instalador nuevos no entregados. Sin publicación ni firma digital. [Estado y evidencia](docs/ESTADO-NOCHE.md).
+- Fase 4: editor en mm, fondo PNG solo en calibración, perfiles, versiones e importación/exportación JSON; lotes y prefijos literales, números escritos o confirmados, hojas dañadas, anulación administrativa, PDF conservado y reimpresión idéntica. Registro de ventas CSV/PDF y vínculo en cierre mensual. Validación final en curso; [estado y evidencia](docs/ESTADO-NOCHE.md).
+- Esquema 16 aditivo: copia previa, cinco cortes reales y comprobación de PDF/plantillas en mantenimiento y respaldos. Numeración conocida conservada al restaurar; revisión administrativa antes de otra emisión. Sin impuestos calculados ni firma digital.
+- Instalador de revisión separado, marcado BORRADOR y sin publicación: carpeta de programa, accesos y datos distintos de producción. Su generación queda condicionada a Windows completo.
 
 # Cobros y documentos financieros de prueba · 1.0.71 · 16/10/2026
 

@@ -117,3 +117,21 @@ Las ejecuciones CI de commits distintos usan máquinas Windows independientes y 
 ## Continuación después del núcleo verde
 
 Las cuatro suites finales del núcleo pasaron en Linux y Windows (`a772d25`, evidencia en el informe). Se continúa ahora el diseño e implementación de Fase 4 bajo la autorización autónoma, sin otra aprobación. La decisión histórica de no iniciar facturas protegía el núcleo mientras fallaba Windows; no limita esta continuación. Se conserva un punto de retorno antes del nuevo esquema. Se descarta integrar un editor o emisor incompleto en la interfaz; la fase necesita sus pruebas de plantilla, numeración, permisos, PDF y migración, además de las cuatro suites. Reversión: commits normales de la fase, sin borrar datos ni reescribir historia, y copia previa en otra carpeta si se hubiera usado una base de prueba.
+
+
+## Fase 4 · decisiones de implementación
+
+| Decisión | Motivo | Alternativa descartada | Cómo revertir |
+|---|---|---|---|
+| Siete tablas aditivas, esquema 16, sin registros iniciales | Mantener recibos, cálculos y correlativos originales | Reconstruir pagos o crear otra base fuera del respaldo | Copia verificada del esquema 15 y código `1526124` en carpeta vacía; conservar completa la carpeta 16 y sus operaciones posteriores |
+| Prefijo literal y ceros del formulario; confirmación expresa de ambos números | No conocemos los formularios reales y Aula no genera numeración fiscal | Suponer número puramente decimal o emitir con la propuesta sin confirmarla | Editar lote antes de usarlo; un rango nuevo no puede excluir hojas ya registradas |
+| PDF exacto guardado con huella y fuentes estándar WinAnsi | Reimprimir idéntico y conservar ñ/tildes sin una fuente completa por factura | Volver a renderizar con plantilla o perfil actuales | No reescribir facturas; anulación con motivo y otra emisión para corregir |
+| Plantilla importada o modificada queda SIN CALIBRAR | Cambios de posición pueden inutilizar una hoja numerada | Considerar la vista en pantalla una calibración física | Comprobar fotocopias y confirmar calibración por Administración; restaurar una versión crea una nueva |
+| Impuestos siempre desactivados; etiquetas y concepto editables | No hay confirmación fiscal del contador | Inventar tasas o habilitar cálculos genéricos | Diseñar y validar por separado cualquier cambio fiscal; no activar IVA/IGTF desde este borrador |
+| Reservas de números conocidos en la entrada auditada de restauración | Una copia vieja no debe permitir reutilizar hojas emitidas después | Reiniciar números con el contenido del respaldo | Revisión física y administrativa; las reservas no se borran ni se reutilizan. Copias ajenas no conocen operaciones que nunca recibieron |
+| Instalador separado BORRADOR | Facilitar revisión sin seleccionar la carpeta real | Reemplazar la instalación publicada con código aún en revisión | Desinstalar el borrador; conservar su carpeta de datos. El programa publicado y sus datos permanecen separados |
+| LOCALAPPDATA del proceso de revisión se ubica bajo AulaRevisionIngresos | Incluso abrir Aula.exe directamente debe seleccionar datos distintos | Separar solo el acceso directo y dejar el ejecutable apuntando a producción | Cerrar borrador y usar instalación publicada; no mover la base 16 sobre una base real. Cerrar Aula publicado antes de abrir el borrador porque comparten mutex/puertos |
+
+El instalador de revisión no ofrece inicio automático. Datos en `%LOCALAPPDATA%\AulaRevisionIngresos\AulaColegio`, programa y accesos separados. No actualiza la versión publicada. Las autopruebas nativas usan únicamente temporales ficticios. No se fusiona, etiqueta ni publica una versión final.
+
+La plantilla Provincial sigue **NO VERIFICADA**. Plantilla de factura genérica editable: **SIN CALIBRAR**. Formulario real, impresión física y validez del medio fiscal: **NO VERIFICADOS**. El bloque no sustituye al contador.

@@ -1,6 +1,6 @@
 # Informe de la mañana · ingresos y facturas
 
-**Entrega parcial de revisión: núcleo de Fases 1–3 integrado y validado en Linux y Windows. Fase 4 y conversiones entre cuentas/monedas no completadas.**
+**Rama de revisión: Fases 1–4 integradas. Fase 4 correcta en Linux; validación final Windows e instalador BORRADOR pendientes de terminar. Conversiones entre cuentas/monedas aún pendientes.**
 
 Rama `autonomo/ingresos-facturas`. Código integrado inicialmente en `2d3af092dec8f25bd8442ae859777f4686bbebd5`; ajustes finales de efectivo `cb34ad7` y cifrado previo `a772d25`. Ese último commit pasó las cuatro suites en ambos sistemas; es el punto verde del núcleo. No se fusionó main, no se publicó versión ni etiqueta y no se abrió ni modificó ninguna base del usuario. Solo datos ficticios.
 
@@ -11,12 +11,33 @@ Rama `autonomo/ingresos-facturas`. Código integrado inicialmente en `2d3af092de
 | 0 | Inventario y diseño: [decisiones autónomas](docs/DECISIONES-AUTONOMAS.md) y [diseño interno](docs/interno/ingresos-diseno.md). |
 | 1 | Cuentas escolares editables, últimos cuatro dígitos, cuenta en cobros/egresos, asignación histórica explícita y atómica, otros ingresos con categorías y soporte textual, depósitos parciales de efectivo sin doble cobertura. Permisos, interfaz, API y bitácora integrados. Los depósitos trasladan saldo; no duplican ingresos. |
 | 2 | CSV/XLSX con perfiles editables, vista previa, huella/usuario/fecha, importación idempotente, revisión de posibles duplicados y rechazo de ID bancario conflictivo. Cruce único por ambos lados y vínculos parciales; débitos/egresos y clasificaciones con soporte. Extractos solo Administración. **Pendiente:** vínculos entre cuentas/monedas y depósitos de efectivo convertidos. |
-| 3 | Foto mensual conservada, bloqueo del período en servidor, reapertura administrativa con motivo e historia, revisión de pendientes, opciones fiscales informativas y relación CSV con BOM/PDF para contador. Incluye tasas conservadas, monedas y cuentas, diferencias contra el extracto, sin documentos ni fechas de nacimiento de menores. Factura queda vacía porque ese módulo no existe. Cuatro suites correctas en Linux y Windows con los últimos ajustes. |
-| 4 | **No implementada:** editor, calibración, lotes, emisión, numeración fiscal confirmada, hojas dañadas, reimpresión y registro de ventas. No se presenta un PDF genérico como sustituto. |
+| 3 | Foto mensual conservada, bloqueo del período en servidor, reapertura administrativa con motivo e historia, revisión de pendientes, opciones fiscales informativas y relación CSV con BOM/PDF para contador. Incluye tasas conservadas, monedas y cuentas, diferencias contra el extracto, sin documentos ni fechas de nacimiento de menores. Factura asociada incorporada en Fase 4, sin duplicar el ingreso. Cuatro suites correctas en Linux y Windows con los últimos ajustes. |
+| 4 | Editor visual en mm, fondo PNG solo para calibración, perfiles, versiones y JSON; lotes con prefijos/ceros, confirmación de números, hojas dañadas, anulación, inmutabilidad y reimpresión del mismo PDF. Relación de ventas CSV/PDF y factura asociada en ingresos. Esquema 16 aditivo. Correcta en Linux; Windows en validación. |
 
 Guías: [cuentas e ingresos](docs/cuentas-ingresos.md), [conciliación](docs/conciliacion-bancaria.md), [Control de ingresos y cierre mensual](docs/control-ingresos-cierre-mensual.md).
 
-## Pruebas reales del núcleo final
+## Fase 4 · validación final real
+
+Código de emisión `6ca60e3`, prefijos/validación `f1c4bb0`, interfaz `ea7301e`; todo en la rama de revisión, sin usar bases reales.
+
+| Comando | Linux | Windows del código nuevo |
+|---|---|---|
+| `python -m unittest discover -s tests -v` | **379 en 408,506 s: 376 correctas, tres exclusivas de Windows omitidas; salida 0** | Pendiente de terminar |
+| `python tests/run_browser.py` | **Salida 0**; editor, arrastre/flechas, calibración sin número, emisión/reimpresión idéntica y recuperación de sesión sin mezclar usuarios | Pendiente de terminar |
+| `python tests/run_browser.py --demo` | **Salida 0** | Pendiente de terminar |
+| `python tests/run_browser.py --roster` | **Salida 0** | Pendiente de terminar |
+
+Registros completos: `/workspace/work/noche4/final-*.log`, con códigos de salida separados. `tests/verify_invoice_pdfs.py`: **dos correctas en 0,100 s**, usando pypdf y PyMuPDF; una página, 396×612 puntos, márgenes/cuadros de texto, ñ/tildes/cursiva, perfil desplazado y carta arriba/abajo con giro a tamaño real. `tests/verify_review_build.py`: **dos correctas en 0,005 s**, selección de carpeta separada antes de iniciar escritorio y rechazo sin LOCALAPPDATA. No es impresión física.
+
+Migración 15→16: fixture publicado 1.0.71 atravesando 13/14/15, respaldo cifrado previo comprobado con contraseña/recuperación y cinco terminaciones reales. Filas de negocio, recibos y prefijo de bitácora conservados; la cabecera avanza exactamente una entrada. Tablas nuevas vacías en instalación nueva. Permisos/CSRF por HTTP, meses cerrados, concurrencia real de dos cajeros, inmutabilidad, rangos/prefijos/ceros/duplicados/saltos/agotamiento, hojas dañadas, anulación, portable sin almacén original, consulta y rechazo de PDF alterado. Los números conocidos se conservan al restaurar, incluso tras dos restauraciones antiguas.
+
+Primer pase completo: **379 en 343,004 s, un fallo, tres omisiones**; una petición vacía podía guardar un perfil por defecto. Primer arreglo: rechazar el perfil ausente/vacío en servidor. La matriz dirigida pasó y el segundo pase completo es el resultado verde de arriba. No se omitieron pruebas ni se relajaron permisos. Otros fallos iniciales de la fase: cuadro de fuente, comparación de cabecera auditada, orden del registro y fixtures sintéticos antiguos; corregidos y repetidos, sin modificar fixtures publicados. El test de exportación portable pasó a crear snapshot consistente antes de cifrar: se conserva el rechazo a WAL activo. El primer navegador falló por URL relativa en su cliente de pruebas; corregido y repetido completo.
+
+Con **800 alumnos, 12 meses, 9.600 cobros/movimientos/facturas con PDF ficticio**, HTTP Linux: principal **7.993 bytes**, mediana **0,331963 s**, máximo **0,448516 s**; conciliación 86.849 bytes / 0,344910 s; relación mensual 425.987 bytes / 0,177546 s; registro de facturas 49.222 bytes / 0,119056 s. Es una carga temporal sintética, no velocidad de emisión ni extracto real. El generador de esta medición tuvo dos errores de preparación (paréntesis e importación), corregidos; ejecución posterior salida 0. No se usa un resultado fallido como medición.
+
+Guía nueva: [facturas preimpresas y calibración](docs/facturas-preimpresas.md). Ejemplo **SIN CALIBRAR**, formulario real/calibración física/validez fiscal **NO VERIFICADOS**. IVA e IGTF no calculados ni activables en este borrador; etiquetas editables. No se inventan tasas históricas ni números preimpresos.
+
+## Pruebas del punto verde anterior · núcleo Fases 1–3
 
 | Comando | Linux, entorno recuperado | Windows Server 2022, últimos ajustes |
 |---|---|---|
@@ -100,18 +121,18 @@ Riesgos y pendientes: conversión entre cuentas/monedas y traslado de efectivo d
 
 ## Instalador y pendientes
 
-**No se generó instalador, ni borrador ni final: no hay enlace ni SHA-256 nuevo.** La rama se conserva para revisión del núcleo mientras faltan facturas y conversión. Compilar desde la rama es posible; no se atribuye la ausencia a una obligación de usar main. No se trabajó en firma digital ni certificados.
+**BORRADOR preparado para compilar desde esta rama, condicionado a Windows correcto. Todavía no existe EXE validado ni SHA-256 para entregar.** Instala programa y accesos separados; el punto de entrada usa `%LOCALAPPDATA%\AulaRevisionIngresos\AulaColegio`, incluso al abrir directamente el EXE. No reemplaza ni actualiza la versión publicada. Cierra Aula publicado antes de abrirlo, porque comparten mutex y puertos. No habilita inicio automático. No se trabajó en firma digital ni certificados.
 
 El ZIP de fuentes fue verificado en scratch (integridad, fixtures publicados y referencia con huellas idénticas, documentación y ausencia de base de negocio/respaldos). No es un instalador ni una publicación; no se incluye un enlace a un archivo temporal.
 
 No se ejecutaron instalación limpia de un EXE nuevo, actualización, otra cuenta de Windows, desinstalación ni impresión física de esta rama. Los tests lógicos y las suites en Windows no sustituyen esas pruebas.
 
-Fase 4 tiene [diseño de implementación](docs/interno/facturas-diseno.md), todavía sin funciones entregadas. Falta: plantillas y versiones, editor visual, perfiles por impresora, calibración, papel y coordenadas, emisión y rangos/números confirmados por operador, inmutabilidad y concurrencia de dos cajeros, anulaciones/hojas dañadas, reimpresión y relación de ventas. No se declara implementada ninguna de esas funciones.
+Fase 4 tiene [diseño y límites](docs/interno/facturas-diseno.md) y las funciones descritas arriba. Falta terminar Windows y el instalador, además de la comprobación física/fiscal. No confundir el PDF verificado con papel físicamente calibrado. Una copia ajena no conoce facturas posteriores que nunca recibió: revisar también las hojas físicas antes de emitir tras restaurar.
 
 ## Pruebas manuales del colegio
 
 1. Piloto separado de producción con datos ficticios; comparar caja, reportes, morosidad y permisos de cada perfil.
 2. Revisar mapeo con un extracto real confidencial: signos, centavos, fechas, referencias y solapamientos. No subirlo al repositorio público.
 3. Probar una copia externa y restaurarla en otra PC, con archivo + contraseña y archivo + recuperación, sin el almacén de llaves original.
-4. Revisar conceptos y validez del medio de emisión con el contador. Cuando exista el módulo completo, calibrar con fotocopias, formulario real e impresora del colegio, antes de usar hojas numeradas.
+4. Revisar conceptos y validez del medio de emisión con el contador. Calibrar con fotocopias, formulario real e impresora del colegio, antes de usar hojas numeradas, siguiendo la guía.
 5. Cuando exista instalador borrador validado, probar instalación/actualización y desinstalación que conserve datos; después, prueba física supervisada de corte de luz durante un cobro. Ninguna se declara realizada.

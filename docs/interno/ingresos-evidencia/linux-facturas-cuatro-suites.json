@@ -1,0 +1,22 @@
+{
+  "platform": "Linux",
+  "tests": 379,
+  "seconds": 408.506,
+  "outcome": "OK (skipped=3)",
+  "exits": {
+    "unittest": 0,
+    "normal": 0,
+    "demo": 0,
+    "roster": 0
+  },
+  "independent_pdf": {
+    "tests": 2,
+    "seconds": 0.1,
+    "outcome": "OK"
+  },
+  "review_entry": {
+    "tests": 2,
+    "seconds": 0.005,
+    "outcome": "OK"
+  }
+}

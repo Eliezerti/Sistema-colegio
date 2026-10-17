@@ -20,4 +20,4 @@ La limpieza excepcional de cobros de prueba se bloquea si hay clasificaciones o 
 
 ## Bloques posteriores
 
-La [conciliación bancaria](conciliacion-bancaria.md) y el [cierre mensual](control-ingresos-cierre-mensual.md) tienen sus propias guías. Sus ampliaciones son los esquemas 14 y 15, también aditivos y con copia previa. Las facturas y las conversiones entre cuentas o monedas siguen pendientes. Provincial, formulario real, calibración física y confirmación fiscal: **NO VERIFICADO**. Aula no se conecta a bancos ni al SENIAT ni calcula IVA o IGTF.
+La [conciliación bancaria](conciliacion-bancaria.md) y el [cierre mensual](control-ingresos-cierre-mensual.md) tienen sus propias guías. Sus ampliaciones son los esquemas 14 y 15, también aditivos y con copia previa. Las facturas tienen su [guía de calibración y emisión](facturas-preimpresas.md); esquema 16 aditivo. Las conversiones entre cuentas o monedas siguen pendientes. Provincial, formulario real, calibración física y confirmación fiscal: **NO VERIFICADO**. Aula no se conecta a bancos ni al SENIAT ni calcula IVA o IGTF.

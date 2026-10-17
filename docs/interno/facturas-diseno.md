@@ -1,6 +1,6 @@
 # Facturas sobre formulario preimpreso · diseño de Fase 4
 
-Diseño de trabajo, no una función entregada. No modifica los recibos de mensualidades. El punto verde de Fases 1–3 se conserva antes de integrar este bloque. Sin conexión al SENIAT ni cálculo de IVA/IGTF. Medidas reales, medio fiscal y calibración física: **NO VERIFICADOS**.
+Diseño implementado en la rama de revisión; resultados reales y límites en INFORME-MAÑANA.md. No modifica los recibos de mensualidades. El punto verde de Fases 1–3 se conserva antes de integrar este bloque. Sin conexión al SENIAT ni cálculo de IVA/IGTF. Medidas reales, medio fiscal y calibración física: **NO VERIFICADOS**.
 
 ## Persistencia y permisos
 
@@ -11,7 +11,7 @@ Diseño de trabajo, no una función entregada. No modifica los recibos de mensua
 
 ## Lotes y emisión
 
-- Datos preimpresos y de imprenta editables por lote; varios lotes y uno activo. Los rangos de factura y control se conservan como texto numérico para mantener ceros iniciales, con claves numéricas canónicas para detectar duplicados.
+- Datos preimpresos y de imprenta editables por lote; varios lotes y uno activo. Los rangos de factura y control se conservan como texto con prefijo literal y ceros iniciales; las claves canónicas combinan prefijo y consecutivo para detectar duplicados.
 - Aula propone los siguientes números disponibles como ayuda; nunca reserva ni emite por consultarlos. El operador debe escribirlos o confirmar expresamente los valores propuestos. Validar rangos, unicidad, orden, saltos y agotamiento dentro de una transacción de escritura. Cada salto requiere revisión y motivo; no declarar automáticamente hojas dañadas.
 - Estados: Borrador, Emitida, Anulada y Hoja dañada o inutilizada. Toda hoja usada o dañada conserva factura/control y motivo; los números no se reutilizan al anular. El registro debe explicar los saltos y hojas inutilizadas.
 - Una factura emitida conserva instantánea de datos, versión de plantilla, perfil aplicado y PDF exacto. No se editan sus importes, cliente ni números. Una corrección requiere anulación administrativa y nueva emisión. Reimpresión del PDF conservado, registrada con usuario y motivo; no volver a renderizar con una plantilla nueva.
