@@ -56,6 +56,7 @@ def retired_route(endpoint):
 
 
 def snapshot(db, user):
+    from .income_book import preferences
     read_only=getattr(db,'read_only',False)
     owns_transaction = not db.in_transaction and not read_only
     if owns_transaction:
@@ -89,14 +90,17 @@ def snapshot(db, user):
         charge['days_overdue'] = max(0, (local_today() - date.fromisoformat(charge['due_date'])).days) if charge['balance'] else 0
     payments = rows(db, '''SELECT p.id,p.student_id,p.amount,p.paid_on,p.method,p.reference,p.notes,
        p.created_by,p.created_at,p.voided,p.void_reason,p.currency,p.received_amount,p.exchange_rate,
-       s.name AS student_name,u.name AS operator FROM payments p
+       s.name AS student_name,u.name AS operator,pa.account_id FROM payments p LEFT JOIN payment_accounts pa ON pa.payment_id=p.id
        JOIN students s ON s.id=p.student_id JOIN users u ON u.id=p.created_by ORDER BY p.id DESC''')
     for payment in payments:
         payment.pop('receipt_snapshot', None)
         payment.pop('request_key', None)
-    expenses = rows(db, 'SELECT * FROM expenses ORDER BY spent_on DESC,id DESC')
+    expenses = rows(db, 'SELECT e.*,ea.account_id FROM expenses e LEFT JOIN expense_accounts ea ON ea.expense_id=e.id ORDER BY spent_on DESC,e.id DESC')
+    other_income=rows(db,'SELECT id,concept,received_on,amount,currency,received_amount,exchange_rate,bcv_rate,account_id,method,reference,voided FROM other_income ORDER BY id DESC')
+    cash_deposits=rows(db,'SELECT id,deposited_on,amount,currency,account_id,reference,difference,voided FROM cash_deposits ORDER BY id DESC')
     month = today[:7]
     income = sum(p['amount'] for p in payments if not p['voided'] and p['paid_on'].startswith(month))
+    income += sum(r['amount'] for r in other_income if not r['voided'] and r['received_on'].startswith(month))
     outgo = sum(e['amount'] for e in expenses if not e['voided'] and e['spent_on'].startswith(month))
     aging = [0, 0, 0, 0]
     for c in charge_list:
@@ -108,6 +112,8 @@ def snapshot(db, user):
             'grades': rows(db, 'SELECT * FROM grades ORDER BY name'),
             'enrollments': rows(db, 'SELECT id,student_id,created_at FROM enrollment_documents ORDER BY id DESC'),
             'charges': charge_list, 'payments': payments, 'expenses': expenses,
+            'school_accounts': rows(db,'SELECT '+('id,name,currency,kind,active' if user['role']=='reader' else '*')+' FROM school_accounts ORDER BY name'),
+            'income_preferences': preferences(db),'other_income':other_income,'cash_deposits':cash_deposits,
             'cash_closures': rows(db,'SELECT id,closed_on,created_at,reopened_at,reopen_reason FROM cash_closures ORDER BY id DESC LIMIT 100'),
             'payment_plans': [plan_status(db,r) for r in db.execute('SELECT * FROM payment_plans ORDER BY id DESC LIMIT 100')],
             'year_transitions': [dict(id=r['id'],source_year=(d:=json.loads(r['snapshot_json']))['source_year'],target_year=d['target_year'],issued_on=d['issued_on']) for r in db.execute('SELECT * FROM year_transitions ORDER BY id DESC LIMIT 30')],
@@ -162,6 +168,8 @@ def prepare_backup_directory(db, value, uid):
 def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, import_archived=False, demo=False):
     uid = user['id']
     db.audit_user = uid
+    from .income_book import ACTIONS as INCOME_ACTIONS,action as income_action
+    if endpoint in INCOME_ACTIONS:return income_action(db,endpoint,data,user)
     admin_paths = {'settings','backup-directory','grades','guardians','students','users','password','void-payment','void-expense','cancel-charge','import-roster','reopen-cash','transition-year','cancel-plan','correct-billing-start'} | DIRECTORY_ACTIONS | ARCHIVE_ACTIONS
     if user['role'] == 'reader' or (endpoint in admin_paths and user['role'] != 'admin'):
         raise PermissionError('Tu perfil no permite esta operación.')
@@ -200,7 +208,8 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
     if endpoint == 'generate':
         return generate_month(db, data, uid)
     if endpoint == 'payments':
-        return record_payment(db, data, uid)
+        from .income_book import bind_payment
+        return bind_payment(db,data,record_payment(db, data, uid),uid)
     if endpoint == 'collections':
         student_id = integer(data.get('student_id'), 1, 2147483647)
         note = required(data, 'note', 2000)
@@ -347,6 +356,8 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
                 raise ValidationError('Anula primero los pagos asociados al cargo.')
             db.execute('UPDATE charges SET cancelled=1 WHERE id=?', (target,))
         else:
+            if endpoint=='void-payment' and db.execute('SELECT 1 FROM cash_deposit_payments a JOIN cash_deposits d ON d.id=a.deposit_id WHERE a.payment_id=? AND d.voided=0',(target,)).fetchone():
+                raise ValidationError('El recibo está vinculado a un depósito. Administración debe revisar y anular primero ese depósito.')
             table = 'payments' if endpoint == 'void-payment' else 'expenses'
             result = db.execute(f'UPDATE {table} SET voided=1,void_reason=? WHERE id=? AND voided=0', (reason, target))
             if not result.rowcount:
@@ -377,6 +388,9 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
     record_id = save_record(db, endpoint, fields, data)
     audit(db, uid, endpoint, {'id': record_id, 'operation': 'update' if data.get('id') else 'create'})
     result = {'id': record_id}
+    if endpoint=='expenses':
+        from .income_book import bind_expense
+        bind_expense(db,data,record_id,uid)
     if endpoint == 'students':
         if synchronize: synchronize_monthly_charges(db)
         result['document_id'] = enrollment(db, record_id, uid)
@@ -923,7 +937,8 @@ class Handler(BaseHTTPRequestHandler):
                 if endpoint not in ('logout','demo-exit'):
                     self.server.clock.require()
                 db.commit()
-                if endpoint in DIRECTORY_ACTIONS or endpoint in ARCHIVE_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','expenses','void-payment','void-expense','close-cash','reopen-cash','settings','backup-directory','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
+                from .income_book import ACTIONS as INCOME_ACTIONS
+                if endpoint in INCOME_ACTIONS or endpoint in DIRECTORY_ACTIONS or endpoint in ARCHIVE_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','expenses','void-payment','void-expense','close-cash','reopen-cash','settings','backup-directory','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
                     status=self.server.make_backup()
                     if status.get('local_error') or status.get('secondary_error'):
                         result['backup_warning']=status.get('local_error') or status.get('secondary_error')
@@ -941,6 +956,10 @@ class Handler(BaseHTTPRequestHandler):
                 result['access']=self.server.access.snapshot()
                 result['read_only']=self.server.read_only_info if read_only else None
                 self.respond(200, result)
+            elif endpoint=='income-book':
+                from .income_book import report as income_report
+                query=parse_qs(url.query)
+                self.respond(200,income_report(db,public_user,query.get('month',[local_today().isoformat()[:7]])[0],offset=query.get('offset',['0'])[0]))
             elif endpoint in ('audit', 'audit.csv', 'audit.pdf'):
                 if user['role'] != 'admin': raise PermissionError('Solo Administración puede consultar o exportar la bitácora.')
                 from .audit_reports import report, csv_bytes, pdf_bytes

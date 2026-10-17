@@ -348,9 +348,11 @@ def cash_summary(db,on):
     on=valid_date(on)
     if on>local_today().isoformat(): raise ValidationError('No se puede cerrar una fecha futura.')
     lines = {}; movements=[]
-    for table,column,direction in (('payments','paid_on','income'),('expenses','spent_on','expense')):
+    sources=[('payments','paid_on','income'),('expenses','spent_on','expense')]
+    if db.execute("SELECT 1 FROM sqlite_master WHERE name='other_income'").fetchone():sources.append(('other_income','received_on','income'))
+    for table,column,direction in sources:
         for r in db.execute(f'SELECT * FROM {table} WHERE {column}=? ORDER BY id',(on,)):
-            movement={'type':direction,'id':r['id'],'currency':r['currency'],'received_amount':r['received_amount'],
+            movement={'type':'other-income' if table=='other_income' else direction,'id':r['id'],'currency':r['currency'],'received_amount':r['received_amount'],
                 'amount':r['amount'],'method':r['method'],'reference':r['reference'],'voided':r['voided'],'exchange_rate':r['exchange_rate']}
             movements.append(movement)
             if r['voided']: continue
@@ -358,6 +360,14 @@ def cash_summary(db,on):
             entry=lines.setdefault(key,{'method':key[0],'currency':key[1],'income':0,'expense':0,'net':0,'income_usd':0,'expense_usd':0})
             entry[direction]+=r['received_amount']; entry[direction+'_usd']+=r['amount']
             entry['net']=entry['income']-entry['expense']
+    if db.execute("SELECT 1 FROM sqlite_master WHERE name='cash_deposits'").fetchone():
+        for r in db.execute('SELECT * FROM cash_deposits WHERE deposited_on=? ORDER BY id',(on,)):
+            movements.append(dict(type='transfer',id=r['id'],currency=r['currency'],received_amount=r['amount'],amount=0,
+                method='Efectivo → Transferencia',reference=r['reference'],voided=r['voided'],exchange_rate=''))
+            if r['voided']:continue
+            for method,sign in (('Efectivo',-1),('Transferencia',1)):
+                key=(method,r['currency']);entry=lines.setdefault(key,dict(method=method,currency=r['currency'],income=0,expense=0,net=0,income_usd=0,expense_usd=0))
+                entry['net']+=sign*r['amount']
     return {'closed_on':on,'lines':[lines[k] for k in sorted(lines)],'movements':movements,
         'preview_hash':hashlib.sha256(json.dumps(movements,sort_keys=True).encode()).hexdigest(),
         'income_usd':sum(v['income_usd'] for v in lines.values()),'expense_usd':sum(v['expense_usd'] for v in lines.values()),

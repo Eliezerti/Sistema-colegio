@@ -50,6 +50,18 @@ def review_database(db):
         ('Existen cargos repetidos para el mismo alumno, período y concepto.', '''SELECT student_id FROM charges
             GROUP BY student_id,period,concept HAVING COUNT(*)>1 LIMIT 1'''),
     )
+    if db.execute("SELECT 1 FROM sqlite_master WHERE name='school_accounts'").fetchone():
+        checks += (
+            ('Una cuenta de cobro no coincide con moneda o método.',"""SELECT p.id FROM payment_accounts a JOIN payments p ON p.id=a.payment_id JOIN school_accounts s ON s.id=a.account_id
+                WHERE p.currency<>s.currency OR (p.method='Efectivo')<>(s.kind='cash') LIMIT 1"""),
+            ('Una cuenta de egreso no coincide con su moneda.',"""SELECT e.id FROM expense_accounts a JOIN expenses e ON e.id=a.expense_id JOIN school_accounts s ON s.id=a.account_id WHERE e.currency<>s.currency LIMIT 1"""),
+            ('Un depósito válido usa un cobro anulado o de otra moneda/método.',"""SELECT d.id FROM cash_deposit_payments a JOIN cash_deposits d ON d.id=a.deposit_id JOIN payments p ON p.id=a.payment_id
+                WHERE d.voided=0 AND (p.voided=1 OR p.method<>'Efectivo' OR p.currency<>d.currency OR p.paid_on>d.deposited_on) LIMIT 1"""),
+            ('Los depósitos cubren más efectivo que el recibo original.',"""SELECT p.id FROM cash_deposit_payments a JOIN cash_deposits d ON d.id=a.deposit_id JOIN payments p ON p.id=a.payment_id
+                WHERE d.voided=0 GROUP BY p.id HAVING SUM(a.amount)>p.received_amount LIMIT 1"""),
+            ('La diferencia de un depósito no coincide con sus aplicaciones.',"""SELECT d.id FROM cash_deposits d LEFT JOIN cash_deposit_payments a ON a.deposit_id=d.id
+                GROUP BY d.id HAVING d.difference<>d.amount-COALESCE(SUM(a.amount),0) LIMIT 1"""),
+        )
     for message,sql in checks:
         if db.execute(sql).fetchone(): errors.append(message)
     payments = db.execute('SELECT COALESCE(SUM(amount),0) FROM payments WHERE voided=0').fetchone()[0]

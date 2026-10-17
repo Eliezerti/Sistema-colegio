@@ -6,6 +6,9 @@ from .backup_inspection import fingerprint
 from .documents import AdministrativePDF, amount
 
 TABLE_LABELS = {
+    'school_accounts':'Cuentas del colegio','payment_accounts':'Cuentas de cobros','expense_accounts':'Cuentas de egresos',
+    'income_categories':'Categorías de otros ingresos','other_income':'Otros ingresos','cash_deposits':'Depósitos de efectivo',
+    'cash_deposit_payments':'Cobertura de depósitos',
     'settings':'Configuración', 'users':'Usuarios', 'students':'Alumnos',
     'guardians':'Representantes', 'grades':'Grados y secciones', 'charges':'Cargos',
     'payments':'Pagos', 'expenses':'Egresos', 'allocations':'Aplicaciones de pagos',
@@ -24,6 +27,9 @@ def table_label(table):
 
 def identity(table,row):
     if 'id' in row: return str(row['id'])
+    if table=='payment_accounts':return str(row['payment_id'])
+    if table=='expense_accounts':return str(row['expense_id'])
+    if table=='cash_deposit_payments':return str(row['deposit_id'])+':'+str(row['payment_id'])
     if table=='settings': return row['key']
     if table=='allocations': return f"{row['payment_id']}:{row['charge_id']}"
     if table=='monthly_assessments': return f"{row['student_id']}:{row['period']}"

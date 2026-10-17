@@ -145,9 +145,11 @@ def daily_report(state, payment_people=None):
     debtors = sorted((s for s in state['students'] if s['overdue'] > 0),
                      key=lambda s: (-s['overdue'], s['name']))
     student_map = {s['id']: s for s in state['students']}
-    collected_usd = sum(p['received_amount'] for p in valid if p['currency'] == 'USD')
-    collected_ves = sum(p['received_amount'] for p in valid if p['currency'] == 'VES')
-    income = sum(p['amount'] for p in valid)
+    other=[r for r in state.get('other_income',[]) if r['received_on']==today and not r['voided']]
+    all_income=valid+other
+    collected_usd = sum(p['received_amount'] for p in all_income if p['currency'] == 'USD')
+    collected_ves = sum(p['received_amount'] for p in all_income if p['currency'] == 'VES')
+    income = sum(p['amount'] for p in all_income)
     overdue = sum(s['overdue'] for s in debtors)
     summaries = [('Recibido en dólares', amount(collected_usd)),
                  ('Recibido en bolívares', amount(collected_ves, 'Bs')),
@@ -186,7 +188,7 @@ def daily_report(state, payment_people=None):
         'summaries': summaries, 'payment_count': len(valid), 'debtor_count': len(debtors),
         'arrears_by_grade':[dict(grade=g,**by_grade[g]) for g in sorted(by_grade)],
         'received_usd': collected_usd, 'received_ves': collected_ves, 'income_usd': income, 'overdue_usd': overdue,
-        'sections': [
+        'sections': ([dict(title='Otros ingresos del día',headings=['Concepto','Método','Moneda','Importe'],widths=[350,180,100,128],lines=[[r['concept'],r['method'],r['currency'],amount(r['received_amount'],r['currency'])] for r in other])] if other else [])+[
             {'title': 'Cobros del día', 'headings': ['N.º', 'Recibo', 'Alumno / grado', 'Representante',
                 'Método / referencia', 'Recibido', 'Equivalente USD / estado'],
              'widths': [26, 76, 163, 144, 122, 117, 110], 'lines': payment_lines,

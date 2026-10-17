@@ -732,9 +732,10 @@ def administrative_pdf(kind,data):
             [75,111,111,111,111])
         pdf.total(f"Equivalente USD: ingresos {amount(data['income_usd'])} | egresos {amount(data['expense_usd'])}")
         pdf.line('Arqueo: efectivo inicial + ingresos en efectivo - egresos en efectivo. El saldo bancario, pagos móviles, transferencias y tarjetas no forman parte del efectivo.')
+        if any(r['type']=='transfer' for r in data['movements']):pdf.line('Los depósitos trasladan efectivo a banco; no son otro ingreso ni un egreso.')
         pdf.line('Observaciones: '+(data['notes'] or 'Sin observaciones.'))
         pdf.table(['Movimiento / referencia','Método','Moneda / recibido','Estado'],
-            [[f"{'R' if r['type']=='income' else 'E'}-{r['id']:06d}\n{r['reference']}",r['method'],amount(r['received_amount'],r['currency']),'Anulado' if r['voided'] else 'Válido'] for r in data['movements']],
+            [[f"{ {'income':'R','expense':'E','other-income':'OI','transfer':'D'}.get(r['type'],'M')}-{r['id']:06d}\n{r['reference']}",r['method'],amount(r['received_amount'],r['currency']),'Anulado' if r['voided'] else 'Válido'] for r in data['movements']],
             [190,119,130,80])
     else:
         g=data['guardian']

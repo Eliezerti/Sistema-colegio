@@ -17,8 +17,8 @@ def report(db,state,period):
     start=f'{period}-01';end=date(year,month,calendar.monthrange(year,month)[1]).isoformat()
     income=expenses=0
     lines={}
-    for table,key,direction in (('payments','paid_on','income'),('expenses','spent_on','expense')):
-        for row in state[table]:
+    for table,key,direction in (('payments','paid_on','income'),('expenses','spent_on','expense'),('other_income','received_on','income')):
+        for row in state.get(table,[]):
             if row['voided'] or row[key]>end:continue
             group=lines.setdefault((row['currency'],row['method']),dict(currency=row['currency'],method=row['method'],
                 opening=0,income=0,expense=0,closing=0,income_usd=0,expense_usd=0))
@@ -29,6 +29,12 @@ def report(db,state,period):
                 if direction=='income':income+=row['amount']
                 else:expenses+=row['amount']
             group['closing']+=sign*row['received_amount']
+    for row in state.get('cash_deposits',[]):
+        if row['voided'] or row['deposited_on']>end:continue
+        for method,sign in (('Efectivo',-1),('Transferencia',1)):
+            group=lines.setdefault((row['currency'],method),dict(currency=row['currency'],method=method,opening=0,income=0,expense=0,closing=0,income_usd=0,expense_usd=0))
+            group['closing']+=sign*row['amount']
+            if row['deposited_on']<start:group['opening']+=sign*row['amount']
     student_map={s['id']:s for s in state['students']}
     pending={}
     for charge in state['charges']:

@@ -13,16 +13,18 @@ def principal(state):
             sid=charge['student_id']
             oldest[sid]=min(oldest.get(sid,charge['due_date']),charge['due_date'])
     paid=[p for p in state['payments'] if not p['voided'] and p['paid_on']==state['today']]
+    other=[r for r in state.get('other_income',[]) if not r['voided'] and r['received_on']==state['today']]
+    all_income=paid+other
     result['dashboard']={'due':due[:5],'due_count':len(due),'due_total':sum(c['balance'] for c in due),
         'new_debtors':sum(on>=(today-timedelta(days=7)).isoformat() for on in oldest.values()),
-        'payment_count':len(paid),'income':sum(p['amount'] for p in paid),
-        'dollars':sum(p['received_amount'] for p in paid if p['currency']=='USD'),
-        'bolivars':sum(p['received_amount'] for p in paid if p['currency']=='VES')}
+        'payment_count':len(paid),'income':sum(p['amount'] for p in all_income),
+        'dollars':sum(p['received_amount'] for p in all_income if p['currency']=='USD'),
+        'bolivars':sum(p['received_amount'] for p in all_income if p['currency']=='VES')}
     result['students']=sorted(state['students'],key=lambda s:(-s['overdue'],s['name']))[:5]
     result['payments']=[p for p in state['payments'] if not p['voided']][:5]
     # An incomplete list is never used as a financial ledger. UI explicitly loads history.
     for key in ('guardians','charges','expenses','enrollments','payment_plans','year_transitions',
-                'guardian_documents','cash_closures','collections','users','audit'):
+                'guardian_documents','cash_closures','collections','users','audit','other_income','cash_deposits'):
         result[key]=[]
     result['rates']=state['rates'][:1]
     result['history_loaded']=False
