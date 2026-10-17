@@ -57,6 +57,9 @@ def reversal_snapshot(path,*,before=12,after=13):
     from .backup_inspection import inspect_copy,file_hash
     from .backup_keys import status
     from .clock_guard import atomic_json
+    cipher=status(path.parent)
+    if cipher['configured'] and not cipher['ready']:
+        raise ValueError('Desbloquea el cifrado antes de actualizar esta base.')
     folder=path.parent/'.aula-migrations'/('schema-'+str(after))
     for candidate in (folder.parent,folder):
         if candidate.is_symlink() or (hasattr(candidate,'is_junction') and candidate.is_junction()):
@@ -69,11 +72,8 @@ def reversal_snapshot(path,*,before=12,after=13):
     digest=file_hash(saved)
     if inspected['summary']['schema']!=before or file_hash(saved)!=digest:
         raise ValueError('No se verificó la copia previa del esquema '+str(before)+'.')
-    cipher=status(path.parent)
     encrypted=False
     if cipher['configured']:
-        if not cipher['ready']:
-            raise ValueError('Desbloquea el cifrado antes de actualizar esta base.')
         from .backup_export import write_encrypted
         target=folder/(identifier+'.aulabak')
         result=write_encrypted(saved,target,path.parent,preserve_schema=True)

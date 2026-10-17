@@ -107,3 +107,9 @@ La plantilla Provincial, el formulario real, la calibración y la revisión fisc
 ## Efectivo y pendientes bancarios
 
 Se excluyen otros ingresos de Caja efectivo del libro de conciliación bancaria, igual que los cobros en efectivo. Motivo: no existe extracto bancario de una caja física y el pendiente era imposible de resolver. Alternativa descartada: ocultarlo solo en pantalla o clasificarlo ficticiamente. Reversión funcional: no hace falta borrar ni migrar datos; el ingreso sigue en caja y en la relación mensual, con su cuenta original. Para depositar efectivo procedente de otros ingresos hará falta ampliar el traslado con cobertura explícita; no se inventa un recibo de mensualidad.
+
+## Bloqueo previo del cifrado y validación independiente
+
+Si un almacén ya configurado no se puede abrir, detener la migración antes de crear su carpeta o copia de reversión. Se descarta comprobarlo después de copiar. La prueba usa solo claves y bases ficticias, vuelve a comprobar esquema y bitácora, y cubre los tres destinos. Reversión: recuperar el acceso con contraseña o clave en el flujo de respaldo, antes de reintentar; no retirar la protección. No se elimina ninguna copia existente.
+
+Las ejecuciones CI de commits distintos usan máquinas Windows independientes y grupos por commit; no comparten datos ni publican nada. Así una validación nueva puede empezar sin cancelar otra que ya está ejecutando pruebas. Alternativa descartada: cancelar una suite en marcha y perder su resultado real. Reversión: restaurar el grupo por rama si se necesita ejecución secuencial. Se fija UTF-8 en Python de CI para conservar tildes en los registros y anotaciones.

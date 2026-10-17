@@ -79,3 +79,22 @@ initialize(sys.argv[1])
                     self.assertEqual(set(TABLES)&names,set(TABLES) if version==13 else set())
                 initialize(path)
                 with closing(connect(path)) as db:self.assertTrue(local_status(db)['ok'])
+
+    def test_locked_cipher_refuses_each_migration_before_creating_reversal_copy(self):
+        from tests.crypto_helpers import configure
+        from colegio.backup_keys import folder,NAME
+        from colegio.income_schema import migrate as income_migrate
+        from colegio.bank_schema import migrate as bank_migrate
+        from colegio.month_schema import migrate as month_migrate
+        from tests.test_bank_schema import BankSchemaTests
+        from tests.test_month_schema import MonthSchemaTests
+        for after,old,migrate in ((13,self.fixture,income_migrate),(14,BankSchemaTests().old,bank_migrate),(15,MonthSchemaTests().old,month_migrate)):
+            with self.subTest(schema=after),tempfile.TemporaryDirectory() as d:
+                path=old(d);configure(d)
+                # Simulate an unavailable real keyring, without bypassing crypto status.
+                (folder(d)/NAME).write_text('{}',encoding='utf-8')
+                with self.assertRaisesRegex(ValueError,'Desbloquea el cifrado'):migrate(path)
+                self.assertFalse((Path(d)/'.aula-migrations'/('schema-'+str(after))).exists())
+                with closing(connect(path)) as db:
+                    self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],after-1)
+                    self.assertTrue(local_status(db)['ok'])
