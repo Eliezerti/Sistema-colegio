@@ -17,13 +17,14 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('nod
     await source.getByLabel('Nombre del administrador').fill('Administración de prueba');
     await source.getByLabel('Usuario',{exact:true}).fill('admin');await source.getByLabel(/^Contraseña/).fill('Prueba-segura-2026');
     await source.getByRole('button',{name:'Crear mi cuenta'}).click();await source.getByLabel('Bolívares por 1 USD').fill('100');await source.getByRole('button',{name:'Confirmar tasa y entrar'}).click();await source.locator('.layout').waitFor();
+    await nav(source,'income');await click(source,'income-account');await fill(source,'name','Banco ficticio USD');await fill(source,'bank','Banco ficticio');await fill(source,'last4','0042');await source.locator('dialog[open] button[type=submit]').click();await source.waitForFunction(()=>!document.querySelector('dialog').open);
     await nav(source,'grades');await click(source,'grade');await fill(source,'name','Primero A');await source.locator('dialog[open] button[type=submit]').click();await source.waitForFunction(()=>!document.querySelector('dialog').open);
     await nav(source,'guardians');await click(source,'guardian');await fill(source,'name','Ana Representante');await fill(source,'document','V-12345678');await fill(source,'phone','04121234567');await source.locator('dialog[open] button[type=submit]').click();await source.waitForFunction(()=>!document.querySelector('dialog').open);
     await nav(source,'students');
     for(const [name,status] of [['Alumno activo','active'],['Alumno inactivo','inactive']]){
       await click(source,'student');await fill(source,'name',name);await fill(source,'monthly_fee','100');await fill(source,'discount','10');await source.locator('dialog[open] [name=guardian_id]').selectOption({label:'V-12345678 · Ana Representante'});await source.locator('dialog[open] [name=status]').selectOption(status);await source.locator('dialog[open] button[type=submit]').click();await source.locator('dialog[open] .receipt-number').waitFor();await click(source,'close');
     }
-    await nav(source,'payments');await click(source,'payment');await fill(source,'amount','10');await source.locator('dialog[open] button[type=submit]').click();await source.locator('dialog[open] .receipt-number').waitFor();await click(source,'close');
+    await nav(source,'payments');await click(source,'payment');await fill(source,'amount','10');await source.locator('dialog[open] [name=account_id]').selectOption({label:'Banco ficticio USD · USD · …0042'});await source.locator('dialog[open] button[type=submit]').click();await source.locator('dialog[open] .receipt-number').waitFor();await click(source,'close');
     const original=await state(source);assert.equal(original.students.length,2);assert.equal(original.payments.length,1);
     await nav(source,'students');await click(source,'export-students');
     for(const [extension,label] of [['xlsx','Exportar Excel (.xlsx)'],['csv','Exportar CSV']]){

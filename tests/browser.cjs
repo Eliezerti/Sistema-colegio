@@ -67,6 +67,14 @@ function printedTextLayout(pdf){
     await page.locator('form[data-endpoint="confirm-rate"] [name="rate"]').fill('100');
     await page.getByRole('button',{name:'Confirmar tasa y entrar'}).click();
     await page.locator('.layout').waitFor();
+    await nav('income');
+    for(const currency of ['USD','VES'])for(const kind of ['bank','cash']){
+      await click('income-account');await fill('name','Cuenta ficticia '+currency+' '+kind);
+      await page.locator('dialog[open] [name="currency"]').selectOption(currency);await page.locator('dialog[open] [name="kind"]').selectOption(kind);
+      if(kind==='bank'){await fill('bank','Banco ficticio');await fill('last4','0042');}
+      await submit();
+    }
+    await nav('dashboard');
     const warning=page.locator('#backup-alerts .backup-persistent');
     assert.equal(await warning.isVisible(),true);
     assert.equal(await warning.locator('button[aria-label*="Cerrar"], [data-action="close"]').count(),0);
@@ -193,7 +201,7 @@ function printedTextLayout(pdf){
     await page.getByText('45,00',{exact:false}).first().waitFor();
     await click('rates');await fill('rate','100');const previousRateForm=await page.locator('dialog[open] form').elementHandle();await page.locator('dialog[open] button[type="submit"]').click();await page.waitForFunction(form=>!form.isConnected,previousRateForm);await page.locator('dialog[open] td').filter({hasText:'100'}).waitFor();
     await page.locator('dialog[open] [data-action="close"]').first().click();
-    await nav('payments');await click('payment');await page.locator('dialog[open] [name="currency"]').selectOption('VES');await page.locator('dialog[open] [name="method"]').selectOption('Pago móvil');await fill('amount','1000');await fill('reference','TR-001');
+    await nav('payments');await click('payment');await page.locator('dialog[open] [name="currency"]').selectOption('VES');await page.locator('dialog[open] [name="method"]').selectOption('Pago móvil');await fill('amount','1000');await fill('reference','TR-001');await page.locator('dialog[open] [name="account_id"]').selectOption({label:'Cuenta ficticia VES bank · VES · …0042'});
     await page.locator('dialog[open] button[type="submit"]').click();
     await page.locator('dialog[open] .receipt-number').waitFor();
     assert.match(await page.locator('dialog[open] .receipt').innerText(),/10,00/);
@@ -346,7 +354,7 @@ function printedTextLayout(pdf){
     await click('issue-account');await page.locator('dialog[open] .receipt-number').waitFor();
     const familyDownload=page.waitForEvent('download');await page.getByRole('link',{name:'Descargar PDF'}).click();await(await familyDownload).saveAs(scratch('aula-family-account.pdf'));
     await page.locator('dialog[open] [data-action="close"]').first().click();
-    await nav('payments');await click('payment');await click('full-payment');
+    await nav('payments');await click('payment');await click('full-payment');await page.locator('dialog[open] [name="account_id"]').selectOption({label:'Cuenta ficticia USD bank · USD · …0042'});
     await page.locator('dialog[open] button[type="submit"]').click();await page.locator('dialog[open] .receipt-number').waitFor();
     assert.match(await page.locator('dialog[open] .receipt-balance').innerText(),/Pago completo/);
     await page.locator('dialog[open] [data-action="close"]').first().click();
@@ -500,6 +508,7 @@ function printedTextLayout(pdf){
     await require('./session_browser.cjs')(page,expectedSessionError);
     await nav('settings');await settingsTab('Protección y mantenimiento');
     assert.equal(await page.locator('[data-action="reset-review"],.reset-settings').count(),0);
+    await require('./income_browser.cjs')(page);
     const finalState=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());
     assert.equal(finalState.audit_status.ok,true);assert.ok(finalState.students.length>0);
     assert.deepEqual(errors,[]);

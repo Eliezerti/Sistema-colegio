@@ -1,0 +1,33 @@
+// Real phase-1 UI, in the normal browser's disposable authenticated school.
+const assert=require('node:assert/strict');
+module.exports=async page=>{
+  const nav=async id=>{await page.locator(`.nav-button[data-id="${id}"]`).click();await page.locator(`.nav-button.active[data-id="${id}"]`).waitFor();};
+  const click=action=>page.locator(`[data-action="${action}"]`).first().click();
+  const fill=(name,value)=>page.locator(`dialog[open] [name="${name}"]`).fill(value);
+  const save=async()=>{await page.locator('dialog[open] button[type="submit"]').click();await page.waitForFunction(()=>!document.querySelector('dialog').open);};
+  const get=path=>page.evaluate(async path=>{const response=await fetch('/api/'+path);if(!response.ok)throw new Error(await response.text());return response.json();},path);
+  const post=(path,data)=>page.evaluate(async({path,data})=>{const session=await(await fetch('/api/session')).json();const response=await fetch('/api/'+path,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':session.user.csrf},body:JSON.stringify(data)});if(!response.ok)throw new Error(await response.text());return response.json();},{path,data});
+  const before=await get('state?history=1');
+  for(const closure of before.cash_closures.filter(c=>c.closed_on===before.today&&!c.reopened_at))await post('reopen-cash',{id:closure.id,reason:'Piloto ficticio del libro de ingresos'});
+  await nav('income');await click('income-categories');await click('income-category');await fill('name','Aportes ficticios de navegador');await save();
+  await click('income-other');await fill('concept','Aporte ficticio de navegador');
+  await page.locator('dialog[open] [name="category_id"]').selectOption({label:'Aportes ficticios de navegador'});
+  await fill('amount','2.00');await fill('support','Documento ficticio del piloto');
+  await page.locator('dialog[open] [name="account_id"]').selectOption({label:'Cuenta ficticia USD bank · USD · …0042'});await save();
+  assert.match(await page.locator('#page-content').innerText(),/Aporte ficticio de navegador/);
+  const pupil=before.students.find(s=>s.status==='active'&&!s.archived);assert.ok(pupil);
+  await post('charges',{student_id:pupil.id,concept:'Prueba ficticia de depósito',period:before.today,amount:'5',due_date:before.today});
+  await nav('payments');await click('payment');await page.locator('dialog[open] [name="student_id"]').selectOption(String(pupil.id));
+  await page.locator('dialog[open] [name="method"]').selectOption('Efectivo');await fill('amount','5.00');
+  assert.equal(await page.locator('dialog[open] [name="account_id"]').inputValue(),String(before.school_accounts.find(a=>a.currency==='USD'&&a.kind==='cash').id));
+  await page.locator('dialog[open] button[type="submit"]').click();await page.locator('dialog[open] .receipt-number').waitFor();await click('close');
+  const paid=await get('state?history=1'),pid=paid.payments[0].id;assert.equal(paid.summary.pending,before.summary.pending);
+  await nav('income');await click('income-deposit');await fill('amount','5.00');await fill('reference','FICTICIO-DEP-NAVEGADOR');
+  await fill('support','Planilla ficticia del piloto');await fill('allocations',`${pid}=5.00`);
+  await page.locator('dialog[open] [name="account_id"]').selectOption({label:'Cuenta ficticia USD bank · USD'});await save();
+  const after=await get('state?history=1');assert.equal(after.summary.income,before.summary.income+700);assert.equal(after.summary.pending,before.summary.pending);
+  await click('income-void-other');await fill('reason','Anulación ficticia del aporte de navegador');await save();
+  await click('income-void-deposit');await fill('reason','Anulación ficticia de la planilla de navegador');await save();
+  const final=await get('state?history=1');assert.equal(final.summary.income,before.summary.income+500);assert.equal(final.audit_status.ok,true);
+  console.log('PASS: cuentas escolares por UI, categoría y otro ingreso con soporte, cuenta en cobro, Caja efectivo sugerida, depósito vinculado sin duplicar ingreso, anulaciones auditadas y deuda intacta.');
+};
