@@ -2,7 +2,7 @@
 
 **Entrega parcial de revisión: núcleo de Fases 1–3 integrado; validación Windows de Fase 3 pendiente. Fase 4 y conversiones entre cuentas/monedas no completadas.**
 
-Rama `autonomo/ingresos-facturas`. Código del núcleo `2d3af092dec8f25bd8442ae859777f4686bbebd5`; los arreglos posteriores afectan pruebas, finales de línea y evidencia de CI. No se fusionó main, no se publicó versión ni etiqueta y no se abrió ni modificó ninguna base del usuario. Solo datos ficticios.
+Rama `autonomo/ingresos-facturas`. Código integrado inicialmente en `2d3af092dec8f25bd8442ae859777f4686bbebd5`; ajustes finales de efectivo `cb34ad7` y cifrado previo `a772d25`. La validación de ese último commit está en curso. No se fusionó main, no se publicó versión ni etiqueta y no se abrió ni modificó ninguna base del usuario. Solo datos ficticios.
 
 ## Resultado por fase
 
@@ -11,14 +11,14 @@ Rama `autonomo/ingresos-facturas`. Código del núcleo `2d3af092dec8f25bd8442ae8
 | 0 | Inventario y diseño: [decisiones autónomas](docs/DECISIONES-AUTONOMAS.md) y [diseño interno](docs/interno/ingresos-diseno.md). |
 | 1 | Cuentas escolares editables, últimos cuatro dígitos, cuenta en cobros/egresos, asignación histórica explícita y atómica, otros ingresos con categorías y soporte textual, depósitos parciales de efectivo sin doble cobertura. Permisos, interfaz, API y bitácora integrados. Los depósitos trasladan saldo; no duplican ingresos. |
 | 2 | CSV/XLSX con perfiles editables, vista previa, huella/usuario/fecha, importación idempotente, revisión de posibles duplicados y rechazo de ID bancario conflictivo. Cruce único por ambos lados y vínculos parciales; débitos/egresos y clasificaciones con soporte. Extractos solo Administración. **Pendiente:** vínculos entre cuentas/monedas y depósitos de efectivo convertidos. |
-| 3 | Foto mensual conservada, bloqueo del período en servidor, reapertura administrativa con motivo e historia, revisión de pendientes, opciones fiscales informativas y relación CSV con BOM/PDF para contador. Incluye tasas conservadas, monedas y cuentas, diferencias contra el extracto, sin documentos ni fechas de nacimiento de menores. Factura queda vacía porque ese módulo no existe. Linux correcto; Windows final pendiente. |
+| 3 | Foto mensual conservada, bloqueo del período en servidor, reapertura administrativa con motivo e historia, revisión de pendientes, opciones fiscales informativas y relación CSV con BOM/PDF para contador. Incluye tasas conservadas, monedas y cuentas, diferencias contra el extracto, sin documentos ni fechas de nacimiento de menores. Factura queda vacía porque ese módulo no existe. Linux del punto inicial correcto; validación final de los últimos ajustes en curso. |
 | 4 | **No implementada:** editor, calibración, lotes, emisión, numeración fiscal confirmada, hojas dañadas, reimpresión y registro de ventas. No se presenta un PDF genérico como sustituto. |
 
 Guías: [cuentas e ingresos](docs/cuentas-ingresos.md), [conciliación](docs/conciliacion-bancaria.md), [Control de ingresos y cierre mensual](docs/control-ingresos-cierre-mensual.md).
 
-## Pruebas reales del código final
+## Pruebas reales y validación final en curso
 
-| Comando | Linux, entorno recuperado | Windows Server 2022, núcleo final |
+| Comando | Linux, entorno recuperado | Windows Server 2022, últimos ajustes |
 |---|---|---|
 | `python -m unittest discover -s tests -v` | **352 en 293,531 s; 349 correctas y tres nativas omitidas; salida 0** | Pendiente de comprobar |
 | `python tests/run_browser.py` | **Salida 0**, incluidos cuentas, importación, conciliación, cierre mensual y copia de consulta | Pendiente de comprobar |
@@ -36,6 +36,10 @@ Validaciones anteriores, sin reutilizarlas como aprobación del núcleo final:
 | Fase 3 antes de referencia completa | 351 en 233,656 s, tres nativas omitidas; tres navegadores salida 0; referencia adicional correcta sola | [39004156877](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39004156877) falló; no se recuperaron sus logs | No aprobado |
 
 La repetición anterior de 352 no se pudo recuperar tras reiniciarse el entorno; no se declara aprobada. Se volvió a ejecutar completa y el resultado real es la tabla final de arriba. [Resumen conservado de las cuatro suites Linux](docs/interno/ingresos-evidencia/linux-cuatro-suites.json). Registros actuales: `/workspace/work/noche3/final-*.log`. Los registros del entorno anterior desaparecieron; sus resultados ya observados y enlaces CI se conservan en este informe y el historial de la rama.
+
+Windows `c276966`: **352 correctas en 668,336 s, sin omisiones; normal/demo/roster salida 0**, [run 39027327681](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39027327681), [evidencia de anotaciones](docs/interno/ingresos-evidencia/windows-c276.json). Este punto precede al ajuste de efectivo y a la comprobación previa de cifrado; no se reutiliza como aprobación final.
+
+Se amplió la cobertura: recuperación del cierre conciliado sin almacén original (contraseña y recuperación); exclusión de otros ingresos en efectivo de pendientes bancarios; rechazo de las tres migraciones antes de copiar si el cifrado está bloqueado. La suite final tiene 355 pruebas y se está ejecutando en [39028897879](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39028897879).
 
 ## Cobertura y referencia independiente
 
@@ -57,9 +61,13 @@ La repetición anterior de 352 no se pudo recuperar tras reiniciarse el entorno;
 | Fase 3 local | Contraseña errónea del fixture corregida. El rechazo 400 deliberado de mes cerrado se cuenta exactamente en la prueba de navegador; otros errores siguen fallando la suite. |
 | Reanudación | Ocho dirigidas: una falló porque una importación tardía retenía el Mock de fecha de la referencia. Primer arreglo: congelar datetime solo durante esa prueba, sin cambiar la función real ni relajar fechas futuras. Ocho correctas en 9,207 s y completa 352 correcta. |
 | Portabilidad | Checkout equivalente a Windows con autocrlf produjo 124 CRLF y otra huella. Se fija ese JSON a LF: cero CRLF y huella original idéntica. No se normaliza ni omite la comprobación. |
-| Windows final | Run inicial fallido sin traceback recuperable: el host del artefacto fue rechazado por política y `gh run view --log` devolvió vacío. Se agrega a los nuevos runs evidencia en anotaciones: salidas, conteo, duración y traceback completo por partes. La causa de aquel run no se inventa. La repetición [39027076426](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39027076426) sí publicó diagnóstico: 352 en 596,378 s, un fallo de huella del JSON (CRLF), sin omisiones; normal/demo/roster salida 0. [Traceback y resultados de las anotaciones](docs/interno/ingresos-evidencia/windows-primer-arreglo.json). Coincide exactamente con la reproducción de portabilidad; el run con LF fijado sigue en curso. La causa del run inicial no se infiere de esta repetición. |
+| Windows inicial | Run inicial fallido sin traceback recuperable: el host del artefacto fue rechazado por política y `gh run view --log` devolvió vacío. Se agrega a los nuevos runs evidencia en anotaciones: salidas, conteo, duración y traceback completo por partes. La causa de aquel run no se inventa. La repetición [39027076426](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39027076426) sí publicó diagnóstico: 352 en 596,378 s, un fallo de huella del JSON (CRLF), sin omisiones; normal/demo/roster salida 0. [Traceback y resultados de las anotaciones](docs/interno/ingresos-evidencia/windows-primer-arreglo.json). Coincide exactamente con la reproducción de portabilidad; el run con LF fijado sigue en curso. La causa del run inicial no se infiere de esta repetición. |
 
 La revisión automática por límite de uso impidió una consulta antes de reiniciarse el entorno; no fue una determinación de riesgo. Al reanudar, volvió a funcionar el mismo mecanismo autorizado y se recuperó la rama enviada. No se eludieron revisión, credenciales ni política de red.
+
+Dos hallazgos finales reproducidos y corregidos al primer intento: otros ingresos en efectivo aparecían entre pendientes bancarios (1 falla; después 7 dirigidas correctas en 13,114 s); un almacén inaccesible detenía las migraciones después de crear una copia privada (tres subcasos negativos fallidos; después 7 pruebas de migración correctas en 8,682 s). La corrección adelanta el rechazo antes de crear la carpeta o copia y no elimina archivos existentes.
+
+La repetición intermedia de 353 pruebas terminó en 332,730 s, con tres nativas omitidas y los tres navegadores correctos. Empezó antes de los dos últimos ajustes; no se usa como aprobación final. Las dos ejecuciones Windows que solo estaban en cola se sustituyeron antes de ejecutar pruebas; ninguna suite en marcha se canceló. Las nuevas validaciones usan máquinas independientes por commit.
 
 ## Rendimiento HTTP
 
@@ -74,7 +82,7 @@ La revisión automática por límite de uso impidió una consulta antes de reini
 | Linux / 36 | `/api/bank-book` | 87.086 | 1,002592 |
 | Linux / 36 | `/api/accounting-report` | 421.668 | 0,508382 |
 
-Windows: pendiente de registrar. [CSV Linux de 12 meses](docs/interno/ingresos-evidencia/linux-12-meses.csv) y [36 meses](docs/interno/ingresos-evidencia/linux-36-meses.csv) conservan tamaño, mediana y máximo de tres muestras. El escenario de 36 meses tiene 28.800 registros por lado. No se usa una medición de reglas puras para afirmar rendimiento HTTP.
+Windows `c276966` / 12 meses: state 8.093 bytes, mediana 0,398051 s; banco 86.849 y 0,296438 s; informe 421.083 y 0,144395 s. Son mediciones previas a los dos últimos ajustes; la repetición final está en curso. Windows / 36 meses: no ejecutado. [CSV Linux de 12 meses](docs/interno/ingresos-evidencia/linux-12-meses.csv) y [36 meses](docs/interno/ingresos-evidencia/linux-36-meses.csv) conservan tamaño, mediana y máximo de tres muestras. El escenario de 36 meses tiene 28.800 registros por lado. No se usa una medición de reglas puras para afirmar rendimiento HTTP.
 
 El objetivo principal menor de 1 MB y 1 s se cumple en las mediciones Linux de 12 y 36 meses para la pantalla principal. La revisión bancaria de 36 meses tuvo mediana de 1,003 s; no se afirma que todas las pantallas estén bajo un segundo. No es una garantía para cualquier PC. La ventana de candidatos admite hasta 20.000 por lado; el libro tiene un límite de seguridad de 200.000 registros, escala no validada.
 
@@ -91,6 +99,8 @@ Riesgos y pendientes: conversión entre cuentas/monedas sin registro explícito 
 ## Instalador y pendientes
 
 **No se generó instalador, ni borrador ni final: no hay enlace ni SHA-256 nuevo.** La rama se conserva para revisión del núcleo mientras faltan facturas y conversión. Compilar desde la rama es posible; no se atribuye la ausencia a una obligación de usar main. No se trabajó en firma digital ni certificados.
+
+El ZIP de fuentes fue verificado en scratch (integridad, fixtures publicados y referencia con huellas idénticas, documentación y ausencia de base de negocio/respaldos). No es un instalador ni una publicación; no se incluye un enlace a un archivo temporal.
 
 No se ejecutaron instalación limpia de un EXE nuevo, actualización, otra cuenta de Windows, desinstalación ni impresión física de esta rama. Los tests lógicos y las suites en Windows no sustituyen esas pruebas.
 
