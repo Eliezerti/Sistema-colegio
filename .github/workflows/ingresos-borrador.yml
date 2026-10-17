@@ -3,6 +3,7 @@ on:
   push:
     branches: [autonomo/ingresos-facturas]
     paths:
+      - '.gitattributes'
       - 'colegio/**'
       - 'static/**'
       - 'tests/**'
