@@ -63,3 +63,11 @@ Separar lotes, rangos, hojas, plantillas versionadas, perfiles de impresora y fa
 Plantilla inicial SIN CALIBRAR, fondo solo de pantalla y prueba, margen mínimo 5 mm. Cada campo y variable validados, largo y detalles nunca truncados sin aviso. Media carta vertical 396 × 612 pt; en carta, marco superior/inferior con coordenadas físicas verificadas. La impresión de facturas al 100 % es independiente de la configuración normal de los recibos existentes.
 
 La implementación y las pruebas de lotes, concurrencia, editor, PDF, calibración e impresión física están pendientes. No se presenta un PDF genérico como formulario aprobado por SENIAT.
+
+## Riesgos concretos que la integración debe resolver
+
+- `colegio/audit_chain.py:147–174` sanea claves privadas conocidas, pero no conoce la descripción ni el identificador de movimientos bancarios futuros. No registrar extractos crudos en detalles, errores ni exportaciones de bitácora. Los movimientos importados deben ser inmutables; sus acciones registran ID interno, hash, cantidad y motivo, sin copiar el contenido confidencial.
+- `colegio/server.py:177` sincroniza mensualidades antes de varias mutaciones. El guardia mensual no puede agregarse al final de la ruta: debe cubrir también cambios indirectos y la generación automática que atraviese un período cerrado. La asignación de cuenta a históricos cerrados requiere reapertura si modifica el libro congelado.
+- `colegio/backup_export.py:30–35` migra copias antiguas al convertirlas. No llamar esa conversión sin un contexto separado desde la migración nueva: podría intentar migrar otra vez su propia copia previa. Hace falta un respaldo de reversión verificado que preserve la versión anterior, sin publicar copias nuevas con Personal ni perder el acceso por contraseña/recuperación.
+- La conciliación debe reservar importes pendientes en una transacción de escritor; la validación pura recibe disponibilidad anterior, pero por sí sola no impide que dos cajeros consuman el mismo saldo. No anunciar concurrencia probada por estos tests.
+- Los archivos con contenido idéntico y sin ID bancario necesitan revisión. Una huella sola no distingue dos depósitos legítimos iguales; tampoco autoriza ignorar movimientos repetidos entre dos extractos solapados.
