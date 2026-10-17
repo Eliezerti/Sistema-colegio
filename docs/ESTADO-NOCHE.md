@@ -45,3 +45,12 @@ Medición real Linux 800/12 con 9.600 facturas/PDF: principal 7.993 bytes / medi
 Se preparó instalador BORRADOR aislado, todavía sin compilar ni validar: AppId/programa/accesos separados, datos bajo `%LOCALAPPDATA%\AulaRevisionIngresos\AulaColegio`; no sustituye el publicado. Entrada probada sin tocar producción. CI ejecutará cuatro suites, medición, verificación PDF, compilación, Defender, instalación separada, autopruebas y desinstalación. Sin releases ni etiquetas. Faltan actualización desde publicado/otra cuenta de este borrador y pruebas físicas; no se declaran realizadas.
 
 La consulta anterior a GitHub fue bloqueada por límite de uso de revisión automática; no se ejecutó ni se eludió. Tras la nueva indicación del usuario, el mismo mecanismo autorizado permitió consultar de nuevo. Sigue válido el punto verde Windows anterior 39028897879; no se atribuye ese resultado a Fase 4.
+
+
+## Envío de Fase 4 y validación en curso
+
+Enviado al remoto `ee7a4881dec3aed662cf8aafc7b87dbe951ad75f`, que incluye `cd367dc` (compilación BORRADOR) y documentación. [Windows 39042799764](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39042799764), job `117425504627`: dependencias correctas, cuatro suites en ejecución. Esta es la validación de Fase 4; no confundirla con la anterior del núcleo. No cancelar una suite en marcha. Observador local `/workspace/work/noche4/windows-watch.log` y `.exit`.
+
+Medición adicional Linux 800/36 con 28.800 PDF ficticios: salida 0; principal 8.000 bytes / mediana 0,483898 s / máximo 0,485014 s; conciliación 87.086 / 0,879629; relación 426.572 / 0,404841; registro facturas 49.284 / 0,241264. Evidencia `linux-facturas-800-36.csv`. Sigue pendiente la medición equivalente en Windows, aparte de la de 12 meses prevista en CI.
+
+El ZIP fuente local fue verificado: 280 archivos, sin claves ni respaldos; bases únicamente como fixtures ficticios declarados bajo tests/fixtures, con manifiesto y huella publicados intactos. No se incluyó una base de negocio en el instalador. La ruta de outputs del chat no existe y el sistema operativo rechazó crear /codex por permisos; no se atribuye a una prueba fallida. Los enlaces de entrega serán al repositorio y a artefactos CI autorizados si no hay una ruta de outputs disponible.

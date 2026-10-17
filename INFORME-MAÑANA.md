@@ -18,7 +18,7 @@ Guías: [cuentas e ingresos](docs/cuentas-ingresos.md), [conciliación](docs/con
 
 ## Fase 4 · validación final real
 
-Código de emisión `6ca60e3`, prefijos/validación `f1c4bb0`, interfaz `ea7301e`; todo en la rama de revisión, sin usar bases reales.
+Código de emisión `6ca60e3`, prefijos/validación `f1c4bb0`, interfaz `ea7301e`; enviado como `ee7a488`, todo en la rama de revisión, sin usar bases reales. [Validación Windows en curso](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39042799764).
 
 | Comando | Linux | Windows del código nuevo |
 |---|---|---|
@@ -34,6 +34,8 @@ Migración 15→16: fixture publicado 1.0.71 atravesando 13/14/15, respaldo cifr
 Primer pase completo: **379 en 343,004 s, un fallo, tres omisiones**; una petición vacía podía guardar un perfil por defecto. Primer arreglo: rechazar el perfil ausente/vacío en servidor. La matriz dirigida pasó y el segundo pase completo es el resultado verde de arriba. No se omitieron pruebas ni se relajaron permisos. Otros fallos iniciales de la fase: cuadro de fuente, comparación de cabecera auditada, orden del registro y fixtures sintéticos antiguos; corregidos y repetidos, sin modificar fixtures publicados. El test de exportación portable pasó a crear snapshot consistente antes de cifrar: se conserva el rechazo a WAL activo. El primer navegador falló por URL relativa en su cliente de pruebas; corregido y repetido completo.
 
 Con **800 alumnos, 12 meses, 9.600 cobros/movimientos/facturas con PDF ficticio**, HTTP Linux: principal **7.993 bytes**, mediana **0,331963 s**, máximo **0,448516 s**; conciliación 86.849 bytes / 0,344910 s; relación mensual 425.987 bytes / 0,177546 s; registro de facturas 49.222 bytes / 0,119056 s. Es una carga temporal sintética, no velocidad de emisión ni extracto real. El generador de esta medición tuvo dos errores de preparación (paréntesis e importación), corregidos; ejecución posterior salida 0. No se usa un resultado fallido como medición.
+
+Medición adicional con **800 alumnos, 36 meses y 28.800 facturas/PDF**: principal **8.000 bytes / mediana 0,483898 s / máximo 0,485014 s**; conciliación 87.086 / 0,879629; relación mensual 426.572 / 0,404841; facturas 49.284 / 0,241264. Salida 0; [CSV](docs/interno/ingresos-evidencia/linux-facturas-800-36.csv). La medición Windows de tres años de facturas aún no se ejecutó.
 
 Guía nueva: [facturas preimpresas y calibración](docs/facturas-preimpresas.md). Ejemplo **SIN CALIBRAR**, formulario real/calibración física/validez fiscal **NO VERIFICADOS**. IVA e IGTF no calculados ni activables en este borrador; etiquetas editables. No se inventan tasas históricas ni números preimpresos.
 
