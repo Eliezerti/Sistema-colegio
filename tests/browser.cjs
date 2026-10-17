@@ -513,6 +513,7 @@ function printedTextLayout(pdf){
     await require('./income_browser.cjs')(page);
 await require('./bank_browser.cjs')(page);
 await require('./accounting_browser.cjs')(page,expectedMonthError);
+await require('./invoices_browser.cjs')(page,expectedSessionError);
     const finalState=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());
     assert.equal(finalState.audit_status.ok,true);assert.ok(finalState.students.length>0);
     assert.deepEqual(errors,[]);

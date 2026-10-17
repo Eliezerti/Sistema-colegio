@@ -1,0 +1,16 @@
+.invoice-editor-modal{width:min(1240px,97vw);max-width:1240px}
+.invoice-editor{display:grid;grid-template-columns:minmax(250px,.7fr) minmax(400px,1.3fr);gap:22px;align-items:start}
+.invoice-editor-controls{display:grid;gap:12px}
+.invoice-editor-work{min-width:0}
+.invoice-canvas-wrap{overflow:auto;max-height:68vh;background:#e5ebe7;border:1px solid #cbd7cf;border-radius:8px;padding:14px}
+#invoice-editor-svg{display:block;max-width:none;touch-action:none;background:#f4f7f5}
+#invoice-editor-svg [data-invoice-field]{cursor:move;outline:none}
+#invoice-editor-svg [data-invoice-field]:focus rect{stroke:#bc6e2c;stroke-width:.7}
+.invoice-editor-form details{margin:14px 0;padding:10px;border:1px solid #dce5df;border-radius:6px}
+.invoice-editor-form summary{cursor:pointer;font-weight:600}
+.invoice-options{display:flex;gap:16px;flex-wrap:wrap}
+.invoice-detail-column{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr auto;gap:8px;align-items:end;padding:8px 0;border-bottom:1px solid #dce5df}
+.invoice-editor-form h3{margin-top:16px}
+#invoice-items td:first-child{min-width:220px}
+#invoice-items td:nth-child(2),#invoice-items td:nth-child(3){min-width:110px}
+@media(max-width:900px){.invoice-editor{grid-template-columns:1fr}.invoice-canvas-wrap{max-height:60vh}.invoice-detail-column{grid-template-columns:1fr 1fr}.invoice-editor-modal{width:97vw}}
