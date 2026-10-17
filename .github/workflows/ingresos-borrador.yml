@@ -4,6 +4,7 @@ on:
     branches: [autonomo/ingresos-facturas]
     paths:
       - 'colegio/**'
+      - 'static/**'
       - 'tests/**'
       - '.github/workflows/ingresos-borrador.yml'
 permissions:
@@ -47,10 +48,17 @@ jobs:
           if ($unit -ne 0 -or $normal -ne 0 -or $demo -ne 0 -or $roster -ne 0) {
             throw 'Falló al menos una suite. Revisa los resultados reales.'
           }
+      - name: Medición HTTP de ingresos con 800 alumnos y 12 meses
+        shell: pwsh
+        run: |
+          python tests/benchmark_income.py --output noche-income-benchmark.csv 2>&1 | Tee-Object -FilePath noche-income-benchmark.log
+          if ($LASTEXITCODE -ne 0) { throw 'Falló la medición HTTP del libro de ingresos.' }
       - name: Conservar registros de revisión
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ingresos-borrador-pruebas-Windows
-          path: noche-*.log
+          path: |
+            noche-*.log
+            noche-income-benchmark.csv
           if-no-files-found: warn

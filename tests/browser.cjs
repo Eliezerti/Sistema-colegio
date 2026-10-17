@@ -26,10 +26,12 @@ function printedTextLayout(pdf){
   const page=await context.newPage(), errors=[];
   let expectedProbeError=false,probeErrors=0;
   const expectedSessionError={active:false};
+  const expectedMonthError={active:false,count:0};
   const cloudFolder=fs.mkdtempSync(scratch('aula-cloud-browser-'));
   page.on('pageerror',error=>errors.push(error.message));
   page.on('console',msg=>{if(msg.type()==='error'){
     if(expectedSessionError.active&&msg.location().url.endsWith('/api/session-status')&&msg.text().includes('401 (Unauthorized)')){}
+    else if(expectedMonthError.active&&msg.location().url.endsWith('/api/payments')&&msg.text().includes('400 (Bad Request)'))expectedMonthError.count++;
     else if(expectedProbeError&&msg.location().url.endsWith('/api/probe-backup')&&msg.text().includes('400 (Bad Request)'))probeErrors++;
     else errors.push(msg.text());
   }});
@@ -510,6 +512,7 @@ function printedTextLayout(pdf){
     assert.equal(await page.locator('[data-action="reset-review"],.reset-settings').count(),0);
     await require('./income_browser.cjs')(page);
 await require('./bank_browser.cjs')(page);
+await require('./accounting_browser.cjs')(page,expectedMonthError);
     const finalState=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());
     assert.equal(finalState.audit_status.ok,true);assert.ok(finalState.students.length>0);
     assert.deepEqual(errors,[]);
