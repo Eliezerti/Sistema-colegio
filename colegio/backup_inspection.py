@@ -63,6 +63,9 @@ def validate(db):
     for table,expected in REQUIRED.items():
         if table not in tables or not expected <= {r['name'] for r in db.execute(f'PRAGMA table_info("{table}")')}:
             raise ValueError('El archivo no es un respaldo compatible de Aula.')
+    if version>=13:
+        from .income_schema import verify_layout
+        verify_layout(db)
     return version,tables
 
 

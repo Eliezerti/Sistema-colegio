@@ -16,7 +16,7 @@ def checkpoint(stage):
     pass
 
 
-def write_encrypted(source,destination,directory):
+def write_encrypted(source,destination,directory,*,preserve_schema=False):
     destination=Path(destination)
     state,nonces=reserve(directory)
     with job_space(directory,destination.parent) as (work,identifier),staged_backup(source,temporary_root=work) as (snapshot,_,digest):
@@ -27,7 +27,9 @@ def write_encrypted(source,destination,directory):
         from contextlib import closing
         with closing(sqlite3.connect(snapshot)) as db:
             old_version=db.execute('PRAGMA user_version').fetchone()[0]
-        if old_version < SCHEMA_VERSION:
+        if preserve_schema and old_version<12:
+            raise CryptoError('La copia de reversión cifrada requiere esquema 12 sin Personal.')
+        if old_version < SCHEMA_VERSION and not preserve_schema:
             from .audit_chain import adopt_restored
             from .db import initialize
             adopt_restored(snapshot)

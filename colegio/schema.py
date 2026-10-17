@@ -42,7 +42,9 @@ def migrate(path, *, new=False):
     with path_lock(path), closing(connect(path)) as db:
         version = db.execute('PRAGMA user_version').fetchone()[0]
         if version > VERSION:
-            raise ValueError('Esta base requiere una versión más reciente de Aula.')
+            if version!=13:
+                raise ValueError('Esta base requiere una versión más reciente de Aula.')
+            return
         work = path.parent / '.aula-schema-12'
         backup = work / 'previa.sqlite3'
         if version < VERSION:
