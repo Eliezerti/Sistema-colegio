@@ -1,0 +1,22 @@
+{
+  "run": "https://github.com/Eliezerti/Sistema-colegio/actions/runs/39027076426",
+  "commit": "3fa075d8af7e1f04a95bd31c2870fae52ffa4480",
+  "source": "GitHub Check Runs API; observed after completion",
+  "annotations": [
+    {
+      "annotation_level": "failure",
+      "message": "Process completed with exit code 1.",
+      "title": ""
+    },
+    {
+      "annotation_level": "failure",
+      "message": "FAIL: test_published_cash_daily_monthly_and_arrears_identical_after_all_migrations (test_income_reference.PublishedIncomeReferenceTests.test_published_cash_daily_monthly_and_arrears_identical_after_all_migrations)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"D:\\a\\Sistema-colegio\\Sistema-colegio\\tests\\test_income_reference.py\", line 16, in test_published_cash_daily_monthly_and_arrears_identical_after_all_migrations\n    self.assertEqual(hashlib.sha256(raw).hexdigest(),meta['reference_sha256']);reference=json.loads(raw);self.assertTrue(reference['fictional']);self.assertEqual(reference['commit'],meta['commit']);self.assertEqual(reference['fixture_sha256'],meta['sha256'])\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: '921dbec04ba7c197090f11a92eeda86abc41fbfbb465a7df14798f78b55f104c' != 'd885f5c6236c0c6e741abd4a3b27083dbb46ec57875abf67168bc692fea9320e'\n- 921dbec04ba7c197090f11a92eeda86abc41fbfbb465a7df14798f78b55f104c\n+ d885f5c6236c0c6e741abd4a3b27083dbb46ec57875abf67168bc692fea9320e\n\n\n",
+      "title": "unittest fallo 1"
+    },
+    {
+      "annotation_level": "notice",
+      "message": "{\"exits\": {\"unittest\": 1, \"browser\": 0, \"demo\": 0, \"roster\": 0}, \"unit\": {\"tests\": 352, \"seconds\": \"596.378\", \"outcome\": \"FAILED (failures=1)\"}}",
+      "title": "Resultados reales de las cuatro suites"
+    }
+  ]
+}

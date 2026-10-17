@@ -1,0 +1,36 @@
+{
+  "environment": "Linux; Python 3.12.14; datos temporales ficticios",
+  "unit": {
+    "tests": 352,
+    "seconds": "293.531",
+    "outcome": "OK (skipped=3)"
+  },
+  "native_skips": [
+    "test_dpapi_roundtrip_and_tampering_without_plaintext_fallback (test_backup_crypto.WindowsDPAPITests.test_dpapi_roundtrip_and_tampering_without_plaintext_fallback) ... skipped 'DPAPI solo se ejecuta en Windows.'",
+    "test_windows_mutex_prevents_second_real_instance_and_allows_separate_trial (test_desktop.DesktopTests.test_windows_mutex_prevents_second_real_instance_and_allows_separate_trial) ... skipped 'El mutex y enfoque de ventanas se validan en Windows.'",
+    "test_scrollable_review_and_independent_probe_do_not_need_an_active_database (test_restore_windows_ui.RestoreWindowsUITests.test_scrollable_review_and_independent_probe_do_not_need_an_active_database) ... skipped 'Necesita ventanas nativas de Windows y Tk.'"
+  ],
+  "observed_exit_codes": {
+    "unittest": 0,
+    "browser": 0,
+    "demo": 0,
+    "roster": 0
+  },
+  "browser_summary": {
+    "browser": [
+      "PASS: A3 warning, activity without background renewal, configurable timeout, RAM-only drafts, same-user recovery, different-user discard, password clearing, administrative notice.",
+      "PASS: cuentas escolares por UI, categoría y otro ingreso con soporte, cuenta en cobro, Caja efectivo sugerida, depósito vinculado sin duplicar ingreso, anulaciones auditadas y deuda intacta.",
+      "PASS: perfil editable NO VERIFICADO, CSV ficticio con ñ, vista previa y confirmación por interfaz, cruce único de ceros a la izquierda y totales sin cambios.",
+      "PASS: opciones informativas, cierre mensual con pendientes revisados, cobro rechazado por servidor, CSV con BOM y PDF descargados, reapertura con motivo y totales intactos.",
+      "PASS: fiscal settings, PNG logo, fiscal letterheads and printing, daily rate checkpoint and reopening, guardian search, live discount, automatic student code, enrollment PDF, automatic arrears without manual monthly generation, BCV payment and receipt PDF, arrears, simplified expense, filtered directory PDFs and printing, daily payments/arrears PDF, reports, family account and solvency PDFs, CSV preview and import, cash close and reopening, backup status, thermal tickets, bulk promotion and archived PDF, payment plan, responsive layout, read-only role.",
+      "PASS: copy viewer banner, safe reload and session end, no rate confirmation, history navigation, server write rejection and unchanged ledger."
+    ],
+    "demo": [
+      "PASS: trial administrator, empty isolated database, simplified expense, reload, multiple tabs, mobile layout and automatic cleanup."
+    ],
+    "roster": [
+      "PASS: actual Excel and CSV downloads, import into empty trial, automatic grades, preserved codes/phones/fees/statuses, preview invalidation, old listing explanation, no copied payments or altered source ledger, guardian PDF states and trial cleanup."
+    ]
+  },
+  "logs": "Registros de ejecución /workspace/work/noche3/final-*.log; no son parte del producto"
+}

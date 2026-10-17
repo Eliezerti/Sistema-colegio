@@ -28,7 +28,7 @@ No existe instalador de esta rama. No se ejecutaron instalación/actualización/
 
 ## Estado actualizado de la validación
 
-- Primer arreglo de aislamiento: `3fa075d8af7e1f04a95bd31c2870fae52ffa4480`. Run [39027076426](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39027076426) en ejecución al registrar este punto.
-- Corrección de portabilidad: `c2769660078113b55246962b91fcf62c6fe197a7`. Checkout con `core.autocrlf=true` reproducía 124 CRLF y otra huella; `.gitattributes` conserva LF y la huella original. Run [39027327681](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39027327681) pendiente en la cola, sin cancelar el anterior para conservar su diagnóstico real.
+- Primer arreglo de aislamiento: `3fa075d8af7e1f04a95bd31c2870fae52ffa4480`. Run [39027076426](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39027076426) terminado: **352 en 596,378 s; un fallo de huella por CRLF, sin omisiones; tres navegadores salida 0**. Traceback completo en `docs/interno/ingresos-evidencia/windows-primer-arreglo.json`.
+- Corrección de portabilidad: `c2769660078113b55246962b91fcf62c6fe197a7`. Checkout con `core.autocrlf=true` reproducía 124 CRLF y otra huella; `.gitattributes` conserva LF y la huella original. Run [39027327681](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39027327681) en ejecución desde 11:13:08 UTC; no se canceló el anterior para conservar su diagnóstico real.
 - Medición HTTP Linux repetida con 800 alumnos: 12 meses (9.600 movimientos por lado) y 36 (28.800). CSV actuales en `docs/interno/ingresos-evidencia/`. Pantalla principal: 7.993/8.000 bytes y medianas 0,197489/0,450677 s. Banco 36 meses: mediana 1,002592 s; no se afirma que todas las rutas estén bajo un segundo.
 - README/CHANGELOG e informe corregidos para reflejar Fase 3 integrada, sin reutilizar validaciones anteriores como aprobación final. Guía de una página: `control-ingresos-cierre-mensual.md`.
