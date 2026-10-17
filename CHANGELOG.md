@@ -256,3 +256,7 @@ Validación del seguimiento: 161 descubiertas en Linux (160 correctas, una exclu
 - Intento 1 detenido al fallar actualización de firmas; no se analizó ni ejecutó el instalador. Un único reintento en runner nuevo pasó ambos análisis de Defender sin detecciones, motor 1.1.26080.3 y firmas 1.459.680.0.
 - ZIP de código fuente antiguo retirado del borrador y actualización del ZIP del repositorio con verificación de módulos del reloj. El ejecutable validado no cambia.
 - No se comenzó el cifrado del punto 3. Sin migración SQLite, cambio de ubicación ni modificación de datos contables anteriores.
+
+## Corrección de validación en la rama autónoma
+
+- El rechazo de escrituras en copias de consulta descarta el cuerpo HTTP con límite de tamaño y plazo total de dos segundos, sin analizar JSON ni abrir SQLite. Evita cerrar con datos pendientes antes de entregar el 403 en Windows. Incluye pruebas con cuerpo grande y emisores incompletos/lentos; el bloqueo del servidor y la inmutabilidad se conservan.

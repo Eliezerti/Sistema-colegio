@@ -48,3 +48,7 @@ Esquema 13 aditivo; snapshot consistente, integridad, claves foráneas y cadena 
 Los valores seguros del encargo para cierre, impuestos, plantillas y numeración fiscal quedan en el diseño: no son configuraciones nuevas activadas en la aplicación. No se habilitaron IVA, IGTF, acceso a bancos ni emisión fiscal.
 
 El primer envío al remoto fue rechazado por revisión automática por falta de titularidad acreditada. Se comprobó en lectura que `origin` pertenece a la cuenta autenticada y tiene permisos de administración; el repositorio es público. Tras esa comprobación, la revisión autorizó el envío de código genérico y pruebas ficticias. No se publicaron extractos ni datos del colegio. El rechazo no se eludió por otro canal.
+
+## Ajuste derivado de la prueba Windows
+
+La prueba real de consulta falló con un cierre TCP (`WinError 10053`) al esperar 403. Se corrige únicamente el transporte del rechazo: drenar con memoria y tiempo acotados antes del 403, sin JSON ni acceso a SQLite. Se descarta ignorar errores de conexión en el test o permitir ejecutar la ruta para después revertirla. Reversión: revertir el commit de este ajuste; no hay esquema ni datos modificados. Las líneas del inventario inicial corresponden al punto de partida `ed1c5e9`.

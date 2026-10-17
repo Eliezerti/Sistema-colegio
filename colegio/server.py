@@ -576,6 +576,36 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         self.handle_request(True)
 
+    def discard_rejected_body(self):
+        """Drain a bounded rejected POST so Windows can receive the HTTP 403.
+
+        No JSON parsing, session access or database handle. A shared two-second
+        deadline bounds slow/incomplete clients; oversized bodies still fail closed.
+        """
+        self.close_connection = True
+        raw = self.headers.get('Content-Length', '0')
+        if not raw.isascii() or not raw.isdigit() or len(raw)>9:
+            return
+        remaining = int(raw)
+        if remaining > 46_000_000:
+            return
+        prior_timeout = self.connection.gettimeout()
+        deadline = time.monotonic()+2
+        try:
+            while remaining:
+                available = deadline-time.monotonic()
+                if available <= 0:
+                    break
+                self.connection.settimeout(available)
+                chunk = self.rfile.read1(min(65536,remaining))
+                if not chunk:
+                    break
+                remaining -= len(chunk)
+        except (OSError, TimeoutError):
+            pass
+        finally:
+            self.connection.settimeout(prior_timeout)
+
     def handle_request(self, post):
         db = None
         self.session_metadata = None
@@ -588,6 +618,7 @@ class Handler(BaseHTTPRequestHandler):
             endpoint = url.path.removeprefix('/api/')
             read_only=getattr(self.server,'read_only',False)
             if read_only and post and endpoint not in ('session-activity','logout'):
+                self.discard_rejected_body()
                 raise PermissionError('Copia de solo lectura: no se permiten cambios, tasas, cobros ni respaldos.')
             if not post and not url.path.startswith('/api/'):
                 assets = {'/': 'index.html', '/app.js': 'app.js', '/session.js': 'session.js', '/style.css': 'style.css', '/favicon.svg': 'favicon.svg',

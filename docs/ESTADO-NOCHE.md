@@ -33,3 +33,11 @@
 - Código `f2c468c`: 324 pruebas en 173,620 s; 321 correctas y 3 exclusivas de Windows omitidas. Sin fallos.
 - Tres navegadores: salida 0. Servidor, interfaz y sus pruebas no cambiaron; el núcleo nuevo no está conectado a ellos.
 - CI anterior `38996676220` sustituido y cancelado por cambio de código; no cuenta como validación. La ejecución válida será `38996806129`, aún en curso.
+
+## Fallo Windows observado y primer arreglo
+
+- Ejecución `38996806129`: 324 pruebas en 482,260 s, 1 error (`WinError 10053`, rechazo POST `import-roster` en modo consulta); tres navegadores correctos, salidas `1/0/0/0`. No se declaró aprobada.
+- Evidencia: `tests/test_read_only_copy.py:62`, rechazo anterior en `colegio/server.py:591` antes de consumir el cuerpo. Posible cierre TCP con datos pendientes; no se observó una escritura en la copia.
+- Primer arreglo: `Handler.discard_rejected_body`, antes de devolver 403. Descarta bytes por fragmentos, máximo 46 MB y plazo total 2 s; nunca analiza JSON ni abre la base. Cuerpos inválidos siguen bloqueados.
+- Prueba dirigida real: 4 correctas en 9,361 s; cuerpo de 200 KB no JSON, emisores incompleto y lento, 403, sin conexión SQLite y copia intacta.
+- Pendiente repetir las cuatro suites Linux y Windows del arreglo. Máximo dos intentos de corrección; se lleva uno, sin omitir pruebas.

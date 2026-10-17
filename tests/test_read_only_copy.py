@@ -117,3 +117,42 @@ class ReadOnlyCopyTests(unittest.TestCase):
                 snapshot(db,{'id':0,'name':'Consulta','role':'reader'})
                 self.assertEqual(db.execute('SELECT COUNT(*) FROM charges').fetchone()[0],before)
         self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(),digest)
+
+    def test_rejected_post_drains_non_json_without_opening_or_changing_copy(self):
+        from unittest.mock import patch
+        import socket,time
+        with self.read_server() as server:
+            thread=threading.Thread(target=server.serve_forever);thread.start()
+            saved_hash=hashlib.sha256(Path(server.db_path).read_bytes()).hexdigest()
+            try:
+                with patch.object(server,'connect_view',side_effect=AssertionError('No debe abrir SQLite')):
+                    client=http.client.HTTPConnection('127.0.0.1',server.server_port,timeout=10)
+                    client.request('POST','/api/import-roster',b'X'*200000,{'Content-Type':'application/json'})
+                    response=client.getresponse()
+                    self.assertEqual(response.status,403);self.assertIn('solo lectura',response.read().decode());client.close()
+                    # Incomplete AND slow-dripping senders share one total deadline.
+                    for drip in (False,True):
+                        with socket.create_connection(('127.0.0.1',server.server_port),timeout=10) as raw:
+                            start=time.monotonic()
+                            raw.sendall(('POST /api/payments HTTP/1.0\r\nHost: 127.0.0.1:'+str(server.server_port)+'\r\nContent-Length: 100\r\nContent-Type: application/json\r\n\r\nX').encode())
+                            stop=threading.Event()
+                            def trickle():
+                                while not stop.wait(0.1):
+                                    try:raw.sendall(b'X')
+                                    except OSError:return
+                            sender=threading.Thread(target=trickle)
+                            if drip:sender.start()
+                            try:
+                                response=raw.recv(4096)
+                                self.assertIn(b'403',response.split(b'\r\n')[0])
+                                self.assertLess(time.monotonic()-start,8)
+                                while b'solo lectura' not in response:
+                                    chunk=raw.recv(4096)
+                                    if not chunk:break
+                                    response+=chunk
+                                self.assertIn(b'solo lectura',response)
+                            finally:
+                                stop.set()
+                                if drip:sender.join()
+                self.assertEqual(saved_hash,hashlib.sha256(Path(server.db_path).read_bytes()).hexdigest())
+            finally:server.shutdown();thread.join()
