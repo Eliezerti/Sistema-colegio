@@ -1,19 +1,19 @@
 # Informe de la mañana · ingresos y facturas
 
-**Entrega parcial de revisión. Las Fases 1–4 NO están completas ni habilitadas en Aula.**
+**Entrega parcial de revisión. Fase 1 integrada y validada en Linux; Windows en curso. Fases 2–4 pendientes.**
 Rama: `autonomo/ingresos-facturas`. Punto de partida: `ed1c5e9`, Aula 1.0.71. Main, etiquetas y versión publicada intactas. Ninguna base del usuario fue abierta, limpiada o migrada.
 
 ## Qué se hizo
 
 | Bloque | Resultado real |
 |---|---|
-| Fase 0 | Inventario y diseño documentados; decisiones y reversión en `docs/DECISIONES-AUTONOMAS.md`; diseño de tablas, migración y permisos en `docs/interno/ingresos-diseno.md`. Commit `427e381`, ampliado en los siguientes. |
-| Fase 1 | Reglas aisladas de catálogo mínimo, cuenta sugerida y depósitos de efectivo con cobertura parcial y diferencias. No hay catálogo persistente, cuenta en el formulario, asignación masiva, otros ingresos ni rutas nuevas. **Pendiente de integración.** |
-| Fase 2 | Vista previa genérica CSV/XLSX, huella del archivo, posibles duplicados, referencias originales y normalizadas; propuestas únicas por ambos lados y validación de vínculos parciales. No hay importación persistida, conciliación operativa ni deduplicación entre archivos. **Pendiente de integración.** |
-| Fase 3 | Diseño de cierre protegido y relación para contador. No hay cierre mensual nuevo ni relación ampliada. Los reportes y cierres actuales no cambian. **Pendiente.** |
-| Fase 4 | Solo diseño, sin editor, emisión, lotes, numeración fiscal ni PDF nuevo. **Pendiente.** |
+| Fase 0 | Inventario, diseño y decisiones documentados; sin datos reales. |
+| Fase 1 | Cuentas editables, cuenta en cobros, asignación histórica explícita, depósitos parciales de efectivo sin doble cobertura, otros ingresos/categorías/soporte y egresos con cuenta. Interfaz, API, permisos y bitácora integrados. Migración aditiva a esquema 13, copia previa verificada y pruebas sobre código publicado 1.0.71. Linux correcto; Windows en curso. |
+| Fase 2 | Reglas puras CSV/XLSX, huella, referencias y propuestas; importación persistente, perfiles guardados, conciliación operativa y clasificaciones **pendientes**. |
+| Fase 3 | Cierre diario y reportes vigentes incluyen otros ingresos y traslados sin duplicar ingresos; cierre mensual protegido y relación ampliada para contador **pendientes**. |
+| Fase 4 | Editor, lotes, emisión y PDF de facturas **pendientes**; ningún número fiscal generado. |
 
-Los commits `a311cfc`, `27241fc` y `f2c468c` contienen las reglas y sus pruebas. El commit `6f19357` corrige además un fallo de transporte del rechazo HTTP observado en la validación real de Windows, sin habilitar escrituras ni abrir SQLite. El módulo nuevo no se importa desde el servidor, escritorio ni interfaz. No se declara ningún flujo financiero nuevo como disponible.
+Código de Fase 1: `ddba0ca9a2707f1fd9b133b4aea732d757fd1c2a`; commits `2701023` (esquema), `1e003a4` (servidor/reportes), `11e00dc` (pruebas) y `ddba0ca` (interfaz). [Guía de cuentas e ingresos](docs/cuentas-ingresos.md). El comprobante de mensualidad conserva su foto, importes y correlativo. No se asigna cuenta a históricos automáticamente.
 
 ## Pruebas reales
 
@@ -54,23 +54,34 @@ En grupos ambiguos se entregan hasta 50 candidatos y su cantidad real. **Esto no
 
 El fallo Windows previo se corrigió en el primer intento de arreglo. No se cambió ni retiró ninguna prueba existente; se añadió cobertura del transporte. La ejecución obsoleta `38996676220` fue cancelada al sustituir su código y no se contabiliza como aprobada.
 
+## Validación de la Fase 1
+
+- Primera regresión completa: 331 en 213,631 s, **15 errores**, tres omisiones nativas. No se declaró aprobada. Se corrigieron fixtures antiguos y el comportamiento de lectura ante cabecera de bitácora dañada; las escrituras siguen bloqueadas. Primer arreglo, dirigido: 57 correctas en 11,695 s; ocho pruebas de ingresos/migración correctas en 7,882 s.
+- Repetición completa Linux: **333 en 206,436 s; 330 correctas y 3 exclusivas de Windows omitidas**. Los tres navegadores terminaron con **salida 0**. El normal prueba por interfaz cuentas, categoría, otro ingreso, cuenta en cobro, depósito y anulaciones; la deuda sigue igual y el depósito no duplica ingresos. Roster inicial falló por no elegir una cuenta; se incorporó la configuración real a ese flujo y pasó la repetición.
+- Las pruebas nuevas incluyen fixture ficticio producido con el código publicado 1.0.71, conservación exacta de dinero y prefijo de cadena, copia previa cifrada abierta con contraseña y recuperación, cinco terminaciones reales del proceso, cero registros iniciales, asignación masiva atómica, concurrencia de dos solicitudes de depósito, permisos por HTTP, restauración cifrada con vínculos, revisión de datos y comparación diaria/mensual/morosidad.
+- Windows para este código: [39001990044](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39001990044), **todavía en curso al registrar este punto**. La validación Windows anterior del núcleo aislado no acredita esta integración.
+- Logs de esta fase: `/workspace/work/noche2/phase1-unittest-fixed.log`, `phase1-browser-fixed.log`, `phase1-demo-fixed.log`, `phase1-roster-final.log`. Los fallos iniciales también se conservaron.
+
 ## Decisiones y reversión
 
-- Sin migración nueva hasta probar respaldo previo reversible, interrupciones y comparación financiera con fixtures publicados. Esquema actual: 12. La propuesta 13 no está implementada.
-- Sin asignar cuenta a cobros antiguos. La sugerencia es una propuesta; no altera cobros.
-- Efectivo y banco de la misma moneda; nunca conciliar monedas distintas automáticamente. La conversión necesita la tasa BCV histórica verificada. La tasa `1` de un recibo USD no se reutiliza como BCV.
-- Un hash de contenido sin ID bancario señala un posible duplicado; no se descarta silenciosamente un ingreso legítimo idéntico. La deduplicación persistente sigue pendiente.
-- No inventar un formato de Provincial. CSV/Excel es genérico y requiere mapeo; perfil Provincial: **NO VERIFICADO**.
-- IVA/IGTF y facturas no están habilitados. Formulario real, calibración, validez del medio de emisión y confirmación fiscal: **NO VERIFICADO**.
-- Para revertir este trabajo, dejar de usar esta rama y volver al punto previo; no hay datos ni esquema que revertir. No hace falta borrar carpetas o restaurar la base del colegio.
+- Esquema 13 implementado: siete tablas acompañantes, sin borrar ni reconstruir tablas existentes ni alterar pisos. Instalación nueva vacía, sin cuentas semilla.
+- Copia previa en `.aula-migrations/schema-13/`, verificada antes de DDL. Cifrada si está configurado el cifrado; si está bloqueado, no actualiza. Sin configuración queda una copia SQLite privada local: **no se presenta como cifrada**. El manifiesto la identifica y no se rota automáticamente.
+- Para revertir, conservar íntegra la carpeta actual y sus operaciones nuevas. Restaurar la copia previa en otra carpeta vacía con la versión anterior. No sobrescribir ni borrar la base actual. [Procedimiento](docs/cuentas-ingresos.md).
+- Sin cuenta histórica inferida. Caja registra cobros y depósitos; Administración configura, asigna y registra/anula otros ingresos. Consulta ve resúmenes sin datos bancarios ni soporte.
+- Tasa histórica BCV en metadatos nuevos; si falta para un cobro USD antiguo queda vacía, nunca se reutiliza su tasa `1` como BCV.
+- No se inventó formato de Provincial: **NO VERIFICADO**. También **NO VERIFICADO**: formulario físico, calibración, validez del medio de emisión y confirmación fiscal.
+- IVA/IGTF no habilitados; sin conexión a bancos o SENIAT. Las facturas todavía no existen en esta rama.
+- La revisión automática rechazó una edición que podía admitir esquemas futuros desconocidos; no se ejecutó. Se sustituyó por aceptación explícita del único esquema nuevo conocido (13), conservando el rechazo de versiones superiores. La alternativa fue autorizada.
 
 ## Pendientes y límites
 
-La integración operativa de todas las fases queda pendiente. Se conserva un núcleo aislado y probado como punto de reanudación; no se entrega una aplicación a medio migrar ni se afirma que el objetivo completo quedó resuelto.
+Fase 2: perfiles persistidos, importación confidencial e historial, duplicados entre archivos, conciliación y clasificaciones guardadas, cruce de débitos/egresos, listas y revisión. Las reglas puras no acreditan esas funciones.
 
-Faltan específicamente: tablas/migración y fixture 1.0.71; respaldo previo cifrado reversible sin recursión de migración; recuperación por terminación real en la migración nueva; interfaz y permisos HTTP por perfil; asignación de históricos; otros ingresos y categorías; importación persistida e historial; deduplicación entre archivos; clasificación de depósitos; conciliación cambiaria y concurrencia; cierre/reapertura mensual; exportaciones y guía operativa; editor/calibración/lotes/emisión de facturas y sus pruebas.
+Fase 3: bloqueo mensual en servidor y reapertura motivada, resumen de pendientes, relación para contador CSV/Excel/PDF con equivalentes históricos verificados, conciliación contra extracto, guía mensual y pruebas.
 
-Las suites actuales prueban los mecanismos vigentes de restauración, consulta, bitácora, instalación en cero y comparación de totales. No acreditan los flujos nuevos que todavía no existen. La matriz de permisos, totales y migración del libro nuevo debe incorporarse antes de habilitarlo.
+Fase 4: editor visual completo, calibración, plantillas versionadas, lotes y números confirmados por operador, concurrencia de emisión, inmutabilidad, hojas dañadas, reimpresión, relación de ventas y pruebas de PDF. No se presenta un PDF genérico como formulario autorizado.
+
+Rendimiento anterior de 800 alumnos y 12 meses mide únicamente reglas puras. Falta rendimiento de HTTP/base/interfaz de la conciliación integrada, incluida Windows.
 
 ## Instalador
 
@@ -83,4 +94,4 @@ No se ejecutó instalación, actualización, desinstalación ni instalación con
 1. Cuando exista el editor completo: calibrar con fotocopias del formulario real y la impresora del colegio; medir regla, márgenes, posiciones y mitades de carta antes de usar hojas numeradas.
 2. Cuando se habilite la importación: revisar el mapeo con un extracto real de Provincial; validar signos, centavos, referencias, fechas y duplicados. Mantenerlo confidencial; no subirlo al repositorio público.
 3. Revisar con el contador la validez del medio de emisión, datos fiscales y conceptos. Aula no se conecta a bancos ni SENIAT y no sustituye esa revisión.
-4. Tras completar la integración: piloto separado de producción, comparación de cierre/reportes/morosidad, prueba de respaldo/restauración y permisos por perfil. Nada de esto se declara ejecutado físicamente.
+4. Antes de usar Fase 1 en producción y tras completar las demás fases: piloto separado de producción, comparación de cierre/reportes/morosidad, prueba de respaldo/restauración y permisos por perfil. Nada de esto se declara ejecutado físicamente.
