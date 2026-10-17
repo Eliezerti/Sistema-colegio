@@ -85,6 +85,9 @@ def review_database(db):
                 if content['period']!=row['period'] or signature(content)!=row['preview_hash']:raise ValueError()
             except (ValueError,TypeError,KeyError):
                 errors.append('No se pudo verificar una foto de cierre mensual.');break
+    if db.execute("SELECT 1 FROM sqlite_master WHERE name='invoices'").fetchone():
+        from .invoices import review_records
+        errors.extend(review_records(db))
     payments = db.execute('SELECT COALESCE(SUM(amount),0) FROM payments WHERE voided=0').fetchone()[0]
     allocations = db.execute('''SELECT COALESCE(SUM(a.amount),0) FROM allocations a
                                 JOIN payments p ON p.id=a.payment_id WHERE p.voided=0''').fetchone()[0]

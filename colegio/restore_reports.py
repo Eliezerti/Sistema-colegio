@@ -6,6 +6,9 @@ from .backup_inspection import fingerprint
 from .documents import AdministrativePDF, amount
 
 TABLE_LABELS = {
+    'invoice_preferences':'Configuración de facturas','invoice_batches':'Lotes preimpresos','invoice_templates':'Plantillas de facturas',
+    'invoice_template_versions':'Versiones de plantillas','invoice_printer_profiles':'Perfiles de impresora','invoices':'Facturas y hojas contabilizadas',
+    'invoice_print_events':'Impresiones y reimpresiones',
     'accounting_closures':'Cierres mensuales protegidos','income_annotations':'Opciones informativas de ingresos',
     'statement_profiles':'Perfiles de extractos','statement_imports':'Importaciones de extractos','bank_movements':'Movimientos bancarios','reconciliation_links':'Vínculos de conciliación','bank_classifications':'Clasificaciones bancarias',
     'school_accounts':'Cuentas del colegio','payment_accounts':'Cuentas de cobros','expense_accounts':'Cuentas de egresos',
@@ -80,6 +83,11 @@ def compare(current,incoming):
                     'before_state':'Anulado' if row['voided'] else 'Válido',
                     'after_state':('Anulado' if other['voided'] else 'Válido') if other else 'Ausente',
                     'before_hash':fingerprint(row),'after_hash':fingerprint(other) if other else None})
+            elif table=='invoices':
+                details.append(dict(type=table,action='Anulación se revierte' if other and row['state']=='void' and other['state']=='issued' else action,
+                    number=row['invoice_number']+' / '+row['control_number'] if row['invoice_key'] else 'Borrador '+str(row['id']),
+                    date=row['issued_on'],person='',before_state=row['state'],after_state=other['state'] if other else 'Ausente',
+                    before_hash=fingerprint(row),after_hash=fingerprint(other) if other else None))
             elif table in ('students','guardians','enrollment_documents'):
                 details.append({'type':table,'action':action,'number':str(row.get('student_code') or row['id']),
                     'date':row.get('created_at',''),'person':row.get('name',''),

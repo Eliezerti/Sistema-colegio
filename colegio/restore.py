@@ -126,6 +126,9 @@ def restore(backup,directory,*,preview_hash=None,confirmation=None,emergency_flo
         event['previous_audit_head']=current['summary'].get('audit',{}).get('head') if current else None
         event['source_audit_head']=incoming['summary'].get('audit',{}).get('head')
         event['previous_sha256']=file_hash(previous) if previous else None
+        from .invoices import reservation_records
+        invoice_numbers=reservation_records(current['records']) if current else []
+        if invoice_numbers:event['invoice_reservations']=invoice_numbers
         from .audit_chain import adopt_restored
         adopt_restored(candidate)
         # Upgrade only the staged candidate, after A1 approval and original-copy
@@ -134,6 +137,8 @@ def restore(backup,directory,*,preview_hash=None,confirmation=None,emergency_flo
         initialize(candidate)
         with closing(connect(candidate)) as db,db:
             db.execute('PRAGMA synchronous=FULL')
+            if invoice_numbers:
+                db.execute("INSERT INTO settings(key,value) VALUES('invoice_restore_review_required',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",(operation_id,))
             for table,floor in floors.items():
                 db.execute('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value',
                            ('id_floor_'+table,str(floor)))

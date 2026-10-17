@@ -106,6 +106,10 @@ def inspect_copy(path):
         from .audit_chain import portable_status
         audit_status=portable_status(db)
         if not audit_status['ok']:raise ValueError(audit_status['message'])
+        if version>=16:
+            from .invoices import review_records
+            problems=review_records(db)
+            if problems:raise ValueError(problems[0])
         summary={'retired_counts':{t:len(records.get(t,[])) for t in ('employees','positions','payroll_plans','salary_receipts') if t in records},'audit':audit_status,'schema':version,'integrity':'ok','references':'ok','students':len(records['students']),
             'payments':len(payments),'valid_payments':len(valid),'voided_payments':len(payments)-len(valid),
             'income_usd':sum(p['amount'] for p in valid),'received':paid,'balance_usd':balance,

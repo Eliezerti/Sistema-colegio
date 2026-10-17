@@ -46,6 +46,8 @@ def live_report(db,period):
                 concept=concept,account_id=account_id,account=account_names.get(account_id,'Sin cuenta asignada'),method=row['method'],reference=row['reference'],currency=row['currency'],
                 original_amount=row['received_amount'],bcv_rate=bcv,usd_equivalent=usd,ves_equivalent=ves,recorded_usd=row['amount'],
                 verification='Tasa histórica conservada' if bcv else 'NO VERIFICADO · falta tasa BCV histórica',voided=bool(row['voided']),void_reason=row['void_reason'])
+            if prefix=='P':
+                item['invoice']='; '.join(r[0]+(' · Anulada' if r[1]=='void' else '') for r in db.execute("SELECT invoice_number,state FROM invoices WHERE payment_id=? AND state IN('issued','void') ORDER BY id",(row['id'],)))
             if prefix!='E':item.update(flags(db,item['source']))
             (expenses if prefix=='E' else records).append(item)
             if not row['voided']:
@@ -69,8 +71,10 @@ def live_report(db,period):
     pending=dict(unassigned=sum(not r['account_id'] for r in (*records,*expenses) if not r['voided']),missing_rates=sum(not r['bcv_rate'] for r in (*records,*expenses) if not r['voided']),
         bank_unlinked=sum(1 for b in bs if b['id'] not in classified and b['amount']>ub.get(b['id'],0)),book_unlinked=sum(1 for l in ls if l['amount']>ul.get(l['id'],0)),
         unrecorded_tuition=sum(1 for b in bs if classified.get(b['id'])=='Mensualidad no registrada'))
+    from .invoices import pending as invoice_pending
+    pending.update(invoice_pending(db,period))
     return dict(period=period,school={k:v for k,v in db.execute('SELECT key,value FROM settings') if k in ('school_name','institution_type','legal_name','rif','fiscal_address','address','phone','email','logo')},income=records,expenses=expenses,totals=totals,groups=list(groups.values()),reconciliation=list(recon.values()),pending=pending,
-        note='Informe administrativo para revisión del contador. IVA e IGTF no se calculan. Factura vacía: módulo de facturas pendiente. Equivalencias NO VERIFICADAS quedan vacías; no se inventan tasas. Depósitos de efectivo son traslados, no ingresos. Diferencia bancaria por fecha original de cada lado; puede atravesar meses. Sin documentos ni fechas de nacimiento de menores.')
+        note='Informe administrativo para revisión del contador. IVA e IGTF no se calculan. Facturas: números preimpresos confirmados por operador; en blanco si no se emitió. Equivalencias NO VERIFICADAS quedan vacías; no se inventan tasas. Depósitos de efectivo son traslados, no ingresos. Diferencia bancaria por fecha original de cada lado; puede atravesar meses. Sin documentos ni fechas de nacimiento de menores.')
 
 def report(db,period):
     period=valid_period(period);closed=active(db,period)

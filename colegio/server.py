@@ -174,6 +174,8 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
     if endpoint in BANK_ACTIONS:return bank_action(db,endpoint,data,user)
     from .accounting import ACTIONS as MONTH_ACTIONS,action as month_action
     if endpoint in MONTH_ACTIONS:return month_action(db,endpoint,data,user)
+    from .invoices import ACTIONS as INVOICE_ACTIONS,action as invoice_action
+    if endpoint in INVOICE_ACTIONS:return invoice_action(db,endpoint,data,user)
     admin_paths = {'settings','backup-directory','grades','guardians','students','users','password','void-payment','void-expense','cancel-charge','import-roster','reopen-cash','transition-year','cancel-plan','correct-billing-start'} | DIRECTORY_ACTIONS | ARCHIVE_ACTIONS
     if user['role'] == 'reader' or (endpoint in admin_paths and user['role'] != 'admin'):
         raise PermissionError('Tu perfil no permite esta operación.')
@@ -211,6 +213,9 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
         if prior: ensure_open_day(db,prior[0])
         from .bank_book import unchanged
         unchanged(db,'P' if endpoint=='void-payment' else 'E',integer(data.get('id'),1,2147483647))
+        if endpoint=='void-payment':
+            from .invoices import unchanged as invoice_unchanged
+            invoice_unchanged(db,integer(data.get('id'),1,2147483647))
     if endpoint == 'generate':
         return generate_month(db, data, uid)
     if endpoint == 'payments':
@@ -641,7 +646,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.discard_rejected_body()
                 raise PermissionError('Copia de solo lectura: no se permiten cambios, tasas, cobros ni respaldos.')
             if not post and not url.path.startswith('/api/'):
-                assets = {'/': 'index.html', '/app.js': 'app.js', '/session.js': 'session.js', '/style.css': 'style.css', '/favicon.svg': 'favicon.svg',
+                assets = {'/': 'index.html', '/app.js': 'app.js', '/invoices.js':'invoices.js','/invoices.css':'invoices.css','/session.js': 'session.js', '/style.css': 'style.css', '/favicon.svg': 'favicon.svg',
                           '/'+LOGO_FILE: LOGO_FILE, '/responsive.js': 'responsive.js'}
                 if url.path not in assets:
                     self.respond(404, {'error': 'Página inexistente.'})
@@ -667,6 +672,7 @@ class Handler(BaseHTTPRequestHandler):
                     raise PermissionError('Origen no permitido.')
                 length = int(self.headers.get('Content-Length', '0'))
                 maximum=46_000_000 if endpoint in ('probe-backup','export-encrypted-backup') else 3_000_000 if endpoint in ('import-roster','transition-year','settings','bank-preview','bank-import') else 65536
+                if endpoint in ('invoice-template','invoice-import-template','invoice-test'):maximum=1000000
                 if not 0 < length <= maximum or 'application/json' not in self.headers.get('Content-Type', ''):
                     raise ValidationError('Envía un objeto JSON válido (máximo 64 KB).')
                 data = json.loads(self.rfile.read(length))
@@ -946,7 +952,8 @@ class Handler(BaseHTTPRequestHandler):
                 from .income_book import ACTIONS as INCOME_ACTIONS
                 from .bank_book import ACTIONS as BANK_ACTIONS
                 from .accounting import ACTIONS as MONTH_ACTIONS
-                if endpoint in MONTH_ACTIONS or endpoint in BANK_ACTIONS or endpoint in INCOME_ACTIONS or endpoint in DIRECTORY_ACTIONS or endpoint in ARCHIVE_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','expenses','void-payment','void-expense','close-cash','reopen-cash','settings','backup-directory','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
+                from .invoices import ACTIONS as INVOICE_ACTIONS
+                if endpoint in INVOICE_ACTIONS or endpoint in MONTH_ACTIONS or endpoint in BANK_ACTIONS or endpoint in INCOME_ACTIONS or endpoint in DIRECTORY_ACTIONS or endpoint in ARCHIVE_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','expenses','void-payment','void-expense','close-cash','reopen-cash','settings','backup-directory','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
                     status=self.server.make_backup()
                     if status.get('local_error') or status.get('secondary_error'):
                         result['backup_warning']=status.get('local_error') or status.get('secondary_error')
@@ -964,6 +971,27 @@ class Handler(BaseHTTPRequestHandler):
                 result['access']=self.server.access.snapshot()
                 result['read_only']=self.server.read_only_info if read_only else None
                 self.respond(200, result)
+            elif endpoint in ('invoice-book','invoice-sales','invoice-sales.csv','invoice-sales.pdf','invoice-source','invoice-detail','invoice-template','invoice-template.json','invoice-example'):
+                from . import invoices as fiscal
+                from .invoice_layout import example_template
+                query=parse_qs(url.query);month=query.get('month',[local_today().isoformat()[:7]])[0]
+                if endpoint=='invoice-book':self.respond(200,fiscal.book(db,public_user,month,query.get('offset',['0'])[0]))
+                elif endpoint=='invoice-source':
+                    if user['role']=='reader':raise PermissionError('Consulta solo recibe informes de facturas.')
+                    self.respond(200,fiscal.source(db,query.get('payment_id',[''])[0]))
+                elif endpoint=='invoice-detail':self.respond(200,fiscal.detail(db,query.get('id',[''])[0],public_user))
+                elif endpoint=='invoice-example':
+                    if user['role']!='admin':raise PermissionError('Solo Administración configura plantillas.')
+                    self.respond(200,example_template())
+                elif endpoint in ('invoice-template','invoice-template.json'):
+                    result=fiscal.template_detail(db,query.get('version_id',[''])[0],public_user)
+                    if endpoint=='invoice-template':self.respond(200,result)
+                    else:self.respond(200,json.dumps(result['layout'],ensure_ascii=False,indent=2).encode(),'application/json; charset=utf-8',{'Content-Disposition':'attachment; filename=plantilla-Aula.json'})
+                else:
+                    result=fiscal.sales(db,month)
+                    if endpoint=='invoice-sales':self.respond(200,result)
+                    elif endpoint.endswith('.csv'):self.respond(200,fiscal.csv_bytes(result),'text/csv; charset=utf-8',{'Content-Disposition':'attachment; filename=ventas-'+month+'.csv'})
+                    else:self.respond(200,fiscal.pdf_bytes(result,public_user),'application/pdf',{'Content-Disposition':'attachment; filename=ventas-'+month+'.pdf'})
             elif endpoint in ('accounting-report','accounting-report.csv','accounting-report.pdf'):
                 from .accounting import report as accounting_report,csv_bytes as accounting_csv,pdf_bytes as accounting_pdf
                 result=accounting_report(db,parse_qs(url.query).get('month',[local_today().isoformat()[:7]])[0])

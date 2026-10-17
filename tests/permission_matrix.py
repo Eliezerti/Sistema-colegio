@@ -10,10 +10,10 @@ ADMIN = ('admin',)
 WRITERS = ('admin', 'cashier')
 
 GET_ALL = ('session', 'session-status', 'clock-status', 'rate-gate', 'state', 'cash-preview',
-           'backup-status', 'accounting-report','accounting-report.csv','accounting-report.pdf', 'bank-book','income-book', 'daily-report', 'daily-report.pdf', 'monthly-report','monthly-report.pdf','monthly-report.csv', 'health', 'export')
+           'backup-status', 'invoice-book','invoice-sales','invoice-sales.csv','invoice-sales.pdf','accounting-report','accounting-report.csv','accounting-report.pdf', 'bank-book','income-book', 'daily-report', 'daily-report.pdf', 'monthly-report','monthly-report.pdf','monthly-report.csv', 'health', 'export')
 GET_ADMIN = ('audit', 'audit.csv', 'audit.pdf', 'import-template', 'import-guide',
-             'backup', 'maintenance-review')
-POST_ADMIN = ('month-close','month-reopen','month-annotation','bank-profile','bank-preview','bank-import','bank-link','bank-auto','bank-unlink','bank-classify','bank-unclassify','income-account','income-category','income-assign','income-other','income-void-other','income-void-deposit','settings', 'backup-directory', 'grades', 'guardians', 'students',
+             'backup', 'maintenance-review','invoice-example')
+POST_ADMIN = ('invoice-config','invoice-batch','invoice-template','invoice-template-restore','invoice-import-template','invoice-profile','invoice-test','invoice-void','month-close','month-reopen','month-annotation','bank-profile','bank-preview','bank-import','bank-link','bank-auto','bank-unlink','bank-classify','bank-unclassify','income-account','income-category','income-assign','income-other','income-void-other','income-void-deposit','settings', 'backup-directory', 'grades', 'guardians', 'students',
               'users', 'password', 'void-payment', 'void-expense', 'cancel-charge',
                 'import-roster', 'reopen-cash', 'transition-year',
               'cancel-plan', 'correct-billing-start', 'archive-student', 'archive-guardian',
@@ -21,7 +21,7 @@ POST_ADMIN = ('month-close','month-reopen','month-annotation','bank-profile','ba
                'delete-unused-record', 'clock-confirm', 'session-preferences',
               'recovery-notice-ack', 'crypto-prepare', 'crypto-confirm', 'crypto-unlock',
               'probe-backup', 'export-encrypted-backup', 'backup-now', 'backup-cloud-declare', )
-POST_WRITERS = ('income-deposit','generate', 'payments', 'collections', 'rates', 'expenses', 'charges', 'close-cash',
+POST_WRITERS = ('invoice-draft','invoice-edit-draft','invoice-issue','invoice-damaged','invoice-print','invoice-preview','income-deposit','generate', 'payments', 'collections', 'rates', 'expenses', 'charges', 'close-cash',
                 'guardian-documents', 'payment-plans')
 
 
@@ -32,6 +32,8 @@ def cases():
                            key=key or route.split('?')[0], body=body or {}))
     for route in GET_ALL: add('GET', route, (*ALL, 'anonymous') if route=='session' else ALL, 200)
     for route in GET_ADMIN: add('GET', route, ADMIN, 200)
+    for route in ('invoice-template?version_id=0','invoice-template.json?version_id=0'):add('GET',route,ADMIN,400)
+    for route in ('invoice-source?payment_id=0','invoice-detail?id=0'):add('GET',route,WRITERS,400)
     add('GET', 'year-roster?year=2020', ADMIN, 200)
     for kind in ('students', 'guardians'):
         for extension in ('', '.pdf'):
@@ -64,7 +66,8 @@ def endpoint_inventory():
     from colegio.income_book import ACTIONS as INCOME_ACTIONS
     from colegio.bank_book import ACTIONS as BANK_ACTIONS
     from colegio.accounting import ACTIONS as MONTH_ACTIONS
-    discovered = set(MONTH_ACTIONS) | set(BANK_ACTIONS) | set(DIRECTORY_ACTIONS) | set(ARCHIVE_ACTIONS) | set(INCOME_ACTIONS)
+    from colegio.invoices import ACTIONS as INVOICE_ACTIONS
+    discovered = set(INVOICE_ACTIONS) | set(MONTH_ACTIONS) | set(BANK_ACTIONS) | set(DIRECTORY_ACTIONS) | set(ARCHIVE_ACTIONS) | set(INCOME_ACTIONS)
     tree = ast.parse(source.read_text(encoding='utf-8'))
     # Tombstones have their own HTTP/profile/nonmutation contract in test_staff_retirement.
     tree.body = [node for node in tree.body if not isinstance(node, ast.FunctionDef) or node.name != 'retired_route']
