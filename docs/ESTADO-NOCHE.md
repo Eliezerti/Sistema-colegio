@@ -36,3 +36,5 @@ No existe instalador de esta rama. No se ejecutaron instalación/actualización/
 ## Prueba compuesta de recuperación
 
 Se añadió una prueba automatizada con movimientos importados, vínculo bancario, clasificación, opciones informativas y mes cerrado. Se exporta con un almacén de claves temporal independiente y se elimina ese almacén antes de probar, por separado, contraseña y recuperación. Cada opción verifica Probar respaldo, restauración completa de las catorce tablas nuevas, integridad, claves foráneas, cadena, Verificar datos, foto mensual idéntica y apertura de consulta inmutable con temporal eliminado. Primera ejecución: **1 correcta en 3,473 s**. Se repiten ahora las cuatro suites con 353 pruebas. No cambió código de producción.
+
+Se revisó además el ZIP de fuentes: faltaba incluir el fixture publicado de ingresos y el archivo de finales de línea. Se incorporan mediante el manifiesto y huella ya verificados, junto al informe y la documentación interna referenciada. La prueba real de empaquetado verificó ZIP íntegro, fixture/referencia idénticos y ausencia de bases de negocio o respaldos. Es solo código fuente en scratch, no instalador ni publicación.

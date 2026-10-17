@@ -12,11 +12,11 @@ def main():
     args = parser.parse_args()
     output = Path(args.output).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    files = [root / name for name in ('README.md','CHANGELOG.md','desktop_entry.py','requirements.txt','requirements-desktop.txt','Iniciar-Aula.bat','Iniciar-Pruebas.bat','Configurar-Red.bat','Iniciar-Red.bat','Restaurar-respaldo.bat','Abrir-carpeta-de-datos.bat','Recuperar-clave-admin.bat')]
-    files.extend(p for p in (root/'docs').glob('*') if p.suffix in ('.md','.html'))
+    files = [root / name for name in ('.gitattributes','README.md','CHANGELOG.md','INFORME-MAÑANA.md','desktop_entry.py','requirements.txt','requirements-desktop.txt','Iniciar-Aula.bat','Iniciar-Pruebas.bat','Configurar-Red.bat','Iniciar-Red.bat','Restaurar-respaldo.bat','Abrir-carpeta-de-datos.bat','Recuperar-clave-admin.bat')]
+    files.extend(p for p in (root/'docs').rglob('*') if p.is_file() and p.suffix in ('.md','.html','.json','.csv'))
     # Isolated historical test fixtures only, each bound to its published source.
     import json
-    for fixture_root in (root/'tests/fixtures/restore',root/'tests/fixtures/retirement'):
+    for fixture_root in (root/'tests/fixtures/restore',root/'tests/fixtures/retirement',root/'tests/fixtures/income'):
         metadata=json.loads((fixture_root/'manifest.json').read_text())
         for fixture in metadata if isinstance(metadata,list) else [metadata]:
             name=fixture['filename']
