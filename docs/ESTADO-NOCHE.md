@@ -1,56 +1,49 @@
-# Estado de trabajo nocturno
+# Estado de trabajo · ingresos y facturas
 
-**Núcleo de Fases 1–3 integrado y validado en Linux y Windows. Fase 4: diseño, sin funciones entregadas todavía.**
+## Punto actual · 17/10/2026
 
-- Rama `autonomo/ingresos-facturas`; código verde `a772d2553d2f070f33aa715692d5cdb95988cdc3`. Main intacta; sin merge, etiquetas ni versión publicada. No se abrió ni modificó una base del usuario.
-- Fase 1: cuentas escolares, cuenta destino, asignación explícita de históricos, otros ingresos y depósitos parciales. Fase 2: CSV/XLSX, perfiles editables, huellas, duplicados, cruces únicos y parciales, clasificaciones y privacidad. Fase 3: cierre mensual, bloqueo del servidor, foto conservada, reapertura motivada y relación CSV/PDF.
-- Esquema 15, catorce tablas nuevas aditivas. Transiciones 12→13→14→15 con respaldo previo verificado y cinco terminaciones reales por transición; integridad, claves foráneas y cadena. Fixture publicado 1.0.71 y referencia independiente de caja/reportes/morosidad. Instalación lógica vacía.
-- **Linux final: 355 en 309,459 s, 352 correctas y tres nativas omitidas; normal/demo/roster salida 0.** Registros `/workspace/work/noche3/final355-*.log`; resumen conservado en `docs/interno/ingresos-evidencia/linux-cuatro-suites.json`.
-- **Windows final: 355 correctas en 666,551 s, sin omisiones; normal/demo/roster salida 0.** [39028897879](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39028897879), evidencia `windows-final.json` en la misma carpeta. También terminó correctamente el punto anterior `cb34ad7`: 354 en 750,012 s, tres navegadores salida 0; no se canceló ninguna suite en marcha.
-- HTTP final con 800 alumnos: Linux 12/36 meses, principal 7.993/8.000 bytes, medianas 0,185610/0,442593 s; Windows 12 meses, 8.093 bytes y 0,394435 s. CSV con tamaño, mediana y máximo en `docs/interno/ingresos-evidencia/`. Windows 36 meses no ejecutado.
-- Últimos arreglos: aislamiento de reloj de referencia; LF obligatorio para conservar su huella; exclusión de otros ingresos de caja de pendientes bancarios; rechazo con cifrado bloqueado antes de crear copia de reversión. Prueba compuesta portable de libro conciliado y cierre, con contraseña/recuperación sin almacén original, restauración e inmutabilidad de consulta.
-- Fallos y resultados previos completos en INFORME-MAÑANA.md e historial. Dos validaciones que estaban solo en cola se sustituyeron antes de ejecutar pruebas; las activas terminaron. Inicial Windows fallido sin logs recuperables, causa desconocida; repetición diagnosticó CRLF, corregido sin relajar huellas.
+Rama `autonomo/ingresos-facturas`; último código enviado `ee7a4881dec3aed662cf8aafc7b87dbe951ad75f`. `f9997f1` añade solamente seguimiento y evidencia. Main intacta; sin merge, etiquetas, release ni versión final. Solo bases ficticias y temporales; ninguna base del usuario abierta o modificada.
 
-## Siguiente fase y punto de retorno
+Fases 1–4 implementadas. Fases 1–3 tienen cuatro suites verdes en Linux y Windows. Fase 4 tiene las cuatro suites Linux verdes; **Windows e instalador BORRADOR en curso, no entregados todavía**.
 
-Se continúa Fase 4 por autorización autónoma, conservando este punto verde del núcleo. Diseño en `docs/interno/facturas-diseno.md`. Primero reglas de plantilla/PDF con pruebas; integrar API, esquema e interfaz solo como bloque funcional completo. No presentar botones ni emisión fiscal parcial como entregados. Si una prueba sigue fallando tras dos arreglos, revertir la fase mediante commits normales al punto verde anterior y conservar el informe.
+## Resultados reales actuales
 
-Pendientes del núcleo: conversión entre cuentas/monedas, depósitos de efectivo convertidos y traslado de efectivo de otros ingresos. Soporte textual sin adjuntos. No se inventan tasas ni recibos para cubrir esos casos.
+- Linux Fase 4: **379 en 408,506 s; 376 correctas y tres exclusivas de Windows omitidas; salida 0**. Normal, demo y roster: **salida 0**. Registros y códigos `/workspace/work/noche4/final-*.log` y `.exit`; evidencia conservada en `docs/interno/ingresos-evidencia/linux-facturas-cuatro-suites.json`.
+- PDF independiente pypdf/PyMuPDF: **dos correctas en 0,100 s**. Entrada BORRADOR: **dos correctas en 0,005 s**. Media carta 396×612, una página, coordenadas y fuentes, ñ/tildes/cursiva, perfiles y carta superior/inferior. No equivale a impresión física.
+- Windows nuevo: [39042799764](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39042799764), job `117425504627`, código `ee7a488`. Dependencias correctas; cuatro suites en ejecución al guardar. No cancelar pruebas en marcha. Observador local `/workspace/work/noche4/windows-watch.log` y `.exit`, sesión de herramienta `44312` si sigue disponible.
+- Windows anterior, SOLO núcleo: **355 en 666,551 s, sin omisiones; normal/demo/roster salida 0**, run 39028897879, código `a772d25`. No reutilizarlo como aprobación de facturas.
+- Rendimiento Linux 800/12 con 9.600 cobros, movimientos y PDF de facturas: principal **7.993 bytes / mediana 0,331963 s / máximo 0,448516 s**; relación mensual 425.987 / 0,177546; registro facturas 49.222 / 0,119056.
+- Linux 800/36 con 28.800 facturas/PDF: principal **8.000 bytes / 0,483898 / 0,485014**; conciliación 87.086 / 0,879629; relación 426.572 / 0,404841; facturas 49.284 / 0,241264. Ambos comandos terminaron con salida 0; CSV conservados en evidencia. Windows 36 meses de facturas no ejecutado; CI mide 12.
 
-No existe instalador de esta rama. No se ejecutaron instalación/actualización/desinstalación ni impresión física de este código. NO VERIFICADO: extracto real de Provincial, formulario real, calibración y confirmación fiscal. El ZIP fuente en scratch fue verificado, sin base de negocio ni respaldos; no es instalador ni publicación.
+## Cambios y puntos de retorno
 
-## Entorno y recuperación
+- Núcleo completo verde: `a772d25`; documentación de cierre `1526124`.
+- Fase 4: `35ffaf1` plantillas/PDF; `58a4cc3` esquema 16; `6ca60e3` API/emisión; `f1c4bb0` prefijos y perfil inválido; `ea7301e` editor/sesiones/navegador; `cd367dc` compilación aislada; `ee7a488` guías/evidencia.
+- Esquemas 13–16 aditivos: cuentas/ingresos, extractos/conciliación, cierres y siete tablas de facturas. Copia previa verificada; fixture publicado 1.0.71; cinco terminaciones reales por transición; integridad, claves foráneas y cadena comprobadas. Instalación lógica vacía.
+- Los recibos actuales, cálculos y correlativos se conservan. Emisión preimpresa exige configuración revisada, versión calibrada y números escritos o confirmados. PDF emitido inmutable, reimpresión idéntica y auditada. Restauración conserva los números conocidos en una entrada auditada, bloquea reutilización y exige revisión administrativa.
+- Primer pase completo de Fase 4: 379 en 343,004 s, un fallo por perfil vacío. Primer arreglo: rechazo en servidor; matriz dirigida y repetición completa verdes. Otros errores iniciales y correcciones están en INFORME-MAÑANA.md; no se alteraron fixtures publicados ni se omitieron pruebas. Si una prueba sigue fallando tras dos arreglos, retirar esa fase mediante commits normales al punto verde, sin borrar datos ni reescribir historia.
 
-Al reanudar, el entorno volvió a `a5b5aed` sin logs anteriores. Se recuperó la rama enviada; no se perdió código. La revisión por límite de uso volvió a permitir el mismo mecanismo autorizado. No se eludió la política de red: el host de un artefacto estaba prohibido; las nuevas anotaciones de GitHub conservan resultados y tracebacks por API permitida. Los logs antiguos no observados no se declaran correctos. Los nuevos logs y evidencia real sustituyen esa incertidumbre para el núcleo final.
+## Siguiente trabajo concreto
 
-## Fase 4 en desarrollo local (no entregada ni enviada al remoto)
+1. Dejar terminar Windows 39042799764. Consultar estado y anotaciones por la API autorizada. Registrar cuenta, tiempo y cuatro salidas reales; conservar cualquier traceback si falla.
+2. Si pasa: CI compila **1.0.72-borrador.<número del run>**, analiza con Defender y prueba instalación separada, ventanas nativas, consulta, PDF del comprobante, reinstalación y desinstalación sin alterar fixtures. El artefacto solo se conserva después de estos pasos. No crear releases ni etiquetas.
+3. Obtener enlace/huella del BORRADOR únicamente si termina correctamente; comprobar el archivo descargado si la política de red permite obtenerlo. No sortear hosts prohibidos.
+4. Actualizar INFORME-MAÑANA.md, README, CHANGELOG y este estado con resultados finales. Enviar solo commits pequeños de la rama; finalizar con resumen de máximo 25 líneas y pendientes explícitos.
 
-Punto de retorno completo: `1526124651db4588e0d551b676965d5de5973402` (código verde `a772d25`, 355 y las cuatro suites en ambos sistemas). El árbol local contiene trabajo de Fase 4 todavía sin validación completa ni interfaz: reglas/plantillas/PDF, esquema 16 aditivo, API y registro de facturas. No abrir una base del usuario con este árbol en desarrollo.
+## Instalador y separación
 
-- Plantillas: 8 pruebas correctas en 0,115 s. PDF independiente (pypdf/PyMuPDF): primera ejecución detectó cuadros de fuente fuera del margen (13 subcasos); primer arreglo reserva ascendentes/descendentes y cursiva, 2 pruebas correctas en 0,086 s, incluida media carta 396×612 y carta arriba/abajo con giro a tamaño real. PNG de ejemplo y PDF solo en `/workspace/work/noche4/`.
-- Migración: primera dirigida 11, un fallo del test al comparar audit_meta sin admitir el avance de la cabecera. Se exige incremento de una entrada, cadena/baseline iguales y todas las filas de negocio idénticas. Primer arreglo: 11 correctas en 6,714 s. Cinco cortes reales 15→16 y respaldo cifrado previo de 15, desde datos publicados 1.0.71. Instalación lógica vacía.
-- API: primera dirigida 10, una falla de orden en el registro: el ID interno del borrador dejaba la hoja dañada 2 después de la factura 3. Ordenado por fecha y número preimpreso. Las 10 pruebas de facturas pasaron en la ampliación siguiente; además pasaron concurrencia real de dos cajeros, inmutabilidad/reimpresión idéntica, cierres, restauración portable y conservación de números tras dos restauraciones.
-- Ampliación 30 pruebas: dos errores de fixtures sintéticos de marca que conservaban tablas de la ampliación al simular esquema viejo. Se corrige solo su constructor; nunca se modifica un fixture publicado ni se debilita el migrador. Repetición en curso: `/workspace/work/noche3/invoices-compat-fixed1.log`.
-- Siguiente: terminar interfaz/editor, pruebas reales de navegador, ampliar evidencia independiente del PDF a Windows y ejecutar cuatro suites completas. Ninguna función de Fase 4 se declara entregada. Falta instalador y verificación física/fiscal. Si una prueba sigue fallando tras dos arreglos, retirar esta fase al punto de retorno mediante commits normales; no tocar datos del usuario.
+Aún no hay EXE validado para entregar. Instalador BORRADOR con AppId/programa/accesos propios; el punto de entrada cambia LOCALAPPDATA del proceso a una subcarpeta, seleccionando `%LOCALAPPDATA%\AulaRevisionIngresos\AulaColegio` incluso al abrir directamente Aula.exe. No actualiza el producto publicado ni habilita inicio automático. Cerrar Aula publicado antes de abrir el borrador: comparten mutex/puertos. Desinstalar conserva los datos. La entrada se probó; la instalación nativa nueva todavía no.
 
+El ZIP fuente scratch fue comprobado: archivos únicos, sin claves/respaldos, bases solamente como fixtures ficticios bajo tests/fixtures con manifiestos/huellas intactos. No es un instalador. `/codex/.../output` no existe y el sistema operativo rechazó crear /codex; entregar enlaces al repositorio/artefactos si esa ruta no está disponible.
 
-## Reanudación · 17/10/2026 10:53 Venezuela
+## Límites y pendientes que no deben ocultarse
 
-Fase 4 implementada localmente y cuatro suites Linux completas correctas: **379 en 408,506 s, tres exclusivas de Windows omitidas; normal/demo/roster salida 0**. Registros `/workspace/work/noche4/final-*.log` y `.exit`. Primer pase completo 379 en 343,004 s: un fallo por perfil vacío; primer arreglo y repetición completa correctos. Matriz dirigida correcta. PDF independiente dos correctas en 0,100 s; aislamiento de entrada BORRADOR dos correctas en 0,005 s. API/GUI, sesión fiscal, numeración, portable, permisos y referencia incluidas.
+- Cruces entre cuentas o monedas, depósitos de efectivo convertidos y traslado de efectivo procedente de otros ingresos no habilitados. Soporte textual, sin archivos adjuntos. No inventar tasas ni recibos.
+- Actualización nativa desde la versión publicada y otra cuenta Windows de este BORRADOR no ejecutadas. Instalar el borrador separado no equivale a actualizar el producto.
+- **NO VERIFICADO:** extracto real Provincial, formulario real, impresión/calibración física y confirmación fiscal. Ejemplo editable SIN CALIBRAR. IVA/IGTF no calculados ni activables en este borrador; etiquetas editables. Sin banco ni SENIAT conectados.
+- Pruebas manuales: fotocopias e impresora real, extracto confidencial fuera del repositorio, contador, restauración en otra PC y corte físico de luz durante piloto supervisado. No se declaran realizadas.
+- No tocar Personal/Nómina, firma digital, otras tandas ni datos del usuario.
 
-Commits locales: `35ffaf1` PDF; `58a4cc3` esquema 16; `6ca60e3` backend; `f1c4bb0` prefijos/validación; `ea7301e` editor y navegador. Falta enviar esta fase y terminar Windows. El remoto aún conserva `1526124`. No abrir una base del usuario.
+## Bloqueos observados
 
-Medición real Linux 800/12 con 9.600 facturas/PDF: principal 7.993 bytes / mediana 0,331963 s / máximo 0,448516 s; relación mensual 425.987 / 0,177546; registro facturas 49.222 / 0,119056. CSV `/workspace/work/noche4/invoices-800-12.csv`. Generador corregido (sintaxis/importación), ejecución final salida 0.
-
-Se preparó instalador BORRADOR aislado, todavía sin compilar ni validar: AppId/programa/accesos separados, datos bajo `%LOCALAPPDATA%\AulaRevisionIngresos\AulaColegio`; no sustituye el publicado. Entrada probada sin tocar producción. CI ejecutará cuatro suites, medición, verificación PDF, compilación, Defender, instalación separada, autopruebas y desinstalación. Sin releases ni etiquetas. Faltan actualización desde publicado/otra cuenta de este borrador y pruebas físicas; no se declaran realizadas.
-
-La consulta anterior a GitHub fue bloqueada por límite de uso de revisión automática; no se ejecutó ni se eludió. Tras la nueva indicación del usuario, el mismo mecanismo autorizado permitió consultar de nuevo. Sigue válido el punto verde Windows anterior 39028897879; no se atribuye ese resultado a Fase 4.
-
-
-## Envío de Fase 4 y validación en curso
-
-Enviado al remoto `ee7a4881dec3aed662cf8aafc7b87dbe951ad75f`, que incluye `cd367dc` (compilación BORRADOR) y documentación. [Windows 39042799764](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39042799764), job `117425504627`: dependencias correctas, cuatro suites en ejecución. Esta es la validación de Fase 4; no confundirla con la anterior del núcleo. No cancelar una suite en marcha. Observador local `/workspace/work/noche4/windows-watch.log` y `.exit`.
-
-Medición adicional Linux 800/36 con 28.800 PDF ficticios: salida 0; principal 8.000 bytes / mediana 0,483898 s / máximo 0,485014 s; conciliación 87.086 / 0,879629; relación 426.572 / 0,404841; registro facturas 49.284 / 0,241264. Evidencia `linux-facturas-800-36.csv`. Sigue pendiente la medición equivalente en Windows, aparte de la de 12 meses prevista en CI.
-
-El ZIP fuente local fue verificado: 280 archivos, sin claves ni respaldos; bases únicamente como fixtures ficticios declarados bajo tests/fixtures, con manifiesto y huella publicados intactos. No se incluyó una base de negocio en el instalador. La ruta de outputs del chat no existe y el sistema operativo rechazó crear /codex por permisos; no se atribuye a una prueba fallida. Los enlaces de entrega serán al repositorio y a artefactos CI autorizados si no hay una ruta de outputs disponible.
+La revisión automática alcanzó su límite de uso y una consulta GitHub no se ejecutó. Tras la nueva indicación del usuario se reintentó el mismo mecanismo autorizado y volvió a funcionar; no se eludió la revisión. Un host de artefactos anterior estaba prohibido; se conservó evidencia mediante anotaciones GitHub permitidas. Los logs no recuperados no se declaran correctos.
