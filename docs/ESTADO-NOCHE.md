@@ -1,68 +1,58 @@
-# Estado de trabajo · ingresos y facturas
+# Estado final · ingresos y facturas · 17/10/2026
 
-## Punto actual · 17/10/2026
+## Resultado para revisar
 
-Rama `autonomo/ingresos-facturas`; último código de producto `ee7a4881dec3aed662cf8aafc7b87dbe951ad75f`. Enviado `1fcebfb73967fc8de7010bb0d9fc15a2e37666b5` con el primer arreglo de prueba nativa `6b139e2` y documentación. Main intacta; sin merge, etiquetas, release ni versión final. Solo bases ficticias y temporales; ninguna base del usuario abierta o modificada.
+Rama `autonomo/ingresos-facturas`. Código compilado y validado `1fcebfb73967fc8de7010bb0d9fc15a2e37666b5`; código de producto `ee7a488` más primer arreglo de prueba Tk `6b139e2`. Los commits posteriores solo actualizan documentación/evidencia. Main intacta; sin merge, etiquetas ni release final. Ninguna base del usuario abierta o modificada; solo datos ficticios y temporales.
 
-Fases 1–4 implementadas. Fases 1–3 tienen cuatro suites verdes en Linux y Windows. Fase 4 tiene las cuatro suites Linux y Windows verdes; **instalador BORRADOR en compilación, no entregado todavía**. El conteo/tiempo Windows y CSV final deben recuperarse al terminar el job.
+Fases 1–4 integradas: cuentas, clasificación, depósitos, otros ingresos, CSV/XLSX, conciliación, cierre mensual e informes; editor de formularios preimpresos, perfiles/versiones, lotes, números confirmados, emisión, anulación, hojas dañadas y reimpresión del PDF conservado. Los recibos existentes, cálculos y correlativos permanecen iguales. Hay límites funcionales explícitos al final.
 
-## Resultados reales actuales
+## Pruebas reales finales
 
-- Linux Fase 4: **379 en 408,506 s; 376 correctas y tres exclusivas de Windows omitidas; salida 0**. Normal, demo y roster: **salida 0**. Registros y códigos `/workspace/work/noche4/final-*.log` y `.exit`; evidencia conservada en `docs/interno/ingresos-evidencia/linux-facturas-cuatro-suites.json`.
-- PDF independiente pypdf/PyMuPDF: **dos correctas en 0,100 s**. Entrada BORRADOR: **dos correctas en 0,005 s**. Media carta 396×612, una página, coordenadas y fuentes, ñ/tildes/cursiva, perfiles y carta superior/inferior. No equivale a impresión física.
-- Windows nuevo: [39042799764](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39042799764), job `117425504627`, código `ee7a488`. Primera ejecución fallida: unittest cerró con -2147483645, sin resumen, por Tcl_AsyncDelete; normal/demo/roster 0/0/0. Instalador no generado. Primer arreglo preparado; debe repetirse Windows. No cancelar pruebas en marcha. Observador local `/workspace/work/noche4/windows-watch.log` y `.exit`, sesión de herramienta `44312` si sigue disponible.
-- Windows anterior, SOLO núcleo: **355 en 666,551 s, sin omisiones; normal/demo/roster salida 0**, run 39028897879, código `a772d25`. No reutilizarlo como aprobación de facturas.
-- Rendimiento Linux 800/12 con 9.600 cobros, movimientos y PDF de facturas: principal **7.993 bytes / mediana 0,331963 s / máximo 0,448516 s**; relación mensual 425.987 / 0,177546; registro facturas 49.222 / 0,119056.
-- Linux 800/36 con 28.800 facturas/PDF: principal **8.000 bytes / 0,483898 / 0,485014**; conciliación 87.086 / 0,879629; relación 426.572 / 0,404841; facturas 49.284 / 0,241264. Ambos comandos terminaron con salida 0; CSV conservados en evidencia. Windows 36 meses de facturas no ejecutado; CI mide 12.
+| Comando | Linux | Windows Server 2022 |
+|---|---|---|
+| python -m unittest discover -s tests -v | 379 en 408,506 s; 376 correctas, tres nativas omitidas; salida 0 | 379 en 956,891 s, sin omisiones; salida 0 |
+| python tests/run_browser.py | Salida 0 | Salida 0 |
+| python tests/run_browser.py --demo | Salida 0 | Salida 0 |
+| python tests/run_browser.py --roster | Salida 0 | Salida 0 |
 
-## Cambios y puntos de retorno
+Windows repitió unittest durante la compilación: 379 correctas en 926,067 s. PDF independiente: dos correctas, 0,100 s Linux / 0,091 s Windows; aislamiento de entrada: dos correctas, 0,005 / 0,011 s. Media carta 396×612 puntos, una página, coordenadas y fuentes, ñ/tildes/cursiva, perfiles y carta superior/inferior. No equivalen a calibración física.
 
-- Núcleo completo verde: `a772d25`; documentación de cierre `1526124`.
-- Fase 4: `35ffaf1` plantillas/PDF; `58a4cc3` esquema 16; `6ca60e3` API/emisión; `f1c4bb0` prefijos y perfil inválido; `ea7301e` editor/sesiones/navegador; `cd367dc` compilación aislada; `ee7a488` guías/evidencia.
-- Esquemas 13–16 aditivos: cuentas/ingresos, extractos/conciliación, cierres y siete tablas de facturas. Copia previa verificada; fixture publicado 1.0.71; cinco terminaciones reales por transición; integridad, claves foráneas y cadena comprobadas. Instalación lógica vacía.
-- Los recibos actuales, cálculos y correlativos se conservan. Emisión preimpresa exige configuración revisada, versión calibrada y números escritos o confirmados. PDF emitido inmutable, reimpresión idéntica y auditada. Restauración conserva los números conocidos en una entrada auditada, bloquea reutilización y exige revisión administrativa.
-- Primer pase completo de Fase 4: 379 en 343,004 s, un fallo por perfil vacío. Primer arreglo: rechazo en servidor; matriz dirigida y repetición completa verdes. Otros errores iniciales y correcciones están en INFORME-MAÑANA.md; no se alteraron fixtures publicados ni se omitieron pruebas. Si una prueba sigue fallando tras dos arreglos, retirar esa fase mediante commits normales al punto verde, sin borrar datos ni reescribir historia.
+[Windows final 39044266696](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39044266696), job 117429759501: **success**, incluidas compilación, Defender antes/después (salida 0, sin detecciones), instalación separada, ventanas nativas normal/Pruebas/consulta cifrada, PDF del comprobante, reinstalación y desinstalación conservando dos bases y dos respaldos ficticios. Instalación revisada sin bases ni respaldos empaquetados.
 
-## Siguiente trabajo concreto
+Evidencia conservada en `docs/interno/ingresos-evidencia/windows-facturas-final.json` y CSV; Linux en `linux-facturas-cuatro-suites.json`. Registros locales `/workspace/work/noche4/final-*.log`, `.exit`, `windows-fixed1-job.log`, anotaciones, estado y metadatos. Recolector terminó correctamente. No volver a ejecutar suites por cambios solo de documentación.
 
-1. Dejar terminar Windows 39042799764. Consultar estado y anotaciones por la API autorizada. Registrar cuenta, tiempo y cuatro salidas reales; conservar cualquier traceback si falla.
-2. Si pasa: CI compila **1.0.72-borrador.<número del run>**, analiza con Defender y prueba instalación separada, ventanas nativas, consulta, PDF del comprobante, reinstalación y desinstalación sin alterar fixtures. El artefacto solo se conserva después de estos pasos. No crear releases ni etiquetas.
-3. Obtener enlace/huella del BORRADOR únicamente si termina correctamente; comprobar el archivo descargado si la política de red permite obtenerlo. No sortear hosts prohibidos.
-4. Actualizar INFORME-MAÑANA.md, README, CHANGELOG y este estado con resultados finales. Enviar solo commits pequeños de la rama; finalizar con resumen de máximo 25 líneas y pendientes explícitos.
+## Instalador BORRADOR
 
-## Instalador y separación
+[Descargar artefacto ZIP](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39044266696/artifacts/12106501131): incluye `Aula-Colegio-Instalador-1.0.72-borrador.14.exe` y `.exe.sha256`. Puede requerir sesión GitHub. SHA-256 del EXE comprobado por CI antes/después:
 
-Aún no hay EXE validado para entregar. Instalador BORRADOR con AppId/programa/accesos propios; el punto de entrada cambia LOCALAPPDATA del proceso a una subcarpeta, seleccionando `%LOCALAPPDATA%\AulaRevisionIngresos\AulaColegio` incluso al abrir directamente Aula.exe. No actualiza el producto publicado ni habilita inicio automático. Cerrar Aula publicado antes de abrir el borrador: comparten mutex/puertos. Desinstalar conserva los datos. La entrada se probó; la instalación nativa nueva todavía no.
+`5f3148447d13b41ae8c50c38172e8dcf1f94dc03e2c70da16bc3a4896de3ec2b`
 
-El ZIP fuente scratch fue comprobado: archivos únicos, sin claves/respaldos, bases solamente como fixtures ficticios bajo tests/fixtures con manifiestos/huellas intactos. No es un instalador. `/codex/.../output` no existe y el sistema operativo rechazó crear /codex; entregar enlaces al repositorio/artefactos si esa ruta no está disponible.
+Cierra Aula publicado antes de abrir **Inicio → Aula - Revision ingresos → Aula BORRADOR**. AppId/programa/accesos separados; datos en `%LOCALAPPDATA%\AulaRevisionIngresos\AulaColegio`, incluso al abrir el EXE directamente. No actualiza el producto publicado ni activa inicio automático. No copiar la base de revisión encima de datos reales. Desinstalar conserva datos. Comparten mutex/puertos con el producto publicado.
 
-## Límites y pendientes que no deben ocultarse
+El entorno bloqueó descargar el nuevo artefacto desde `productionresultssa7.blob.core.windows.net` (Forbidden); no se eludió ni se afirma haber verificado localmente el EXE. Existe y fue validado/subido en GitHub. Artefacto ZIP 19.279.149 bytes; su digest es distinto del SHA del EXE. La ruta `/codex/.../output` tampoco pudo crearse por permisos del sistema operativo; entrega por enlaces autorizados de GitHub.
 
-- Cruces entre cuentas o monedas, depósitos de efectivo convertidos y traslado de efectivo procedente de otros ingresos no habilitados. Soporte textual, sin archivos adjuntos. No inventar tasas ni recibos.
-- Actualización nativa desde la versión publicada y otra cuenta Windows de este BORRADOR no ejecutadas. Instalar el borrador separado no equivale a actualizar el producto.
+## Rendimiento real · 800 alumnos y PDF ficticios
+
+| Sistema / historia | Principal bytes / mediana / máximo | Conciliación mediana | Relación mensual mediana | Facturas mediana |
+|---|---|---|---|---|
+| Linux / 12 meses, 9.600 facturas | 7.993 / 0,331963 / 0,448516 s | 0,344910 s | 0,177546 s | 0,119056 s |
+| Linux / 36 meses, 28.800 facturas | 8.000 / 0,483898 / 0,485014 s | 0,879629 s | 0,404841 s | 0,241264 s |
+| Windows / 12 meses, 9.600 facturas | 8.093 / 0,419400 / 0,430406 s | 0,302261 s | 0,187098 s | 0,132599 s |
+
+Son cargas sintéticas temporales; no velocidad de emisión ni extractos reales. Windows 36 meses con facturas no se ejecutó.
+
+## Conservación y fallos resueltos
+
+Esquemas 13–16 aditivos (21 tablas nuevas en total), copia previa verificada, fixture publicado 1.0.71 y cinco terminaciones reales por transición; integridad, claves foráneas y cadena comprobadas. Referencia independiente de caja/reportes/morosidad, recibos y aplicaciones conservados. Instalación lógica en cero. Reversión: copia previa en otra carpeta vacía y código compatible; conservar íntegra la carpeta actual y operaciones posteriores. Punto verde del núcleo: `a772d25`, documentación `1526124`.
+
+Primer Linux completo de Fase 4: 379 en 343,004 s, un fallo por perfil vacío; primer arreglo y repetición completa verdes. Primer Windows 39042799764: unittest cerró con -2147483645 y Tcl_AsyncDelete, sin resumen ni traceback Python; normal/demo/roster 0/0/0. La prueba Tk mantiene sus aserciones reales en un hijo y recoge ciclos en su hilo; primer arreglo aprobado por dos ejecuciones completas Windows. No se omitió la prueba. No se modificaron reglas del producto ni fixtures publicados para evitar fallos.
+
+El ZIP de logs anterior estaba en un host prohibido sa1; el registro completo se recuperó por el comando normal de logs GitHub permitido. El límite de uso de revisión automática bloqueó una consulta; tras la nueva indicación del usuario el mismo mecanismo volvió a funcionar. Ninguna suite en marcha fue cancelada. Historial de intentos y decisiones en INFORME-MAÑANA.md y DECISIONES-AUTONOMAS.md.
+
+## Pendientes y siguiente paso
+
+- Cruces entre cuentas/monedas, depósitos de efectivo convertidos y traslado de efectivo de otros ingresos. Soporte textual sin adjuntos. Facturas desde cobros con R; no desde otros ingresos. No inventar tasas ni recibos para resolverlo.
+- Actualización del instalador publicado y otra cuenta Windows de este borrador no ejecutadas. Su instalación separada no realiza una actualización del producto.
 - **NO VERIFICADO:** extracto real Provincial, formulario real, impresión/calibración física y confirmación fiscal. Ejemplo editable SIN CALIBRAR. IVA/IGTF no calculados ni activables en este borrador; etiquetas editables. Sin banco ni SENIAT conectados.
-- Pruebas manuales: fotocopias e impresora real, extracto confidencial fuera del repositorio, contador, restauración en otra PC y corte físico de luz durante piloto supervisado. No se declaran realizadas.
-- No tocar Personal/Nómina, firma digital, otras tandas ni datos del usuario.
-
-## Bloqueos observados
-
-La revisión automática alcanzó su límite de uso y una consulta GitHub no se ejecutó. Tras la nueva indicación del usuario se reintentó el mismo mecanismo autorizado y volvió a funcionar; no se eludió la revisión. Un host de artefactos anterior estaba prohibido; se conservó evidencia mediante anotaciones GitHub permitidas. Los logs no recuperados no se declaran correctos.
-
-
-## Primer arreglo Windows · pendiente de repetición
-
-El registro completo de 39042799764 se recuperó por `gh run view --log-failed` (permitido), pese a que el ZIP de artefactos fue rechazado por el host prohibido sa1. Causa exacta: `Tcl_AsyncDelete: async handler deleted by the wrong thread`, durante un test de sistema posterior a la prueba Tk. No hubo resumen ni traceback Python: no declarar 379 correctas en Windows.
-
-Se aísla `tests/test_restore_windows_ui.py` en un subproceso con las mismas aserciones reales y recogida de ciclos en el hilo de Tk. El padre exige salida 0 y resumen de un test; no se omite la prueba. No cambia código de producto. Primer intento de arreglo. Se activa faulthandler y se corrigen límites/orden de anotaciones para que un cierre nativo conserve su final. Linux: prueba nativa omitida como antes; resumen/fragmentos del publicador comprobados. Enviar y repetir las cuatro suites Windows antes de construir BORRADOR. Evidencia `windows-facturas-primer-fallo.json`.
-
-
-## Repetición enviada · 17/10/2026 11:16 Venezuela
-
-[Windows 39044266696](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39044266696), commit `1fcebfb73967fc8de7010bb0d9fc15a2e37666b5`, primera repetición tras `6b139e2`. Cuatro suites completas y solo después compilación/instalación BORRADOR. Registro observador `/workspace/work/noche4/windows-fixed1-watch.log` y `.exit`. La ejecución anterior ya terminó; no se canceló. El producto es el mismo que pasó Linux; el cambio es la vida de la prueba Tk y su diagnóstico. Resultado Windows aún desconocido al guardar.
-
-
-## Primer arreglo aprobado · 17/10/2026 11:35 Venezuela
-
-Run 39044266696, job 117429759501, commit 1fcebfb: **Cuatro suites reales de la rama = success; medición 800/12 con facturas = success; PDF independiente = success**. Aislamiento/compilación BORRADOR en curso. Todavía no hay instalador validado. Las anotaciones completas no se publicaron mientras el job está activo; no inventar conteo, segundos ni medidas Windows. Evidencia observada en `windows-facturas-etapas-correctas.json`.
-
-Recolector compatible con la versión de gh instalada: `/workspace/work/noche4/collect_windows.py`, sesión 32224. Guarda estado cada 30 s y, al terminar, anotaciones/metadatos/log completo en scratch. No usa el flag --slurp no disponible. El observador 27591 sigue activo; no se canceló ninguna prueba. Próximo: dejar terminar compilación, Defender y nativas, recuperar resultados, actualizar el informe y entregar solo BORRADOR si pasa.
+- Manuales: fotocopias e impresora real, extracto confidencial fuera del repositorio, contador, restauración en otra PC y corte físico de luz durante piloto ficticio supervisado.
+- No tocar Personal/Nómina, firma digital, otras tandas ni datos del usuario. No fusionar/publicar sin otra instrucción. Siguiente paso: revisión del usuario con el BORRADOR y los pendientes explícitos, no repetir trabajo ya verde.

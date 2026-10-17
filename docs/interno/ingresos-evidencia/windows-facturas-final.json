@@ -1,0 +1,101 @@
+{
+  "run": 39044266696,
+  "job": 117429759501,
+  "commit": "1fcebfb73967fc8de7010bb0d9fc15a2e37666b5",
+  "conclusion": "success",
+  "results": {
+    "exits": {
+      "unittest": 0,
+      "browser": 0,
+      "demo": 0,
+      "roster": 0
+    },
+    "unit": {
+      "tests": 379,
+      "seconds": "956.891",
+      "outcome": "OK"
+    }
+  },
+  "build_unit": {
+    "tests": 379,
+    "seconds": 926.067,
+    "outcome": "OK"
+  },
+  "independent_pdf": {
+    "tests": 2,
+    "seconds": 0.091,
+    "outcome": "OK"
+  },
+  "review_entry": {
+    "tests": 2,
+    "seconds": 0.011,
+    "outcome": "OK"
+  },
+  "installer": {
+    "name": "Aula-Colegio-Instalador-1.0.72-borrador.14.exe",
+    "sha256": "5f3148447d13b41ae8c50c38172e8dcf1f94dc03e2c70da16bc3a4896de3ec2b",
+    "artifact_id": 12106501131,
+    "url": "https://github.com/Eliezerti/Sistema-colegio/actions/runs/39044266696/artifacts/12106501131",
+    "local_download_verified": false,
+    "local_download_block": "productionresultssa7.blob.core.windows.net: Forbidden"
+  },
+  "annotations": [
+    {
+      "title": "Archivo analizado",
+      "message": "Aula-Colegio-Instalador-1.0.72-borrador.14.exe SHA256 5f3148447d13b41ae8c50c38172e8dcf1f94dc03e2c70da16bc3a4896de3ec2b"
+    },
+    {
+      "title": "Resultado Defender",
+      "message": "Motor 1.1.26090.9; firmas 1.461.74.0; actualización 2026-10-17T11:07:43.0000000+00:00; salida 0. Scan starting... Scan finished. Scanning D:\\a\\Sistema-colegio\\Sistema-colegio\\dist found no threats."
+    },
+    {
+      "title": "Instalador BORRADOR",
+      "message": "Instalación separada, accesos, tres autopruebas nativas, reinstalación y desinstalación correctas; bases y respaldos ficticios de producción/revisión conservados. No es actualización del producto publicado ni prueba física de impresora."
+    },
+    {
+      "title": "Archivo analizado",
+      "message": "Aula-Colegio-Instalador-1.0.72-borrador.14.exe SHA256 5f3148447d13b41ae8c50c38172e8dcf1f94dc03e2c70da16bc3a4896de3ec2b"
+    },
+    {
+      "title": "Resultado Defender",
+      "message": "Motor 1.1.26090.9; firmas 1.461.74.0; actualización 2026-10-17T11:07:43.0000000+00:00; salida 0. Scan starting... Scan finished. Scanning D:\\a\\Sistema-colegio\\Sistema-colegio\\dist found no threats."
+    },
+    {
+      "title": "PDF de facturas",
+      "message": "Dos pruebas independientes correctas: una página, dimensiones, coordenadas, acentos, desplazamiento y carta superior/inferior."
+    },
+    {
+      "title": "Medición HTTP real",
+      "message": "{\"os\": \"Windows\", \"students\": \"800\", \"months\": \"12\", \"charges\": \"9600\", \"payments\": \"9600\", \"bank_movements\": \"9600\", \"invoices\": \"9600\", \"endpoint\": \"invoice-book\", \"bytes\": \"49222\", \"median_seconds\": \"0.132599\", \"max_seconds\": \"0.136104\"}"
+    },
+    {
+      "title": "Medición HTTP real",
+      "message": "{\"os\": \"Windows\", \"students\": \"800\", \"months\": \"12\", \"charges\": \"9600\", \"payments\": \"9600\", \"bank_movements\": \"9600\", \"invoices\": \"9600\", \"endpoint\": \"accounting-report\", \"bytes\": \"425987\", \"median_seconds\": \"0.187098\", \"max_seconds\": \"0.189725\"}"
+    },
+    {
+      "title": "Medición HTTP real",
+      "message": "{\"os\": \"Windows\", \"students\": \"800\", \"months\": \"12\", \"charges\": \"9600\", \"payments\": \"9600\", \"bank_movements\": \"9600\", \"invoices\": \"9600\", \"endpoint\": \"bank-book\", \"bytes\": \"86849\", \"median_seconds\": \"0.302261\", \"max_seconds\": \"0.307748\"}"
+    },
+    {
+      "title": "Medición HTTP real",
+      "message": "{\"os\": \"Windows\", \"students\": \"800\", \"months\": \"12\", \"charges\": \"9600\", \"payments\": \"9600\", \"bank_movements\": \"9600\", \"invoices\": \"9600\", \"endpoint\": \"state\", \"bytes\": \"8093\", \"median_seconds\": \"0.4194\", \"max_seconds\": \"0.430406\"}"
+    },
+    {
+      "title": "Resultados reales de las cuatro suites",
+      "message": "{\"exits\": {\"unittest\": 0, \"browser\": 0, \"demo\": 0, \"roster\": 0}, \"unit\": {\"tests\": 379, \"seconds\": \"956.891\", \"outcome\": \"OK\"}}"
+    }
+  ],
+  "native": [
+    "Instalación separada y accesos",
+    "Autopruebas reales normal/demo/consulta cifrada",
+    "Reinstalación y desinstalación conservando cuatro fixtures (dos bases y dos respaldos)",
+    "PDF nativos de comprobantes verificados independientemente",
+    "Defender antes/después salida 0 sin detecciones"
+  ],
+  "not_executed": [
+    "Impresión física y calibración con formulario real",
+    "Extracto bancario real y contador",
+    "Actualización del instalador publicado y otra cuenta Windows de este borrador",
+    "Windows 36 meses con facturas"
+  ]
+}

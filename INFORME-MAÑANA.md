@@ -1,6 +1,6 @@
 # Informe de la mañana · ingresos y facturas
 
-**Rama de revisión: Fases 1–4 integradas. Fase 4 correcta en Linux y en la repetición Windows tras el primer arreglo de Tk. Compilación e instalación BORRADOR todavía en curso; no hay EXE validado para entregar. Conversiones entre cuentas/monedas aún pendientes.**
+**Rama de revisión: Fases 1–4 integradas y cuatro suites correctas en Linux y Windows. Instalador BORRADOR 1.0.72-borrador.14 compilado y validado en Windows Server 2022. Conversiones entre cuentas/monedas y comprobaciones físicas/fiscales pendientes.**
 
 Rama `autonomo/ingresos-facturas`. Código integrado inicialmente en `2d3af092dec8f25bd8442ae859777f4686bbebd5`; ajustes finales de efectivo `cb34ad7` y cifrado previo `a772d25`. Ese último commit pasó las cuatro suites en ambos sistemas; es el punto verde del núcleo. No se fusionó main, no se publicó versión ni etiqueta y no se abrió ni modificó ninguna base del usuario. Solo datos ficticios.
 
@@ -12,20 +12,20 @@ Rama `autonomo/ingresos-facturas`. Código integrado inicialmente en `2d3af092de
 | 1 | Cuentas escolares editables, últimos cuatro dígitos, cuenta en cobros/egresos, asignación histórica explícita y atómica, otros ingresos con categorías y soporte textual, depósitos parciales de efectivo sin doble cobertura. Permisos, interfaz, API y bitácora integrados. Los depósitos trasladan saldo; no duplican ingresos. |
 | 2 | CSV/XLSX con perfiles editables, vista previa, huella/usuario/fecha, importación idempotente, revisión de posibles duplicados y rechazo de ID bancario conflictivo. Cruce único por ambos lados y vínculos parciales; débitos/egresos y clasificaciones con soporte. Extractos solo Administración. **Pendiente:** vínculos entre cuentas/monedas y depósitos de efectivo convertidos. |
 | 3 | Foto mensual conservada, bloqueo del período en servidor, reapertura administrativa con motivo e historia, revisión de pendientes, opciones fiscales informativas y relación CSV con BOM/PDF para contador. Incluye tasas conservadas, monedas y cuentas, diferencias contra el extracto, sin documentos ni fechas de nacimiento de menores. Factura asociada incorporada en Fase 4, sin duplicar el ingreso. Cuatro suites correctas en Linux y Windows con los últimos ajustes. |
-| 4 | Editor visual en mm, fondo PNG solo para calibración, perfiles, versiones y JSON; lotes con prefijos/ceros, confirmación de números, hojas dañadas, anulación, inmutabilidad y reimpresión del mismo PDF. Relación de ventas CSV/PDF y factura asociada en ingresos. Esquema 16 aditivo. Correcta en Linux; Windows en validación. |
+| 4 | Editor visual en mm, fondo PNG solo para calibración, perfiles, versiones y JSON; lotes con prefijos/ceros, confirmación de números, hojas dañadas, anulación, inmutabilidad y reimpresión del mismo PDF. Relación de ventas CSV/PDF y factura asociada en ingresos. Esquema 16 aditivo. Correcta en Linux y Windows; BORRADOR nativo validado. |
 
 Guías: [cuentas e ingresos](docs/cuentas-ingresos.md), [conciliación](docs/conciliacion-bancaria.md), [Control de ingresos y cierre mensual](docs/control-ingresos-cierre-mensual.md).
 
 ## Fase 4 · validación final real
 
-Código de emisión `6ca60e3`, prefijos/validación `f1c4bb0`, interfaz `ea7301e`; enviado como `ee7a488`, todo en la rama de revisión, sin usar bases reales. [Validación Windows en curso](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39042799764).
+Código de emisión `6ca60e3`, prefijos/validación `f1c4bb0`, interfaz `ea7301e`; enviado como `ee7a488`, todo en la rama de revisión, sin usar bases reales. [Validación Windows final correcta](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39044266696), commit `1fcebfb` con el primer arreglo de la prueba Tk (`6b139e2`).
 
 | Comando | Linux | Windows del código nuevo |
 |---|---|---|
-| `python -m unittest discover -s tests -v` | **379 en 408,506 s: 376 correctas, tres exclusivas de Windows omitidas; salida 0** | Primera ejecución: cierre nativo; **repetición salida 0**, cantidad/tiempo por recuperar al terminar CI |
-| `python tests/run_browser.py` | **Salida 0**; editor, arrastre/flechas, calibración sin número, emisión/reimpresión idéntica y recuperación de sesión sin mezclar usuarios | **Salida 0** en ambas ejecuciones Windows |
-| `python tests/run_browser.py --demo` | **Salida 0** | **Salida 0** en ambas ejecuciones Windows |
-| `python tests/run_browser.py --roster` | **Salida 0** | **Salida 0** en ambas ejecuciones Windows |
+| `python -m unittest discover -s tests -v` | **379 en 408,506 s: 376 correctas, tres exclusivas de Windows omitidas; salida 0** | **379 en 956,891 s, sin omisiones; salida 0**. Primer pase interrumpido por Tk, documentado abajo |
+| `python tests/run_browser.py` | **Salida 0**; editor, arrastre/flechas, calibración sin número, emisión/reimpresión idéntica y recuperación de sesión sin mezclar usuarios | **Salida 0** |
+| `python tests/run_browser.py --demo` | **Salida 0** | **Salida 0** |
+| `python tests/run_browser.py --roster` | **Salida 0** | **Salida 0** |
 
 Registros completos: `/workspace/work/noche4/final-*.log`, con códigos de salida separados. `tests/verify_invoice_pdfs.py`: **dos correctas en 0,100 s**, usando pypdf y PyMuPDF; una página, 396×612 puntos, márgenes/cuadros de texto, ñ/tildes/cursiva, perfil desplazado y carta arriba/abajo con giro a tamaño real. `tests/verify_review_build.py`: **dos correctas en 0,005 s**, selección de carpeta separada antes de iniciar escritorio y rechazo sin LOCALAPPDATA. No es impresión física.
 
@@ -37,13 +37,17 @@ Con **800 alumnos, 12 meses, 9.600 cobros/movimientos/facturas con PDF ficticio*
 
 Medición adicional con **800 alumnos, 36 meses y 28.800 facturas/PDF**: principal **8.000 bytes / mediana 0,483898 s / máximo 0,485014 s**; conciliación 87.086 / 0,879629; relación mensual 426.572 / 0,404841; facturas 49.284 / 0,241264. Salida 0; [CSV](docs/interno/ingresos-evidencia/linux-facturas-800-36.csv). La medición Windows de tres años de facturas aún no se ejecutó.
 
+Windows final 39044266696: **379 correctas en 956,891 s, sin omisiones, y las tres suites de navegador salida 0**. La compilación volvió a ejecutar unittest: **379 correctas en 926,067 s**. PDF independiente: **dos en 0,091 s**; aislamiento de entrada: **dos en 0,011 s**. Instalación separada, ventanas nativas normal/Pruebas/consulta cifrada, reinstalación y desinstalación conservando bases/respaldos ficticios, y verificación independiente de los PDF de comprobantes: correctas. Defender antes/después **salida 0, sin detecciones**, motor 1.1.26090.9 y firmas 1.461.74.0. [Evidencia final](docs/interno/ingresos-evidencia/windows-facturas-final.json).
+
+HTTP Windows, 800 alumnos/12 meses y 9.600 facturas con PDF: principal **8.093 bytes / mediana 0,419400 s / máximo 0,430406 s**; conciliación 86.849 / 0,302261; relación mensual 425.987 / 0,187098; facturas 49.222 / 0,132599. [CSV completo](docs/interno/ingresos-evidencia/windows-facturas-800-12.csv).
+
 Guía nueva: [facturas preimpresas y calibración](docs/facturas-preimpresas.md). Ejemplo **SIN CALIBRAR**, formulario real/calibración física/validez fiscal **NO VERIFICADOS**. IVA e IGTF no calculados ni activables en este borrador; etiquetas editables. No se inventan tasas históricas ni números preimpresos.
 
 ### Fallo nativo Windows y primer arreglo
 
 Run [39042799764](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39042799764): unittest salió con **-2147483645 (0x80000003)** antes del resumen; normal/demo/roster **0/0/0**. No se generó instalador. Mensaje completo de causa: `Tcl_AsyncDelete: async handler deleted by the wrong thread`, observado durante `test_system.SystemTests.test_guardian_directory_and_account_pdf_identify_inactive_children_at_their_cut`. No existe traceback Python de esa ejecución: fue un cierre nativo. La prueba anterior de Tk había terminado; sus objetos cíclicos podían liberarse posteriormente desde un trabajador HTTP.
 
-Evidencia: `tests/test_restore_windows_ui.py:19` creaba Tk en el proceso de todas las pruebas; el diálogo de `colegio/desktop.py:185` usa ScrolledText y callbacks. Se conserva la prueba real completa en un subproceso Windows, como la herramienta local del producto, y se recogen sus ciclos en el hilo propietario. Se exige salida 0 y el resumen de la prueba hija; un fallo se propaga con stdout/stderr al unittest padre. **Primer intento de arreglo, sin omitir pruebas ni modificar reglas de negocio: las cuatro suites de repetición pasaron.** Linux mantiene la omisión nativa existente. Run [39044266696](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39044266696), commit `1fcebfb`: etapas de cuatro suites, medición y PDF independiente correctas; compilación en curso. Conteo/tiempo exactos y CSV se recuperarán al terminar el job. Faulthandler activado para la repetición. El publicador de evidencia fracciona a 3 KB y prioriza el final ante cierres nativos para evitar truncamiento por GitHub.
+Evidencia: `tests/test_restore_windows_ui.py:19` creaba Tk en el proceso de todas las pruebas; el diálogo de `colegio/desktop.py:185` usa ScrolledText y callbacks. Se conserva la prueba real completa en un subproceso Windows, como la herramienta local del producto, y se recogen sus ciclos en el hilo propietario. Se exige salida 0 y el resumen de la prueba hija; un fallo se propaga con stdout/stderr al unittest padre. **Primer intento de arreglo, sin omitir pruebas ni modificar reglas de negocio: las cuatro suites de repetición pasaron.** Linux mantiene la omisión nativa existente. Run [39044266696](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39044266696), commit `1fcebfb`: ejecución completa correcta, incluidas las cuatro suites, medición, PDF independiente, compilación y pruebas nativas. Los resultados exactos figuran arriba. Faulthandler activado para la repetición. El publicador de evidencia fracciona a 3 KB y prioriza el final ante cierres nativos para evitar truncamiento por GitHub.
 
 El ZIP de logs no pudo descargarse: su host `productionresultssa1.blob.core.windows.net` está prohibido. No se eludió la política. Se recuperó el registro completo por el comando normal de logs de GitHub, que sí estaba permitido. [Resumen conservado](docs/interno/ingresos-evidencia/windows-facturas-primer-fallo.json).
 
@@ -131,13 +135,23 @@ Riesgos y pendientes: conversión entre cuentas/monedas y traslado de efectivo d
 
 ## Instalador y pendientes
 
-**BORRADOR preparado para compilar desde esta rama, condicionado a Windows correcto. Todavía no existe EXE validado ni SHA-256 para entregar.** Instala programa y accesos separados; el punto de entrada usa `%LOCALAPPDATA%\AulaRevisionIngresos\AulaColegio`, incluso al abrir directamente el EXE. No reemplaza ni actualiza la versión publicada. Cierra Aula publicado antes de abrirlo, porque comparten mutex y puertos. No habilita inicio automático. No se trabajó en firma digital ni certificados.
+**[Descargar BORRADOR 1.0.72-borrador.14](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39044266696/artifacts/12106501131)**. El artefacto ZIP de GitHub contiene el EXE y su archivo `.sha256`; puede requerir iniciar sesión en GitHub. No es una versión final ni se publicó un release o etiqueta.
 
-El ZIP de fuentes fue verificado en scratch (integridad, fixtures publicados y referencia con huellas idénticas, documentación y ausencia de base de negocio/respaldos). No es un instalador ni una publicación; no se incluye un enlace a un archivo temporal.
+EXE: `Aula-Colegio-Instalador-1.0.72-borrador.14.exe`.
 
-No se ejecutaron instalación limpia de un EXE nuevo, actualización, otra cuenta de Windows, desinstalación ni impresión física de esta rama. Los tests lógicos y las suites en Windows no sustituyen esas pruebas.
+SHA-256 del EXE, calculado y comprobado antes/después por CI:
 
-Fase 4 tiene [diseño y límites](docs/interno/facturas-diseno.md) y las funciones descritas arriba. Falta terminar Windows y el instalador, además de la comprobación física/fiscal. No confundir el PDF verificado con papel físicamente calibrado. Una copia ajena no conoce facturas posteriores que nunca recibió: revisar también las hojas físicas antes de emitir tras restaurar.
+`5f3148447d13b41ae8c50c38172e8dcf1f94dc03e2c70da16bc3a4896de3ec2b`
+
+Cierra Aula publicado antes de probarlo. Instala programa y accesos separados; ábrelo desde **Inicio → Aula - Revision ingresos → Aula BORRADOR**. Los datos están en `%LOCALAPPDATA%\AulaRevisionIngresos\AulaColegio`, incluso al abrir el EXE directamente. No reemplaza ni actualiza la versión publicada, no habilita inicio automático y desinstalar conserva los datos. No copies esta base de revisión encima de una base real. Mantén el piloto separado de producción.
+
+Instalación/reinstalación/desinstalación separadas y tres autopruebas reales del EXE pasaron; los hashes de dos bases y dos respaldos ficticios se conservaron. El paquete se revisó sin bases ni respaldos. Sigue **sin ejecutar** una actualización del producto publicado ni otra cuenta Windows para este borrador; su AppId separado no realiza esa actualización. Las suites de datos y migración sí usaron el fixture publicado 1.0.71.
+
+**Bloqueo de entrega local:** el entorno rechazó descargar este artefacto desde `productionresultssa7.blob.core.windows.net` (**Forbidden**). No se eludió la política ni se presenta como EXE descargado/verificado aquí. El archivo sí se generó, validó y adjuntó en GitHub; el enlace anterior y la huella proceden de su ejecución correcta. El artefacto comprimido mide 19.279.149 bytes (no se afirma ese tamaño para el EXE). Su digest de archivo ZIP es distinto del SHA del EXE.
+
+El ZIP de fuentes scratch se verificó sin claves ni respaldos; sus únicas bases son fixtures ficticios declarados bajo `tests/fixtures/`, con manifiesto y huellas comprobados. El repositorio conserva código, guías, decisiones, evidencia y el estado reanudable. No se trabajó en firma digital ni certificados de Aula.
+
+Pendientes funcionales: cruces entre cuentas/monedas, depósitos de efectivo convertidos y traslado de efectivo de otros ingresos. Soporte textual sin adjuntos. La emisión parte de cobros con recibo R; no crea facturas de otros ingresos. IVA/IGTF no calculados ni activables en este borrador; etiquetas editables. No se usa la tasa de hoy para inventar equivalencias históricas. El formulario genérico sigue SIN CALIBRAR hasta comprobación física administrativa.
 
 ## Pruebas manuales del colegio
 
@@ -145,4 +159,4 @@ Fase 4 tiene [diseño y límites](docs/interno/facturas-diseno.md) y las funcion
 2. Revisar mapeo con un extracto real confidencial: signos, centavos, fechas, referencias y solapamientos. No subirlo al repositorio público.
 3. Probar una copia externa y restaurarla en otra PC, con archivo + contraseña y archivo + recuperación, sin el almacén de llaves original.
 4. Revisar conceptos y validez del medio de emisión con el contador. Calibrar con fotocopias, formulario real e impresora del colegio, antes de usar hojas numeradas, siguiendo la guía.
-5. Cuando exista instalador borrador validado, probar instalación/actualización y desinstalación que conserve datos; después, prueba física supervisada de corte de luz durante un cobro. Ninguna se declara realizada.
+5. Probar el BORRADOR separado con cuentas de Windows e impresora del colegio; la actualización del producto publicado queda pendiente. Hacer una prueba física supervisada de corte de luz durante un cobro ficticio y recuperar con respaldo. Las verificaciones físicas no se declaran realizadas.
