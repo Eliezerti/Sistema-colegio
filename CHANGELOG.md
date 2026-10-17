@@ -10,6 +10,7 @@
 - Recuperación compuesta probada: libro conciliado y mes cerrado, contraseña y clave de recuperación sin el almacén original, integridad, cadena y consulta inmutable.
 - Fase 4: editor en mm, fondo PNG solo en calibración, perfiles, versiones e importación/exportación JSON; lotes y prefijos literales, números escritos o confirmados, hojas dañadas, anulación administrativa, PDF conservado y reimpresión idéntica. Registro de ventas CSV/PDF y vínculo en cierre mensual. Validación final en curso; [estado y evidencia](docs/ESTADO-NOCHE.md).
 - Esquema 16 aditivo: copia previa, cinco cortes reales y comprobación de PDF/plantillas en mantenimiento y respaldos. Numeración conocida conservada al restaurar; revisión administrativa antes de otra emisión. Sin impuestos calculados ni firma digital.
+- Primera validación Windows de facturas: tres navegadores correctos; unittest interrumpido por Tcl_AsyncDelete. Primer arreglo de aislamiento de la prueba nativa, sin omitirla ni cambiar el producto; repetición pendiente.
 - Instalador de revisión separado, marcado BORRADOR y sin publicación: carpeta de programa, accesos y datos distintos de producción. Su generación queda condicionada a Windows completo.
 
 # Cobros y documentos financieros de prueba · 1.0.71 · 16/10/2026

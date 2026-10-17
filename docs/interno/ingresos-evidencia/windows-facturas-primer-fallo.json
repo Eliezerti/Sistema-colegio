@@ -1,0 +1,18 @@
+{
+  "run": 39042799764,
+  "job": 117425504627,
+  "commit": "ee7a4881dec3aed662cf8aafc7b87dbe951ad75f",
+  "conclusion": "failure",
+  "exits": {
+    "unittest": -2147483645,
+    "normal": 0,
+    "demo": 0,
+    "roster": 0
+  },
+  "unit_summary": null,
+  "error": "Tcl_AsyncDelete: async handler deleted by the wrong thread",
+  "observed_during": "test_system.SystemTests.test_guardian_directory_and_account_pdf_identify_inactive_children_at_their_cut",
+  "python_traceback": "No hubo traceback Python: cierre nativo de Tcl antes del resumen.",
+  "source": "Registro completo obtenido con gh run view --log-failed; descarga del artefacto rechazada por host prohibido.",
+  "installer": "No generado: las cuatro suites no pasaron."
+}

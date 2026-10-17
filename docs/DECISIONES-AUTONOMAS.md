@@ -135,3 +135,8 @@ Las cuatro suites finales del núcleo pasaron en Linux y Windows (`a772d25`, evi
 El instalador de revisión no ofrece inicio automático. Datos en `%LOCALAPPDATA%\AulaRevisionIngresos\AulaColegio`, programa y accesos separados. No actualiza la versión publicada. Las autopruebas nativas usan únicamente temporales ficticios. No se fusiona, etiqueta ni publica una versión final.
 
 La plantilla Provincial sigue **NO VERIFICADA**. Plantilla de factura genérica editable: **SIN CALIBRAR**. Formulario real, impresión física y validez del medio fiscal: **NO VERIFICADOS**. El bloque no sustituye al contador.
+
+
+## Prueba nativa de Tk en proceso independiente
+
+Windows cerró unittest con Tcl_AsyncDelete, sin resumen; tres navegadores correctos. Se ejecuta la prueba de restauración/probar respaldo con todas sus aserciones en un hijo y se recogen ciclos en su hilo principal. Motivo: evitar que ScrolledText/callbacks sobrevivan y que un trabajador HTTP posterior libere el intérprete Tk en otro hilo. La herramienta real ya se ejecuta separada desde Windows. Se descarta saltar el test, ocultar su salida o desactivar el recolector global. Reversión: revertir solo este cambio de prueba; el producto y sus datos no cambian. Primer arreglo: falta demostrar el resultado completo Windows. Se habilita faulthandler y se publica primero el final de los fallos nativos dentro de los límites de anotaciones de GitHub.

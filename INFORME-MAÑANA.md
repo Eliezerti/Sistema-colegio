@@ -1,6 +1,6 @@
 # Informe de la mañana · ingresos y facturas
 
-**Rama de revisión: Fases 1–4 integradas. Fase 4 correcta en Linux; validación final Windows e instalador BORRADOR pendientes de terminar. Conversiones entre cuentas/monedas aún pendientes.**
+**Rama de revisión: Fases 1–4 integradas. Fase 4 correcta en Linux; primera validación Windows interrumpida por Tk. Primer arreglo de aislamiento de la prueba nativa preparado; repetición pendiente. Instalador BORRADOR todavía no generado. Conversiones entre cuentas/monedas aún pendientes.**
 
 Rama `autonomo/ingresos-facturas`. Código integrado inicialmente en `2d3af092dec8f25bd8442ae859777f4686bbebd5`; ajustes finales de efectivo `cb34ad7` y cifrado previo `a772d25`. Ese último commit pasó las cuatro suites en ambos sistemas; es el punto verde del núcleo. No se fusionó main, no se publicó versión ni etiqueta y no se abrió ni modificó ninguna base del usuario. Solo datos ficticios.
 
@@ -22,10 +22,10 @@ Código de emisión `6ca60e3`, prefijos/validación `f1c4bb0`, interfaz `ea7301e
 
 | Comando | Linux | Windows del código nuevo |
 |---|---|---|
-| `python -m unittest discover -s tests -v` | **379 en 408,506 s: 376 correctas, tres exclusivas de Windows omitidas; salida 0** | Pendiente de terminar |
-| `python tests/run_browser.py` | **Salida 0**; editor, arrastre/flechas, calibración sin número, emisión/reimpresión idéntica y recuperación de sesión sin mezclar usuarios | Pendiente de terminar |
-| `python tests/run_browser.py --demo` | **Salida 0** | Pendiente de terminar |
-| `python tests/run_browser.py --roster` | **Salida 0** | Pendiente de terminar |
+| `python -m unittest discover -s tests -v` | **379 en 408,506 s: 376 correctas, tres exclusivas de Windows omitidas; salida 0** | Primera ejecución: cierre nativo `-2147483645`, sin resumen; repetición tras primer arreglo pendiente |
+| `python tests/run_browser.py` | **Salida 0**; editor, arrastre/flechas, calibración sin número, emisión/reimpresión idéntica y recuperación de sesión sin mezclar usuarios | **Salida 0** en primera ejecución Windows |
+| `python tests/run_browser.py --demo` | **Salida 0** | **Salida 0** en primera ejecución Windows |
+| `python tests/run_browser.py --roster` | **Salida 0** | **Salida 0** en primera ejecución Windows |
 
 Registros completos: `/workspace/work/noche4/final-*.log`, con códigos de salida separados. `tests/verify_invoice_pdfs.py`: **dos correctas en 0,100 s**, usando pypdf y PyMuPDF; una página, 396×612 puntos, márgenes/cuadros de texto, ñ/tildes/cursiva, perfil desplazado y carta arriba/abajo con giro a tamaño real. `tests/verify_review_build.py`: **dos correctas en 0,005 s**, selección de carpeta separada antes de iniciar escritorio y rechazo sin LOCALAPPDATA. No es impresión física.
 
@@ -38,6 +38,14 @@ Con **800 alumnos, 12 meses, 9.600 cobros/movimientos/facturas con PDF ficticio*
 Medición adicional con **800 alumnos, 36 meses y 28.800 facturas/PDF**: principal **8.000 bytes / mediana 0,483898 s / máximo 0,485014 s**; conciliación 87.086 / 0,879629; relación mensual 426.572 / 0,404841; facturas 49.284 / 0,241264. Salida 0; [CSV](docs/interno/ingresos-evidencia/linux-facturas-800-36.csv). La medición Windows de tres años de facturas aún no se ejecutó.
 
 Guía nueva: [facturas preimpresas y calibración](docs/facturas-preimpresas.md). Ejemplo **SIN CALIBRAR**, formulario real/calibración física/validez fiscal **NO VERIFICADOS**. IVA e IGTF no calculados ni activables en este borrador; etiquetas editables. No se inventan tasas históricas ni números preimpresos.
+
+### Fallo nativo Windows y primer arreglo
+
+Run [39042799764](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39042799764): unittest salió con **-2147483645 (0x80000003)** antes del resumen; normal/demo/roster **0/0/0**. No se generó instalador. Mensaje completo de causa: `Tcl_AsyncDelete: async handler deleted by the wrong thread`, observado durante `test_system.SystemTests.test_guardian_directory_and_account_pdf_identify_inactive_children_at_their_cut`. No existe traceback Python de esa ejecución: fue un cierre nativo. La prueba anterior de Tk había terminado; sus objetos cíclicos podían liberarse posteriormente desde un trabajador HTTP.
+
+Evidencia: `tests/test_restore_windows_ui.py:19` creaba Tk en el proceso de todas las pruebas; el diálogo de `colegio/desktop.py:185` usa ScrolledText y callbacks. Se conserva la prueba real completa en un subproceso Windows, como la herramienta local del producto, y se recogen sus ciclos en el hilo propietario. Se exige salida 0 y el resumen de la prueba hija; un fallo se propaga con stdout/stderr al unittest padre. **Primer intento de arreglo, sin omitir pruebas ni modificar reglas de negocio.** Linux mantiene la omisión nativa existente; todavía no se presenta como corrección validada en Windows. Faulthandler activado para la repetición. El publicador de evidencia fracciona a 3 KB y prioriza el final ante cierres nativos para evitar truncamiento por GitHub.
+
+El ZIP de logs no pudo descargarse: su host `productionresultssa1.blob.core.windows.net` está prohibido. No se eludió la política. Se recuperó el registro completo por el comando normal de logs de GitHub, que sí estaba permitido. [Resumen conservado](docs/interno/ingresos-evidencia/windows-facturas-primer-fallo.json).
 
 ## Pruebas del punto verde anterior · núcleo Fases 1–3
 

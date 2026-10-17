@@ -10,7 +10,7 @@ Fases 1–4 implementadas. Fases 1–3 tienen cuatro suites verdes en Linux y Wi
 
 - Linux Fase 4: **379 en 408,506 s; 376 correctas y tres exclusivas de Windows omitidas; salida 0**. Normal, demo y roster: **salida 0**. Registros y códigos `/workspace/work/noche4/final-*.log` y `.exit`; evidencia conservada en `docs/interno/ingresos-evidencia/linux-facturas-cuatro-suites.json`.
 - PDF independiente pypdf/PyMuPDF: **dos correctas en 0,100 s**. Entrada BORRADOR: **dos correctas en 0,005 s**. Media carta 396×612, una página, coordenadas y fuentes, ñ/tildes/cursiva, perfiles y carta superior/inferior. No equivale a impresión física.
-- Windows nuevo: [39042799764](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39042799764), job `117425504627`, código `ee7a488`. Dependencias correctas; cuatro suites en ejecución al guardar. No cancelar pruebas en marcha. Observador local `/workspace/work/noche4/windows-watch.log` y `.exit`, sesión de herramienta `44312` si sigue disponible.
+- Windows nuevo: [39042799764](https://github.com/Eliezerti/Sistema-colegio/actions/runs/39042799764), job `117425504627`, código `ee7a488`. Primera ejecución fallida: unittest cerró con -2147483645, sin resumen, por Tcl_AsyncDelete; normal/demo/roster 0/0/0. Instalador no generado. Primer arreglo preparado; debe repetirse Windows. No cancelar pruebas en marcha. Observador local `/workspace/work/noche4/windows-watch.log` y `.exit`, sesión de herramienta `44312` si sigue disponible.
 - Windows anterior, SOLO núcleo: **355 en 666,551 s, sin omisiones; normal/demo/roster salida 0**, run 39028897879, código `a772d25`. No reutilizarlo como aprobación de facturas.
 - Rendimiento Linux 800/12 con 9.600 cobros, movimientos y PDF de facturas: principal **7.993 bytes / mediana 0,331963 s / máximo 0,448516 s**; relación mensual 425.987 / 0,177546; registro facturas 49.222 / 0,119056.
 - Linux 800/36 con 28.800 facturas/PDF: principal **8.000 bytes / 0,483898 / 0,485014**; conciliación 87.086 / 0,879629; relación 426.572 / 0,404841; facturas 49.284 / 0,241264. Ambos comandos terminaron con salida 0; CSV conservados en evidencia. Windows 36 meses de facturas no ejecutado; CI mide 12.
@@ -47,3 +47,10 @@ El ZIP fuente scratch fue comprobado: archivos únicos, sin claves/respaldos, ba
 ## Bloqueos observados
 
 La revisión automática alcanzó su límite de uso y una consulta GitHub no se ejecutó. Tras la nueva indicación del usuario se reintentó el mismo mecanismo autorizado y volvió a funcionar; no se eludió la revisión. Un host de artefactos anterior estaba prohibido; se conservó evidencia mediante anotaciones GitHub permitidas. Los logs no recuperados no se declaran correctos.
+
+
+## Primer arreglo Windows · pendiente de repetición
+
+El registro completo de 39042799764 se recuperó por `gh run view --log-failed` (permitido), pese a que el ZIP de artefactos fue rechazado por el host prohibido sa1. Causa exacta: `Tcl_AsyncDelete: async handler deleted by the wrong thread`, durante un test de sistema posterior a la prueba Tk. No hubo resumen ni traceback Python: no declarar 379 correctas en Windows.
+
+Se aísla `tests/test_restore_windows_ui.py` en un subproceso con las mismas aserciones reales y recogida de ciclos en el hilo de Tk. El padre exige salida 0 y resumen de un test; no se omite la prueba. No cambia código de producto. Primer intento de arreglo. Se activa faulthandler y se corrigen límites/orden de anotaciones para que un cierre nativo conserve su final. Linux: prueba nativa omitida como antes; resumen/fragmentos del publicador comprobados. Enviar y repetir las cuatro suites Windows antes de construir BORRADOR. Evidencia `windows-facturas-primer-fallo.json`.
