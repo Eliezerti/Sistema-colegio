@@ -189,3 +189,23 @@ class IncomeRulesTests(unittest.TestCase):
                     self.assertEqual(set(result['candidates']),set(expected))
                     self.assertEqual(result['candidate_count'],len(expected))
                     self.assertEqual(result['unique'],len(expected)==1 and counts[expected[0]]==1)
+
+    def test_unicode_references_do_not_drop_meaningful_letters(self):
+        self.assertEqual(reference('É0001'),'É0001')
+        self.assertEqual(reference('ＡＢ００１'),'AB001')
+        self.assertFalse(proposals([self.movement('b',reference='É0001')],[self.movement('r',reference='0001')])[0]['unique'])
+
+    def test_xlsx_shared_string_expansion_is_bounded_and_negative_index_rejected(self):
+        import io,zipfile
+        from colegio.income_rules import parse_statement
+        for index,repetitions in (('-1',1),('0',1100)):
+            original=self.workbook([['2026-10-10','10','000123','Ficticio']]);output=io.BytesIO()
+            with zipfile.ZipFile(io.BytesIO(original)) as source,zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED) as target:
+                for name in source.namelist():
+                    data=source.read(name)
+                    if name.endswith('sheet1.xml'):
+                        rows=''.join('<row r="'+str(n+2)+'"><c r="A'+str(n+2)+'" t="s"><v>'+index+'</v></c></row>' for n in range(repetitions))
+                        data=('<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'+rows+'</sheetData></worksheet>').encode()
+                    target.writestr(name,data)
+                target.writestr('xl/sharedStrings.xml','<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><si><t>'+('X'*2000)+'</t></si></sst>')
+            with self.assertRaisesRegex(IncomeError,'compartido|expandir celdas'):parse_statement(output.getvalue(),'x.xlsx',self.profile,self.bank)

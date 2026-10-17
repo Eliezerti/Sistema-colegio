@@ -51,7 +51,7 @@ def day(value):
 def reference(value):
     """Numeric leading zeros are insignificant for matching, never for display."""
     original = text(value)
-    normalized = ''.join(c for c in unicodedata.normalize('NFKC', original).upper() if c.isascii() and c.isalnum())
+    normalized = ''.join(c for c in unicodedata.normalize('NFKC', original).upper() if c.isalnum())
     return (normalized.lstrip('0') or '0') if normalized.isdigit() else normalized
 
 
@@ -69,7 +69,7 @@ class Account:
         if type(self.id) is not int or self.id < 1 or self.currency not in CURRENCIES or self.kind not in ('bank', 'cash') or type(self.active) is not bool:
             raise IncomeError('Cuenta inválida.')
         text(self.name, required=True); text(self.bank)
-        if any(re.search(r'[0-9]{12,}', re.sub(r'[\s-]','',value)) for value in (self.name,self.bank)):
+        if any(len(''.join(c for c in value if c.isdigit()))>=12 for value in (self.name,self.bank)):
             raise IncomeError('No guardes números completos de cuenta en el nombre o banco.')
         if not isinstance(self.last4, str) or (self.last4 and not re.fullmatch('[0-9]{4}', self.last4)):
             raise IncomeError('Guarda únicamente los últimos cuatro dígitos.')
@@ -337,7 +337,7 @@ def parse_statement(raw, filename, profile, account):
             shared=[]
             if 'xl/sharedStrings.xml' in names:
                 shared=[''.join(node.itertext()) for node in xml('xl/sharedStrings.xml').findall('s:si',ns)]
-            matrix=[]; types=[]
+            matrix=[]; types=[]; characters=0
             for row in xml(path).findall('s:sheetData/s:row',ns):
                 if len(matrix)>10000:raise IncomeError('Máximo 10.000 movimientos.')
                 values={}; kinds={}
@@ -357,7 +357,9 @@ def parse_statement(raw, filename, profile, account):
                         node=cell.find('s:is',ns)
                         value=''.join(node.itertext()) if node is not None else ''
                     elif kind not in ('n','str','d'):raise IncomeError('Tipo de celda no permitido.')
-                    if len(value)>2000:raise IncomeError('Celda demasiado larga.')
+                    characters+=len(value)
+                    if len(value)>2000 or characters>2_000_000:
+                        raise IncomeError('Texto del Excel demasiado grande al expandir celdas.')
                     values[col-1]=value; kinds[col-1]=kind
                 if not any(values.values()):continue
                 width=max(values,default=-1)+1
