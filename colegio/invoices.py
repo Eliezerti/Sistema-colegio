@@ -30,9 +30,22 @@ def reason(data,key='reason'):
 
 
 def printed(value):
-    if not isinstance(value,str) or not re.fullmatch(r'[0-9]{1,16}',value) or int(value)<1:
-        raise ValidationError('Escribe un número preimpreso de 1 a 16 dígitos, mayor que cero.')
-    return value,str(int(value))
+    prefix,serial,digits=parts(value)
+    return value,(prefix.upper()+'#' if prefix else '')+str(serial)
+
+
+def parts(value):
+    layout.text(value,40,'número preimpreso',empty=False)
+    if '\n' in value or value!=value.strip():raise ValidationError('Copia el número preimpreso sin espacios al principio o al final.')
+    match=re.fullmatch(r'(.*?)([0-9]+)',value)
+    if not match or len(match[2])>16 or int(match[2])<1:raise ValidationError('El número requiere una parte final de 1 a 16 dígitos mayor que cero; conserva su prefijo literal.')
+    return match[1],int(match[2]),match[2]
+
+
+def range_parts(lot,label):
+    prefix,low,digits=parts(lot[label+'_from']);other,high,_=parts(lot[label+'_to'])
+    if prefix!=other or low>high:raise ValidationError('Ambos extremos deben conservar el mismo prefijo y el inicio no puede superar el final.')
+    return prefix,low,high,len(digits)
 
 
 def cents(value):
@@ -122,11 +135,12 @@ def batch(db,identifier,*,active=False):
 def next_numbers(db,lot):
     result={}
     for label in ('invoice','control'):
-        used=[int(r[0]) for r in db.execute('SELECT '+label+'_key FROM invoices WHERE batch_id=? AND '+label+'_key IS NOT NULL',(lot['id'],))]
-        used.extend(int(r[label+'_key']) for r in reservations(db) if int(lot[label+'_from'])<=int(r[label+'_key'])<=int(lot[label+'_to']))
-        following=max(used,default=int(lot[label+'_from'])-1)+1
-        result[label]=str(following).zfill(len(lot[label+'_from'])) if following<=int(lot[label+'_to']) else ''
-        result[label+'_remaining']=max(0,int(lot[label+'_to'])-following+1)
+        prefix,low,high,padding=range_parts(lot,label)
+        used=[parts(r[0])[1] for r in db.execute('SELECT '+label+'_number FROM invoices WHERE batch_id=? AND '+label+'_key IS NOT NULL',(lot['id'],))]
+        used.extend(parts(r[label+'_number'])[1] for r in reservations(db) if parts(r[label+'_number'])[0].upper()==prefix.upper() and low<=parts(r[label+'_number'])[1]<=high)
+        following=max(used,default=low-1)+1
+        result[label]=prefix+str(following).zfill(padding) if following<=high else ''
+        result[label+'_remaining']=max(0,high-following+1)
     result['warning']='Lote agotado' if not result['invoice'] or not result['control'] else 'Lote por agotarse' if min(result['invoice_remaining'],result['control_remaining'])<=10 else ''
     return result
 
@@ -136,14 +150,16 @@ def numbers(db,lot,data,*,old_damaged=False):
     proposal=next_numbers(db,lot);result={};review={}
     for label in ('invoice','control'):
         value,key=printed(data.get(label+'_number'))
-        if not int(lot[label+'_from'])<=int(key)<=int(lot[label+'_to']):raise ValidationError('El número queda fuera del rango del lote.')
+        prefix,low,high,padding=range_parts(lot,label);actual,serial,digits=parts(value)
+        if actual!=prefix or not low<=serial<=high:raise ValidationError('El número o su prefijo queda fuera del rango del lote.')
+        if digits!=str(serial).zfill(padding):raise ValidationError('Conserva los ceros y el formato escritos en el rango del lote.')
         if db.execute('SELECT 1 FROM invoices WHERE '+label+'_key=?',(key,)).fetchone():raise ValidationError('Ese número de factura o control ya está contabilizado.')
         if any(entry[label+'_key']==key for entry in reservations(db)):raise ValidationError('Ese número ya se usó antes de una restauración; no se reutiliza.')
-        expected=int(proposal[label]) if proposal[label] else int(lot[label+'_to'])+1
-        if int(key)<expected and not old_damaged:raise ValidationError('El número retrocede en el orden del lote. Revisa las hojas ya contabilizadas.')
-        if int(key)>expected:
+        expected=parts(proposal[label])[1] if proposal[label] else high+1
+        if serial<expected and not old_damaged:raise ValidationError('El número retrocede en el orden del lote. Revisa las hojas ya contabilizadas.')
+        if serial>expected:
             if data.get('gap_confirmed') is not True:raise ValidationError('Hay un salto de numeración: revisa y confirma el motivo.')
-            review[label]=dict(first=str(expected),last=str(int(key)-1),reason=reason(data,'gap_reason'))
+            review[label]=dict(prefix=prefix,first=str(expected),last=str(serial-1),reason=reason(data,'gap_reason'))
         result[label+'_number']=value;result[label+'_key']=key
     return result,review
 
@@ -222,7 +238,8 @@ def variables_for(snapshot,operator,numbers_value=None):
         tasa='BCV: '+value['bcv_rate'] if value['bcv_rate'] else 'NO VERIFICADO · falta tasa histórica',
         exento=amount(value['original_amount'],currency),base=amount(0,currency),iva=amount(0,currency),igtf=amount(0,currency),
         total=amount(value['original_amount'],currency),observaciones=value['observations'],usuario=operator,
-        recibo=value['receipt'],moneda=currency,mes=month[0].lower() if month else '',año=value['month'][:4],grado=value['grade'])
+        recibo=value['receipt'],moneda=currency,mes=month[0].lower() if month else '',año=value['month'][:4],grado=value['grade'],
+        etiqueta_iva=value.get('tax_labels',{}).get('iva','IVA'),etiqueta_igtf=value.get('tax_labels',{}).get('igtf','IGTF'))
     return fields,[dict(concepto=item['concept'],cantidad=str(item['quantity']),precio=amount(item['unit_cents'],currency),
         exento=amount(item['amount_cents'],currency),total=amount(item['amount_cents'],currency)) for item in value['items']]
 
@@ -256,13 +273,13 @@ def _action(db,endpoint,data,user):
         name=layout.text(data.get('name'),100,'lote',empty=False);identifier=integer(data['id'],1,2147483647) if data.get('id') else None
         limits={key:printed(data.get(key))[0] for key in ('invoice_from','invoice_to','control_from','control_to')}
         for label in ('invoice','control'):
-            low,high=int(limits[label+'_from']),int(limits[label+'_to'])
-            if low>high:raise ValidationError('El inicio del rango supera el final.')
+            prefix,low,high,padding=range_parts(limits,label)
             for other in db.execute('SELECT * FROM invoice_batches WHERE id<>?',(identifier or 0,)):
-                if low<=int(other[label+'_to']) and high>=int(other[label+'_from']):raise ValidationError('Ese rango se superpone con otro lote; revisa los números preimpresos.')
+                other_prefix,other_low,other_high,_=range_parts(other,label)
+                if prefix.upper()==other_prefix.upper() and low<=other_high and high>=other_low:raise ValidationError('Ese rango se superpone con otro lote; revisa los números preimpresos.')
             if identifier:
-                used=[int(r[0]) for r in db.execute('SELECT '+label+'_key FROM invoices WHERE batch_id=? AND '+label+'_key IS NOT NULL',(identifier,))]
-                if any(not low<=value<=high for value in used):raise ValidationError('El rango nuevo excluiría hojas ya contabilizadas.')
+                used=[r[0] for r in db.execute('SELECT '+label+'_number FROM invoices WHERE batch_id=? AND '+label+'_key IS NOT NULL',(identifier,))]
+                if any(parts(value)[0]!=prefix or not low<=parts(value)[1]<=high or parts(value)[2]!=str(parts(value)[1]).zfill(padding) for value in used):raise ValidationError('El rango o formato nuevo excluiría hojas ya contabilizadas.')
         issuer=data.get('issuer');layout.exact_keys(issuer,ISSUER_KEYS,'datos preimpresos e imprenta')
         issuer={key:layout.text(issuer[key],1000 if key in ('address','notes') else 200,key,empty=key not in ('name','rif','printer_name')) for key in issuer}
         active=layout.boolean(data.get('active'),'lote activo')
@@ -288,6 +305,7 @@ def _action(db,endpoint,data,user):
         db.execute('UPDATE invoice_templates SET current_version_id=? WHERE id=?',(vid,identifier))
         audit(db,uid,endpoint,dict(id=identifier,version_id=vid,revision=revision,layout_hash=layout.digest(value),calibrated=value['calibrated']));return dict(id=identifier,version_id=vid)
     if endpoint=='invoice-profile':
+        if not isinstance(data.get('profile'),dict) or not data['profile']:raise ValidationError('Completa el perfil de impresora antes de guardarlo.')
         value=layout.profile(data.get('profile'));identifier=integer(data['id'],1,2147483647) if data.get('id') else None
         if identifier:
             if not db.execute('SELECT 1 FROM invoice_printer_profiles WHERE id=?',(identifier,)).fetchone():raise ValidationError('Perfil inexistente.')
@@ -303,6 +321,7 @@ def _action(db,endpoint,data,user):
     if endpoint in ('invoice-draft','invoice-edit-draft'):
         value=content(db,data);p=payment_source(db,value['payment_id'])
         value['payment']=dict(method=p['method'],reference=p['reference'])
+        cfg=preferences(db);value['tax_labels']=dict(iva=cfg['iva_label'],igtf=cfg['igtf_label'])
         value['profile_id']=integer(data['profile_id'],1,2147483647) if data.get('profile_id') else None
         vid=integer(data.get('template_version_id'),1,2147483647);version(db,vid)
         lot=batch(db,data.get('batch_id'));pr=printer(db,data.get('profile_id'))
@@ -366,7 +385,7 @@ def _action(db,endpoint,data,user):
         if count and data.get('reprint_confirmed') is not True:raise ValidationError('Confirma la reimpresión y su motivo; no uses otra hoja numerada.')
         db.execute('INSERT INTO invoice_print_events(invoice_id,pdf_sha256,reason,printed_by,printed_at) VALUES(?,?,?,?,?)',(existing['id'],existing['pdf_sha256'],why,uid,stamp))
         audit(db,uid,endpoint,dict(id=existing['id'],reprint=bool(count),pdf_sha256=existing['pdf_sha256'],reason=why))
-        return dict(id=existing['id'],pdf_base64=existing['pdf_base64'],sha256=existing['pdf_sha256'],filename='Factura-'+existing['invoice_number']+'.pdf',reprint=bool(count))
+        return dict(id=existing['id'],pdf_base64=existing['pdf_base64'],sha256=existing['pdf_sha256'],filename='Factura-'+re.sub(r'[^A-Za-z0-9._-]','_',existing['invoice_number'])+'.pdf',reprint=bool(count))
     raise ValidationError('Operación de facturas inexistente.')
 
 
@@ -384,8 +403,10 @@ def outstanding_numbers(db,period):
     for record in db.execute("SELECT batch_id,snapshot_json FROM invoices WHERE substr(issued_on,1,7)=? AND state<>'draft'",(period,)):
         for label,gap in json.loads(record['snapshot_json']).get('numbering_review',{}).items():
             first,last=int(gap['first']),int(gap['last'])
-            occupied=db.execute('SELECT COUNT(*) FROM invoices WHERE batch_id=? AND CAST('+label+'_key AS INTEGER) BETWEEN ? AND ?',(record['batch_id'],first,last)).fetchone()[0]
-            count+=max(0,last-first+1-occupied)
+            used={r[0] for r in db.execute('SELECT '+label+'_number FROM invoices WHERE batch_id=? AND '+label+'_key IS NOT NULL',(record['batch_id'],))}
+            used.update(r[label+'_number'] for r in reservations(db))
+            occupied={printed(value)[1] for value in used if parts(value)[0].upper()==gap.get('prefix','').upper() and first<=parts(value)[1]<=last}
+            count+=max(0,last-first+1-len(occupied))
     return count
 
 
@@ -400,7 +421,7 @@ def sales(db,period):
     period=valid_period(period)
     if period>local_today().isoformat()[:7]:raise ValidationError('Selecciona un mes actual o anterior.')
     records=[];totals={}
-    for r in db.execute("SELECT * FROM invoices WHERE substr(issued_on,1,7)=? AND state<>'draft' ORDER BY issued_on,CAST(invoice_key AS INTEGER),id",(period,)):
+    for r in db.execute("SELECT * FROM invoices WHERE substr(issued_on,1,7)=? AND state<>'draft' ORDER BY issued_on,id",(period,)):
         snap=json.loads(r['snapshot_json']);damaged=r['state']=='damaged';currency='' if damaged else snap['currency'];total=0 if damaged else snap['original_amount']
         review=snap.get('numbering_review',{})
         records.append(dict(id=r['id'],date=r['issued_on'],invoice=r['invoice_number'],control=r['control_number'],
@@ -411,6 +432,7 @@ def sales(db,period):
             reason=snap.get('reason','') if damaged else r['void_reason'],numbering_review=review))
         if r['state']=='issued':totals[currency]=totals.get(currency,0)+total
         if len(records)>50000:raise ValidationError('Divide el informe en meses más pequeños antes de exportar.')
+    records.sort(key=lambda r:(r['date'],parts(r['invoice'])[0].upper(),parts(r['invoice'])[1],r['id']))
     school={key:value for key,value in db.execute('SELECT key,value FROM settings') if key in ('school_name','legal_name','institution_type','rif','fiscal_address','address','phone','email','logo')}
     return dict(period=period,records=records,totals=totals,school=school,note='Relación administrativa de formularios preimpresos. Números confirmados por operador; Aula no calcula IVA/IGTF ni sustituye al contador. Anuladas y hojas dañadas conservan número, pero no suman ventas. Sin datos personales del menor. Un salto no declara automáticamente hojas dañadas.')
 
@@ -470,7 +492,13 @@ def review_records(db):
         for record in db.execute('SELECT id,layout_json,layout_hash FROM invoice_template_versions'):
             value=layout.validate(json.loads(record['layout_json']))
             if layout.digest(value)!=record['layout_hash']:raise ValueError('plantilla')
-        for record in db.execute("SELECT * FROM invoices WHERE state IN('issued','void')"):
+        for record in db.execute("SELECT * FROM invoices WHERE state<>'draft'"):
+            for label in ('invoice','control'):
+                if printed(record[label+'_number'])[1]!=record[label+'_key']:raise ValueError('numeración')
+                lot=batch(db,record['batch_id']);prefix,low,high,padding=range_parts(lot,label);actual,serial,digits=parts(record[label+'_number'])
+                if actual!=prefix or not low<=serial<=high or digits!=str(serial).zfill(padding):raise ValueError('rango')
+                if json.loads(record['snapshot_json'])['numbers'][label+'_number']!=record[label+'_number']:raise ValueError('número en instantánea')
+            if record['state']=='damaged':continue
             raw=base64.b64decode(record['pdf_base64'],validate=True)
             if hashlib.sha256(raw).hexdigest()!=record['pdf_sha256']:raise ValueError('PDF')
             snap=json.loads(record['snapshot_json']);p=payment_source(db,record['payment_id']) if record['state']=='issued' else db.execute('SELECT * FROM payments WHERE id=?',(record['payment_id'],)).fetchone()

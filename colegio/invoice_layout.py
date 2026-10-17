@@ -12,7 +12,7 @@ from .pdf_fonts import text_width
 MM = 72 / 25.4
 VARIABLES = frozenset(('fecha','numero_factura','numero_control','cliente','documento_cliente',
     'direccion','concepto','forma_pago','referencia','tasa','exento','base','iva','igtf',
-    'total','observaciones','usuario','recibo','moneda','mes','año','grado'))
+    'total','observaciones','usuario','recibo','moneda','mes','año','grado','etiqueta_iva','etiqueta_igtf'))
 DETAIL_KEYS = frozenset(('concepto','cantidad','precio','exento','total'))
 WARNING = 'Confirma con tu contador que este medio de emisión es válido para el colegio.'
 
@@ -254,7 +254,7 @@ def sample():
         forma_pago='Transferencia',referencia='EJEMPLO',tasa='BCV: EJEMPLO',
         exento='USD 100,00',base='USD 0,00',iva='USD 0,00',igtf='USD 0,00',total='USD 100,00',
         observaciones='PRUEBA SIN VALIDEZ',usuario='Operador de ejemplo',recibo='EJEMPLO',
-        moneda='USD',mes='enero',año='2026',grado='Grado de ejemplo')
+        moneda='USD',mes='enero',año='2026',grado='Grado de ejemplo',etiqueta_iva='IVA',etiqueta_igtf='IGTF')
 
 
 def render(layout,data,items,printer=None,*,calibration=False,include_background=False):

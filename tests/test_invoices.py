@@ -222,3 +222,37 @@ class InvoiceTests(unittest.TestCase):
                 self.assertFalse(preferences(db)['reviewed'])
                 with self.assertRaisesRegex(ValidationError,'restauración'):
                     numbers(db,lot,dict(invoice_number='000001',control_number='000101',numbers_confirmed=True))
+
+    def test_ves_invoice_keeps_original_cents_and_historical_bcv(self):
+        pid=self.f.request('payments',self.f.payment(currency='VES',amount='1000.01',paid_on=self.on,key='invoice-ves'))['id']
+        before=self.f.request('state')['summary'];receipt=self.f.request('receipt/'+str(pid)+'.pdf')
+        identifier,_=self.draft(pid);self.issue(identifier)
+        detail=self.f.request('invoice-detail?id='+str(identifier));self.assertEqual(detail['snapshot']['original_amount'],100001)
+        self.assertEqual(detail['snapshot']['bcv_rate'],'100');self.assertEqual(sum(r['amount_cents'] for r in detail['snapshot']['items']),100001)
+        sales=self.f.request('invoice-sales');self.assertEqual(sales['totals'],{'VES':100001})
+        self.assertEqual(sales['records'][0]['iva'],0);self.assertEqual(sales['records'][0]['igtf'],0)
+        self.assertEqual(self.f.request('state')['summary'],before);self.assertEqual(self.f.request('receipt/'+str(pid)+'.pdf'),receipt)
+
+    def test_probe_rejects_changed_pdf_even_when_sqlite_is_integral(self):
+        from colegio.storage import consistent_backup
+        from colegio.backup_inspection import probe_backup
+        identifier,_=self.draft();self.issue(identifier)
+        with closing(connect(self.f.path)) as db:prefix=db.execute('SELECT pdf_base64 FROM invoices WHERE id=?',(identifier,)).fetchone()[0][:24].encode()
+        copy_path=self.f.path.parent/'pdf-alterado-ficticio.sqlite3';consistent_backup(self.f.path,copy_path)
+        raw=copy_path.read_bytes();self.assertEqual(raw.count(prefix),1)
+        changed=prefix[:16]+(b'A' if prefix[16:17]!=b'A' else b'B')+prefix[17:]
+        copy_path.write_bytes(raw.replace(prefix,changed,1))
+        with closing(sqlite3.connect(copy_path)) as db:self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
+        with self.assertRaisesRegex(ValueError,'factura'):probe_backup(copy_path)
+
+    def test_literal_prefix_and_printed_zeroes_follow_the_configured_batch(self):
+        prefixed=dict(self.lot_data,id=self.lot,invoice_from='SERIE-000001',invoice_to='SERIE-000003',control_from='CONTROL-000101',control_to='CONTROL-000103')
+        self.f.request('invoice-batch',prefixed)
+        identifier,_=self.draft();data=dict(self.issue_data(identifier),invoice_number='SERIE-000001',control_number='CONTROL-000101')
+        self.f.request('invoice-issue',dict(data,invoice_number='SERIE-1'),status=400)
+        self.f.request('invoice-issue',dict(data,invoice_number='OTRA-000001'),status=400)
+        self.f.request('invoice-issue',data)
+        view=self.f.request('invoice-book');self.assertEqual(view['batches'][0]['proposal']['invoice'],'SERIE-000002')
+        self.assertEqual(view['sales'][0]['control'],'CONTROL-000101')
+        self.f.request('invoice-batch',dict(prefixed,invoice_from='OTRA-000001',invoice_to='OTRA-000003'),status=400)
+        self.assertTrue(self.f.request('maintenance-review')['ok'])
