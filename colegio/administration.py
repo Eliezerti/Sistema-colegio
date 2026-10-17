@@ -340,6 +340,9 @@ def import_roster(db,data,user,save_record):
 
 
 def ensure_open_day(db,on):
+    if db.execute("SELECT 1 FROM sqlite_master WHERE name='accounting_closures'").fetchone():
+        from .accounting import ensure_open
+        ensure_open(db,on)
     if db.execute('SELECT 1 FROM cash_closures WHERE closed_on=? AND reopened_at IS NULL',(on,)).fetchone():
         raise ValidationError('La caja de esa fecha está cerrada. Administración debe reabrirla con un motivo antes de modificar movimientos.')
 

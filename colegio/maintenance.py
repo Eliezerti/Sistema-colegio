@@ -76,6 +76,15 @@ def review_database(db):
                 ("La conciliación supera el importe del libro.","SELECT p.id FROM "+table+" p JOIN reconciliation_links l ON l."+column+"=p.id WHERE l.voided=0 GROUP BY p.id HAVING SUM(l.amount)>"+amount+" LIMIT 1"))
     for message,sql in checks:
         if db.execute(sql).fetchone(): errors.append(message)
+    if db.execute("SELECT 1 FROM sqlite_master WHERE name='accounting_closures'").fetchone():
+        import json
+        from .income_book import signature
+        for row in db.execute('SELECT period,snapshot_json,preview_hash FROM accounting_closures'):
+            try:
+                content=json.loads(row['snapshot_json'])
+                if content['period']!=row['period'] or signature(content)!=row['preview_hash']:raise ValueError()
+            except (ValueError,TypeError,KeyError):
+                errors.append('No se pudo verificar una foto de cierre mensual.');break
     payments = db.execute('SELECT COALESCE(SUM(amount),0) FROM payments WHERE voided=0').fetchone()[0]
     allocations = db.execute('''SELECT COALESCE(SUM(a.amount),0) FROM allocations a
                                 JOIN payments p ON p.id=a.payment_id WHERE p.voided=0''').fetchone()[0]

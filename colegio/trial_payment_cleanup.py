@@ -32,7 +32,7 @@ def inspect(db):
         raise ValidationError('Verificar datos y cobros detectó errores. No se borraron cobros.')
     if db.execute('SELECT 1 FROM settings WHERE key=?',(MARKER,)).fetchone():
         raise ValidationError('Esta base ya preparó sus recibos para producción. No se permite repetir la limpieza.')
-    if any(db.execute('SELECT 1 FROM '+table+' LIMIT 1').fetchone() for table in ('payment_accounts','other_income','cash_deposits')):
+    if any(db.execute('SELECT 1 FROM '+table+' LIMIT 1').fetchone() for table in ('payment_accounts','other_income','cash_deposits','accounting_closures','income_annotations','bank_movements')):
         raise ValidationError('Hay movimientos del libro de ingresos. No se permite una limpieza automática de sus recibos.')
     documents={'guardian_documents':0,'cash_closures':db.execute('SELECT COUNT(*) FROM cash_closures').fetchone()[0]}
     for row in db.execute('SELECT snapshot_json FROM guardian_documents'):

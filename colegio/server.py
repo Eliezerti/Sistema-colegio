@@ -172,6 +172,8 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
     if endpoint in INCOME_ACTIONS:return income_action(db,endpoint,data,user)
     from .bank_book import ACTIONS as BANK_ACTIONS,action as bank_action
     if endpoint in BANK_ACTIONS:return bank_action(db,endpoint,data,user)
+    from .accounting import ACTIONS as MONTH_ACTIONS,action as month_action
+    if endpoint in MONTH_ACTIONS:return month_action(db,endpoint,data,user)
     admin_paths = {'settings','backup-directory','grades','guardians','students','users','password','void-payment','void-expense','cancel-charge','import-roster','reopen-cash','transition-year','cancel-plan','correct-billing-start'} | DIRECTORY_ACTIONS | ARCHIVE_ACTIONS
     if user['role'] == 'reader' or (endpoint in admin_paths and user['role'] != 'admin'):
         raise PermissionError('Tu perfil no permite esta operación.')
@@ -943,7 +945,8 @@ class Handler(BaseHTTPRequestHandler):
                 db.commit()
                 from .income_book import ACTIONS as INCOME_ACTIONS
                 from .bank_book import ACTIONS as BANK_ACTIONS
-                if endpoint in BANK_ACTIONS or endpoint in INCOME_ACTIONS or endpoint in DIRECTORY_ACTIONS or endpoint in ARCHIVE_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','expenses','void-payment','void-expense','close-cash','reopen-cash','settings','backup-directory','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
+                from .accounting import ACTIONS as MONTH_ACTIONS
+                if endpoint in MONTH_ACTIONS or endpoint in BANK_ACTIONS or endpoint in INCOME_ACTIONS or endpoint in DIRECTORY_ACTIONS or endpoint in ARCHIVE_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','expenses','void-payment','void-expense','close-cash','reopen-cash','settings','backup-directory','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
                     status=self.server.make_backup()
                     if status.get('local_error') or status.get('secondary_error'):
                         result['backup_warning']=status.get('local_error') or status.get('secondary_error')
@@ -961,6 +964,12 @@ class Handler(BaseHTTPRequestHandler):
                 result['access']=self.server.access.snapshot()
                 result['read_only']=self.server.read_only_info if read_only else None
                 self.respond(200, result)
+            elif endpoint in ('accounting-report','accounting-report.csv','accounting-report.pdf'):
+                from .accounting import report as accounting_report,csv_bytes as accounting_csv,pdf_bytes as accounting_pdf
+                result=accounting_report(db,parse_qs(url.query).get('month',[local_today().isoformat()[:7]])[0])
+                if endpoint=='accounting-report':self.respond(200,result)
+                elif endpoint.endswith('.csv'):self.respond(200,accounting_csv(result),'text/csv; charset=utf-8',{'Content-Disposition':'attachment; filename=ingresos-'+result['period']+'.csv'})
+                else:self.respond(200,accounting_pdf(result,public_user),'application/pdf',{'Content-Disposition':'attachment; filename=ingresos-'+result['period']+'.pdf'})
             elif endpoint=='bank-book':
                 from .bank_book import report as bank_report
                 query=parse_qs(url.query)
