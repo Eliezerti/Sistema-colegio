@@ -10,10 +10,10 @@ ADMIN = ('admin',)
 WRITERS = ('admin', 'cashier')
 
 GET_ALL = ('session', 'session-status', 'clock-status', 'rate-gate', 'state', 'cash-preview',
-           'backup-status', 'daily-report', 'daily-report.pdf', 'monthly-report','monthly-report.pdf','monthly-report.csv', 'health', 'export')
+           'backup-status', 'income-book', 'daily-report', 'daily-report.pdf', 'monthly-report','monthly-report.pdf','monthly-report.csv', 'health', 'export')
 GET_ADMIN = ('audit', 'audit.csv', 'audit.pdf', 'import-template', 'import-guide',
              'backup', 'maintenance-review')
-POST_ADMIN = ('settings', 'backup-directory', 'grades', 'guardians', 'students',
+POST_ADMIN = ('income-account','income-category','income-assign','income-other','income-void-other','income-void-deposit','settings', 'backup-directory', 'grades', 'guardians', 'students',
               'users', 'password', 'void-payment', 'void-expense', 'cancel-charge',
                 'import-roster', 'reopen-cash', 'transition-year',
               'cancel-plan', 'correct-billing-start', 'archive-student', 'archive-guardian',
@@ -21,7 +21,7 @@ POST_ADMIN = ('settings', 'backup-directory', 'grades', 'guardians', 'students',
                'delete-unused-record', 'clock-confirm', 'session-preferences',
               'recovery-notice-ack', 'crypto-prepare', 'crypto-confirm', 'crypto-unlock',
               'probe-backup', 'export-encrypted-backup', 'backup-now', 'backup-cloud-declare', )
-POST_WRITERS = ('generate', 'payments', 'collections', 'rates', 'expenses', 'charges', 'close-cash',
+POST_WRITERS = ('income-deposit','generate', 'payments', 'collections', 'rates', 'expenses', 'charges', 'close-cash',
                 'guardian-documents', 'payment-plans')
 
 
@@ -61,7 +61,8 @@ def endpoint_inventory():
     """Discover comparisons/prefixes and imported action sets; new routes require a case."""
     from colegio.server import DIRECTORY_ACTIONS, ARCHIVE_ACTIONS
     source = Path(__file__).resolve().parents[1]/'colegio/server.py'
-    discovered = set(DIRECTORY_ACTIONS) | set(ARCHIVE_ACTIONS)
+    from colegio.income_book import ACTIONS as INCOME_ACTIONS
+    discovered = set(DIRECTORY_ACTIONS) | set(ARCHIVE_ACTIONS) | set(INCOME_ACTIONS)
     tree = ast.parse(source.read_text(encoding='utf-8'))
     # Tombstones have their own HTTP/profile/nonmutation contract in test_staff_retirement.
     tree.body = [node for node in tree.body if not isinstance(node, ast.FunctionDef) or node.name != 'retired_route']

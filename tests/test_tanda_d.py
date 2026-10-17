@@ -1,3 +1,4 @@
+from colegio.branding import SCHEMA_VERSION
 """Tanda D contracts: privacy, startup calendar and unchanged historical expenses."""
 from contextlib import closing
 from datetime import date
@@ -225,7 +226,7 @@ class FirstStartCalendarTests(unittest.TestCase):
                 with closing(connect(path)) as db:
                     settings=dict(db.execute('SELECT key,value FROM settings'))
                     self.assertEqual((settings['school_year'],settings['start_month'],settings['due_day']),('2027','1','31'))
-                    self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],12)
+                    self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],SCHEMA_VERSION)
                     from colegio.audit_chain import local_status
                     self.assertTrue(local_status(db)['ok'])
             finally:self.server.shutdown();thread.join();self.server.server_close()

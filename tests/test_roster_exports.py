@@ -18,6 +18,7 @@ class RosterExportTests(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
         self.user={'id':1,'name':'Administración de prueba','role':'admin'}
         self.source=self.database('source');self.target=self.database('target')
+        mutate(self.source,'income-account',dict(name='Caja efectivo ficticia',currency='USD',kind='cash'),self.user)
         self.month=local_today().strftime('%Y-%m')
         self.year=local_today().year-(local_today().month<9)
         for db in (self.source,self.target):

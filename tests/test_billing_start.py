@@ -34,6 +34,7 @@ class BillingStartTests(unittest.TestCase):
             self.db.execute("INSERT INTO users VALUES(1,'admin','Administración','unused','admin')")
             self.db.execute("INSERT INTO guardians(id,name,document) VALUES(1,'Ana','V-123')")
             self.db.execute("INSERT INTO grades VALUES(1,'Primaria A',30)")
+            mutate(self.db,'income-account',dict(name='Caja efectivo ficticia',currency='USD',kind='cash'),self.user)
 
     def student(self, **overrides):
         data = {'name':'Sofía','document':'','birth_date':'2015-01-01','guardian_id':1,'grade_id':1,

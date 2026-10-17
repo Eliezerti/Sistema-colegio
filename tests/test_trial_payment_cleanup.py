@@ -23,6 +23,8 @@ class TrialPaymentCleanupTests(unittest.TestCase):
         self.f.request('expenses',dict(concept='Gasto ficticio a conservar',category='Operación',spent_on=local_today().isoformat(),amount='7.25',currency='USD',method='Efectivo'))
         for role in ('cashier','reader'):
             self.f.request('users',dict(username='ficticio-'+role,name='Usuario ficticio '+role,password='FICTICIO-cuenta-segura',role=role))
+        # These pre-production records model a published v12 base with no account classifications.
+        with closing(connect(self.f.path)) as db,db:db.execute('DELETE FROM payment_accounts')
         self.f.server.shutdown();self.f.server.server_close();self.f.thread.join()
         with closing(connect(self.f.path)) as db,db:
             for kind in ('account','solvency'):

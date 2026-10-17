@@ -53,6 +53,10 @@ class SystemTests(unittest.TestCase):
         self.csrf = self.request('session')['user']['csrf']
         self.request('confirm-rate', {'rate_date':local_today().isoformat(),'rate':'100'})
         self.request('settings', dict(SCHOOL_PROFILE,school_name='Colegio Prueba',school_year=self.year,due_day=10,start_month=9))
+        self.school_accounts={}
+        for currency in ('USD','VES'):
+            for kind in ('bank','cash'):
+                self.school_accounts[(currency,kind)]=self.request('income-account',dict(name='Cuenta ficticia '+currency+' '+kind,currency=currency,kind=kind,bank='Banco ficticio' if kind=='bank' else '',last4='0042' if kind=='bank' else ''))['id']
         self.grade = self.request('grades', {'name':'Primaria A','capacity':2})['id']
         self.guardian = self.request('guardians', {'name':'Representante Uno','document':'V-123','phone':'04120000000'})['id']
         self.student = self.request('students', self.student_data())['id']
@@ -101,7 +105,7 @@ class SystemTests(unittest.TestCase):
         after=self.request('state')
         for table in ('students','charges','payments','expenses'):self.assertEqual(before[table],after[table])
         with closing(connect(self.path)) as db:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],12)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],SCHEMA_VERSION)
             dump='\n'.join(db.iterdump())
             for secret in (password,pending['recovery']):self.assertNotIn(secret,dump);self.assertNotIn(secret.encode(),path.read_bytes())
 
@@ -223,6 +227,7 @@ class SystemTests(unittest.TestCase):
         data={'student_id':self.student,'amount':amount,'currency':currency,'paid_on':f'{self.year+1}-02-10',
               'method':'Transferencia','reference':'ref-'+key,'request_key':key}
         data.update(overrides)
+        data.setdefault('account_id',self.school_accounts[(data['currency'],'cash' if data['method']=='Efectivo' else 'bank')])
         return data
 
     def test_multicurrency_partial_allocations_idempotency_void_and_frozen_receipt(self):

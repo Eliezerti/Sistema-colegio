@@ -14,6 +14,9 @@ def legacy_fixture(db):
     # companion objects before constructing that synthetic pre-A4 layout.
     for name, in db.execute("SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE 'audit_%'").fetchall():
         db.execute('DROP TRIGGER "'+name+'"')
+    # Only these disposable synthetic-v10 fixtures remove later companion tables.
+    for table in ('cash_deposit_payments','cash_deposits','other_income','expense_accounts','payment_accounts','income_categories','school_accounts'):
+        db.execute('DROP TABLE IF EXISTS '+table)
     db.execute('DROP TABLE IF EXISTS audit_links')
     db.execute('DROP TABLE IF EXISTS audit_meta')
     db.execute('PRAGMA user_version=10')
