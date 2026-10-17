@@ -1,8 +1,10 @@
 # En desarrollo · rama autónoma, sin publicación
 
-- Diseño documentado del libro de ingresos y requisitos de migración, permisos, cierre y facturas.
-- Reglas aisladas de cuentas, depósitos, candidatos de conciliación y vista previa CSV/XLSX con mapeo; sin rutas nuevas ni persistencia. No se anuncian esas funciones como disponibles en Aula.
-- Se conservan el esquema 12, los recibos, los correlativos y todos los controles vigentes. Validación y pendientes: [estado nocturno](docs/ESTADO-NOCHE.md).
+- Fase 1: cuentas escolares con cuatro últimos dígitos, cuenta destino en cobros, asignación histórica explícita y cuentas opcionales en egresos. Los recibos y correlativos se conservan.
+- Otros ingresos con categorías y soporte; depósitos vinculados parcialmente a efectivo, sin doble cobertura ni doble ingreso. Anulaciones y permisos comprobados en el servidor.
+- Esquema 13 aditivo, sin registros precargados; copia previa verificada y reversión documentada. Fixture publicado 1.0.71, comparación financiera, cinco terminaciones reales durante migración y restauración cifrada comprobadas.
+- Linux: 333 pruebas, 330 correctas y 3 exclusivas de Windows omitidas; tres navegadores correctos. Windows en ejecución para este código. [Estado y evidencia](docs/ESTADO-NOCHE.md).
+- Conciliación persistente, cierre mensual nuevo y facturas siguen pendientes. Sin instalador nuevo ni publicación.
 
 # Cobros y documentos financieros de prueba · 1.0.71 · 16/10/2026
 

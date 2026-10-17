@@ -1,38 +1,31 @@
 # Estado de trabajo nocturno
 
-**Entrega parcial comprobada. Fases 1–4 pendientes de integración.**
+**Fase 1 integrada y validada en Linux. Validación Windows en curso. Fases 2–4 pendientes.**
 
-- Rama: `autonomo/ingresos-facturas`; origen `ed1c5e9` (1.0.71). Main y versiones publicadas intactas.
-- Código final validado: `6f19357e990ce49ed84d0f96f3d5891262cbeafb`. Los commits posteriores solo actualizan documentación.
-- Fase 0 completada: inventario, decisiones y diseño en `DECISIONES-AUTONOMAS.md` y `interno/ingresos-diseno.md`.
-- Núcleo aislado: cuentas, sugerencias, depósitos, CSV/XLSX y candidatos/asignaciones de conciliación; 17 pruebas propias. Sin rutas, interfaz, persistencia ni nuevas tablas. No se importa desde la aplicación.
-- Arreglo real adicional: rechazo HTTP 403 en copias de consulta; descarta el cuerpo con memoria/plazo acotados, sin analizar JSON ni abrir SQLite. Protecciones y archivo fuente intactos.
-- Ninguna base del usuario fue abierta o modificada. Esquema 12; recibos, cálculos y correlativos conservados. No se generó instalador ni se trabajó en firma digital.
+- Rama `autonomo/ingresos-facturas`; código de Fase 1: `ddba0ca9a2707f1fd9b133b4aea732d757fd1c2a`. Main, etiquetas y publicación intactos.
+- Commits: `2701023` migración; `1e003a4` servidor y reportes; `11e00dc` pruebas; `ddba0ca` interfaz.
+- Fase 0 documentada. Fase 1: catálogo, cuenta destino, asignación histórica, otros ingresos/categorías, depósitos parciales, egresos con cuenta, permisos y bitácora. [Guía](cuentas-ingresos.md).
+- Esquema 13 aditivo; copia previa verificada (cifrada cuando está configurado), fixture real del código publicado 1.0.71 con datos ficticios, integridad/cadena y cinco cortes reales comprobados. Ninguna base del usuario abierta o modificada.
+- Los recibos originales, importes y correlativos se conservan. Los depósitos no duplican ingresos. Instalación nueva con siete tablas nuevas vacías.
 
-## Validación final real
+## Resultados reales de esta fase
 
-| Suite | Linux | Windows Server 2022 |
+| Comando | Linux | Windows |
 |---|---|---|
-| unittest completo | 325 en 188,147 s; 322 correctas y 3 nativas omitidas | 325 correctas en 438,560 s; sin omisiones |
-| Navegador normal | Salida 0 | Salida 0 |
-| Navegador --demo | Salida 0 | Salida 0 |
-| Navegador --roster | Salida 0 | Salida 0 |
+| `python -m unittest discover -s tests -v` | 333 en 206,436 s; 330 correctas y 3 nativas omitidas | En ejecución; no aprobado aún |
+| `python tests/run_browser.py` | Salida 0, incluye flujo nuevo por interfaz y copia consulta | En ejecución |
+| `python tests/run_browser.py --demo` | Salida 0 | En ejecución |
+| `python tests/run_browser.py --roster` | Salida 0 | En ejecución |
 
-Windows: https://github.com/Eliezerti/Sistema-colegio/actions/runs/38997949165
-Registros: https://github.com/Eliezerti/Sistema-colegio/actions/runs/38997949165/artifacts/12087338899
-Logs Linux y desarrollo: `/workspace/work/noche/`.
+Windows: https://github.com/Eliezerti/Sistema-colegio/actions/runs/39001990044
+Logs Linux: `/workspace/work/noche2/phase1-*-fixed.log`, `phase1-roster-final.log`.
 
-## Fallos conservados
+Primera regresión ampliada: 331 en 213,631 s, 15 errores y 3 omisiones. Causas: fixtures sintéticos antiguos con tablas acompañantes nuevas, fixtures de pago sin cuenta y reapertura con cabecera local de bitácora dañada. Primer arreglo: fixtures actualizados y conservación de consulta con escrituras bloqueadas ante bitácora dañada; 57 dirigidas correctas y repetición completa correcta. Roster inicial falló por no elegir cuenta; ajustado el flujo real, sin omitir la validación. La prueba dirigida inicial de Consulta recibió 428: se confirmó la tasa diaria por el flujo vigente, sin quitar el control.
 
-- Primera línea base restringida: 118 errores de sockets y 3 omisiones. Repetida con el mecanismo de permisos autorizado, sin alterar pruebas; prueba administrativa correcta y línea base completa correcta.
-- Windows `38996806129`: 324 en 482,260 s, 1 error WinError 10053 al esperar 403 en import-roster de una copia. Tres navegadores correctos. Corregido en el primer intento (`6f19357`); prueba dirigida de cuatro casos correcta y luego cuatro suites completas correctas en ambos sistemas.
-- `38996676220`: ejecución obsoleta cancelada por cambio de código; no cuenta como validación.
+## Próximo bloque
 
-## Reanudación
+1. Recoger resultado y logs Windows; actualizar informe y pruebas reales. No reutilizar el resultado anterior del núcleo aislado como validación de Fase 1.
+2. Fase 2: importaciones y perfiles persistidos, duplicados entre archivos, conciliación y clasificaciones. Las reglas puras existen; no constituyen el flujo operativo.
+3. Fase 3: cierre mensual protegido, relación para contador y conciliación contra extracto. Después, Fase 4 completa si alcanza el uso.
 
-1. Leer `INFORME-MAÑANA.md` y decisiones; no asumir fases entregadas por tener pruebas de reglas puras.
-2. Implementar Fase 1: protocolo de respaldo cifrado previo reversible, fixture publicado 1.0.71, migración aditiva y terminación real del proceso; verificar integridad, referencias, cadena y totales exactos.
-3. Integrar catálogo, cuenta en cobros, revisión/asignación histórica, depósitos, otros ingresos y cuentas en egresos; permisos HTTP y bitácora. Cuatro suites antes de declarar la fase completa.
-4. Continuar conciliación persistida y cierre mensual, después facturas/editor. Se mantiene la autonomía autorizada; no hay una aprobación pendiente.
-
-NO VERIFICADO: perfil real Provincial, formulario/calibración física y confirmación fiscal. No se hicieron instalación/actualización/desinstalación de esta rama ni impresión física: no existe instalador nuevo ni módulo de facturas integrado.
+No existe instalador nuevo. No se hicieron instalación/actualización/desinstalación de esta rama ni impresión física. NO VERIFICADO: Provincial, formulario/calibración y confirmación fiscal. No hay aprobación pendiente.

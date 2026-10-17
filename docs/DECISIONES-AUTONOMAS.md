@@ -52,3 +52,20 @@ El primer envío al remoto fue rechazado por revisión automática por falta de 
 ## Ajuste derivado de la prueba Windows
 
 La prueba real de consulta falló con un cierre TCP (`WinError 10053`) al esperar 403. Se corrige únicamente el transporte del rechazo: drenar con memoria y tiempo acotados antes del 403, sin JSON ni acceso a SQLite. Se descarta ignorar errores de conexión en el test o permitir ejecutar la ruta para después revertirla. Reversión: revertir el commit de este ajuste; no hay esquema ni datos modificados. Las líneas del inventario inicial corresponden al punto de partida `ed1c5e9`.
+
+## Fase 1 · integración posterior comprobada
+
+La decisión previa de conservar reglas aisladas describía el punto verde anterior, no una restricción permanente. Se implementó la Fase 1 en cuatro commits pequeños (`2701023`, `1e003a4`, `11e00dc`, `ddba0ca`). Fases 2–4 siguen pendientes de integración.
+
+| Decisión | Motivo | Alternativa descartada | Cómo revertir |
+|---|---|---|---|
+| Siete tablas aditivas en esquema 13; conservar columnas y fotos de recibos | Evitar alterar cálculos, correlativos o comprobantes | Reconstruir pagos para añadir metadatos | Copia previa verificada y versión anterior en carpeta vacía separada; conservar carpeta 13 y datos posteriores |
+| Respaldo privado previo; cifrado si está configurado, detener si está bloqueado | Actualizar incluso bases que aún no configuraron cifrado, sin exportar una copia como si fuera cifrada | Inventar una contraseña o no respaldar | Configurar cifrado antes de actualizar; conservar copia privada con las mismas protecciones de la carpeta de datos |
+| Sin cuenta histórica inferida; revisión masiva con motivo y transacción única | Una referencia no prueba la cuenta destino | Asignar históricos a la primera cuenta del catálogo | Reasignación administrativa auditada; el comprobante original sigue idéntico |
+| Otros ingresos solo Administración | El encargo permite a Caja cobros y depósitos; no autoriza configurar o clasificar ingresos ajenos | Ampliar permisos por conveniencia | Cambiar la matriz de permisos y añadir pruebas explícitas antes de ampliar |
+| Depósitos como traslado y diferencia explicada, no ingreso duplicado | Conservar totales y reflejar efectivo físico | Sumarlos a ingresos por segunda vez o inventar un egreso por diferencia | Anulación administrativa con motivo; nunca borrar registro o vínculo |
+| Bloquear limpieza excepcional antigua ante registros del libro nuevo | Esa herramienta no está diseñada para retirar nuevas clasificaciones y depósitos | Extender un borrado fuera de este alcance | Diseñar y probar una herramienta específica antes de permitir otra operación |
+
+Reversión detallada y límites en `cuentas-ingresos.md`. La copia del esquema 12 procede del código publicado 1.0.71, no de cambiar un número de PRAGMA. Su manifiesto y SHA-256 verifican el fixture ficticio; se prueban contraseña y recuperación, comparación exacta y cinco terminaciones reales.
+
+La revisión automática rechazó una primera propuesta porque podía aceptar cualquier esquema futuro al saltar la migración antigua. No se ejecutó esa edición. Se sustituyó por aceptar **únicamente el esquema 13 conocido**; cualquier versión mayor sigue rechazada por ambos límites. La revisión autorizó esta alternativa. Las pruebas de consulta ante bitácora dañada conservan la disponibilidad de lectura y todos los bloqueos de escritura.
