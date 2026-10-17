@@ -1,3 +1,9 @@
+# En desarrollo · rama autónoma, sin publicación
+
+- Diseño documentado del libro de ingresos y requisitos de migración, permisos, cierre y facturas.
+- Reglas aisladas de cuentas, depósitos, candidatos de conciliación y vista previa CSV/XLSX con mapeo; sin rutas nuevas ni persistencia. No se anuncian esas funciones como disponibles en Aula.
+- Se conservan el esquema 12, los recibos, los correlativos y todos los controles vigentes. Validación y pendientes: [estado nocturno](docs/ESTADO-NOCHE.md).
+
 # Cobros y documentos financieros de prueba · 1.0.71 · 16/10/2026
 
 - Con autorización explícita, la limpieza única incluye estados de cuenta, solvencias y cierres de caja de prueba, junto con cobros y recibos. La revisión muestra sus cantidades y exige confirmar también esos documentos.
