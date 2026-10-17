@@ -147,6 +147,8 @@ def initialize(path):
             migrate_schema(path)
             from .income_schema import migrate as migrate_income
             migrate_income(path)
+            from .bank_schema import migrate as migrate_bank
+            migrate_bank(path)
             return
     with closing(connect(path)) as db, db:
         db.execute('PRAGMA journal_mode=WAL')
@@ -245,6 +247,8 @@ def initialize(path):
     migrate_schema(path, new=new_database)
     from .income_schema import migrate as migrate_income
     migrate_income(path,new=new_database)
+    from .bank_schema import migrate as migrate_bank
+    migrate_bank(path,new=new_database)
 
 
 

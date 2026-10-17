@@ -66,6 +66,9 @@ def validate(db):
     if version>=13:
         from .income_schema import verify_layout
         verify_layout(db)
+    if version>=14:
+        from .bank_schema import verify_layout as verify_bank
+        verify_bank(db)
     return version,tables
 
 

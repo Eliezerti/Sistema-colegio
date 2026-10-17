@@ -5,7 +5,7 @@ import base64
 from functools import lru_cache
 from pathlib import Path
 
-SCHEMA_VERSION = 13
+SCHEMA_VERSION = 14
 INSTITUTION_TYPE = 'Unidad Educativa Colegio'
 SCHOOL_NAME = 'Mi colegio'
 LOGO_FILE = 'aula-app.png'

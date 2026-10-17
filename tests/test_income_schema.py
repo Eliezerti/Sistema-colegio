@@ -4,6 +4,7 @@ from pathlib import Path
 import hashlib,json,shutil,sqlite3,subprocess,sys,tempfile,time,unittest
 from colegio.db import connect,initialize
 from colegio.audit_chain import adopt_restored,portable_status,local_status
+from colegio.branding import SCHEMA_VERSION
 from colegio.income_schema import TABLES
 from colegio.backup_inspection import probe_backup,staged_backup
 
@@ -29,7 +30,7 @@ class IncomeSchemaTests(unittest.TestCase):
                 reference=cash_summary(db,'2025-09-20')
             initialize(path);initialize(path)
             with closing(connect(path)) as db:
-                self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],13)
+                self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],SCHEMA_VERSION)
                 self.assertEqual(before,{t:[tuple(r) for r in db.execute('SELECT * FROM '+t)] for t in preserved})
                 self.assertEqual(cash_summary(db,'2025-09-20'),reference)
                 self.assertEqual([tuple(r) for r in db.execute('SELECT * FROM audit')][:len(history)],history)
@@ -44,7 +45,7 @@ class IncomeSchemaTests(unittest.TestCase):
                     with closing(sqlite3.connect(previous)) as db:
                         self.assertEqual(before['payments'],[tuple(r) for r in db.execute('SELECT * FROM payments')])
                         self.assertTrue(portable_status(db)['ok'])
-            self.assertEqual(probe_backup(path)['schema'],13)
+            self.assertEqual(probe_backup(path)['schema'],SCHEMA_VERSION)
 
     def test_real_kill_before_and_after_commit_complete_or_intact(self):
         for stage in ('backup_verified','table_3','before_commit','audit_after_commit','after_commit'):

@@ -52,12 +52,12 @@ def checkpoint(stage):
     """A test child can be killed here; no environment or runtime bypass."""
 
 
-def reversal_snapshot(path):
+def reversal_snapshot(path,*,before=12,after=13):
     from .storage import consistent_backup
     from .backup_inspection import inspect_copy,file_hash
     from .backup_keys import status
     from .clock_guard import atomic_json
-    folder=path.parent/'.aula-migrations'/'schema-13'
+    folder=path.parent/'.aula-migrations'/('schema-'+str(after))
     for candidate in (folder.parent,folder):
         if candidate.is_symlink() or (hasattr(candidate,'is_junction') and candidate.is_junction()):
             raise ValueError('La carpeta privada de reversión no puede estar enlazada.')
@@ -67,8 +67,8 @@ def reversal_snapshot(path):
     consistent_backup(path,saved);saved.chmod(0o600)
     inspected=inspect_copy(saved)
     digest=file_hash(saved)
-    if inspected['summary']['schema']!=12 or file_hash(saved)!=digest:
-        raise ValueError('No se verificó la copia previa del esquema 12.')
+    if inspected['summary']['schema']!=before or file_hash(saved)!=digest:
+        raise ValueError('No se verificó la copia previa del esquema '+str(before)+'.')
     cipher=status(path.parent)
     encrypted=False
     if cipher['configured']:
@@ -81,7 +81,7 @@ def reversal_snapshot(path):
             raise ValueError('No se verificó el respaldo cifrado previo.')
         # Only this operation's private temporary, after verified cipher publication.
         saved.unlink();saved=target;encrypted=True
-    record=dict(schema_before=12,schema_after=13,backup=saved.name,sha256=file_hash(saved),
+    record=dict(schema_before=before,schema_after=after,backup=saved.name,sha256=file_hash(saved),
         plaintext_sha256=digest,encrypted=encrypted,created_at=datetime.now(timezone.utc).isoformat(),
         purpose='Reversión privada de la migración de ingresos; conservar con la versión anterior')
     atomic_json(folder/(identifier+'.json'),record)
@@ -95,8 +95,8 @@ def migrate(path,*,new=False):
     path=Path(path).resolve()
     with path_lock(path),closing(connect(path)) as db:
         version=db.execute('PRAGMA user_version').fetchone()[0]
-        if version>VERSION:raise ValueError('Esta base requiere una versión más reciente.')
-        if version==VERSION:
+        if version>14:raise ValueError('Esta base requiere una versión más reciente.')
+        if version in (VERSION,14):
             verify_layout(db)
             # Preserve existing consultation when the local audit head is bad;
             # require()/SQLite guards continue to block every business write.
