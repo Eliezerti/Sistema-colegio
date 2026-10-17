@@ -509,6 +509,7 @@ function printedTextLayout(pdf){
     await nav('settings');await settingsTab('Protección y mantenimiento');
     assert.equal(await page.locator('[data-action="reset-review"],.reset-settings').count(),0);
     await require('./income_browser.cjs')(page);
+await require('./bank_browser.cjs')(page);
     const finalState=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());
     assert.equal(finalState.audit_status.ok,true);assert.ok(finalState.students.length>0);
     assert.deepEqual(errors,[]);
