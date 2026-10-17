@@ -25,7 +25,7 @@ def ledger(db):
     for prefix,(table,on,join,key,direction) in SOURCES.items():
         if join:
             sql='SELECT p.*,a.account_id,a.bcv_rate FROM '+table+' p JOIN '+join+' a ON a.'+key+'=p.id JOIN school_accounts s ON s.id=a.account_id WHERE p.voided=0 AND s.kind=\'bank\''
-        else:sql='SELECT p.* FROM '+table+' p WHERE p.voided=0'
+        else:sql="SELECT p.* FROM "+table+" p JOIN school_accounts s ON s.id=p.account_id WHERE p.voided=0 AND s.kind='bank'"
         for row in db.execute(sql):
             row=dict(row);amount=row['amount'] if prefix=='D' else row['received_amount']
             result.append(dict(id=prefix+str(row['id']),account=row['account_id'],on=row[on],amount=amount,currency=row['currency'],reference=row['reference'],direction=direction,bcv_rate=row.get('bcv_rate','')))

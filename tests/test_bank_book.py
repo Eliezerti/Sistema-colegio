@@ -90,3 +90,13 @@ class BankBookTests(unittest.TestCase):
         self.assertEqual(self.f.request('bank-auto',dict(month=self.on[:7]))['linked'],1)
         links=self.f.request('bank-book')['links'];self.assertEqual([r['payment_id'] for r in links],[current])
         self.assertEqual(self.f.request('bank-auto',dict(month=past[:7]))['linked'],1)
+
+    def test_cash_other_income_is_not_an_impossible_bank_pending(self):
+        category=self.f.request('income-category',dict(name='Ficticio aporte'))['id']
+        ids={}
+        for method,kind in (('Efectivo','cash'),('Transferencia','bank')):
+            ids[kind]=self.f.request('income-other',dict(concept='Ficticio '+kind,category_id=category,received_on=self.on,amount='3',currency='USD',method=method,account_id=self.f.school_accounts[('USD',kind)],reference='FICTICIO-'+kind,support='Soporte ficticio',request_key='FICTICIO-'+kind))['id']
+        before=self.f.request('state?history=1')['summary']
+        pending=self.f.request('bank-book')['ledger_pending']
+        self.assertEqual([r['id'] for r in pending],['O'+str(ids['bank'])])
+        self.assertEqual(self.f.request('state?history=1')['summary'],before)

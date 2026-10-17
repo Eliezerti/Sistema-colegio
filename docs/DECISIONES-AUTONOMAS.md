@@ -103,3 +103,7 @@ Los estados previos de este archivo describen puntos históricos, no restriccion
 La reversión 15→14 requiere la copia en `.aula-migrations/schema-15/` y el código de Fase 2, en una carpeta vacía separada. Para regresar a 1.0.71 se usa la copia 12 de `schema-13/`. No abrir un esquema mayor con un ejecutable antiguo ni sobrescribir la carpeta actual. Si había cifrado configurado, la copia previa se cifra y verifica; si estaba bloqueado, no migra. Sin cifrado configurado queda copia SQLite privada, que no se presenta como respaldo cifrado externo.
 
 La plantilla Provincial, el formulario real, la calibración y la revisión fiscal siguen NO VERIFICADOS. La falta de medidas no se usa como supuesto bloqueo técnico: el encargo permite una versión genérica, pero ese bloque aún no fue implementado. Compilar desde la rama es posible; no se alega que deba hacerse desde main.
+
+## Efectivo y pendientes bancarios
+
+Se excluyen otros ingresos de Caja efectivo del libro de conciliación bancaria, igual que los cobros en efectivo. Motivo: no existe extracto bancario de una caja física y el pendiente era imposible de resolver. Alternativa descartada: ocultarlo solo en pantalla o clasificarlo ficticiamente. Reversión funcional: no hace falta borrar ni migrar datos; el ingreso sigue en caja y en la relación mensual, con su cuenta original. Para depositar efectivo procedente de otros ingresos hará falta ampliar el traslado con cobertura explícita; no se inventa un recibo de mensualidad.
