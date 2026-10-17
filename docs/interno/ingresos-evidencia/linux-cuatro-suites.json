@@ -1,8 +1,9 @@
 {
+  "commit": "a772d2553d2f070f33aa715692d5cdb95988cdc3",
   "environment": "Linux; Python 3.12.14; datos temporales ficticios",
   "unit": {
-    "tests": 352,
-    "seconds": "293.531",
+    "tests": 355,
+    "seconds": "309.459",
     "outcome": "OK (skipped=3)"
   },
   "native_skips": [
@@ -32,5 +33,5 @@
       "PASS: actual Excel and CSV downloads, import into empty trial, automatic grades, preserved codes/phones/fees/statuses, preview invalidation, old listing explanation, no copied payments or altered source ledger, guardian PDF states and trial cleanup."
     ]
   },
-  "logs": "Registros de ejecución /workspace/work/noche3/final-*.log; no son parte del producto"
+  "logs": "Registros finales /workspace/work/noche3/final355-*.log"
 }

@@ -1,0 +1,28 @@
+{
+  "run": "https://github.com/Eliezerti/Sistema-colegio/actions/runs/39028658645",
+  "commit": "cb34ad774b5149a2e1e2b29a53865070ceee15f4",
+  "conclusion": "success",
+  "source": "GitHub Check Runs API; observed after completion",
+  "annotations": [
+    {
+      "annotation_level": "notice",
+      "message": "{\"os\": \"Windows\", \"students\": \"800\", \"months\": \"12\", \"charges\": \"9600\", \"payments\": \"9600\", \"bank_movements\": \"9600\", \"endpoint\": \"accounting-report\", \"bytes\": \"421083\", \"median_seconds\": \"0.146237\", \"max_seconds\": \"0.148231\"}",
+      "title": "Medici�n HTTP real"
+    },
+    {
+      "annotation_level": "notice",
+      "message": "{\"os\": \"Windows\", \"students\": \"800\", \"months\": \"12\", \"charges\": \"9600\", \"payments\": \"9600\", \"bank_movements\": \"9600\", \"endpoint\": \"bank-book\", \"bytes\": \"86849\", \"median_seconds\": \"0.297201\", \"max_seconds\": \"0.29856\"}",
+      "title": "Medici�n HTTP real"
+    },
+    {
+      "annotation_level": "notice",
+      "message": "{\"os\": \"Windows\", \"students\": \"800\", \"months\": \"12\", \"charges\": \"9600\", \"payments\": \"9600\", \"bank_movements\": \"9600\", \"endpoint\": \"state\", \"bytes\": \"8093\", \"median_seconds\": \"0.394338\", \"max_seconds\": \"0.406239\"}",
+      "title": "Medici�n HTTP real"
+    },
+    {
+      "annotation_level": "notice",
+      "message": "{\"exits\": {\"unittest\": 0, \"browser\": 0, \"demo\": 0, \"roster\": 0}, \"unit\": {\"tests\": 354, \"seconds\": \"750.012\", \"outcome\": \"OK\"}}",
+      "title": "Resultados reales de las cuatro suites"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+os,students,months,charges,payments,bank_movements,endpoint,bytes,median_seconds,max_seconds
+Windows,800,12,9600,9600,9600,state,8093,0.394435,0.403689
+Windows,800,12,9600,9600,9600,bank-book,86849,0.299684,0.299961
+Windows,800,12,9600,9600,9600,accounting-report,421083,0.145015,0.145772

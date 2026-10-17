@@ -2,10 +2,12 @@
 
 - Cuentas escolares, cuenta destino, revisión histórica, otros ingresos y depósitos. Los recibos originales y correlativos se conservan. Fase 1: cuatro suites correctas en Linux y Windows.
 - Importación CSV/XLSX con perfiles editables, huella/usuario/fecha, duplicados y conflictos, cruces únicos y parciales, clasificaciones y acceso al extracto solo por Administración. Fase 2: cuatro suites correctas en ambos sistemas. Conversión entre cuentas/monedas pendiente.
-- Cierre mensual integrado: foto conservada, bloqueo de movimientos por servidor, reapertura administrativa con motivo y relación CSV/PDF para contador. Sin datos personales de menores ni cálculo de impuestos; opciones fiscales solo informativas. En validación final, todavía no declarado aprobado en Windows.
+- Cierre mensual integrado: foto conservada, bloqueo de movimientos por servidor, reapertura administrativa con motivo y relación CSV/PDF para contador. Sin datos personales de menores ni cálculo de impuestos; opciones fiscales solo informativas. Cuatro suites correctas con el código final: Linux 355 en 309,459 s (tres nativas omitidas), Windows 355 correctas en 666,551 s sin omisiones; normal/demo/roster salida 0 en ambos.
 - Conciliación automática limitada al mes revisado y candidatos vecinos, conservando unicidad en ambos lados. Medición HTTP con 800 alumnos, 12 y 36 meses; resultados en el informe, sin confundir reglas puras con rendimiento del servidor.
 - Esquemas 13→14→15 aditivos, copia previa verificada y cinco cortes reales por transición, fixture publicado 1.0.71 y referencia independiente de caja/reportes/morosidad. Instalación nueva vacía.
 - Corregido el aislamiento de fecha de la referencia; el rechazo real de movimientos futuros permanece. Archivo de referencia fijado a LF para conservar su huella en Windows, sin omitir la comprobación.
+- Otros ingresos en Caja efectivo no aparecen como pendientes bancarios imposibles de cruzar; conservan sus totales en caja y reportes. Con el cifrado bloqueado se rechaza la migración antes de crear su carpeta o copia de reversión.
+- Recuperación compuesta probada: libro conciliado y mes cerrado, contraseña y clave de recuperación sin el almacén original, integridad, cadena y consulta inmutable.
 - Facturas/editor e instalador nuevos no entregados. Sin publicación ni firma digital. [Estado y evidencia](docs/ESTADO-NOCHE.md).
 
 # Cobros y documentos financieros de prueba · 1.0.71 · 16/10/2026

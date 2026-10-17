@@ -1,4 +1,4 @@
 os,students,months,charges,payments,bank_movements,endpoint,bytes,median_seconds,max_seconds
-Linux,800,12,9600,9600,9600,state,7993,0.197489,0.202696
-Linux,800,12,9600,9600,9600,bank-book,86849,0.299858,0.421341
-Linux,800,12,9600,9600,9600,accounting-report,421083,0.157115,0.157906
+Linux,800,12,9600,9600,9600,state,7993,0.18561,0.208833
+Linux,800,12,9600,9600,9600,bank-book,86849,0.264491,0.390569
+Linux,800,12,9600,9600,9600,accounting-report,421083,0.141985,0.146417
