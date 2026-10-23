@@ -1,0 +1,91 @@
+name: Corrección de alumnos duplicados
+on:
+  push:
+    branches: [correccion/alumnos-duplicados]
+    paths:
+      - colegio/**
+      - static/**
+      - tests/**
+      - packaging/**
+      - .github/workflows/correccion-alumnos.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: alumnos-${{ github.sha }}
+  cancel-in-progress: false
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 55
+    env:
+      PYTHONUTF8: '1'
+      PYTHONFAULTHANDLER: '1'
+      VERSION: '1.0.73'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar navegador de prueba
+        shell: pwsh
+        run: |
+          npm install --no-save --package-lock=false --prefix "$env:RUNNER_TEMP/aula-node" playwright@1.58.2
+          if ($LASTEXITCODE -ne 0) { throw 'No se instaló Playwright.' }
+          "NODE_PATH=$env:RUNNER_TEMP/aula-node/node_modules" >> $env:GITHUB_ENV
+          & "$env:RUNNER_TEMP/aula-node/node_modules/.bin/playwright.cmd" install chromium
+          if ($LASTEXITCODE -ne 0) { throw 'No se instaló Chromium.' }
+      - name: Cuatro suites y compilación
+        shell: pwsh
+        run: |
+          ./packaging/build_windows.ps1 -Version $env:VERSION *>&1 | Tee-Object desktop-build.log
+          if ($LASTEXITCODE -ne 0) { throw 'Falló unittest o la compilación.' }
+          python tests/run_browser.py *>&1 | Tee-Object browser-normal.log
+          if ($LASTEXITCODE -ne 0) { throw 'Falló navegador normal.' }
+          python tests/run_browser.py --demo *>&1 | Tee-Object browser-demo.log
+          if ($LASTEXITCODE -ne 0) { throw 'Falló navegador Pruebas.' }
+          python tests/run_browser.py --roster *>&1 | Tee-Object browser-roster.log
+          if ($LASTEXITCODE -ne 0) { throw 'Falló navegador matrícula.' }
+      - name: Defender antes de ejecutar
+        shell: pwsh
+        run: ./packaging/scan_windows.ps1 -Path dist
+      - name: Instalación e impresión nativa y conservación
+        shell: pwsh
+        env:
+          AULA_RECEIPT_REPORT_DIR: ${{ runner.temp }}/aula-recibo-native
+        run: ./packaging/test_installer.ps1 -Version $env:VERSION
+      - uses: actions/download-artifact@v4
+        with:
+          name: Aula-1.0.71-validado
+          run-id: 38963579514
+          github-token: ${{ github.token }}
+          path: anterior-1.0.71
+      - name: Actualización real 1.0.71 y eliminación en EXE instalado
+        shell: pwsh
+        run: |
+          python tests/windows_duplicate_upgrade.py --previous anterior-1.0.71/Aula-Colegio-Instalador-1.0.71.exe --version $env:VERSION
+          if ($LASTEXITCODE -ne 0) { throw 'Falló la actualización desde 1.0.71.' }
+      - name: Defender después de ejecutar
+        shell: pwsh
+        run: ./packaging/scan_windows.ps1 -Path dist -ReportDir "$env:RUNNER_TEMP/defender-after-runtime"
+      - name: Conservar instalador solo si todas las comprobaciones pasan
+        uses: actions/upload-artifact@v4
+        with:
+          name: Aula-1.0.73-correccion-alumnos
+          path: dist/Aula-Colegio-Instalador-1.0.73.exe
+          if-no-files-found: error
+      - name: Conservar evidencia
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Correccion-alumnos-evidencia
+          path: |
+            *-build.log
+            browser-*.log
+            ${{ runner.temp }}/aula-recibo-native/
+            ${{ runner.temp }}/defender*/
+            C:/Users/runneradmin/AppData/Local/Temp/AulaColegio-Compilacion/logs/
+          if-no-files-found: warn

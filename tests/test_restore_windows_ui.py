@@ -1,6 +1,8 @@
 """Real Tk widgets on Windows; core/HTTP/browser checks run independently on Linux."""
 import os
 import sys
+import gc
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -10,6 +12,18 @@ from unittest.mock import patch
 @unittest.skipUnless(os.name=='nt','Necesita ventanas nativas de Windows y Tk.')
 class RestoreWindowsUITests(unittest.TestCase):
     def test_scrollable_review_and_independent_probe_do_not_need_an_active_database(self):
+        # Keep Tcl ownership in the process that uses its native widgets.
+        # This is the previously verified test lifecycle fix, without skipping assertions.
+        if os.environ.get('AULA_NATIVE_RESTORE_TEST_CHILD')!='1':
+            env=dict(os.environ,AULA_NATIVE_RESTORE_TEST_CHILD='1',PYTHONFAULTHANDLER='1')
+            result=subprocess.run([sys.executable,'-m','unittest',
+                'tests.test_restore_windows_ui.RestoreWindowsUITests', '-v'],
+                cwd=Path(__file__).resolve().parents[1],env=env,capture_output=True,text=True,
+                encoding='utf-8',errors='replace',timeout=90)
+            self.assertEqual(result.returncode,0,result.stdout+'\n'+result.stderr)
+            self.assertIn('Ran 1 test',result.stderr)
+            return
+        self.addCleanup(gc.collect)
         import tkinter as tk
         from colegio.desktop import restoration_review_dialog,main
         from colegio.restore import preview_restore
