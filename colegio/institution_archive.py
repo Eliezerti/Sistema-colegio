@@ -8,7 +8,7 @@ from .db import ValidationError, audit, charges, check_password, integer, next_r
 from .storage import consistent_backup
 
 KINDS = {'student': 'students', 'guardian': 'guardians'}
-ARCHIVE_ACTIONS = {'delete-unused-record'}
+ARCHIVE_ACTIONS = {'delete-unused-record', 'delete-error-student'}
 
 
 def admin_only(user):
@@ -29,10 +29,12 @@ def references(value, kind, target, context=''):
     return False
 
 
-def record_preview(db, kind, target, user):
+def record_preview(db, kind, target, user, *, created_by_error=False):
     admin_only(user)
     if kind not in KINDS:
         raise ValidationError('Tipo de ficha inválido.')
+    if created_by_error and kind != 'student':
+        raise ValidationError('Esta corrección solo permite eliminar un alumno creado por error.')
     target = integer(target, 1, 2147483647)
     record = db.execute(f'SELECT * FROM {KINDS[kind]} WHERE id=?', (target,)).fetchone()
     if not record:
@@ -49,15 +51,23 @@ def record_preview(db, kind, target, user):
             blocked.append(label)
 
     if kind == 'student':
-        linked('charges', 'student_id', 'Cargos, incluidos pagados o anulados')
+        linked('charges', 'student_id', 'Cargos, incluidos pagados o anulados', protect=not created_by_error)
         linked('payments', 'student_id', 'Pagos y recibos, incluidos anulados')
         linked('payment_plans', 'student_id', 'Convenios')
         linked('collection_notes', 'student_id', 'Seguimientos')
         linked('enrollment_documents', 'student_id', 'Constancias de matrícula', protect=False)
         linked('monthly_assessments', 'student_id', 'Evaluaciones de mensualidad', protect=False)
         # A positive assessment is history even if a damaged record lost its charge link.
-        if db.execute('SELECT 1 FROM monthly_assessments WHERE student_id=? AND (amount>0 OR charge_id IS NOT NULL)', (target,)).fetchone():
+        if not created_by_error and db.execute('SELECT 1 FROM monthly_assessments WHERE student_id=? AND (amount>0 OR charge_id IS NOT NULL)', (target,)).fetchone():
             blocked.append('Evaluaciones de mensualidad con importe')
+        if created_by_error:
+            allocations = [tuple(r) for r in db.execute('''SELECT a.* FROM allocations a
+                JOIN charges c ON c.id=a.charge_id WHERE c.student_id=?
+                ORDER BY a.payment_id,a.charge_id''', (target,))]
+            counts['Abonos aplicados a los cargos'] = len(allocations)
+            digest.update(json.dumps(allocations).encode())
+            if allocations:
+                blocked.append('Abonos aplicados a los cargos')
     elif kind == 'guardian':
         linked('students', 'guardian_id', 'Alumnos vinculados, incluidos archivados')
     # These documents have JSON snapshots rather than relational foreign keys.
@@ -81,10 +91,14 @@ def record_preview(db, kind, target, user):
             blocked.append(label)
     archived = bool(record['archived'])
     balance = sum(c['balance'] for c in charges(db, target)) if kind == 'student' else None
-    if not archived:
+    if not archived and not created_by_error:
         blocked.insert(0, 'Primero debes archivar esta ficha')
     result = {'kind': kind, 'id': target, 'name': record['name'], 'archived': archived,
               'balance': balance, 'counts': counts, 'blockers': blocked, 'can_delete': not blocked}
+    if created_by_error:
+        result.update(created_by_error=True, student_code=record['student_code'],
+                      grade_name=db.execute('SELECT name FROM grades WHERE id=?', (record['grade_id'],)).fetchone()[0],
+                      guardian_name=db.execute('SELECT name FROM guardians WHERE id=?', (record['guardian_id'],)).fetchone()[0])
     digest.update(json.dumps(result, sort_keys=True, ensure_ascii=False).encode())
     result['preview_hash'] = digest.hexdigest()
     return result
@@ -92,13 +106,21 @@ def record_preview(db, kind, target, user):
 
 def archive_action(db, endpoint, data, user, *, demo=False):
     admin_only(user)
-    preview = record_preview(db, data.get('kind'), data.get('id'), user)
+    if endpoint not in ARCHIVE_ACTIONS:
+        raise ValidationError('Operación de archivo inválida.')
+    created_by_error = endpoint == 'delete-error-student'
+    preview = record_preview(db, data.get('kind'), data.get('id'), user, created_by_error=created_by_error)
     if not preview['can_delete']:
+        if created_by_error:
+            raise ValidationError('No se puede eliminar esta ficha: ' + '; '.join(preview['blockers']) +
+                                  '. Revisa que hayas elegido la matrícula equivocada.')
         raise ValidationError('Esta ficha conserva historial o vínculos. Usa Archivar; un saldo de $0 no autoriza borrar movimientos.')
     if data.get('preview_hash') != preview['preview_hash']:
         raise ValidationError('La ficha cambió. Revisa nuevamente el detalle antes de borrar.')
     if data.get('confirmation') != 'BORRAR FICHA':
         raise ValidationError('Escribe BORRAR FICHA para confirmar.')
+    if created_by_error and data.get('student_code_confirmation') != preview['student_code']:
+        raise ValidationError('Escribe el código del alumno que deseas eliminar; revisa que sea la ficha equivocada.')
     reason = required(data, 'reason', 500)
     password = data.get('password')
     saved = db.execute('SELECT password FROM users WHERE id=?', (user['id'],)).fetchone()
@@ -124,6 +146,8 @@ def archive_action(db, endpoint, data, user, *, demo=False):
     if kind == 'student':
         db.execute('DELETE FROM monthly_assessments WHERE student_id=?', (target,))
         db.execute('DELETE FROM enrollment_documents WHERE student_id=?', (target,))
+        if created_by_error:
+            db.execute('DELETE FROM charges WHERE student_id=?', (target,))
     db.execute(f'DELETE FROM {table} WHERE id=?', (target,))
     if db.execute('PRAGMA foreign_key_check').fetchone():
         raise ValidationError('No se pudo validar el borrado. Los cambios se revertirán.')

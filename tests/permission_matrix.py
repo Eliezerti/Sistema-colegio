@@ -18,7 +18,7 @@ POST_ADMIN = ('settings', 'backup-directory', 'grades', 'guardians', 'students',
                 'import-roster', 'reopen-cash', 'transition-year',
               'cancel-plan', 'correct-billing-start', 'archive-student', 'archive-guardian',
               'restore-student', 'restore-guardian', 'delete-grade',
-               'delete-unused-record', 'clock-confirm', 'session-preferences',
+               'delete-unused-record', 'delete-error-student', 'clock-confirm', 'session-preferences',
               'recovery-notice-ack', 'crypto-prepare', 'crypto-confirm', 'crypto-unlock',
               'probe-backup', 'export-encrypted-backup', 'backup-now', 'backup-cloud-declare', )
 POST_WRITERS = ('generate', 'payments', 'collections', 'rates', 'expenses', 'charges', 'close-cash',
@@ -41,6 +41,7 @@ def cases():
             add('GET', kind+'/0'+extension, ALL, 400, kind+'/')
     add('GET', 'guardian-account/0', ALL, 400, 'guardian-account/')
     add('GET', 'archive-preview/student/0', ADMIN, 400, 'archive-preview/')
+    add('GET', 'student-deletion-preview/0', ADMIN, 400, 'student-deletion-preview/')
     for kind in ('students', 'payments', 'expenses'):
         add('GET', 'export?type='+kind, ALL, 200, 'export')
     for route in POST_ADMIN:

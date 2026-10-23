@@ -1,5 +1,8 @@
 """Offboarding must preserve paid history and make empty-record deletion reviewable."""
 from contextlib import closing
+import json
+import subprocess
+import sys
 import sqlite3
 import tempfile
 import unittest
@@ -30,6 +33,155 @@ class InstitutionArchiveTests(unittest.TestCase):
                   password='Una-clave-segura',confirmation='BORRAR FICHA',reason='Ficha duplicada de prueba')
         data.update(overrides)
         return data
+
+    def error_deletion(self, target, **overrides):
+        preview = self.request(f'student-deletion-preview/{target}')
+        data = dict(kind='student', id=target, preview_hash=preview['preview_hash'],
+                    student_code_confirmation=preview['student_code'], password='Una-clave-segura',
+                    confirmation='BORRAR FICHA', reason='Matrícula duplicada ficticia')
+        data.update(overrides)
+        return data
+
+    def duplicate(self):
+        return self.request('students', self.student_data(name='Matrícula equivocada', document='A-duplicada'))['id']
+
+    def test_error_deletion_removes_active_duplicate_and_unpaid_charges_only(self):
+        paid = self.request('payments', self.payment())['id']
+        original_receipt = self.request(f'receipt/{paid}.pdf')
+        reference = self.request('state')
+        cash = self.request('cash-preview')
+        duplicate = self.duplicate()
+        preview = self.request(f'student-deletion-preview/{duplicate}')
+        self.assertTrue(preview['can_delete'])
+        self.assertFalse(preview['archived'])
+        self.assertGreater(preview['balance'], 0)
+        self.assertGreater(preview['counts']['Cargos, incluidos pagados o anulados'], 0)
+        self.assertFalse(self.preview('student', duplicate)['can_delete'])
+        self.request('delete-error-student', self.error_deletion(duplicate))
+        after = self.request('state')
+        for key in ('students', 'guardians', 'charges', 'payments', 'expenses', 'summary', 'enrollments'):
+            self.assertEqual(reference[key], after[key], key)
+        self.assertEqual(cash, self.request('cash-preview'))
+        self.assertEqual(original_receipt, self.request(f'receipt/{paid}.pdf'))
+        self.request(f'student-deletion-preview/{duplicate}', status=400)
+        with closing(connect(self.path)) as db:
+            for table in ('charges', 'enrollment_documents', 'monthly_assessments'):
+                self.assertEqual(db.execute(f'SELECT COUNT(*) FROM {table} WHERE student_id=?', (duplicate,)).fetchone()[0], 0)
+            self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0], 'ok')
+            self.assertFalse(db.execute('PRAGMA foreign_key_check').fetchone())
+            from colegio.maintenance import review_database
+            self.assertTrue(review_database(db)['ok'])
+        fresh = self.request('students', self.student_data(name='Nueva matrícula', document='A-nueva'))
+        self.assertGreater(fresh['id'], duplicate)
+
+    def test_error_deletion_requires_password_code_confirmation_csrf_and_fresh_review(self):
+        duplicate = self.duplicate()
+        for overrides, status in (({'password':'incorrecta'},403), ({'password':'', 'demo':True},403),
+                                  ({'student_code_confirmation':'AL-equivocado'},400),
+                                  ({'confirmation':'BORRAR'},400), ({'kind':'guardian'},400),
+                                  ({'preview_hash':'anterior'},400), ({'reason':''},400)):
+            with self.subTest(overrides=overrides):
+                self.request('delete-error-student', self.error_deletion(duplicate, **overrides), status=status)
+        data = self.error_deletion(duplicate)
+        self.request('delete-error-student', data, status=403, csrf=False)
+        self.request('charges', {'student_id':duplicate, 'period':local_today().strftime('%Y-%m'),
+                                'concept':'Cargo ficticio', 'amount':'3', 'due_date':local_today().isoformat()})
+        self.request('delete-error-student', data, status=400)
+        self.assertTrue(self.request(f'student-deletion-preview/{duplicate}')['can_delete'])
+
+    def test_error_deletion_never_removes_paid_voided_or_financially_documented_students(self):
+        duplicate = self.duplicate()
+        old = self.error_deletion(duplicate)
+        paid = self.request('payments', self.payment(student_id=duplicate))['id']
+        self.request('delete-error-student', old, status=400)
+        self.request('void-payment', {'id':paid, 'reason':'Anulación ficticia'})
+        self.assertFalse(self.request(f'student-deletion-preview/{duplicate}')['can_delete'])
+        self.request('delete-error-student', self.error_deletion(duplicate), status=400)
+        self.assertTrue(self.request(f'receipt/{paid}.pdf').startswith(b'%PDF'))
+        self.request('guardian-documents', {'guardian_id':self.guardian, 'kind':'account'})
+        self.assertFalse(self.request(f'student-deletion-preview/{self.student}')['can_delete'])
+        self.request('delete-error-student', self.error_deletion(self.student), status=400)
+
+    def test_error_deletion_backup_failure_preserves_duplicate_and_all_charges(self):
+        duplicate = self.duplicate()
+        before = self.request('state')
+        data = self.error_deletion(duplicate)
+        with patch('colegio.institution_archive.consistent_backup', side_effect=OSError('Disco lleno ficticio')):
+            self.request('delete-error-student', data, status=400)
+        for key in ('students', 'charges', 'payments', 'enrollments'):
+            self.assertEqual(before[key], self.request('state')[key])
+
+    def test_error_deletion_backup_restores_duplicate_and_full_ledger(self):
+        duplicate = self.duplicate()
+        before = self.request('state')
+        result = self.request('delete-error-student', self.error_deletion(duplicate))
+        restored = Path(self.temp.name)/'restaurada'/'colegio.sqlite3'
+        restore(Path(result['backup_path']), restored.parent)
+        with closing(connect(restored)) as db:
+            self.assertIsNotNone(db.execute('SELECT id FROM students WHERE id=?', (duplicate,)).fetchone())
+            self.assertEqual(len(before['charges']), db.execute('SELECT COUNT(*) FROM charges WHERE cancelled=0').fetchone()[0])
+            self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0], 'ok')
+            self.assertFalse(db.execute('PRAGMA foreign_key_check').fetchone())
+            from colegio.audit_chain import local_status
+            self.assertTrue(local_status(db)['ok'])
+
+    def test_error_deletion_second_destination_failure_and_foreign_allocations_block_deletion(self):
+        duplicate = self.duplicate()
+        data = self.error_deletion(duplicate)
+        with tempfile.TemporaryDirectory() as destination:
+            self.request('backup-directory', {'backup_directory':destination})
+            with patch('colegio.backup_export.write_encrypted', side_effect=OSError('USB ficticio lleno')):
+                self.request('delete-error-student', data, status=400)
+            self.assertTrue(self.request(f'student-deletion-preview/{duplicate}')['can_delete'])
+            self.request('backup-directory', {'backup_directory':''})
+        paid = self.request('payments', self.payment())['id']
+        with closing(connect(self.path)) as db, db:
+            # Damaged imported link: never infer safety only from payments.student_id.
+            charge = db.execute('SELECT id FROM charges WHERE student_id=? ORDER BY id LIMIT 1', (duplicate,)).fetchone()[0]
+            db.execute('UPDATE allocations SET charge_id=? WHERE payment_id=?', (charge, paid))
+        preview = self.request(f'student-deletion-preview/{duplicate}')
+        self.assertIn('Abonos aplicados a los cargos', preview['blockers'])
+        self.request('delete-error-student', self.error_deletion(duplicate), status=400)
+
+    def test_error_deletion_real_process_termination_keeps_complete_or_intact_record(self):
+        from colegio.storage import consistent_backup
+        from colegio.audit_chain import adopt_restored, local_status
+        from colegio.db import initialize
+        duplicate = self.duplicate()
+        data = self.error_deletion(duplicate)
+        script = '''import json,os,sys
+from colegio.db import connect
+import colegio.audit_chain as chain
+import colegio.institution_archive as archive
+stage=sys.argv[2]
+original=archive.audit
+def before_audit(*args,**kwargs):
+    if stage=='after_delete': os._exit(71)
+    return original(*args,**kwargs)
+archive.audit=before_audit
+chain.checkpoint=lambda point: os._exit(71) if point==stage else None
+with connect(sys.argv[1]) as db:
+    db.execute('BEGIN IMMEDIATE')
+    user=dict(db.execute('SELECT * FROM users WHERE id=1').fetchone())
+    preview=archive.record_preview(db,'student',json.loads(sys.argv[3])['id'],user,created_by_error=True)
+    data=json.loads(sys.argv[3]);data['preview_hash']=preview['preview_hash']
+    archive.archive_action(db,'delete-error-student',data,user)
+'''
+        for stage in ('after_delete', 'before_commit', 'after_commit', 'after_head'):
+            with self.subTest(stage=stage):
+                target = self.path.parent/stage/'colegio.sqlite3'
+                consistent_backup(self.path, target); adopt_restored(target)
+                process = subprocess.run([sys.executable, '-c', script, str(target), stage, json.dumps(data)],
+                                         capture_output=True, timeout=30)
+                self.assertEqual(process.returncode, 71, process.stderr.decode())
+                initialize(target)
+                with closing(connect(target)) as db:
+                    expected = int(stage in ('after_delete', 'before_commit'))
+                    self.assertEqual(db.execute('SELECT COUNT(*) FROM students WHERE id=?', (duplicate,)).fetchone()[0], expected)
+                    count = db.execute('SELECT COUNT(*) FROM charges WHERE student_id=?', (duplicate,)).fetchone()[0]
+                    self.assertEqual(bool(count), bool(expected))
+                    self.assertTrue(local_status(db)['ok'])
+                    self.assertFalse(db.execute('PRAGMA foreign_key_check').fetchone())
 
     def empty_guardian(self):
         target=self.request('guardians',{'name':'Ficha sin alumnos','document':'V-vacia'})['id']

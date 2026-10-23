@@ -920,6 +920,9 @@ class Handler(BaseHTTPRequestHandler):
                     self.respond(200, pdf_bytes(result) if pdf else csv_bytes(result),
                         'application/pdf' if pdf else 'text/csv; charset=utf-8',
                         {'Content-Disposition': 'attachment; filename="bitacora.'+('pdf' if pdf else 'csv')+'"'})
+            elif endpoint.startswith('student-deletion-preview/'):
+                self.respond(200, record_preview(db, 'student', endpoint.split('/', 1)[1], user,
+                                                created_by_error=True))
             elif endpoint.startswith('archive-preview/'):
                 parts=endpoint.split('/')
                 if len(parts)!=3: raise ValidationError('Selecciona una ficha válida.')
