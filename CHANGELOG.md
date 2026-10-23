@@ -1,3 +1,9 @@
+# Corrección de matrículas duplicadas · en revisión
+
+- Opción discreta dentro de Editar matrícula, solo para Administración: eliminación definitiva de una ficha creada por error, sus constancias y sus cargos sin pagos, sin archivar primero. Revisión de vínculos, contraseña, confirmación del código y respaldo verificado antes de borrar.
+- Se conservan los bloqueos sobre pagos y recibos, incluso anulados, abonos aplicados, convenios, seguimientos y documentos financieros. Ningún representante, otra ficha, recibo ni correlativo de recibos se elimina o modifica. Los códigos de alumno y constancia no se reutilizan. No hay migración ni cambio de esquema.
+- Bitácora y respaldos conservados; no se ofrece eliminación de todas las copias existentes. El borrador de ingresos y facturas no forma parte de esta corrección.
+
 # Cobros y documentos financieros de prueba · 1.0.71 · 16/10/2026
 
 - Con autorización explícita, la limpieza única incluye estados de cuenta, solvencias y cierres de caja de prueba, junto con cobros y recibos. La revisión muestra sus cantidades y exige confirmar también esos documentos.

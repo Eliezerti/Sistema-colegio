@@ -17,6 +17,23 @@ Revisar ficha → Recuperar ficha → motivo y RECUPERAR. El alumno vuelve como 
 
 ## Borrar una ficha creada por error
 
+### Matrícula duplicada o equivocada
+
+En **Alumnos y matrículas**, abre **Editar** en la fila equivocada. Al final del formulario despliega **Corrección de fichas creadas por error** y pulsa **Eliminar esta ficha…**. Esta opción solo aparece para Administración, dentro de la ficha; no está junto a los botones del directorio.
+
+1. Revisa nombre, código, grado, representante y cantidades. No hace falta archivar ni dejar inactivo al alumno antes.
+2. Si solo tiene cargos sin pagos, Aula permite eliminar la ficha junto con esos cargos, sus evaluaciones de mensualidad y sus constancias. Deja de aparecer en alumnos, matrícula y morosidad, incluso después de reiniciar.
+3. Escribe el motivo, tu contraseña de Administrador, el código exacto de la ficha equivocada y BORRAR FICHA. En modo Pruebas se omite únicamente la contraseña; la revisión y las confirmaciones se conservan.
+4. Aula vuelve a comprobar todo dentro de la transacción y crea el respaldo previo verificado. Si falla el respaldo local o el segundo destino configurado, no borra. Si alguien cambió la ficha o registró un pago después de revisarla, tendrás que revisarla otra vez.
+
+**No elimina pagos ni recibos, aunque estén anulados**, abonos, convenios, seguimientos, estados de cuenta, solvencias ni vínculos con actas de pase de año. En esos casos muestra el motivo del bloqueo. El representante, los demás alumnos, los cobros y el correlativo de recibos se conservan. Los códigos eliminados de alumno y constancia no se reutilizan.
+
+Esta corrección quita la deuda equivocada del alumno eliminado; por eso disminuyen los pendientes de ese duplicado. Los importes cobrados y egresados, el cierre de caja y las cuentas de los demás alumnos permanecen iguales.
+
+El borrado es de la ficha en la base activa. La bitácora, el respaldo previo, las copias anteriores y los archivos descargados conservan información. No es borrado forense del disco ni eliminación de todas las copias existentes. No hay borrado masivo ni botón para deshacer: restaurar un respaldo completo puede dejar fuera operaciones posteriores.
+
+### Fichas vacías desde el Archivo de la institución
+
 **Un saldo de $0 no significa que esté vacía.** Los cargos pagados o anulados, pagos/recibos anulados o válidos y egresos mantienen bloqueado el borrado definitivo. También se comprueban convenios, seguimientos, relaciones de pago, actas y documentos familiares. Un representante con alumnos vinculados sigue protegido, aunque estén archivados.
 
 Solo si la ficha ya está archivada y no tiene movimientos ni vínculos protegidos aparece **Borrar definitivamente**:

@@ -12,6 +12,8 @@ Una instalación nueva comienza como «Mi colegio», sin registros ni usuarios p
 - [Comprobantes](docs/comprobante-media-carta.md): media carta vertical y ORIGINAL/COPIA en carta horizontal, con impresión normal.
 - [Archivo de la institución](docs/archivo-institucion.md): conservar historia y revisar un borrado permitido.
 
+Una matrícula duplicada se revisa en **Alumnos y matrículas → Editar → Corrección de fichas creadas por error → Eliminar esta ficha**. Solo Administración puede borrar la ficha, sus constancias y sus cargos sin pagos, con contraseña, código del alumno y respaldo previo verificado. No hace falta archivarla. Los pagos, documentos financieros, convenios y otros vínculos protegidos bloquean esta corrección. Se conservan la bitácora y los respaldos anteriores.
+
 Para la limpieza excepcional y única de cobros ficticios, estados de cuenta, solvencias y cierres de prueba antes de producción, consulta [Empezar recibos en R-000001](docs/limpieza-cobros-prueba.md). No reemplaces la carpeta de datos ni uses esta operación con pagos reales.
 
 ## Consulta y reportes

@@ -477,6 +477,26 @@ function printedTextLayout(pdf){
     await fill('reason','Borrar ficha ficticia sin movimientos');await fill('password','Prueba-segura-2026');await fill('confirmation','BORRAR FICHA');await submit();
     const archiveState=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());
     assert.equal(archiveState.guardians.some(g=>g.document==='V-ficha-vacia'),false);
+    // A mistaken active enrollment can be removed from its own edit form, without archiving first.
+    const beforeDeletion=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());
+    const mistaken=await apiPost('students',{...pastStudent,name:'Duplicado para eliminar',document:'A-BORRAR'});
+    await page.evaluate(()=>refresh());await nav('students');await page.locator('#search').fill('Duplicado para eliminar');
+    const mistakenRow=page.locator('tr').filter({hasText:'Duplicado para eliminar'});
+    assert.equal(await mistakenRow.locator('[data-action="student-delete-review"]').count(),0,'Deletion must not clutter the directory');
+    await mistakenRow.locator('[data-action="student"]').click();
+    assert.equal(await page.locator('dialog[open] [data-action="student-delete-review"]').isVisible(),false);
+    await page.locator('dialog[open] summary').getByText('Corrección de fichas creadas por error',{exact:true}).click();
+    await click('student-delete-review');await page.locator('form[data-endpoint="delete-error-student"]').waitFor();
+    assert.match(await page.locator('dialog[open]').innerText(),/Duplicado para eliminar/);
+    assert.match(await page.locator('dialog[open]').innerText(),/bitácora.*respaldos/);
+    await page.screenshot({path:scratch('aula-eliminar-duplicado.png'),fullPage:true});
+    await fill('reason','Matrícula ficticia duplicada');await fill('password','Prueba-segura-2026');
+    await fill('student_code_confirmation',mistaken.student_code);await fill('confirmation','BORRAR FICHA');await submit();
+    const afterDeletion=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());
+    for(const key of ['students','guardians','charges','payments','expenses','summary','enrollments'])assert.deepEqual(afterDeletion[key],beforeDeletion[key],key);
+    assert.equal(await page.locator('tr').filter({hasText:'Duplicado para eliminar'}).count(),0);
+    await page.reload();await page.getByRole('button',{name:'Confirmar tasa y entrar'}).click();await page.locator('.layout').waitFor();
+    assert.equal((await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json())).students.some(s=>s.id===mistaken.id),false);
     await apiPost('users',{name:'Usuario Caja',username:'caja',password:'Caja-segura-2026',role:'cashier'});
     await click('logout');await page.locator('.auth-form').getByLabel('Usuario',{exact:true}).fill('caja');await page.locator('.auth-form').getByLabel(/^Contraseña/).fill('Caja-segura-2026');
     await page.getByRole('button',{name:'Iniciar sesión'}).click();await page.locator('.gate-card .backup-persistent').waitFor();
