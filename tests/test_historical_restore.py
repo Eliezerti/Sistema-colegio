@@ -23,10 +23,10 @@ class HistoricalRestoreTests(unittest.TestCase):
                 summary=probe_backup(source)
                 self.assertEqual(summary['schema'],metadata['schema'])
                 target=approved_restore(source,directory)
-                self.assertEqual(probe_backup(target)['schema'],12,'La candidata se migra antes de publicarse')
+                self.assertEqual(probe_backup(target)['schema'],13,'La candidata se migra antes de publicarse')
                 with open_school(target,0):pass # Reuse the existing historical migrations unchanged.
                 with closing(connect(target)) as db:
-                    self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],12)
+                    self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],13)
                     self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
                     self.assertFalse(db.execute('PRAGMA foreign_key_check').fetchone())
                     self.assertEqual(db.execute('SELECT COUNT(*) FROM payments').fetchone()[0],1)

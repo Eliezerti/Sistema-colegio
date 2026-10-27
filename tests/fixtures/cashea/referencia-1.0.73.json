@@ -1,0 +1,170 @@
+{
+  "cash": {
+    "closed_on": "2026-10-27",
+    "lines": [
+      {
+        "method": "Efectivo",
+        "currency": "USD",
+        "income": 6000,
+        "expense": 1500,
+        "net": 4500,
+        "income_usd": 6000,
+        "expense_usd": 1500
+      },
+      {
+        "method": "Pago móvil",
+        "currency": "USD",
+        "income": 14000,
+        "expense": 0,
+        "net": 14000,
+        "income_usd": 14000,
+        "expense_usd": 0
+      },
+      {
+        "method": "Transferencia",
+        "currency": "VES",
+        "income": 270000,
+        "expense": 0,
+        "net": 270000,
+        "income_usd": 2700,
+        "expense_usd": 0
+      }
+    ],
+    "movements": [
+      {
+        "type": "income",
+        "id": 1,
+        "currency": "USD",
+        "received_amount": 5000,
+        "amount": 5000,
+        "method": "Efectivo",
+        "reference": "AUD-FICTICIO-001",
+        "voided": 0,
+        "exchange_rate": "1"
+      },
+      {
+        "type": "income",
+        "id": 2,
+        "currency": "VES",
+        "received_amount": 270000,
+        "amount": 2700,
+        "method": "Transferencia",
+        "reference": "AUD-FICTICIO-002",
+        "voided": 0,
+        "exchange_rate": "100"
+      },
+      {
+        "type": "income",
+        "id": 3,
+        "currency": "USD",
+        "received_amount": 14000,
+        "amount": 14000,
+        "method": "Pago móvil",
+        "reference": "AUD-FICTICIO-003",
+        "voided": 0,
+        "exchange_rate": "1"
+      },
+      {
+        "type": "income",
+        "id": 4,
+        "currency": "USD",
+        "received_amount": 1000,
+        "amount": 1000,
+        "method": "Efectivo",
+        "reference": "AUD-FICTICIO-004",
+        "voided": 0,
+        "exchange_rate": "1"
+      },
+      {
+        "type": "expense",
+        "id": 1,
+        "currency": "USD",
+        "received_amount": 1500,
+        "amount": 1500,
+        "method": "Efectivo",
+        "reference": "AUD-GASTO-FICTICIO",
+        "voided": 0,
+        "exchange_rate": "1"
+      }
+    ],
+    "preview_hash": "27a92e8beec721edaa82b934d39ed1aabd985dc28d3273640ada1f82bbf3c8f5",
+    "income_usd": 22700,
+    "expense_usd": 1500,
+    "active_id": null
+  },
+  "summary": {
+    "active_students": 5,
+    "pending": 24100,
+    "overdue": 24100,
+    "debtors": 3,
+    "income": 22700,
+    "expenses": 1500,
+    "net": 21200,
+    "aging": [
+      16400,
+      7700,
+      0,
+      0
+    ]
+  },
+  "daily": {
+    "payment_count": 4,
+    "debtor_count": 3,
+    "received_usd": 20000,
+    "received_ves": 270000,
+    "income_usd": 22700,
+    "overdue_usd": 24100
+  },
+  "monthly": {
+    "title": "Informe mensual de cierre",
+    "period": "2026-10",
+    "filter_label": "Movimientos del 2026-10-01 al 2026-10-31 · datos disponibles al emitir",
+    "count_label": "2026-10 · importes originales separados por moneda y método",
+    "income_usd": 22700,
+    "expenses_usd": 1500,
+    "net_usd": 21200,
+    "balances": [
+      {
+        "currency": "USD",
+        "method": "Efectivo",
+        "opening": 0,
+        "income": 6000,
+        "expense": 1500,
+        "closing": 4500,
+        "income_usd": 6000,
+        "expense_usd": 1500
+      },
+      {
+        "currency": "USD",
+        "method": "Pago móvil",
+        "opening": 0,
+        "income": 14000,
+        "expense": 0,
+        "closing": 14000,
+        "income_usd": 14000,
+        "expense_usd": 0
+      },
+      {
+        "currency": "VES",
+        "method": "Transferencia",
+        "opening": 0,
+        "income": 270000,
+        "expense": 0,
+        "closing": 270000,
+        "income_usd": 2700,
+        "expense_usd": 0
+      }
+    ],
+    "pending_by_grade": [
+      {
+        "grade": "Grado FICTICIO 1",
+        "pending": 5000
+      },
+      {
+        "grade": "Grado FICTICIO 2",
+        "pending": 19100
+      }
+    ],
+    "annulments": []
+  }
+}

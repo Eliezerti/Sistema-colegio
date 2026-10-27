@@ -76,7 +76,7 @@ class RestoreSafetyTests(unittest.TestCase):
         self.assertTrue(any(d['action']=='Anulación se revierte' for d in review['comparison']['details']))
         approved_restore(self.backup,self.directory)
         with closing(connect(self.target)) as db:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],12)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],13)
             for i,table in enumerate(SEQUENCES):self.assertEqual(next_record_id(db,table),11+i)
             event=json.loads(db.execute("SELECT details FROM audit WHERE action='restore-backup'").fetchone()[0])
             self.assertEqual(event['payment_changes'],2)

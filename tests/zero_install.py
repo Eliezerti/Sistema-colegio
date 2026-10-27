@@ -5,15 +5,16 @@ from colegio.audit_chain import portable_status
 
 BUSINESS=('students','guardians','grades','charges','payments','allocations','expenses',
           'exchange_rates','payment_plans','collection_notes','enrollment_documents',
-          'guardian_documents','year_transitions','monthly_assessments','cash_closures')
-SEQUENCES=('payments','expenses','students','guardians','enrollment_documents')
+          'guardian_documents','year_transitions','monthly_assessments','cash_closures','cashea_orders','cashea_allocations',
+          'cashea_settlements','cashea_settlement_orders','cashea_requests')
+SEQUENCES=('payments','expenses','students','guardians','enrollment_documents','cashea_orders','cashea_settlements')
 
 
 def assert_empty_database(path):
     with closing(sqlite3.connect(path)) as db:
         assert db.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
         assert not list(db.execute('PRAGMA foreign_key_check'))
-        assert db.execute('PRAGMA user_version').fetchone()[0]==12
+        assert db.execute('PRAGMA user_version').fetchone()[0]==13
         for table in (*BUSINESS,'users','audit','audit_links','sessions'):
             assert db.execute('SELECT COUNT(*) FROM '+table).fetchone()[0]==0,table
         profile=dict(db.execute('SELECT key,value FROM settings'))

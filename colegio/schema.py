@@ -41,6 +41,9 @@ def migrate(path, *, new=False):
     # writers within this process. Never publish automatic backups during migration.
     with path_lock(path), closing(connect(path)) as db:
         version = db.execute('PRAGMA user_version').fetchone()[0]
+        if version == 13:
+            verify(db)
+            return
         if version > VERSION:
             raise ValueError('Esta base requiere una versión más reciente de Aula.')
         work = path.parent / '.aula-schema-12'

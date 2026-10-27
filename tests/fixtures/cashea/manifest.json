@@ -1,0 +1,9 @@
+{
+  "version": "1.0.73",
+  "commit": "324d388",
+  "schema": 12,
+  "fictional": true,
+  "filename": "desktop-1.0.73-ficticio.sqlite3",
+  "sha256": "97ffe21d7821581fb86a44726deb9d3d2ef74a901013309248e915082dfca832",
+  "provenance": "Generada con las APIs normales del código publicado 324d388, sin alterar PRAGMA para simular una versión. Cinco alumnos y representantes FICTICIOS; sin sesiones ni credencial utilizable."
+}

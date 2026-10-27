@@ -126,7 +126,7 @@ def connect(path):
 
 
 def next_record_id(db, table):
-    if table not in ('payments', 'expenses', 'students', 'guardians', 'enrollment_documents'):
+    if table not in ('payments', 'expenses', 'students', 'guardians', 'enrollment_documents', 'cashea_orders', 'cashea_settlements'):
         raise ValueError('Correlativo desconocido.')
     floor = db.execute('SELECT value FROM settings WHERE key=?', ('id_floor_'+table,)).fetchone()
     largest = db.execute(f'SELECT COALESCE(MAX(id),0) FROM {table}').fetchone()[0]
@@ -145,6 +145,8 @@ def initialize(path):
             migrate(path)
             from .schema import migrate as migrate_schema
             migrate_schema(path)
+            from .cashea_schema import migrate as migrate_cashea
+            migrate_cashea(path)
             return
     with closing(connect(path)) as db, db:
         db.execute('PRAGMA journal_mode=WAL')
@@ -241,6 +243,8 @@ def initialize(path):
     migrate(path, new=new_database)
     from .schema import migrate as migrate_schema
     migrate_schema(path, new=new_database)
+    from .cashea_schema import migrate as migrate_cashea
+    migrate_cashea(path,new=new_database)
 
 
 
@@ -249,8 +253,16 @@ def audit(db, user_id, action, details):
     append(db, user_id, action, details)
 
 
-BALANCES = '''SELECT c.*,COALESCE((SELECT SUM(a.amount) FROM allocations a JOIN payments p ON p.id=a.payment_id
-    WHERE a.charge_id=c.id AND p.voided=0),0) AS paid FROM charges c WHERE c.cancelled=0'''
+FINANCED_SQL = '''COALESCE((SELECT SUM(a.amount) FROM cashea_allocations a JOIN cashea_orders o ON o.id=a.order_id
+    WHERE a.charge_id=c.id AND o.state<>'anulada'),0)'''
+PAID_SQL = '''COALESCE((SELECT SUM(a.amount) FROM allocations a JOIN payments p ON p.id=a.payment_id
+    WHERE a.charge_id=c.id AND p.voided=0),0) + '''+FINANCED_SQL
+BALANCES = 'SELECT c.*,'+PAID_SQL+' AS paid,'+FINANCED_SQL+' AS cashea_financed FROM charges c WHERE c.cancelled=0'
+
+
+def charge_coverage(db,charge_id):
+    row=db.execute('SELECT '+PAID_SQL+' FROM charges c WHERE c.id=?',(charge_id,)).fetchone()
+    return row[0] if row else 0
 
 
 def charges(db, student_id=None):
@@ -262,6 +274,7 @@ def charges(db, student_id=None):
     rows = [dict(r) for r in db.execute(query + ' ORDER BY due_date,c.id', params)]
     today = local_today().isoformat()
     for row in rows:
+        if not row['cashea_financed']:row.pop('cashea_financed')
         row['balance'] = row['amount'] - row['paid']
         row['overdue'] = row['balance'] > 0 and row['due_date'] < today
     return rows
@@ -351,7 +364,7 @@ def generate_month(db, data, user_id):
     return {'created': created}
 
 
-def record_payment(db, data, user_id):
+def record_payment(db, data, user_id, *, cashea=None):
     from .audit_chain import require
     require(db)
     from .clock_guard import require_database_clock
@@ -398,11 +411,17 @@ def record_payment(db, data, user_id):
         remaining -= applied
         if not remaining:
             break
-    receipt_snapshot = json.dumps({'person': dict(person), 'school': dict(db.execute('SELECT key,value FROM settings')),
-                                  'balance_before': total, 'balance_after': total-amount,
-                                  'payment_status': 'partial' if amount < total else 'complete',
-                                  'allocations': detail,
-                                  'operator': db.execute('SELECT name FROM users WHERE id=?', (user_id,)).fetchone()[0]}, ensure_ascii=False)
+    snapshot={'person':dict(person),'school':dict(db.execute('SELECT key,value FROM settings')),
+              'balance_before':total,'balance_after':total-amount,
+              'payment_status':'partial' if amount<total else 'complete','allocations':detail,
+              'operator':db.execute('SELECT name FROM users WHERE id=?',(user_id,)).fetchone()[0]}
+    if cashea is not None:
+        snapshot['cashea']={k:v for k,v in cashea.items() if k!='charge_totals'}
+        snapshot['balance_after']=total-cashea['total_amount']
+        snapshot['payment_status']='partial' if snapshot['balance_after'] else 'complete'
+        for line in detail:
+            line['balance_after']=line['balance_before']-cashea['charge_totals'].get(str(line['charge_id']),line['amount'])
+    receipt_snapshot=json.dumps(snapshot,ensure_ascii=False)
     result = db.execute('''INSERT INTO payments(id,student_id,amount,paid_on,method,reference,notes,created_by,created_at,request_key,currency,received_amount,exchange_rate,receipt_snapshot)
       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (next_record_id(db,'payments'), student_id, amount, paid_on, method, reference,
       notes, user_id, datetime.now(timezone.utc).isoformat(), request_key, currency, received, rate, receipt_snapshot))
