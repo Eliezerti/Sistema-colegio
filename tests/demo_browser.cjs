@@ -31,6 +31,18 @@ const fs=require('node:fs');
     assert.equal(await page.locator('.backup-persistent').count(),0);
     await nav('expenses');await click('expense');await fill('concept','Gasto temporal');await fill('amount','10');await submit();
     assert.equal(await page.locator('[data-action="salary-document"]').count(),0);
+    await page.evaluate(async()=>{
+      const s=await api('state?history=1'),today=s.today,year=Number(today.slice(0,4))-(Number(today.slice(5,7))<9?1:0);
+      const g=await api('grades',{name:'Grado FICTICIO Cashea',capacity:10});
+      const r=await api('guardians',{name:'Representante FICTICIO Cashea',document:'V-FICTICIO-CASHEA'});
+      const pupil=await api('students',{name:'Alumno FICTICIO Cashea',document:'',birth_date:'',guardian_id:r.id,grade_id:g.id,school_year:year,monthly_fee:'10',discount:0,status:'active',billing_start:today.slice(0,7),enrollment_start:`${year}-09-01`,enrollment_end:`${year+1}-08-31`});
+      const data={student_id:pupil.id,ordered_on:today,total:'10',initial_received:'0',initial_percent:'0',invoice_number:'F-FICTICIA-DEMO-001',request_key:'cashea-demo-ficticia-001'};
+      data.preview_hash=(await api('cashea-preview',data)).preview_hash;await api('cashea-order',data);
+    });
+    const casheaPdf=await page.evaluate(async()=>await(await fetch('/api/cashea-order/1.pdf')).text());
+    assert.ok(casheaPdf.includes('PRUEBA SIN VALIDEZ'));
+    const casheaCsv=await page.evaluate(async()=>await(await fetch('/api/cashea-report.csv?type=sales')).text());
+    assert.ok(casheaCsv.includes('PRUEBA SIN VALIDEZ'));
     await page.reload();await page.getByRole('button',{name:'Confirmar tasa y entrar'}).click();await page.locator('.layout').waitFor();
     assert.equal(await page.evaluate(async()=>(await(await fetch('/api/state?history=1')).json()).expenses.length),1,'Reload must preserve the running trial');
     await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);

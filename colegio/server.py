@@ -938,14 +938,14 @@ class Handler(BaseHTTPRequestHandler):
                 from .cashea_reports import document_pdf
                 kind='order' if endpoint.startswith('cashea-order/') else 'settlement'
                 raw=endpoint.split('/',1)[1];target=raw.removesuffix('.pdf')
-                self.respond(200,document_pdf(db,kind,target) if raw.endswith('.pdf') else detail(db,kind,target),
+                self.respond(200,document_pdf(db,kind,target,demo=self.server.demo) if raw.endswith('.pdf') else self.server.mark_document(detail(db,kind,target)),
                     'application/pdf' if raw.endswith('.pdf') else 'application/json; charset=utf-8')
             elif endpoint in ('cashea-report','cashea-report.csv','cashea-report.pdf','cashea-report.xlsx'):
                 from .cashea_reports import report,export as export_cashea
                 query=parse_qs(url.query);kind=query.get('type',['pending'])[0]
-                if endpoint=='cashea-report':self.respond(200,report(db,kind,public_user,query))
+                if endpoint=='cashea-report':self.respond(200,self.server.mark_document(report(db,kind,public_user,query)))
                 else:
-                    extension=endpoint.rsplit('.',1)[1];content,mime=export_cashea(db,kind,public_user,extension,query)
+                    extension=endpoint.rsplit('.',1)[1];content,mime=export_cashea(db,kind,public_user,extension,query,demo=self.server.demo)
                     self.respond(200,content,mime,{'Content-Disposition':f'attachment; filename="cashea-{kind}.{extension}"'})
             elif endpoint.startswith('student-deletion-preview/'):
                 self.respond(200, record_preview(db, 'student', endpoint.split('/', 1)[1], user,

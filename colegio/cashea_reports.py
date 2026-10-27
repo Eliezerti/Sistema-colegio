@@ -10,8 +10,17 @@ def signed(cents,currency='USD'):
     return ('-' if cents<0 else '')+amount(abs(cents),currency)
 
 
-def document_pdf(db,kind,target):
+def mark_trial(value,demo):
+    if demo:
+        value=dict(value,demo=True,school=dict(value['school']))
+        school=value['school']
+        school['legal_name']='PRUEBA SIN VALIDEZ - '+(school.get('legal_name') or school.get('school_name','Colegio'))
+    return value
+
+
+def document_pdf(db,kind,target,*,demo=False):
     doc=detail(db,kind,target)
+    doc=mark_trial(doc,demo)
     pdf=PDF('Comprobante Cashea' if kind=='order' else 'Liquidación Cashea',doc['school'],size=(396,612))
     pdf.line(doc['code']+' · '+doc['state'],True)
     if doc['void_reason']:pdf.line('ANULADO: '+doc['void_reason'],True)
@@ -66,11 +75,12 @@ def report(db,kind,user,query=None):
         headers=headers,rows=rows,detail_headers=detail_headers,details=details,note=NOTE+' El listado usa AL-, sin cédula, nacimiento ni nombre del menor.')
 
 
-def export(db,kind,user,extension,query=None):
-    value=report(db,kind,user,query)
+def export(db,kind,user,extension,query=None,*,demo=False):
+    value=mark_trial(report(db,kind,user,query),demo)
     if extension=='pdf':return daily_pdf(value),'application/pdf'
     headers=value['headers'];rows=value['rows']
     if kind=='pending':headers=value['detail_headers'];rows=value['details']
+    if demo:headers=['PRUEBA SIN VALIDEZ · '+headers[0],*headers[1:]]
     def safe(v):
         v=str(v)
         return "'"+v if v.lstrip().startswith(('=','+','-','@')) or v.isdecimal() else v
