@@ -517,6 +517,7 @@ function printedTextLayout(pdf){
     await assertRetired('reader');
     await click('logout');await page.locator('.auth-form').getByLabel('Usuario',{exact:true}).fill('admin');await page.locator('.auth-form').getByLabel(/^Contraseña/).fill('Prueba-segura-2026');
     await page.getByRole('button',{name:'Iniciar sesión'}).click();await page.getByRole('button',{name:'Confirmar tasa y entrar'}).click();await page.locator('.layout').waitFor();
+    await require('./cashea_browser.cjs')(page);
     await require('./session_browser.cjs')(page,expectedSessionError);
     await nav('settings');await settingsTab('Protección y mantenimiento');
     assert.equal(await page.locator('[data-action="reset-review"],.reset-settings').count(),0);

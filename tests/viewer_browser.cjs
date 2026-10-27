@@ -13,13 +13,13 @@ const {chromium}=require('playwright');
   assert.equal(await page.getByRole('button',{name:'Registrar pago',exact:true}).count(),0);
   const before=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());
   assert.equal(before.payments.length,1);assert.equal(before.user.role,'reader');
-  for(const id of ['billing','payments','reports','students']){
+  for(const id of ['billing','payments','cashea','reports','students']){
    await page.locator(`.nav-button[data-id="${id}"]`).click();
    await page.locator(`.nav-button.active[data-id="${id}"]`).waitFor();
    assert.equal(await page.locator('#readonly-banner').isVisible(),true);
   }
   const blocked=await page.evaluate(async()=>{
-   const routes=['payments','expenses','confirm-rate','generate','restore','settings','backup-now','import-roster','transition-year','crypto-confirm'];
+   const routes=['payments','expenses','confirm-rate','generate','restore','settings','backup-now','import-roster','transition-year','crypto-confirm','cashea-order','cashea-settlement','cashea-settings','cashea-void-order','cashea-void-settlement','cashea-order-date'];
    return await Promise.all(routes.map(async route=>{const r=await fetch('/api/'+route,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});return r.status;}));
   });assert.ok(blocked.every(status=>status===403));
   const after=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());

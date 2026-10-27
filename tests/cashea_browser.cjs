@@ -1,0 +1,51 @@
+'use strict';
+const assert=require('node:assert/strict');
+module.exports=async function(page){
+  const seeded=await page.evaluate(async()=>{
+    const v=await api('state?history=1'),today=v.today,year=Number(today.slice(0,4))-(Number(today.slice(5,7))<Number(v.settings.start_month)?1:0);
+    for(const c of v.cash_closures||[])if(c.closed_on===today&&!c.reopened_at)await api('reopen-cash',{id:c.id,reason:'Preparar flujo Cashea FICTICIO de navegador'});
+    const g=await api('grades',{name:'Grado FICTICIO Cashea',capacity:30});
+    const r=await api('guardians',{name:'Representante FICTICIO Cashea',document:'V-FICTICIO-CASHEA'});
+    const pupil=await api('students',{name:'Alumno FICTICIO Cashea',document:'',birth_date:'',guardian_id:r.id,grade_id:g.id,school_year:year,monthly_fee:'130',discount:0,status:'active',billing_start:today.slice(0,7),enrollment_start:`${year}-${String(v.settings.start_month).padStart(2,'0')}-01`,enrollment_end:`${year+1}-08-31`});
+    await refresh();return pupil;
+  });
+  await page.evaluate(id=>openPayment(id),seeded.id);
+  await page.locator('dialog[open] [name="method"]').selectOption('Cashea');
+  const sale=page.locator('form[data-endpoint="cashea-order"]');await sale.waitFor();
+  assert.equal(await sale.locator('[name="total"]').inputValue(),'130.00');
+  await sale.getByRole('button',{name:'Calcular inicial en USD'}).click();
+  assert.equal(await sale.locator('[name="initial_received"]').inputValue(),'78.00');
+  await sale.locator('[name="invoice_number"]').fill('FACTURA-FICTICIA-CASHEA-001');
+  await sale.getByRole('button',{name:'Revisar venta'}).click();
+  await sale.getByRole('button',{name:'Confirmar registro'}).waitFor();
+  assert.match(await sale.locator('.cashea-preview').innerText(),/52,00/);
+  await sale.getByRole('button',{name:'Confirmar registro'}).click();
+  await page.locator('dialog[open] h2').filter({hasText:'CA-000001'}).waitFor();
+  assert.match(await page.locator('dialog[open]').innerText(),/No es factura fiscal|no es factura fiscal/);
+  const pdf=await page.evaluate(async()=>{
+    const b=await(await fetch('/api/cashea-order/1.pdf')).arrayBuffer();return new TextDecoder('latin1').decode(b);
+  });assert.ok(pdf.includes('/MediaBox [0 0 396 612]'));
+  await page.locator('dialog[open] [data-action="close"]').first().click();
+  const state=await page.evaluate(()=>api('state?history=1'));
+  const pupil=state.students.find(s=>s.id===seeded.id);assert.equal(pupil.balance,0);assert.equal(pupil.overdue,0);
+  await page.locator('.nav-button[data-id="cashea"]').click();
+  await page.getByRole('heading',{name:'Cashea por liquidar'}).waitFor();
+  assert.match(await page.locator('#page-content').innerText(),/CA-000001/);
+  await page.getByRole('button',{name:'Registrar liquidación',exact:true}).click();
+  const batch=page.locator('form[data-endpoint="cashea-settlement"]');await batch.locator('[name="order_ids"]').first().check();
+  await batch.locator('[name="amount"]').fill('52');await batch.locator('[name="reference"]').fill('BANCO-FICTICIO-0001');
+  await batch.getByRole('button',{name:'Revisar liquidación'}).click();await batch.getByRole('button',{name:'Confirmar registro'}).waitFor();
+  await batch.getByRole('button',{name:'Confirmar registro'}).click();
+  await page.locator('dialog[open] h2').filter({hasText:'CL-000001'}).waitFor();
+  await page.locator('dialog[open] [data-action="close"]').first().click();
+  const final=await page.evaluate(()=>api('cashea'));assert.equal(final.pending,0);assert.equal(final.settlements[0].amount,5200);
+  // This run has earlier normal R-; find the initial by its new order association.
+  const order=final.orders.find(o=>o.student_id===seeded.id);
+  await page.evaluate(id=>receipt(id),order.payment_id);
+  assert.match(await page.locator('dialog[open] .payment-receipt').innerText(),/Pago con Cashea/);
+  await page.locator('dialog[open] [data-action="close"]').first().click();
+  await page.locator('.nav-button[data-id="settings"]').click();
+  await page.getByRole('tab',{name:'Cashea',exact:true}).click();
+  assert.equal(await page.locator('form[data-endpoint="cashea-settings"] [name="cashea_settlement_day"]').inputValue(),'2');
+  console.log('PASS CASHEA: método de cobro, calculadora exacta 130/78/52, revisión/confirmación, PDF 396×612, saldo y mora cero, liquidación seleccionada CL-, recibo de inicial y ajustes.');
+};

@@ -1,3 +1,10 @@
+# Cashea · 1.0.74 · en revisión
+
+- Ventas CA-, inicial con R- normal si es positiva y cobertura financiada separada del dinero recibido. Inicial cero sin recibo R-. Saldo, morosidad, convenios, estados de cuenta y solvencias incluyen la cobertura.
+- Liquidaciones CL- por selección, moneda/tasa original, referencias y diferencias con motivo; ajustes por Administración y anulaciones protegidas. La comisión no crea egreso automático. Todas las escrituras tienen idempotencia, permisos, CSRF y bitácora.
+- Informes PDF/CSV/XLSX, listado externo solo con AL-, sección mensual al corte y depósitos bancarios separados del efectivo físico en caja. Los recibos históricos conservan sus snapshots.
+- Migración aditiva 12 → 13 con copia previa verificada y copia cifrada en el segundo destino configurado; sin retirar registros. Tablas nuevas incluidas en respaldos, restauración, integridad, pisos y modo consulta. [Guía](docs/cashea.md). Resultados reales en docs/interno/cashea-validacion.md al terminar la validación.
+
 # Corrección de matrículas duplicadas · en revisión
 
 - Opción discreta dentro de Editar matrícula, solo para Administración: eliminación definitiva de una ficha creada por error, sus constancias y sus cargos sin pagos, sin archivar primero. Revisión de vínculos, contraseña, confirmación del código y respaldo verificado antes de borrar.

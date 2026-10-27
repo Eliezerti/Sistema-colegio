@@ -5,7 +5,8 @@ let sessionPulsePending=false, sessionCheckPending=false, sessionCheckedAt=-Infi
 let sessionDraft=null, recoveryNotice=null, sessionWarning;
 const draftEndpoints=new Set(['students','guardians','grades','payments','expenses','charges',
   'close-cash','rates','settings','backup-directory','session-preferences','users','password',
-  'payment-plans','collections','generate','correct-billing-start']);
+  'payment-plans','collections','generate','correct-billing-start','cashea-order','cashea-settlement',
+  'cashea-settings','cashea-void-order','cashea-void-settlement','cashea-order-date']);
 
 function sessionHeaders(response, started){
   const remaining=Number(response.headers.get('X-Aula-Idle-Remaining'));
@@ -102,7 +103,8 @@ function lockSession(){
     try{captureSessionDraft();}catch{sessionDraft=null;captureFailed=true;}
     publicSchool=state?.settings||publicSchool;
   }
-  sessionGeneration++;sessionDeadline=0;sessionWarning?.close();recoveryNotice=null;
+  sessionGeneration++;
+  if(typeof casheaView!=='undefined')casheaView=undefined;sessionDeadline=0;sessionWarning?.close();recoveryNotice=null;
   yearCohort=yearPreview=yearRequest=rosterFile=rosterPreview=cashPreview=undefined;
   gateBackup=gateRole=undefined;filters={};
   session=undefined;state=undefined;settingsDrafts={};modal.close();
@@ -138,6 +140,7 @@ async function resumeSessionDraft(){
 
 function forgetSessionDraft(){
   sessionDraft=null;settingsDrafts={};recoveryNotice=null;sessionGeneration++;
+  if(typeof casheaView!=='undefined')casheaView=undefined;
   yearCohort=yearPreview=yearRequest=rosterFile=rosterPreview=cashPreview=undefined;
   sessionDeadline=0;sessionWarning?.close();
 }
