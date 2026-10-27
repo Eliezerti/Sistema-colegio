@@ -133,7 +133,16 @@ def next_record_id(db, table):
     return max(largest, int(floor[0]) if floor else 0) + 1
 
 
-def initialize(path):
+def initialize(path, *, verified_copy=False):
+    if verified_copy:
+        # Only internal callers migrating an already staged, disposable backup.
+        # No HTTP parameter or preference enables this context for the live base.
+        saved=Path(path)
+        wal=saved.with_name(saved.name+'-wal')
+        if not saved.is_file() or (wal.exists() and wal.stat().st_size):
+            raise ValueError('La copia privada debe estar completa y sin un WAL activo.')
+        from .backup_inspection import inspect_copy
+        inspect_copy(saved)
     new_database = not Path(path).exists()
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     from .audit_chain import migrate, VERSION
@@ -146,7 +155,7 @@ def initialize(path):
             from .schema import migrate as migrate_schema
             migrate_schema(path)
             from .cashea_schema import migrate as migrate_cashea
-            migrate_cashea(path)
+            migrate_cashea(path,verified_copy=verified_copy)
             return
     with closing(connect(path)) as db, db:
         db.execute('PRAGMA journal_mode=WAL')
@@ -244,7 +253,7 @@ def initialize(path):
     from .schema import migrate as migrate_schema
     migrate_schema(path, new=new_database)
     from .cashea_schema import migrate as migrate_cashea
-    migrate_cashea(path,new=new_database)
+    migrate_cashea(path,new=new_database,verified_copy=verified_copy)
 
 
 

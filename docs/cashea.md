@@ -32,6 +32,8 @@ Los estados de cuenta muestran la cobertura inicial + financiado. El informe men
 
 Instala 1.0.74 sobre el programa; no reemplaces la carpeta de datos. La migración 12 → 13 verifica la base y conserva `backups/antes-cashea-...sqlite3` y su comprobación `.migration.json`. Si hay segundo destino configurado, exige y verifica allí una copia cifrada del esquema anterior antes de cambiarlo; si falla, no migra. Esa copia previa no se elimina por la rotación normal.
 
+Al convertir, restaurar o abrir un respaldo antiguo en consulta, Aula migra una copia temporal verificada. No escribe en el segundo destino de la escuela de origen ni necesita su almacén de llaves. El archivo original se conserva intacto; para una copia cifrada sigue siendo necesaria su contraseña o clave de recuperación.
+
 Para revisar una reversión, cierra Aula y usa 1.0.73 **en otra carpeta de datos** con una copia de la base previa verificada. No abras una base 13 con el ejecutable anterior. Conserva la base 13 y todos los registros posteriores para revisión: volver a la copia previa no traslada operaciones posteriores. La restauración normal de Aula conserva sus advertencias, pisos de numeración e informes de pérdida. Una instalación nueva continúa vacía, sin usuarios por defecto.
 
 La validación de impresora física y la revisión de una liquidación real con el contador requieren al colegio. Las pruebas automatizadas usan exclusivamente información ficticia.

@@ -101,7 +101,7 @@ def open_copy(source, credential=None, credential_kind='password', *, port=0):
             from .audit_chain import adopt_restored
             from .db import initialize
             # Migration affects only the verified disposable copy, never the source.
-            adopt_restored(path);initialize(path)
+            adopt_restored(path);initialize(path,verified_copy=True)
             with closing(sqlite3.connect(path)) as db:db.execute('PRAGMA wal_checkpoint(TRUNCATE)')
             inspect_copy(path)
         copied=datetime.fromtimestamp(source.stat().st_mtime).astimezone().isoformat(timespec='seconds')

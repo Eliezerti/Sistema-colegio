@@ -68,6 +68,8 @@ El informe Cashea al corte se calcula por fecha de venta, recepción y anulació
 
 Migración: reserva de escritor y bloqueo → verificar 12/cadena/FK → copia previa consistente y hash comprobado (con cifrado de segundo destino si está configurado) → DDL aditivo, defaults y guards de nuevas tablas → version 13/evento → verificar y COMMIT. Reintento tras corte completa o conserva íntegro 12; no hay media migración. Reversión documentada con copia anterior y 1.0.73 en carpeta distinta, conservando datos posteriores para revisión. Fixture real ficticio creado por el código publicado 324d388, sin falsificar PRAGMA para simular una versión.
 
+Precisión comprobada durante la implementación: convertir, restaurar o consultar un respaldo usa una **copia privada ya verificada**, sin WAL activo, y mantiene allí su copia previa de migración. Ese contexto interno no vuelve a publicar en el segundo destino que figura dentro de la copia antigua ni exige el almacén de llaves de la escuela de origen. No es una preferencia ni un parámetro HTTP. La migración de la base activa conserva obligatoriamente el respaldo cifrado del segundo destino configurado; una prueba adicional comprueba que la falta de llaves la detiene antes del DDL. Así se conserva la portabilidad sin escribir en la carpeta externa de origen.
+
 ## Validación y entrega
 
 - Referencia sin Cashea: mismos pagos, allocations, importes, snapshots, numeración, caja y reportes de 1.0.73; ajustes/esquema/tablas técnicas nuevos se documentan aparte.

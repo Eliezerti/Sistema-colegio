@@ -131,7 +131,7 @@ def restore(backup,directory,*,preview_hash=None,confirmation=None,emergency_flo
         # Upgrade only the staged candidate, after A1 approval and original-copy
         # preservation, before publishing any database that can serve requests.
         from .db import initialize
-        initialize(candidate)
+        initialize(candidate,verified_copy=True)
         with closing(connect(candidate)) as db,db:
             db.execute('PRAGMA synchronous=FULL')
             for table,floor in floors.items():

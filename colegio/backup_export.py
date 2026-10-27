@@ -49,7 +49,7 @@ def _write_encrypted(source,destination,directory,*,preserve_schema12=False):
             from .audit_chain import adopt_restored
             from .db import initialize
             adopt_restored(snapshot)
-            initialize(snapshot)
+            initialize(snapshot,verified_copy=True)
             with closing(sqlite3.connect(snapshot)) as db:db.execute('PRAGMA wal_checkpoint(TRUNCATE)')
             digest=hashlib.sha256(snapshot.read_bytes()).hexdigest()
         encoded,keys=encrypt(snapshot.read_bytes(),state,nonces)

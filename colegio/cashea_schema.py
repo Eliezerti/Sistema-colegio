@@ -50,7 +50,7 @@ def checkpoint(stage):
     """Real process-termination test boundary; no environment bypass."""
 
 
-def migrate(path, *, new=False):
+def migrate(path, *, new=False,verified_copy=False):
     from .db import connect,audit
     from .schema import verify,install_triggers_missing
     from .audit_chain import path_lock
@@ -75,7 +75,7 @@ def migrate(path, *, new=False):
                 if not digest or file_hash(backup)!=digest:raise ValueError('El respaldo previo de Cashea no se pudo verificar.')
                 (backup.with_suffix('.migration.json')).write_text(json.dumps({'schema_before':12,'schema_after':13,'sha256':digest,'backup':backup.name}),encoding='utf-8')
                 secondary=db.execute("SELECT value FROM settings WHERE key='backup_directory'").fetchone()
-                if secondary and secondary[0]:
+                if secondary and secondary[0] and not verified_copy:
                     from .backup_export import write_cashea_migration_backup
                     write_cashea_migration_backup(backup,Path(secondary[0])/(backup.stem+'.aulabak'),path.parent)
             checkpoint('backup_verified')
@@ -85,7 +85,8 @@ def migrate(path, *, new=False):
             for key,value in DEFAULTS.items():db.execute('INSERT OR IGNORE INTO settings VALUES(?,?)',(key,value))
             for table in SEQUENCES:db.execute('INSERT OR IGNORE INTO settings VALUES(?,?)',('id_floor_'+table,'0'))
             db.execute('PRAGMA user_version=13')
-            if not new:audit(db,None,'cashea-schema',{'schema_before':12,'schema_after':13,'backup':str(backup)})
+            if not new:audit(db,None,'cashea-schema',{'schema_before':12,'schema_after':13,'backup':str(backup),
+                'verified_private_copy':verified_copy})
             verify(db);checkpoint('before_commit');db.commit();checkpoint('after_commit')
         except BaseException:
             db.rollback();raise

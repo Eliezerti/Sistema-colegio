@@ -130,5 +130,39 @@ initialize(sys.argv[1])
             self.assertEqual(probe_backup(cipher,PASSWORD)['schema'],13)
             self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),before)
 
+    def test_old_copy_with_configured_second_destination_converts_and_opens_without_writing_there(self):
+        from tests.crypto_helpers import configure,PASSWORD
+        from colegio.backup_export import write_encrypted
+        from colegio.read_only import open_copy
+        with tempfile.TemporaryDirectory() as directory,tempfile.TemporaryDirectory() as second:
+            path=self.fixture(directory);configure(path.parent)
+            with closing(connect(path)) as db,db:db.execute("UPDATE settings SET value=? WHERE key='backup_directory'",(second,))
+            before=hashlib.sha256(path.read_bytes()).hexdigest()
+            cipher=path.parent/'portatil.aulabak'
+            write_encrypted(path,cipher,path.parent)
+            self.assertEqual(probe_backup(cipher,PASSWORD)['schema'],13)
+            origin_files={p.relative_to(path.parent) for p in path.parent.rglob('*')}
+            with open_copy(path) as viewer:
+                with closing(viewer.connect_view()) as db:self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],13)
+            self.assertEqual(origin_files,{p.relative_to(path.parent) for p in path.parent.rglob('*')})
+            from tests.restore_helpers import approved_restore
+            restored=approved_restore(path,path.parent/'restaurada')
+            self.assertEqual(probe_backup(restored)['schema'],13)
+            self.assertEqual(list(Path(second).iterdir()),[],'La conversión y consulta privadas no publican en el destino de la escuela de origen.')
+            self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),before)
+
+    def test_live_migration_still_fails_before_ddl_if_configured_secondary_cannot_encrypt(self):
+        from colegio.backup_crypto import CryptoError
+        with tempfile.TemporaryDirectory() as directory,tempfile.TemporaryDirectory() as second:
+            path=self.fixture(directory)
+            with closing(connect(path)) as db,db:db.execute("UPDATE settings SET value=? WHERE key='backup_directory'",(second,))
+            with closing(connect(path)) as db:before=list(db.iterdump())
+            with self.assertRaises(CryptoError):initialize(path)
+            with closing(connect(path)) as db:
+                self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],12)
+                self.assertEqual(list(db.iterdump()),before)
+                self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
+            self.assertEqual(list(Path(second).iterdir()),[])
+
 
 if __name__=='__main__':unittest.main()
