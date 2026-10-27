@@ -79,7 +79,6 @@ def export(db,kind,user,extension,query=None,*,demo=False):
     value=mark_trial(report(db,kind,user,query),demo)
     if extension=='pdf':return daily_pdf(value),'application/pdf'
     headers=value['headers'];rows=value['rows']
-    if kind=='pending':headers=value['detail_headers'];rows=value['details']
     if demo:headers=['PRUEBA SIN VALIDEZ · '+headers[0],*headers[1:]]
     def safe(v):
         v=str(v)

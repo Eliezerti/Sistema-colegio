@@ -230,6 +230,11 @@ class CasheaTests(unittest.TestCase):
         monthly=self.request('monthly-report?month='+local_today().strftime('%Y-%m'))
         self.assertEqual(monthly['cashea']['financed'],5200)
         self.assertEqual(monthly['cashea']['pending'],5200)
+        pending=self.request('cashea-report.csv?type=pending').decode('utf-8-sig')
+        self.assertTrue(pending.startswith('Semana;Órdenes;Financiado USD;Neto esperado USD;Vencidas'))
+        import io,zipfile
+        with zipfile.ZipFile(io.BytesIO(self.request('cashea-report.xlsx?type=pending'))) as archive:
+            self.assertIn(b'Semana',archive.read('xl/worksheets/sheet1.xml'))
 
     def test_monthly_cut_uses_reception_and_void_dates_not_current_status(self):
         from colegio.cashea import cutoff_summary
