@@ -44,6 +44,12 @@ module.exports=async function(page){
   await page.evaluate(id=>receipt(id),order.payment_id);
   assert.match(await page.locator('dialog[open] .payment-receipt').innerText(),/Pago con Cashea/);
   await page.locator('dialog[open] [data-action="close"]').first().click();
+  await page.evaluate(id=>guardianAccount(id),pupil.guardian_id);
+  assert.match(await page.locator('dialog[open]').innerText(),/Pagada con Cashea/);
+  await page.getByRole('button',{name:'Emitir constancia de solvencia'}).click();
+  await page.locator('dialog[open] h2').filter({hasText:'Constancia de solvencia'}).waitFor();
+  assert.match(await page.locator('dialog[open]').innerText(),/Pagada con Cashea/);
+  await page.locator('dialog[open] [data-action="close"]').first().click();
   await page.locator('.nav-button[data-id="settings"]').click();
   await page.getByRole('tab',{name:'Cashea',exact:true}).click();
   assert.equal(await page.locator('form[data-endpoint="cashea-settings"] [name="cashea_settlement_day"]').inputValue(),'2');

@@ -109,6 +109,29 @@ class CasheaTests(unittest.TestCase):
             self.assertEqual(db.execute('SELECT SUM(amount) FROM cashea_allocations WHERE order_id=?',(order['id'],)).fetchone()[0],5200)
             self.assertEqual(db.execute('SELECT COUNT(*) FROM cashea_allocations WHERE order_id=?',(order['id'],)).fetchone()[0],2)
 
+    def test_existing_payment_plan_counts_financing_and_annulment_restores_it(self):
+        original=next(s for s in self.request('state')['students'] if s['id']==self.student)
+        total=original['overdue']
+        plan=self.request('payment-plans',dict(student_id=self.student,expected_total=total,
+            installments=[dict(amount=format(Decimal(total)/100,'.2f'),due_date=local_today().isoformat())]))
+        order,_=self.order(student_id=self.student)
+        current=next(p for p in self.request('state')['payment_plans'] if p['id']==plan['id'])
+        self.assertEqual(current['balance'],total-13000)
+        self.cancel('cashea-void-order',order['id'])
+        current=next(p for p in self.request('state')['payment_plans'] if p['id']==plan['id'])
+        self.assertEqual(current['balance'],total)
+
+    def test_missing_historical_rate_future_sale_and_cashea_overdue_alert_with_grace(self):
+        from datetime import timedelta
+        today=local_today();yesterday=(today-timedelta(days=1)).isoformat()
+        self.request('cashea-preview',self.order_data(ordered_on=yesterday,initial_received='7800',initial_currency='VES'),status=400)
+        self.request('cashea-preview',self.order_data(ordered_on=(today+timedelta(days=1)).isoformat()),status=400)
+        order,_=self.order(ordered_on=(today-timedelta(days=8)).isoformat(),expected_on=yesterday,initial_received='0')
+        self.assertEqual(self.request('cashea')['overdue_count'],1)
+        self.assertEqual(self.cashea_student()['overdue'],0)
+        self.config(cashea_grace_days='2')
+        self.assertEqual(self.request('cashea')['overdue_count'],0)
+
     def test_strict_next_wednesday_edit_and_configuration_do_not_reprice_history(self):
         self.assertEqual(expected_date('2026-10-27'),'2026-10-28')
         self.assertEqual(expected_date('2026-10-28'),'2026-11-04')
