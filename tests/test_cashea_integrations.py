@@ -75,7 +75,10 @@ class CasheaIntegrationTests(unittest.TestCase):
         from colegio.restore_reports import compare,loss_csv
         old=self.path.parent/'antes.sqlite3';consistent_backup(self.path,old)
         order,_=self.order();settlement,_=self.settlement([order['id']])
-        cipher=self.path.parent/'cashea.aulabak';write_encrypted(self.path,cipher,self.path.parent)
+        # Exercise the production contract: encrypt a consistent completed backup,
+        # never byte-copy the live WAL database while the server is still running.
+        source=self.path.parent/'para-cifrar.sqlite3';consistent_backup(self.path,source)
+        cipher=self.path.parent/'cashea.aulabak';write_encrypted(source,cipher,self.path.parent)
         summary=probe_backup(cipher,PASSWORD)
         self.assertEqual(summary['cashea_orders'],1);self.assertEqual(summary['cashea_settlements'],1)
         self.assertEqual(summary['income_usd'],13000)
