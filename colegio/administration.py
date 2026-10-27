@@ -68,7 +68,7 @@ def import_integer(value,column,minimum,maximum):
         raise ValidationError(f'{column}: escribe un entero entre {minimum} y {maximum}, sin símbolos. El año escolar lleva solo el año de inicio y el descuento no lleva %.')
 
 
-def import_template(xlsx=False, grades=(), settings=None, roster_rows=None, columns=COLUMNS):
+def import_template(xlsx=False, grades=(), settings=None, roster_rows=None, columns=COLUMNS, report_title=None):
     from xml.sax.saxutils import escape
     from .import_guide import FIELDS, STEPS
     if not xlsx:
@@ -84,6 +84,7 @@ def import_template(xlsx=False, grades=(), settings=None, roster_rows=None, colu
         ('Instrucciones',[['PASO','INSTRUCCIÓN']]+[[str(i),t] for i,t in enumerate(STEPS,1)]+[['','','','']]+[['COLUMNA','OBLIGATORIA','QUÉ ESCRIBIR','EJEMPLO']]+FIELDS,False),
         ('Grados',[['NOMBRE EXACTO DEL GRADO / SECCIÓN']]+[[g] for g in grades],False),
     ]
+    if report_title:sheets=[(report_title,[columns]+(roster_rows or []),True)]
     out = io.BytesIO()
     with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED) as z:
         overrides = ''.join(f'<Override PartName="/xl/worksheets/sheet{i}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' for i in range(1,len(sheets)+1))
@@ -358,10 +359,12 @@ def cash_summary(db,on):
             entry=lines.setdefault(key,{'method':key[0],'currency':key[1],'income':0,'expense':0,'net':0,'income_usd':0,'expense_usd':0})
             entry[direction]+=r['received_amount']; entry[direction+'_usd']+=r['amount']
             entry['net']=entry['income']-entry['expense']
-    return {'closed_on':on,'lines':[lines[k] for k in sorted(lines)],'movements':movements,
+    result = {'closed_on':on,'lines':[lines[k] for k in sorted(lines)],'movements':movements,
         'preview_hash':hashlib.sha256(json.dumps(movements,sort_keys=True).encode()).hexdigest(),
         'income_usd':sum(v['income_usd'] for v in lines.values()),'expense_usd':sum(v['expense_usd'] for v in lines.values()),
         'active_id':(dict(r)['id'] if (r:=db.execute('SELECT id FROM cash_closures WHERE closed_on=? AND reopened_at IS NULL',(on,)).fetchone()) else None)}
+    from .cashea import extend_cash_summary
+    return extend_cash_summary(db,result)
 
 
 def close_cash(db,data,user):
@@ -405,6 +408,8 @@ def guardian_account(db,guardian_id):
         if c['student_id'] not in smap: continue
         entries.append(dict(c,student_name=smap[c['student_id']]['name'],grade_name=smap[c['student_id']]['grade_name']))
     payments=[dict(p) for p in db.execute('SELECT p.id,p.student_id,p.paid_on,p.amount,p.received_amount,p.currency,p.exchange_rate,p.method,p.reference,p.voided,s.name AS student_name FROM payments p JOIN students s ON s.id=p.student_id WHERE s.guardian_id=? ORDER BY p.paid_on,p.id',(guardian_id,))]
+    from .cashea import decorate_charges
+    decorate_charges(db,entries)
     return {'guardian':dict(g),'students':students,'charges':entries,'payments':payments,
         'balance':sum(c['balance'] for c in entries),'overdue':sum(c['balance'] for c in entries if c['overdue']),
         'issued_on':local_today().isoformat()}

@@ -21,3 +21,6 @@ def legacy_fixture(db):
     db.execute('DROP TABLE IF EXISTS audit_meta')
     db.execute('PRAGMA user_version=10')
     if hasattr(db, '_audit_checked'): db._audit_checked = False
+    # Some legacy callers use closing() without a transaction context. The new
+    # settings DELETE starts one: publish this disposable synthetic layout now.
+    db.commit()

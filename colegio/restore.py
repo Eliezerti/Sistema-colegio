@@ -112,7 +112,7 @@ def restore(backup,directory,*,preview_hash=None,confirmation=None,emergency_flo
             'payment_changes':review['comparison']['payment_changes'],'expense_changes':review['comparison']['expense_changes'],
             'floors':floors,'floors_declared':bool(emergency_floors),'confirmation':confirmation}
         event['source_encrypted']=not review['unencrypted']
-        event['excluded_movements']=[d for d in review['comparison']['details'] if d['type'] in ('payments','expenses')]
+        event['excluded_movements']=[d for d in review['comparison']['details'] if d['type'] in ('payments','expenses','cashea_orders','cashea_settlements')]
         reports={}
         if review['comparison']['has_loss']:
             for extension,payload in [('csv',loss_csv(review['comparison'])),('pdf',loss_pdf(review['comparison'],operation_id))]:
@@ -161,7 +161,9 @@ def review_text(review):
         if s is None:return title+': '+review['comparison_note']
         last=s['last_payment'];last_label=f"{last['receipt']} · pago {last['paid_on']} · registrado {last['created_at']}" if last else 'Sin pagos'
         received=' · '.join(f'{currency} {value/100:.2f}' for currency,value in s['received'].items()) or 'Sin cobros válidos'
-        return f"{title}: {s['students']} alumnos; {s['payments']} pagos ({s['voided_payments']} anulados); cobrado USD {s['income_usd']/100:.2f}.\nRecibido por moneda: {received}\nÚltimo pago: {last_label}"
+        cashea=s.get('cashea',{})
+        extra=(f"\nCashea: {s['cashea_orders']} órdenes; {s['cashea_settlements']} liquidaciones; pendiente USD {cashea['pending']/100:.2f} (no es caja)." if cashea else '')
+        return f"{title}: {s['students']} alumnos; {s['payments']} pagos ({s['voided_payments']} anulados); cobrado USD {s['income_usd']/100:.2f}.\nRecibido por moneda: {received}\nÚltimo pago: {last_label}"+extra
     lines=[summary('Base actual',review['current']),summary('Respaldo',review['backup']),review['backup']['creation_note'],review['backup'].get('audit',{}).get('message','Bitácora antigua sin cadena de huellas.'),
         ('Advertencia: respaldo antiguo sin cifrar.' if review['unencrypted'] else 'Cifrado autenticado y comprobado.')+' No se generan mensualidades al revisarlo.']
     lines.extend(f'{table_label(table)}: {count} registros ausentes o diferentes' for table,count in review['comparison']['counts'].items())

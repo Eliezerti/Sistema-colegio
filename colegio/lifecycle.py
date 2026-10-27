@@ -84,8 +84,8 @@ def plan_status(db,r):
     doc=dict(json.loads(r['snapshot_json']),id=r['id'],cancelled=r['cancelled'],cancel_reason=r['cancel_reason'])
     covered=0
     for original in doc['charges']:
-        now=db.execute('''SELECT COALESCE(SUM(a.amount),0) FROM allocations a JOIN payments p ON p.id=a.payment_id
-            WHERE a.charge_id=? AND p.voided=0''',(original['id'],)).fetchone()[0]
+        from .db import charge_coverage
+        now=charge_coverage(db,original['id'])
         covered+=max(0,now-original['paid'])
     remaining=min(covered,doc['total']); installments=[]
     for item in doc['installments']:

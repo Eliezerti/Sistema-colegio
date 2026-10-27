@@ -6,6 +6,7 @@ from .backup_inspection import fingerprint
 from .documents import AdministrativePDF, amount
 
 TABLE_LABELS = {
+    'cashea_orders':'Órdenes Cashea','cashea_allocations':'Cobertura Cashea','cashea_settlements':'Liquidaciones Cashea','cashea_settlement_orders':'Órdenes liquidadas Cashea','cashea_requests':'Solicitudes Cashea',
     'settings':'Configuración', 'users':'Usuarios', 'students':'Alumnos',
     'guardians':'Representantes', 'grades':'Grados y secciones', 'charges':'Cargos',
     'payments':'Pagos', 'expenses':'Egresos', 'allocations':'Aplicaciones de pagos',
@@ -26,6 +27,9 @@ def identity(table,row):
     if 'id' in row: return str(row['id'])
     if table=='settings': return row['key']
     if table=='allocations': return f"{row['payment_id']}:{row['charge_id']}"
+    if table=='cashea_allocations': return f"{row['order_id']}:{row['charge_id']}"
+    if table=='cashea_settlement_orders': return f"{row['settlement_id']}:{row['order_id']}"
+    if table=='cashea_requests':return row['request_key']
     if table=='monthly_assessments': return f"{row['student_id']}:{row['period']}"
     if table=='exchange_rates': return row['rate_date']
     return fingerprint(row)
@@ -81,6 +85,16 @@ def compare(current,incoming):
                     'date':row.get('due_date',row.get('created_at',row.get('rate_date',''))),
                     'person':students.get(row.get('student_id'),row.get('name','')),
                     'before_hash':fingerprint(row),'after_hash':fingerprint(other) if other else None}
+                if table in ('cashea_orders','cashea_settlements'):
+                    is_order=table=='cashea_orders'
+                    item.update(number=row['code'],date=row['ordered_on'] if is_order else row['received_on'],
+                        amount_usd=row['total_amount'] if is_order else row['amount'],
+                        received=row['total_amount'] if is_order else row['received_amount'],
+                        currency='USD' if is_order else row['currency'],
+                        method='Cobertura Cashea (no es caja)' if is_order else 'Transferencia Cashea',
+                        reference=row.get('reference',''),
+                        before_state=row['state'] if is_order else ('Anulada' if row['voided'] else 'Válida'),
+                        after_state=(other['state'] if is_order else 'Anulada' if other['voided'] else 'Válida') if other else 'Ausente')
                 if table=='charges':
                     item.update(amount_usd=row['amount'],received=row['amount'],currency='USD',method='Cargo',reference=row['period'],
                         before_state='Anulado' if row['cancelled'] else 'Vigente',

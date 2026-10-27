@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .branding import SCHEMA_VERSION
 
-SEQUENCES = ('payments', 'expenses', 'students', 'guardians', 'enrollment_documents')
+SEQUENCES = ('payments', 'expenses', 'students', 'guardians', 'enrollment_documents','cashea_orders','cashea_settlements')
 REQUIRED = {
     'settings': {'key','value'}, 'users': {'id','username','name','password','role'},
     'students': {'id','name','guardian_id'}, 'guardians': {'id','name'}, 'grades': {'id'},
@@ -60,6 +60,11 @@ def validate(db):
     if db.execute('PRAGMA foreign_key_check').fetchone():
         raise ValueError('El respaldo contiene referencias inválidas. No se reemplazará la base.')
     tables={r['name'] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")}
+    if version>=13:
+        from .cashea_schema import TABLES
+        if not set(TABLES)<=tables:raise ValueError('El respaldo de esquema 13 no tiene todas las tablas Cashea.')
+        from .cashea import integrity_errors
+        if integrity_errors(db):raise ValueError('Los registros Cashea del respaldo no pasaron la verificación.')
     for table,expected in REQUIRED.items():
         if table not in tables or not expected <= {r['name'] for r in db.execute(f'PRAGMA table_info("{table}")')}:
             raise ValueError('El archivo no es un respaldo compatible de Aula.')
@@ -90,17 +95,28 @@ def inspect_copy(path):
         applied={}
         for a in records['allocations']:
             if a['payment_id'] in valid_ids: applied[a['charge_id']]=applied.get(a['charge_id'],0)+a['amount']
+        active_orders={r['id'] for r in records.get('cashea_orders',[]) if r['state']!='anulada'}
+        for a in records.get('cashea_allocations',[]):
+            if a['order_id'] in active_orders:applied[a['charge_id']]=applied.get(a['charge_id'],0)+a['amount']
+        settled=[s for s in records.get('cashea_settlements',[]) if not s['voided']]
+        for s in settled:paid[s['currency']]=paid.get(s['currency'],0)+s['received_amount']
         balance=sum(c['amount']-applied.get(c['id'],0) for c in records['charges'] if not c['cancelled'])
         from .audit_chain import portable_status
         audit_status=portable_status(db)
         if not audit_status['ok']:raise ValueError(audit_status['message'])
         summary={'retired_counts':{t:len(records.get(t,[])) for t in ('employees','positions','payroll_plans','salary_receipts') if t in records},'audit':audit_status,'schema':version,'integrity':'ok','references':'ok','students':len(records['students']),
             'payments':len(payments),'valid_payments':len(valid),'voided_payments':len(payments)-len(valid),
-            'income_usd':sum(p['amount'] for p in valid),'received':paid,'balance_usd':balance,
+            'income_usd':sum(p['amount'] for p in valid)+sum(s['amount'] for s in settled),'received':paid,'balance_usd':balance,
             'last_payment':({'id':last['id'],'receipt':f"R-{last['id']:06d}",'paid_on':last['paid_on'],
                              'created_at':last['created_at']} if last else None),
             'created_at':None,'creation_note':'No se conoce una fecha fiable de creación de este respaldo.',
             'floors':floors}
+        if version>=13:
+            from .cashea import cutoff_summary
+            from .db import local_today
+            summary['cashea']=cutoff_summary(db,'2000-01-01',local_today().isoformat())
+            summary['cashea_orders']=len(records['cashea_orders'])
+            summary['cashea_settlements']=len(records['cashea_settlements'])
         return {'summary':summary,'records':records,'floors':floors}
 
 

@@ -18,6 +18,12 @@ def principal(state):
         'payment_count':len(paid),'income':sum(p['amount'] for p in paid),
         'dollars':sum(p['received_amount'] for p in paid if p['currency']=='USD'),
         'bolivars':sum(p['received_amount'] for p in paid if p['currency']=='VES')}
+    settlements=[p for p in state.get('cashea_cash',[]) if p['received_on']==state['today']]
+    result['dashboard']['settlement_count']=len(settlements)
+    result['dashboard']['income']+=sum(p['amount'] for p in settlements)
+    result['dashboard']['dollars']+=sum(p['received_amount'] for p in settlements if p['currency']=='USD')
+    result['dashboard']['bolivars']+=sum(p['received_amount'] for p in settlements if p['currency']=='VES')
+    result['cashea_cash']=[]
     result['students']=sorted(state['students'],key=lambda s:(-s['overdue'],s['name']))[:5]
     result['payments']=[p for p in state['payments'] if not p['voided']][:5]
     # An incomplete list is never used as a financial ledger. UI explicitly loads history.

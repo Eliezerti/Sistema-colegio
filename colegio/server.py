@@ -37,6 +37,7 @@ from .branding import SCHEMA_VERSION, LOGO_FILE
 from .lifecycle import roster_for_year, transition_year, create_plan, cancel_plan, plan_status
 from .student_admin import DIRECTORY_ACTIONS, directory_action, correct_billing_start
 from .institution_archive import ARCHIVE_ACTIONS, archive_action, record_preview
+from .cashea import ACTIONS as CASHEA_ACTIONS, ADMIN as CASHEA_ADMIN
 from .demo import DemoWorkspace
 from .network import PrivateAccess, load_config
 from .sessions import Sessions, token_hash, idle_minutes, IDLE_KEY
@@ -72,7 +73,9 @@ def snapshot(db, user):
     students = rows(db, '''SELECT s.*,g.name AS guardian_name,g.phone AS guardian_phone,g.email AS guardian_email,
       gr.name AS grade_name FROM students s JOIN guardians g ON g.id=s.guardian_id
       JOIN grades gr ON gr.id=s.grade_id ORDER BY s.name''')
-    charge_list = charges(db)
+    from .cashea import cash_rows,decorate_charges
+    settlement_cash=cash_rows(db)
+    charge_list = decorate_charges(db,charges(db))
     student_map = {s['id']: s for s in students}
     today = local_today().isoformat()
     for student in students:
@@ -96,7 +99,7 @@ def snapshot(db, user):
         payment.pop('request_key', None)
     expenses = rows(db, 'SELECT * FROM expenses ORDER BY spent_on DESC,id DESC')
     month = today[:7]
-    income = sum(p['amount'] for p in payments if not p['voided'] and p['paid_on'].startswith(month))
+    income = sum(p['amount'] for p in payments if not p['voided'] and p['paid_on'].startswith(month))+sum(p['amount'] for p in settlement_cash if p['received_on'].startswith(month))
     outgo = sum(e['amount'] for e in expenses if not e['voided'] and e['spent_on'].startswith(month))
     aging = [0, 0, 0, 0]
     for c in charge_list:
@@ -107,7 +110,7 @@ def snapshot(db, user):
             'guardians': rows(db, 'SELECT * FROM guardians ORDER BY name'),
             'grades': rows(db, 'SELECT * FROM grades ORDER BY name'),
             'enrollments': rows(db, 'SELECT id,student_id,created_at FROM enrollment_documents ORDER BY id DESC'),
-            'charges': charge_list, 'payments': payments, 'expenses': expenses,
+            'charges': charge_list, 'payments': payments, 'expenses': expenses, 'cashea_cash':settlement_cash,
             'cash_closures': rows(db,'SELECT id,closed_on,created_at,reopened_at,reopen_reason FROM cash_closures ORDER BY id DESC LIMIT 100'),
             'payment_plans': [plan_status(db,r) for r in db.execute('SELECT * FROM payment_plans ORDER BY id DESC LIMIT 100')],
             'year_transitions': [dict(id=r['id'],source_year=(d:=json.loads(r['snapshot_json']))['source_year'],target_year=d['target_year'],issued_on=d['issued_on']) for r in db.execute('SELECT * FROM year_transitions ORDER BY id DESC LIMIT 30')],
@@ -159,11 +162,11 @@ def prepare_backup_directory(db, value, uid):
     return directory
 
 
-def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, import_archived=False, demo=False):
+def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, import_archived=False, demo=False, _cashea_order=None):
     uid = user['id']
     db.audit_user = uid
     admin_paths = {'settings','backup-directory','grades','guardians','students','users','password','void-payment','void-expense','cancel-charge','import-roster','reopen-cash','transition-year','cancel-plan','correct-billing-start'} | DIRECTORY_ACTIONS | ARCHIVE_ACTIONS
-    if user['role'] == 'reader' or (endpoint in admin_paths and user['role'] != 'admin'):
+    if user['role'] == 'reader' or (endpoint in (admin_paths | CASHEA_ADMIN) and user['role'] != 'admin'):
         raise PermissionError('Tu perfil no permite esta operación.')
     if endpoint == 'backup-directory':
         if not isinstance(data.get('backup_directory'), str):
@@ -175,6 +178,13 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
         return {'saved': True}
     # Calculate outstanding months before editing tariffs, dates or student status.
     if synchronize: synchronize_monthly_charges(db)
+    if endpoint in CASHEA_ACTIONS:
+        from .cashea import action
+        return action(db,endpoint,data,user,lambda payment,reason,order:mutate(db,'void-payment',
+            {'id':payment,'reason':reason},user,synchronize=False,_cashea_order=order))
+    if endpoint=='void-payment':
+        related=db.execute("SELECT id FROM cashea_orders WHERE payment_id=? AND state<>'anulada'",(data.get('id'),)).fetchone()
+        if related and related[0]!=_cashea_order:raise ValidationError('Esta inicial pertenece a Cashea. Anula la orden Cashea para conservar la cobertura y su historial.')
     if endpoint in ARCHIVE_ACTIONS: return archive_action(db, endpoint, data, user, demo=demo)
     batch_record=lambda db,endpoint,data,user: mutate(db,endpoint,data,user,synchronize=False,
         import_code=data.get('_import_code') if endpoint=='students' else None,
@@ -591,7 +601,7 @@ class Handler(BaseHTTPRequestHandler):
                 raise PermissionError('Copia de solo lectura: no se permiten cambios, tasas, cobros ni respaldos.')
             if not post and not url.path.startswith('/api/'):
                 assets = {'/': 'index.html', '/app.js': 'app.js', '/session.js': 'session.js', '/style.css': 'style.css', '/favicon.svg': 'favicon.svg',
-                          '/'+LOGO_FILE: LOGO_FILE, '/responsive.js': 'responsive.js'}
+                          '/'+LOGO_FILE: LOGO_FILE, '/responsive.js': 'responsive.js', '/cashea.js':'cashea.js'}
                 if url.path not in assets:
                     self.respond(404, {'error': 'Página inexistente.'})
                     return
@@ -892,7 +902,7 @@ class Handler(BaseHTTPRequestHandler):
                 if endpoint not in ('logout','demo-exit'):
                     self.server.clock.require()
                 db.commit()
-                if endpoint in DIRECTORY_ACTIONS or endpoint in ARCHIVE_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','expenses','void-payment','void-expense','close-cash','reopen-cash','settings','backup-directory','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
+                if endpoint in DIRECTORY_ACTIONS or endpoint in ARCHIVE_ACTIONS or endpoint in CASHEA_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','expenses','void-payment','void-expense','close-cash','reopen-cash','settings','backup-directory','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
                     status=self.server.make_backup()
                     if status.get('local_error') or status.get('secondary_error'):
                         result['backup_warning']=status.get('local_error') or status.get('secondary_error')
@@ -920,6 +930,23 @@ class Handler(BaseHTTPRequestHandler):
                     self.respond(200, pdf_bytes(result) if pdf else csv_bytes(result),
                         'application/pdf' if pdf else 'text/csv; charset=utf-8',
                         {'Content-Disposition': 'attachment; filename="bitacora.'+('pdf' if pdf else 'csv')+'"'})
+            elif endpoint=='cashea':
+                from .cashea import book
+                self.respond(200,book(db))
+            elif endpoint.startswith('cashea-order/') or endpoint.startswith('cashea-settlement/'):
+                from .cashea import detail
+                from .cashea_reports import document_pdf
+                kind='order' if endpoint.startswith('cashea-order/') else 'settlement'
+                raw=endpoint.split('/',1)[1];target=raw.removesuffix('.pdf')
+                self.respond(200,document_pdf(db,kind,target) if raw.endswith('.pdf') else detail(db,kind,target),
+                    'application/pdf' if raw.endswith('.pdf') else 'application/json; charset=utf-8')
+            elif endpoint in ('cashea-report','cashea-report.csv','cashea-report.pdf','cashea-report.xlsx'):
+                from .cashea_reports import report,export as export_cashea
+                query=parse_qs(url.query);kind=query.get('type',['pending'])[0]
+                if endpoint=='cashea-report':self.respond(200,report(db,kind,public_user,query))
+                else:
+                    extension=endpoint.rsplit('.',1)[1];content,mime=export_cashea(db,kind,public_user,extension,query)
+                    self.respond(200,content,mime,{'Content-Disposition':f'attachment; filename="cashea-{kind}.{extension}"'})
             elif endpoint.startswith('student-deletion-preview/'):
                 self.respond(200, record_preview(db, 'student', endpoint.split('/', 1)[1], user,
                                                 created_by_error=True))
@@ -1030,6 +1057,7 @@ class Handler(BaseHTTPRequestHandler):
                 payment['operator'] = frozen['operator']
                 for key in ('balance_before','balance_after','payment_status'):
                     payment[key] = frozen.get(key)
+                if 'cashea' in frozen:payment['cashea']=frozen['cashea']
                 # Legacy receipts can use the last issued enrollment at payment creation.
                 # Never substitute today's grade for an unknown historical grade.
                 if not payment.get('grade_name'):

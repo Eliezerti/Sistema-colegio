@@ -10,7 +10,7 @@ ADMIN = ('admin',)
 WRITERS = ('admin', 'cashier')
 
 GET_ALL = ('session', 'session-status', 'clock-status', 'rate-gate', 'state', 'cash-preview',
-           'backup-status', 'daily-report', 'daily-report.pdf', 'monthly-report','monthly-report.pdf','monthly-report.csv', 'health', 'export')
+           'backup-status', 'daily-report', 'daily-report.pdf', 'monthly-report','monthly-report.pdf','monthly-report.csv', 'health', 'export', 'cashea','cashea-report','cashea-report.csv','cashea-report.pdf','cashea-report.xlsx')
 GET_ADMIN = ('audit', 'audit.csv', 'audit.pdf', 'import-template', 'import-guide',
              'backup', 'maintenance-review')
 POST_ADMIN = ('settings', 'backup-directory', 'grades', 'guardians', 'students',
@@ -36,7 +36,7 @@ def cases():
     for kind in ('students', 'guardians'):
         for extension in ('', '.pdf'):
             add('GET', 'directory/'+kind+extension, ALL, 200, 'directory/')
-    for kind in ('enrollment', 'receipt', 'payment-plan', 'year-transition', 'guardian-document', 'cash-close'):
+    for kind in ('enrollment', 'receipt', 'payment-plan', 'cashea-order', 'cashea-settlement', 'year-transition', 'guardian-document', 'cash-close'):
         for extension in ('', '.pdf'):
             add('GET', kind+'/0'+extension, ALL, 400, kind+'/')
     add('GET', 'guardian-account/0', ALL, 400, 'guardian-account/')
@@ -48,6 +48,8 @@ def cases():
         add('POST', route, ADMIN, 200 if route in ('backup-now','crypto-unlock') else 400,
             body={'password':'FICTICIO-respaldo-seguro-2026'} if route=='crypto-unlock' else None)
     for route in POST_WRITERS: add('POST', route, WRITERS, 400)
+    from colegio.cashea import ACTIONS,ADMIN as CASHEA_ADMIN
+    for route in sorted(ACTIONS):add('POST',route,ADMIN if route in CASHEA_ADMIN else WRITERS,400)
     add('POST', 'confirm-rate', ALL, 400)
     add('POST', 'session-activity', ALL, 200)
     add('POST', 'logout', ALL, 200)
@@ -60,9 +62,9 @@ def cases():
 
 def endpoint_inventory():
     """Discover comparisons/prefixes and imported action sets; new routes require a case."""
-    from colegio.server import DIRECTORY_ACTIONS, ARCHIVE_ACTIONS
+    from colegio.server import DIRECTORY_ACTIONS, ARCHIVE_ACTIONS, CASHEA_ACTIONS
     source = Path(__file__).resolve().parents[1]/'colegio/server.py'
-    discovered = set(DIRECTORY_ACTIONS) | set(ARCHIVE_ACTIONS)
+    discovered = set(DIRECTORY_ACTIONS) | set(ARCHIVE_ACTIONS) | set(CASHEA_ACTIONS)
     tree = ast.parse(source.read_text(encoding='utf-8'))
     # Tombstones have their own HTTP/profile/nonmutation contract in test_staff_retirement.
     tree.body = [node for node in tree.body if not isinstance(node, ast.FunctionDef) or node.name != 'retired_route']

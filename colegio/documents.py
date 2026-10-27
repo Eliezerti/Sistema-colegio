@@ -81,8 +81,8 @@ def load_document(db, kind, target):
 
 class PDF:
     """Small vector PDF writer: WinAnsi fonts, wrapping and repeating table headings."""
-    def __init__(self, title, school, landscape=False):
-        self.w, self.h = (842, 595) if landscape else (595, 842)
+    def __init__(self, title, school, landscape=False, *, size=None):
+        self.w, self.h = size or ((842, 595) if landscape else (595, 842))
         self.title, self.school, self.pages = title, school, []
         self.logo = pdf_logo(school.get('logo', ''))
         self.new_page()
@@ -413,6 +413,13 @@ class ReceiptPDF(PDF):
             self.text(x+17,top+111,f"Tasa BCV aplicada: Bs {p['exchange_rate']} por USD",8,color=self.muted)
         self.y += height+27
 
+    def cashea_summary(self):
+        data=self.payment.get('cashea')
+        if data:
+            self.ensure(45)
+            self.flow('PAGO CON CASHEA · '+data['code'],9,self.blue,True)
+            self.flow('Total '+amount(data['total_amount'])+' | Inicial '+amount(data['initial_amount'])+' | Financiado '+amount(data['financed_amount']),8,self.blue)
+
     def account_summary(self):
         p = self.payment
         if p.get('balance_after') is None:
@@ -432,6 +439,7 @@ class ReceiptPDF(PDF):
         self.parties()
         self.allocations(data['allocations'])
         self.payment_summary()
+        self.cashea_summary()
         self.account_summary()
         if p['notes']:
             self.ensure(35)
@@ -599,6 +607,7 @@ class HalfLetterReceiptPDF(ReceiptPDF):
         self.parties()
         self.allocations(data['allocations'])
         self.payment_summary()
+        self.cashea_summary()
         self.account_summary()
         if p['notes']:
             self.ensure(25)
@@ -670,6 +679,9 @@ class TicketReceiptPDF(ReceiptPDF):
         if p['reference']:self.ticket_line('Referencia: '+p['reference'])
         self.ticket_line('RECIBIDO: '+amount(p['received_amount'],'Bs' if p['currency']=='VES' else 'USD'),True,9)
         self.ticket_line('Total aplicado: '+amount(p['amount']),True)
+        if p.get('cashea'):
+            self.ticket_line('Pago con Cashea '+p['cashea']['code'],True)
+            self.ticket_line('Total '+amount(p['cashea']['total_amount'])+' / Financiado '+amount(p['cashea']['financed_amount']))
         if p.get('balance_after') is not None:
             self.ticket_line('ABONO' if p['balance_after'] else 'PAGO COMPLETO',True)
             self.ticket_line('Deuda anterior: '+amount(p['balance_before']))
@@ -732,12 +744,16 @@ def administrative_pdf(kind,data):
             [75,111,111,111,111])
         pdf.total(f"Equivalente USD: ingresos {amount(data['income_usd'])} | egresos {amount(data['expense_usd'])}")
         pdf.line('Arqueo: efectivo inicial + ingresos en efectivo - egresos en efectivo. El saldo bancario, pagos móviles, transferencias y tarjetas no forman parte del efectivo.')
+        if data.get('cashea'):
+            pdf.line('Cashea: financiado del día (NO ES CAJA) '+amount(data['cashea']['financed'])+' | Liquidaciones recibidas '+amount(data['cashea']['received']),True)
         pdf.line('Observaciones: '+(data['notes'] or 'Sin observaciones.'))
         pdf.table(['Movimiento / referencia','Método','Moneda / recibido','Estado'],
-            [[f"{'R' if r['type']=='income' else 'E'}-{r['id']:06d}\n{r['reference']}",r['method'],amount(r['received_amount'],r['currency']),'Anulado' if r['voided'] else 'Válido'] for r in data['movements']],
+            [[f"{'CL' if r['type']=='cashea_settlement' else 'R' if r['type']=='income' else 'E'}-{r['id']:06d}\n{r['reference']}",r['method'],amount(r['received_amount'],r['currency']),'Anulado' if r['voided'] else 'Válido'] for r in data['movements']],
             [190,119,130,80])
     else:
         g=data['guardian']
+        for charge in data.get('charges',[]):
+            if charge.get('cashea_label'):pdf.line(charge['student_name']+' · '+charge['period']+' · '+charge['cashea_label'])
         pdf.line(f"Representante: {g['name']} | Cédula: {g['document']}",True)
         if g['phone']: pdf.line('Contacto: '+g['phone'])
         pdf.table(['Alumno / código','Grado / sección','Año escolar','Estado'],

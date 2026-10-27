@@ -51,6 +51,7 @@ def record_preview(db, kind, target, user, *, created_by_error=False):
             blocked.append(label)
 
     if kind == 'student':
+        linked('cashea_orders','student_id','Órdenes Cashea, incluidas anuladas')
         linked('charges', 'student_id', 'Cargos, incluidos pagados o anulados', protect=not created_by_error)
         linked('payments', 'student_id', 'Pagos y recibos, incluidos anulados')
         linked('payment_plans', 'student_id', 'Convenios')

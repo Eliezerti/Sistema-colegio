@@ -27,6 +27,8 @@ def inspect(db):
     if db.execute('PRAGMA user_version').fetchone()[0]!=SCHEMA_VERSION:
         raise ValidationError('Actualiza Aula antes de preparar los recibos. Esta herramienta no migra bases.')
     require(db)
+    if db.execute('SELECT 1 FROM cashea_orders LIMIT 1').fetchone() or db.execute('SELECT 1 FROM cashea_settlements LIMIT 1').fetchone():
+        raise ValidationError('Esta base tiene historial Cashea. No se pueden limpiar sus iniciales ni liquidaciones con esta herramienta.')
     from .maintenance import review_database
     if not review_database(db)['ok']:
         raise ValidationError('Verificar datos y cobros detectó errores. No se borraron cobros.')

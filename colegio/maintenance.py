@@ -1,7 +1,7 @@
 """Read-only integrity checks; never repair or recalculate financial records."""
 from .db import local_today
 
-SEQUENCES = ('payments', 'expenses', 'students', 'guardians', 'enrollment_documents')
+SEQUENCES = ('payments', 'expenses', 'students', 'guardians', 'enrollment_documents','cashea_orders','cashea_settlements')
 
 
 def sequence_review(db):
@@ -52,13 +52,15 @@ def review_database(db):
     )
     for message,sql in checks:
         if db.execute(sql).fetchone(): errors.append(message)
+    from .cashea import integrity_errors
+    errors.extend(integrity_errors(db))
     payments = db.execute('SELECT COALESCE(SUM(amount),0) FROM payments WHERE voided=0').fetchone()[0]
     allocations = db.execute('''SELECT COALESCE(SUM(a.amount),0) FROM allocations a
                                 JOIN payments p ON p.id=a.payment_id WHERE p.voided=0''').fetchone()[0]
     if payments != allocations:
         errors.append('El total de cobros válidos no coincide con sus aplicaciones.')
     sequences = sequence_review(db)
-    labels = dict(zip(SEQUENCES, ('recibos', 'egresos', 'alumnos', 'representantes', 'constancias')))
+    labels = dict(zip(SEQUENCES, ('recibos', 'egresos', 'alumnos', 'representantes', 'constancias','órdenes Cashea','liquidaciones Cashea')))
     for sequence in sequences:
         if not sequence['ok']:
             errors.append('Revisa la numeración de '+labels[sequence['table']]+': '+

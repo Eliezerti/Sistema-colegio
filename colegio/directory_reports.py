@@ -142,12 +142,15 @@ def daily_report(state, payment_people=None):
     today = state['today']
     payments = [p for p in state['payments'] if p['paid_on'] == today]
     valid = [p for p in payments if not p['voided']]
+    settlements=[p for p in state.get('cashea_cash',[]) if p['received_on']==today]
     debtors = sorted((s for s in state['students'] if s['overdue'] > 0),
                      key=lambda s: (-s['overdue'], s['name']))
     student_map = {s['id']: s for s in state['students']}
     collected_usd = sum(p['received_amount'] for p in valid if p['currency'] == 'USD')
     collected_ves = sum(p['received_amount'] for p in valid if p['currency'] == 'VES')
-    income = sum(p['amount'] for p in valid)
+    income = sum(p['amount'] for p in valid)+sum(p['amount'] for p in settlements)
+    collected_usd+=sum(p['received_amount'] for p in settlements if p['currency']=='USD')
+    collected_ves+=sum(p['received_amount'] for p in settlements if p['currency']=='VES')
     overdue = sum(s['overdue'] for s in debtors)
     summaries = [('Recibido en dólares', amount(collected_usd)),
                  ('Recibido en bolívares', amount(collected_ves, 'Bs')),
@@ -181,7 +184,7 @@ def daily_report(state, payment_people=None):
     return {'title': 'Reporte diario de cobros y morosidad', 'school': state['settings'],
         'issued_on': today, 'issued_at': now.strftime('%d/%m/%Y · %H:%M'), 'operator': state['user']['name'],
         'filter_label': f'Cobros del {day_label} · Morosidad actual al emitir el reporte',
-        'count_label': f"{len(valid)} {'cobro válido' if len(valid) == 1 else 'cobros válidos'} · "
+        'count_label': (f"{len(settlements)} liquidaciones Cashea · " if settlements else '')+f"{len(valid)} {'cobro válido' if len(valid) == 1 else 'cobros válidos'} · "
                        f"{len(debtors)} {'alumno' if len(debtors) == 1 else 'alumnos'} con deuda vencida",
         'summaries': summaries, 'payment_count': len(valid), 'debtor_count': len(debtors),
         'arrears_by_grade':[dict(grade=g,**by_grade[g]) for g in sorted(by_grade)],
@@ -194,7 +197,9 @@ def daily_report(state, payment_people=None):
             {'title': 'Morosidad actual', 'headings': ['N.º', 'Alumno / código', 'Grado',
                 'Representante / contacto', 'Vencido USD', 'Mayor atraso'],
              'widths': [26, 180, 115, 240, 105, 92], 'lines': debtor_lines,
-             'empty_message': 'No hay alumnos con deuda vencida.'},
+                'empty_message': 'No hay alumnos con deuda vencida.'},
+            *([{'title':'Liquidaciones Cashea recibidas (dinero real)','headings':['CL-','Referencia','Moneda','Recibido','Equivalente USD'],
+                'widths':[100,200,85,170,203],'lines':[[p['code'],p['reference'],p['currency'],amount(p['received_amount'],p['currency']),amount(p['amount'])] for p in settlements]}] if settlements else []),
             {'title':'Morosidad por grado','headings':['Grado','Alumnos con deuda','Vencido USD'],
              'widths':[400,180,178],'lines':[[g,str(by_grade[g]['students']),amount(by_grade[g]['overdue'])] for g in sorted(by_grade)]}],
         'note': 'Los totales incluyen cobros válidos; las anulaciones se muestran y se excluyen de los totales. '
