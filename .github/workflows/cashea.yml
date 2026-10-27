@@ -1,0 +1,94 @@
+name: Cashea 1.0.74 · revisión
+on:
+  push:
+    branches: [cashea]
+    paths: ['colegio/**','static/**','tests/**','packaging/**','requirements*.txt','.github/workflows/cashea.yml']
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: cashea-${{ github.sha }}
+  cancel-in-progress: false
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    env:
+      VERSION: '1.0.74'
+      PYTHONUTF8: '1'
+      PYTHONFAULTHANDLER: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Preparar navegador
+        shell: pwsh
+        run: |
+          npm install --no-save --package-lock=false --prefix "$env:RUNNER_TEMP/aula-node" playwright@1.58.2
+          if ($LASTEXITCODE -ne 0) { throw 'Falló Playwright.' }
+          "NODE_PATH=$env:RUNNER_TEMP/aula-node/node_modules" >> $env:GITHUB_ENV
+          & "$env:RUNNER_TEMP/aula-node/node_modules/.bin/playwright.cmd" install chromium
+          if ($LASTEXITCODE -ne 0) { throw 'Falló Chromium.' }
+      - name: Unittest y compilación
+        shell: pwsh
+        run: |
+          ./packaging/build_windows.ps1 -Version $env:VERSION *>&1 | Tee-Object desktop-build.log
+          if ($LASTEXITCODE -ne 0) { throw 'Falló unittest o compilación.' }
+      - name: Tres suites de navegador
+        shell: pwsh
+        run: |
+          python tests/run_browser.py *>&1 | Tee-Object browser-normal.log
+          if ($LASTEXITCODE -ne 0) { throw 'Falló navegador normal.' }
+          python tests/run_browser.py --demo *>&1 | Tee-Object browser-demo.log
+          if ($LASTEXITCODE -ne 0) { throw 'Falló modo Pruebas.' }
+          python tests/run_browser.py --roster *>&1 | Tee-Object browser-roster.log
+          if ($LASTEXITCODE -ne 0) { throw 'Falló importación.' }
+      - name: Instalación limpia, impresión nativa y consulta
+        shell: pwsh
+        env:
+          AULA_RECEIPT_REPORT_DIR: ${{ runner.temp }}/aula-recibo-native
+        run: ./packaging/test_installer.ps1 -Version $env:VERSION
+      - uses: actions/download-artifact@v4
+        with:
+          name: Aula-1.0.73-correccion-alumnos
+          run-id: 39896577102
+          github-token: ${{ github.token }}
+          path: anterior-1.0.73
+      - name: Actualización desde el instalador publicado 1.0.73
+        shell: pwsh
+        run: |
+          python tests/windows_cashea_upgrade.py --previous anterior-1.0.73/Aula-Colegio-Instalador-1.0.73.exe --version $env:VERSION *>&1 | Tee-Object cashea-upgrade.log
+          if ($LASTEXITCODE -ne 0) { throw 'Falló actualización Cashea.' }
+      - name: Crear paquete de revisión
+        shell: pwsh
+        run: python tests/package_cashea_review.py --output dist/Aula-Cashea-1.0.74-revision.zip
+      - name: Conservar entrega solo tras validar
+        uses: actions/upload-artifact@v4
+        with:
+          name: Aula-1.0.74-Cashea-revision
+          path: |
+            dist/Aula-Colegio-Instalador-1.0.74.exe
+            dist/Aula-Cashea-1.0.74-revision.zip
+          if-no-files-found: error
+      - name: Reunir evidencia en una sola carpeta
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force evidencia | Out-Null
+          Get-ChildItem -Path . -Filter '*.log' | Copy-Item -Destination evidencia
+          foreach ($Path in @("$env:RUNNER_TEMP/aula-recibo-native", "$env:TEMP/AulaColegio-Compilacion/logs", "$env:RUNNER_TEMP/cashea-upgrade.json", "$env:RUNNER_TEMP/cashea-native-CA.pdf")) {
+            if (Test-Path $Path) { Copy-Item $Path evidencia -Recurse -Force }
+          }
+      - name: Conservar evidencia
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Cashea-evidencia
+          path: evidencia/
+          if-no-files-found: error

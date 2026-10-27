@@ -1,7 +1,11 @@
-param([string]$Version = "1.0.0")
+param([string]$Version = "")
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path $PSScriptRoot -Parent)
 if ($env:OS -ne "Windows_NT") { throw "El ejecutable debe construirse en Windows." }
+$CodeVersion = (python -c "from colegio.branding import APP_VERSION; print(APP_VERSION)").Trim()
+if ($LASTEXITCODE -ne 0) { throw "No se pudo leer la versión del código." }
+if (-not $Version) { $Version = $CodeVersion }
+if ($Version -ne $CodeVersion) { throw "La versión solicitada no coincide con colegio/branding.py." }
 python -m pip install -r requirements-desktop.txt
 if ($LASTEXITCODE -ne 0) { throw "No se pudieron instalar las dependencias." }
 $TestOutput = @(python -m unittest discover -s tests -v 2>&1)
