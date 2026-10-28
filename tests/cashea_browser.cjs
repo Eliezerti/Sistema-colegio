@@ -68,6 +68,8 @@ module.exports=async function(page){
 async function casheaCurrencyAndManual(page){
   const pupil=await page.evaluate(async()=>{
     const s=await api('state?history=1'),sample=s.students.find(p=>p.name==='Alumno FICTICIO Cashea');
+    // The existing server accepts this exact Decimal representation of the same rate.
+    await api('confirm-rate',{rate_date:s.today,rate:'1e2',rate_change_confirmed:true});
     const p=await api('students',{name:'Alumno FICTICIO moneda',document:'',birth_date:'',guardian_id:sample.guardian_id,grade_id:sample.grade_id,school_year:sample.school_year,monthly_fee:'40',discount:0,status:'active',billing_start:s.today.slice(0,7),enrollment_start:sample.enrollment_start,enrollment_end:sample.enrollment_end});
     await refresh();return p;
   });
@@ -131,6 +133,6 @@ async function casheaCurrencyAndManual(page){
   await sale.getByRole('button',{name:'Revisar venta',exact:true}).click();await sale.getByRole('button',{name:'Confirmar registro'}).waitFor();await sale.getByRole('button',{name:'Confirmar registro'}).click();
   await page.locator('dialog[open] .cashea-invoice-number').filter({hasText:'MANUAL-FICTICIO-001'}).waitFor();
   await page.locator('dialog[open] [data-action="close"]').first().click();
-  await page.evaluate(async()=>{const s=(await api('cashea')).settings;await api('cashea-settings',{...s,cashea_invoice_origin:'recibo',request_key:requestKey()});await refresh();});
+  await page.evaluate(async()=>{const s=(await api('cashea')).settings;await api('cashea-settings',{...s,cashea_invoice_origin:'recibo',request_key:requestKey()});await api('confirm-rate',{rate_date:state.today,rate:'100',rate_change_confirmed:true});await refresh();});
   console.log('PASS CASHEA AJUSTE: R- real y Copiar, mensualidad 40/16/24, conversión USD→Bs, tasa/equivalente, advertencia >1 %, inicial cero CA- sin consumir R-, ajustes Manual y campo obligatorio.');
 }

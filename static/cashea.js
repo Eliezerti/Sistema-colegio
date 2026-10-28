@@ -49,7 +49,10 @@ const casheaRound=(n,d)=>(n+d/2n)/d;
 function casheaRate(form){
   const row=state.rates.find(r=>r.rate_date===form.elements.ordered_on.value);
   if(!row)return null;
-  const [a,b='']=String(row.rate).split('.');return {text:row.rate,units:BigInt(a)*1000000n+BigInt(b.padEnd(6,'0'))};
+  // Decimal-valid rates may use scientific notation; expand without floating money.
+  const [mantissa,exponent='0']=String(row.rate).toLowerCase().split('e'),[a,b='']=mantissa.split('.');
+  const places=6+Number(exponent)-b.length,digits=BigInt(a+b),factor=10n**BigInt(Math.abs(places));
+  return {text:row.rate,units:places>=0?digits*factor:digits/factor};
 }
 function casheaResetReview(form){
   form.elements.preview_hash.value='';form.querySelector('[type="submit"]').textContent='Revisar venta';$('.cashea-preview',form).replaceChildren();
