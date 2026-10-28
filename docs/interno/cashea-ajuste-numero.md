@@ -33,7 +33,22 @@ Las tres omisiones en Linux son DPAPI, mutex/ventana Windows y diálogo nativo T
 
 Windows, primer intento [40762203368](https://github.com/Eliezerti/Sistema-colegio/actions/runs/40762203368), job 123076810906, commit `3163f0c`: **358 unittest en 607.294 s, OK sin omisiones**, compilación correcta. Falló el navegador normal en `cashea_browser.cjs:128`: `page.waitForFunction` esperando Manual agotó 30000 ms tras un POST de Ajustes 200. No llegaron a ejecutarse `--demo`, `--roster`, instalación, impresión nativa ni actualización en ese intento. [Salida y traceback](cashea-ajuste-windows.txt).
 
-La prueba navegaba a Ajustes y editaba antes de esperar la actualización asíncrona que reemplaza su formulario. Se sincronizó con el cambio real de estado, se añadió una respuesta deliberadamente lenta de 250 ms y se comprueba que el POST y la respuesta guarden Manual. No se ampliaron tiempos, no se retiró la espera ni se modificó el producto. Se repitieron las tres suites en Linux: todas correctas. Se repite la validación completa Windows; no se declara aprobada por anticipado.
+La prueba navegaba a Ajustes y editaba antes de esperar la actualización asíncrona que reemplaza su formulario. Se sincronizó con el cambio real de estado, se añadió una respuesta deliberadamente lenta de 250 ms y se comprueba que el POST y la respuesta guarden Manual. No se ampliaron tiempos, no se retiró la espera ni se modificó el producto. Se repitieron las tres suites en Linux: todas correctas. La repetición completa aprobó todos los pasos: [Actions 40765068773](https://github.com/Eliezerti/Sistema-colegio/actions/runs/40765068773), job 123086889259, commit `047d150`. La salida final está en [evidencia Windows](cashea-ajuste-windows.txt).
+
+### Resultado final en Windows
+
+Windows Server 2022, Python 3.12.10. Job completo **success**; código funcional idéntico a `3163f0c`, pruebas sincronizadas en `047d150`.
+
+| Comando | Resultado real |
+|---|---|
+| `python -m unittest discover -s tests -v` | 358 en 870.031 s, OK sin omisiones |
+| `python tests/run_browser.py` | Código 0; incluye Copiar, R- real, Bs, 40/16/24, tasa ausente/científica, Manual con petición/respuesta comprobadas, inicial cero y consulta |
+| `python tests/run_browser.py --demo` | Código 0 |
+| `python tests/run_browser.py --roster` | Código 0 |
+
+Compilación, inventario e Inno Setup correctos. Instalación limpia, accesos directos, ventanas, bandeja, consulta cifrada y eliminación del temporal correctos. WebView2 verificó una página de 396 × 612, 612 × 792 y 792 × 612 puntos según papel, con escala predeterminada. Actualización real del instalador 1.0.73 al nuevo 1.0.74: datos/totales y PDF histórico idénticos; CA/R/CL, inicial VES (original Bs 1.600, tasa 100, USD 16), número R- real, integridad y desinstalación conservadora comprobados. La migración 13 → 14 se prueba con el fixture del esquema previamente entregado; la actualización nativa usa 1.0.73.
+
+[Instalador BORRADOR aprobado por esta validación](https://github.com/Eliezerti/Sistema-colegio/actions/runs/40765068773/artifacts/12851326222) · [Evidencia nativa y JSON de actualización](https://github.com/Eliezerti/Sistema-colegio/actions/runs/40765068773/artifacts/12851850601). Sigue siendo una entrega de revisión en `cashea`; no es una publicación final. La impresión física del colegio y la aceptación del número por Cashea/contador no se han verificado.
 
 ## Incidencias durante el desarrollo
 

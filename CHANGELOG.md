@@ -4,6 +4,8 @@
 - Inicial en Bs con conversión al cambiar moneda, calculadora en la moneda elegida, tasa confirmada y equivalente visibles. Advertencia por diferencia mayor al 1 %; el importe real manda. Sin cambios en el motor de cobros ni recibos históricos.
 - Migración 13 → 14 con copia previa verificada, integridad, claves foráneas y bitácora. Conserva todas las órdenes anteriores como Manual y sus snapshots; pruebas con fixture real ficticio del esquema entregado, fallos y terminación real del proceso. [Guía](docs/cashea.md) · [Validación del ajuste](docs/interno/cashea-ajuste-numero.md).
 
+- Validación real del ajuste: Linux, 358 (355 correctas y tres nativas omitidas); Windows, 358 correctas sin omisiones. Normal, `--demo` y `--roster` correctos en ambos. Instalación, impresión nativa, consulta cifrada y actualización 1.0.73 verificadas. Se corrigió la sincronización de la prueba de Ajustes sin cambiar el producto ni ampliar tiempos; se conserva el fallo inicial en el informe. La impresión física y la validación del número con Cashea/contador requieren al colegio.
+
 # Cashea · 1.0.74 · en revisión
 
 - Ventas CA-, inicial con R- normal si es positiva y cobertura financiada separada del dinero recibido. Inicial cero sin recibo R-. Saldo, morosidad, convenios, estados de cuenta y solvencias incluyen la cobertura.
