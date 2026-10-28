@@ -101,7 +101,7 @@ class SystemTests(unittest.TestCase):
         after=self.request('state')
         for table in ('students','charges','payments','expenses'):self.assertEqual(before[table],after[table])
         with closing(connect(self.path)) as db:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],13)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],14)
             dump='\n'.join(db.iterdump())
             for secret in (password,pending['recovery']):self.assertNotIn(secret,dump);self.assertNotIn(secret.encode(),path.read_bytes())
 
