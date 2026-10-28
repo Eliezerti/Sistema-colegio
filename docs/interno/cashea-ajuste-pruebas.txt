@@ -3368,75 +3368,75 @@ OK (skipped=3)
 28/Oct/2026 20:23:05 POST /api/setup 400
 
 ==============================================================================
-Navegador normal y consulta — ejecución final
+Navegador normal y consulta — sincronización final
 ==============================================================================
 PASS CASHEA AJUSTE: R- real y Copiar, mensualidad 40/16/24, conversión USD→Bs, tasa/equivalente, advertencia >1 %, inicial cero CA- sin consumir R-, ajustes Manual y campo obligatorio.
 PASS CASHEA: método de cobro, calculadora exacta 130/78/52, revisión/confirmación, PDF 396×612, saldo y mora cero, liquidación seleccionada CL-, recibo de inicial y ajustes.
 PASS: A3 warning, activity without background renewal, configurable timeout, RAM-only drafts, same-user recovery, different-user discard, password clearing, administrative notice.
 PASS: fiscal settings, PNG logo, fiscal letterheads and printing, daily rate checkpoint and reopening, guardian search, live discount, automatic student code, enrollment PDF, automatic arrears without manual monthly generation, BCV payment and receipt PDF, arrears, simplified expense, filtered directory PDFs and printing, daily payments/arrears PDF, reports, family account and solvency PDFs, CSV preview and import, cash close and reopening, backup status, thermal tickets, bulk promotion and archived PDF, payment plan, responsive layout, read-only role.
 PASS: copy viewer banner, safe reload and session end, no rate confirmation, history navigation, server write rejection and unchanged ledger.
-28/Oct/2026 20:18:24 POST /api/setup 200
-28/Oct/2026 20:18:24 GET /api/session 200
-28/Oct/2026 20:18:24 POST /api/confirm-rate 200
-28/Oct/2026 20:18:24 POST /api/settings 200
-28/Oct/2026 20:18:24 POST /api/grades 200
-28/Oct/2026 20:18:24 POST /api/guardians 200
-28/Oct/2026 20:18:24 POST /api/students 200
-28/Oct/2026 20:18:24 POST /api/payments 200
-28/Oct/2026 20:18:25 GET / 303
-28/Oct/2026 20:18:25 GET / 200
-28/Oct/2026 20:18:25 GET /style.css 200
-28/Oct/2026 20:18:25 GET /session.js 200
-28/Oct/2026 20:18:25 GET /cashea.js 200
-28/Oct/2026 20:18:25 GET /app.js 200
-28/Oct/2026 20:18:25 GET /responsive.js 200
-28/Oct/2026 20:18:25 GET /api/session 200
-28/Oct/2026 20:18:26 GET /api/session-status 200
-28/Oct/2026 20:18:26 GET /favicon.svg 200
-28/Oct/2026 20:18:26 GET /api/state 200
-28/Oct/2026 20:18:26 GET /aula-app.png 200
-28/Oct/2026 20:18:26 GET / 200
-28/Oct/2026 20:18:26 GET /style.css 200
-28/Oct/2026 20:18:26 GET /session.js 200
-28/Oct/2026 20:18:26 GET /app.js 200
-28/Oct/2026 20:18:26 GET /cashea.js 200
-28/Oct/2026 20:18:26 GET /responsive.js 200
-28/Oct/2026 20:18:26 GET /api/session 200
-28/Oct/2026 20:18:26 GET /api/session-status 200
-28/Oct/2026 20:18:26 GET /favicon.svg 200
-28/Oct/2026 20:18:26 GET /api/state 200
-28/Oct/2026 20:18:26 GET /aula-app.png 200
-28/Oct/2026 20:18:26 GET /api/state 200
-28/Oct/2026 20:18:26 POST /api/session-activity 200
-28/Oct/2026 20:18:26 GET /api/state 200
-28/Oct/2026 20:18:26 POST /api/session-activity 200
-28/Oct/2026 20:18:26 GET /api/state 200
-28/Oct/2026 20:18:27 POST /api/session-activity 200
-28/Oct/2026 20:18:27 GET /api/state 200
-28/Oct/2026 20:18:27 GET /api/cashea 200
-28/Oct/2026 20:18:27 POST /api/session-activity 200
-28/Oct/2026 20:18:27 GET /api/state 200
-28/Oct/2026 20:18:27 POST /api/session-activity 200
-28/Oct/2026 20:18:27 GET /api/state 200
-28/Oct/2026 20:18:27 POST /api/payments 403
-28/Oct/2026 20:18:27 POST /api/expenses 403
-28/Oct/2026 20:18:27 POST /api/confirm-rate 403
-28/Oct/2026 20:18:27 POST /api/generate 403
-28/Oct/2026 20:18:27 POST /api/restore 403
-28/Oct/2026 20:18:27 POST /api/settings 403
-28/Oct/2026 20:18:27 POST /api/backup-now 403
-28/Oct/2026 20:18:27 POST /api/import-roster 403
-28/Oct/2026 20:18:27 POST /api/transition-year 403
-28/Oct/2026 20:18:27 POST /api/crypto-confirm 403
-28/Oct/2026 20:18:27 POST /api/cashea-order 403
-28/Oct/2026 20:18:27 POST /api/cashea-settlement 403
-28/Oct/2026 20:18:27 POST /api/cashea-void-order 403
-28/Oct/2026 20:18:27 POST /api/cashea-settings 403
-28/Oct/2026 20:18:27 POST /api/cashea-void-settlement 403
-28/Oct/2026 20:18:27 POST /api/cashea-order-date 403
-28/Oct/2026 20:18:27 GET /api/state 200
-28/Oct/2026 20:18:27 POST /api/logout 200
-28/Oct/2026 20:18:27 GET /api/state 401
+28/Oct/2026 20:35:56 POST /api/setup 200
+28/Oct/2026 20:35:56 GET /api/session 200
+28/Oct/2026 20:35:56 POST /api/confirm-rate 200
+28/Oct/2026 20:35:56 POST /api/settings 200
+28/Oct/2026 20:35:56 POST /api/grades 200
+28/Oct/2026 20:35:56 POST /api/guardians 200
+28/Oct/2026 20:35:56 POST /api/students 200
+28/Oct/2026 20:35:56 POST /api/payments 200
+28/Oct/2026 20:35:57 GET / 303
+28/Oct/2026 20:35:57 GET / 200
+28/Oct/2026 20:35:58 GET /session.js 200
+28/Oct/2026 20:35:58 GET /style.css 200
+28/Oct/2026 20:35:58 GET /app.js 200
+28/Oct/2026 20:35:58 GET /cashea.js 200
+28/Oct/2026 20:35:58 GET /responsive.js 200
+28/Oct/2026 20:35:58 GET /api/session 200
+28/Oct/2026 20:35:58 GET /api/session-status 200
+28/Oct/2026 20:35:58 GET /favicon.svg 200
+28/Oct/2026 20:35:58 GET /api/state 200
+28/Oct/2026 20:35:58 GET /aula-app.png 200
+28/Oct/2026 20:35:58 GET / 200
+28/Oct/2026 20:35:58 GET /session.js 200
+28/Oct/2026 20:35:58 GET /style.css 200
+28/Oct/2026 20:35:58 GET /app.js 200
+28/Oct/2026 20:35:58 GET /cashea.js 200
+28/Oct/2026 20:35:58 GET /responsive.js 200
+28/Oct/2026 20:35:58 GET /api/session 200
+28/Oct/2026 20:35:58 GET /favicon.svg 200
+28/Oct/2026 20:35:58 GET /api/session-status 200
+28/Oct/2026 20:35:58 GET /api/state 200
+28/Oct/2026 20:35:58 GET /aula-app.png 200
+28/Oct/2026 20:35:58 GET /api/state 200
+28/Oct/2026 20:35:59 POST /api/session-activity 200
+28/Oct/2026 20:35:59 GET /api/state 200
+28/Oct/2026 20:35:59 GET /api/state 200
+28/Oct/2026 20:35:59 POST /api/session-activity 200
+28/Oct/2026 20:35:59 POST /api/session-activity 200
+28/Oct/2026 20:35:59 GET /api/state 200
+28/Oct/2026 20:35:59 GET /api/cashea 200
+28/Oct/2026 20:35:59 POST /api/session-activity 200
+28/Oct/2026 20:35:59 GET /api/state 200
+28/Oct/2026 20:35:59 POST /api/session-activity 200
+28/Oct/2026 20:35:59 GET /api/state 200
+28/Oct/2026 20:35:59 POST /api/payments 403
+28/Oct/2026 20:35:59 POST /api/expenses 403
+28/Oct/2026 20:35:59 POST /api/confirm-rate 403
+28/Oct/2026 20:35:59 POST /api/generate 403
+28/Oct/2026 20:35:59 POST /api/restore 403
+28/Oct/2026 20:35:59 POST /api/settings 403
+28/Oct/2026 20:35:59 POST /api/backup-now 403
+28/Oct/2026 20:35:59 POST /api/import-roster 403
+28/Oct/2026 20:35:59 POST /api/transition-year 403
+28/Oct/2026 20:35:59 POST /api/crypto-confirm 403
+28/Oct/2026 20:35:59 POST /api/cashea-order 403
+28/Oct/2026 20:35:59 POST /api/cashea-settlement 403
+28/Oct/2026 20:35:59 POST /api/cashea-settings 403
+28/Oct/2026 20:35:59 POST /api/cashea-void-order 403
+28/Oct/2026 20:35:59 POST /api/cashea-void-settlement 403
+28/Oct/2026 20:35:59 POST /api/cashea-order-date 403
+28/Oct/2026 20:35:59 GET /api/state 200
+28/Oct/2026 20:35:59 POST /api/logout 200
+28/Oct/2026 20:35:59 GET /api/state 401
 
 ==============================================================================
 Navegador modo Pruebas — ejecución final

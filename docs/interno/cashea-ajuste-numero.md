@@ -1,6 +1,6 @@
 # Ajuste Cashea: número de recibo e inicial en Bs
 
-28/10/2026 · rama `cashea` · Aula 1.0.74 en desarrollo · esquema 14. Base del diff: `e3ba2d6e5f02ab1ce4cf1cfbbb6b18ea30a17e5e`. Código funcional y pruebas de entrega: `3163f0cb19ae18405cfb4b15a952d81f93c08d43`. Sin fusión a main, etiquetas ni versión final.
+28/10/2026 · rama `cashea` · Aula 1.0.74 en desarrollo · esquema 14. Base del diff: `e3ba2d6e5f02ab1ce4cf1cfbbb6b18ea30a17e5e`. Código funcional: `3163f0cb19ae18405cfb4b15a952d81f93c08d43`; los commits posteriores solo ajustan sincronización de pruebas y documentación. Sin fusión a main, etiquetas ni versión final.
 
 ## Cambios
 
@@ -31,7 +31,9 @@ La implementación de `record_payment`, `convert_received`, `money` y `next_reco
 
 Las tres omisiones en Linux son DPAPI, mutex/ventana Windows y diálogo nativo Tk de restauración. No se cambiaron sus condiciones. El PDF CA- ficticio se comprobó además con `pdfinfo`: una página, 396 × 612 puntos; número R- real destacado. La impresión física del colegio no se ejecutó.
 
-Windows está ejecutándose en [Actions 40762203368](https://github.com/Eliezerti/Sistema-colegio/actions/runs/40762203368), job 123076810906, commit `3163f0c`. Este apartado se actualizará con su resultado; no se declara aprobado por anticipado.
+Windows, primer intento [40762203368](https://github.com/Eliezerti/Sistema-colegio/actions/runs/40762203368), job 123076810906, commit `3163f0c`: **358 unittest en 607.294 s, OK sin omisiones**, compilación correcta. Falló el navegador normal en `cashea_browser.cjs:128`: `page.waitForFunction` esperando Manual agotó 30000 ms tras un POST de Ajustes 200. No llegaron a ejecutarse `--demo`, `--roster`, instalación, impresión nativa ni actualización en ese intento. [Salida y traceback](cashea-ajuste-windows.txt).
+
+La prueba navegaba a Ajustes y editaba antes de esperar la actualización asíncrona que reemplaza su formulario. Se sincronizó con el cambio real de estado, se añadió una respuesta deliberadamente lenta de 250 ms y se comprueba que el POST y la respuesta guarden Manual. No se ampliaron tiempos, no se retiró la espera ni se modificó el producto. Se repitieron las tres suites en Linux: todas correctas. Se repite la validación completa Windows; no se declara aprobada por anticipado.
 
 ## Incidencias durante el desarrollo
 

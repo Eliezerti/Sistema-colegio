@@ -123,9 +123,23 @@ async function casheaCurrencyAndManual(page){
   const zero=await page.evaluate(()=>api('cashea-order/3'));assert.equal(zero.invoice_number,zero.code);assert.equal(zero.payment_id,null);
   assert.equal((await page.evaluate(()=>api('cashea'))).next_receipt_number,before);
   await page.locator('dialog[open] [data-action="close"]').first().click();
-  await page.locator('.nav-button[data-id="settings"]').click();await page.getByRole('tab',{name:'Cashea',exact:true}).click();
+  // Navigation refresh replaces the settings form asynchronously. Wait for that
+  // actual state change before editing; a slow runner must not submit the old form.
+  const delayedState=async route=>{await new Promise(resolve=>setTimeout(resolve,250));await route.continue();};
+  await page.route('**/api/state?history=1',delayedState);
+  await page.evaluate(()=>{window.casheaSettingsPreviousState=state;});
+  await page.locator('.nav-button[data-id="settings"]').click();
+  await page.waitForFunction(()=>state!==window.casheaSettingsPreviousState);
+  await page.evaluate(()=>{delete window.casheaSettingsPreviousState;});
+  await page.unroute('**/api/state?history=1',delayedState);
+  await page.getByRole('tab',{name:'Cashea',exact:true}).click();
   const settings=page.locator('form[data-endpoint="cashea-settings"]');await settings.locator('[name="cashea_invoice_origin"]').selectOption('manual');
-  await settings.getByRole('button',{name:'Guardar ajustes Cashea'}).click();await page.waitForFunction(()=>state.settings.cashea_invoice_origin==='manual');
+  const saveRequest=page.waitForRequest(r=>r.url().endsWith('/api/cashea-settings')&&r.method()==='POST');
+  const saveResponse=page.waitForResponse(r=>r.url().endsWith('/api/cashea-settings')&&r.request().method()==='POST');
+  await settings.getByRole('button',{name:'Guardar ajustes Cashea'}).click();
+  assert.equal((await saveRequest).postDataJSON().cashea_invoice_origin,'manual');
+  const saved=await saveResponse;assert.equal(saved.status(),200);assert.equal((await saved.json()).settings.cashea_invoice_origin,'manual');
+  await page.waitForFunction(()=>state.settings.cashea_invoice_origin==='manual');
   await page.evaluate(id=>openCasheaOrder(id),another.id);sale=page.locator('form[data-endpoint="cashea-order"]');await sale.waitFor();
   assert.equal(await sale.locator('[name="invoice_number"]').getAttribute('required'),'');
   assert.equal(await sale.getByText('Revisar una factura duplicada').count(),1);

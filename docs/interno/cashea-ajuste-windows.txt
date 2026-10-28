@@ -1,0 +1,19 @@
+Windows · intento 1 · commit 3163f0c · run 40762203368 · job 123076810906
+Log obtenido del job real de GitHub Actions. Se eliminaron códigos ANSI de color. La prueba de navegador falló; las fases posteriores no se ejecutaron.
+
+2026-10-28T20:30:16.8769573Z Ran 358 tests in 607.294s
+2026-10-28T20:30:16.8776310Z OK
+2026-10-28T20:30:33.9369985Z PASS B2: inventario final sin módulos excluidos y con servidor, SQLite, cifrado, Tcl/Tk y WebView2.
+2026-10-28T20:30:45.0157356Z ##[group]Run python tests/run_browser.py *>&1 | Tee-Object browser-normal.log
+2026-10-28T20:31:59.1531221Z ##[error]Process completed with exit code 1.
+
+Traceback de navegador:
+2026-10-28T20:31:58.7160594Z page.waitForFunction: Timeout 30000ms exceeded.
+2026-10-28T20:31:58.7171418Z     at casheaCurrencyAndManual (D:\a\Sistema-colegio\Sistema-colegio\tests\cashea_browser.cjs:128:89)
+2026-10-28T20:31:58.7179844Z     at async module.exports (D:\a\Sistema-colegio\Sistema-colegio\tests\cashea_browser.cjs:64:3)
+2026-10-28T20:31:58.7187391Z     at async D:\a\Sistema-colegio\Sistema-colegio\tests\browser.cjs:520:5 {
+2026-10-28T20:31:58.7206168Z   name: 'TimeoutError'
+2026-10-28T20:31:58.7220015Z }
+2026-10-28T20:31:58.7228627Z Colegio abierto en http://127.0.0.1:53619 · datos: C:\Users\runneradmin\AppData\Local\Temp\aula-e2e-ofkl0yuh\colegio.sqlite3
+2026-10-28T20:31:58.7236098Z Mantén esta ventana abierta. Ctrl+C para cerrar de forma segura.
+
