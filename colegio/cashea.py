@@ -9,7 +9,7 @@ from .db import (ValidationError,PAYMENT_METHODS,audit,charges,convert_received,
 ACTIONS={'cashea-preview','cashea-settlement-preview','cashea-order','cashea-settlement','cashea-void-order',
          'cashea-void-settlement','cashea-settings','cashea-order-date'}
 ADMIN={'cashea-void-order','cashea-void-settlement','cashea-settings'}
-NOTE='Valida el tratamiento contable de comisiones y diferencias con tu contador. No se crea un egreso automático. El comprobante no es factura fiscal.'
+NOTE='Valida el tratamiento contable de comisiones y diferencias con tu contador. No se crea un egreso automático.'
 
 
 def checkpoint(stage):
@@ -51,7 +51,8 @@ def zero_conversion(db,amount,currency,on):
 
 def settings(db):
     from .cashea_schema import DEFAULTS
-    return {key:(db.execute('SELECT value FROM settings WHERE key=?',(key,)).fetchone() or [value])[0] for key,value in DEFAULTS.items()}
+    defaults=dict(DEFAULTS,cashea_invoice_origin='recibo')
+    return {key:(db.execute('SELECT value FROM settings WHERE key=?',(key,)).fetchone() or [value])[0] for key,value in defaults.items()}
 
 
 def preview(db,data,user):
@@ -84,14 +85,20 @@ def preview(db,data,user):
     if initial>total:raise ValidationError('La inicial no puede superar el total de la venta.')
     method=data.get('initial_method','Efectivo')
     if method not in PAYMENT_METHODS:raise ValidationError('Selecciona el método real de la inicial, no Cashea.')
-    initial_percent,_=percent(data.get('initial_percent','0'))
+    initial_percent,initial_bps=percent(data.get('initial_percent','0'))
+    calculated_initial=(total*initial_bps+5000)//10000
+    warning=(abs(initial-calculated_initial)*100>calculated_initial)
+    initial_warning='La inicial recibida difiere más de 1 % del cálculo por porcentaje. Se registrará lo realmente recibido.' if warning else ''
     financed=total-initial
     _,bps=percent(config['cashea_commission_percent'])
     commission=(financed*bps+5000)//10000
-    invoice=text(data,'invoice_number',100);invoice_key=''.join(invoice.upper().split())
-    if config['cashea_invoice_required']=='1' and not invoice:raise ValidationError('Escribe el número de factura de la venta.')
+    origin=config['cashea_invoice_origin']
+    invoice=(f"R-{next_record_id(db,'payments'):06d}" if initial else f"CA-{next_record_id(db,'cashea_orders'):06d}") if origin=='recibo' else required(data,'invoice_number',100)
+    invoice_key=''.join(invoice.upper().split())
     duplicates=[r[0] for r in db.execute('SELECT id FROM cashea_orders WHERE invoice_key=? ORDER BY id',(invoice_key,))] if invoice else []
-    invoice_reason=text(data,'invoice_reason',500)
+    invoice_reason=text(data,'invoice_reason',500) if origin=='manual' else ''
+    if duplicates and (origin=='recibo' or db.execute("SELECT 1 FROM cashea_orders WHERE invoice_key=? AND invoice_origin='recibo'",(invoice_key,)).fetchone()):
+        raise ValidationError('El número ya está vinculado a otra orden. Los números de recibo y orden no pueden duplicarse, aunque estén anulados.')
     if duplicates and (data.get('invoice_duplicate_confirmed') is not True or not invoice_reason):
         raise ValidationError('La factura ya aparece en otra venta. Revisa el duplicado y confirma con un motivo.')
     expected=valid_date(data.get('expected_on') or expected_date(on,int(config['cashea_settlement_day'])))
@@ -99,6 +106,8 @@ def preview(db,data,user):
     result=dict(student=dict(person),ordered_on=on,total_amount=total,initial_percent=initial_percent,
         initial_amount=initial,initial_currency=currency,initial_received=received,initial_rate=rate,
         initial_method=method,initial_reference=text(data,'initial_reference'),financed_amount=financed,
+        calculated_initial=calculated_initial,initial_warning=initial_warning,invoice_origin=origin,
+        invoice_label='N.º de orden' if origin=='recibo' and not initial else 'Número de factura',
         invoice_number=invoice,invoice_key=invoice_key,invoice_duplicates=duplicates,invoice_reason=invoice_reason,
         reference=text(data,'reference'),expected_on=expected,commission_bps=bps,commission_amount=commission,
         expected_amount=financed-commission,charges=plan,student_balance_before=sum(c['balance'] for c in pending),
@@ -116,7 +125,7 @@ def create_order(db,data,user):
     state='por_liquidar' if value['financed_amount'] else 'liquidada'
     fields=dict(id=target,code=code,student_id=value['student']['id'],ordered_on=value['ordered_on'],
         total_amount=value['total_amount'],initial_percent=value['initial_percent'],initial_amount=value['initial_amount'],
-        financed_amount=value['financed_amount'],invoice_number=value['invoice_number'],invoice_key=value['invoice_key'],
+        financed_amount=value['financed_amount'],invoice_number=value['invoice_number'],invoice_key=value['invoice_key'],invoice_origin=value['invoice_origin'],
         reference=value['reference'],expected_on=value['expected_on'],state=state,commission_bps=value['commission_bps'],
         commission_amount=value['commission_amount'],expected_amount=value['expected_amount'],snapshot_json='{}',
         created_by=user['id'],created_at=stamp())
@@ -131,6 +140,9 @@ def create_order(db,data,user):
             reference=value['initial_reference'],notes='Inicial de '+code,
             request_key='cashea-inicial-'+secrets.token_hex(16),duplicate_reference_confirmed=data.get('duplicate_reference_confirmed'),
             duplicate_reason=data.get('duplicate_reason')),user['id'],cashea=meta)['id']
+    if value['invoice_origin']=='recibo':
+        real=f"R-{payment:06d}" if payment else code
+        if real!=value['invoice_number']:raise ValidationError('El correlativo cambió. Revisa la venta nuevamente.')
     remaining=value['initial_amount']
     for charge in value['charges']:
         cash=min(remaining,charge['amount']);remaining-=cash
@@ -138,8 +150,8 @@ def create_order(db,data,user):
         if financed:db.execute('INSERT INTO cashea_allocations VALUES(?,?,?)',(target,charge['id'],financed))
     snapshot=dict(value,id=target,code=code,payment_id=payment);snapshot.pop('preview_hash')
     db.execute('UPDATE cashea_orders SET payment_id=?,snapshot_json=? WHERE id=?',(payment,canonical(snapshot),target))
-    audit(db,user['id'],'cashea-order',dict(id=target,code=code,total=value['total_amount'],initial=value['initial_amount'],financed=value['financed_amount'],invoice_duplicates=value['invoice_duplicates'],invoice_reason=value['invoice_reason']))
-    return dict(saved=True,id=target,code=code,payment_id=payment)
+    audit(db,user['id'],'cashea-order',dict(id=target,code=code,total=value['total_amount'],initial=value['initial_amount'],financed=value['financed_amount'],invoice_duplicates=value['invoice_duplicates'],invoice_reason=value['invoice_reason'],invoice_number=value['invoice_number'],invoice_origin=value['invoice_origin']))
+    return dict(saved=True,id=target,code=code,payment_id=payment,invoice_number=value['invoice_number'],invoice_origin=value['invoice_origin'],invoice_label=value['invoice_label'])
 
 
 def settle(db,data,user,*,preview_only=False):
@@ -200,10 +212,10 @@ def action(db,endpoint,data,user,void_payment):
         weekday=integer(data.get('cashea_settlement_day'),0,6)
         grace=integer(data.get('cashea_grace_days'),0,365)
         pct,_=percent(data.get('cashea_commission_percent'))
-        required_invoice=data.get('cashea_invoice_required')
-        if required_invoice not in (True,False,'0','1','on'):raise ValidationError('Revisa si la factura es obligatoria.')
+        origin=data.get('cashea_invoice_origin',settings(db)['cashea_invoice_origin'])
+        if origin not in ('recibo','manual'):raise ValidationError('Selecciona Recibo o Manual como origen del número de factura.')
         values=dict(cashea_settlement_day=str(weekday),cashea_grace_days=str(grace),cashea_commission_percent=pct,
-            cashea_invoice_required='1' if required_invoice in (True,'1','on') else '0')
+            cashea_invoice_required='1',cashea_invoice_origin=origin)
         previous=settings(db)
         for k,v in values.items():db.execute('UPDATE settings SET value=? WHERE key=?',(v,k))
         audit(db,user['id'],endpoint,dict(before=previous,after=values));result=dict(saved=True,settings=values)
@@ -308,7 +320,7 @@ def book(db):
             group['financed']+=order['financed_amount'];group['expected']+=order['expected_amount'];group['count']+=1;group['overdue']+=int(order['overdue'])
     settlements=[dict(r) for r in db.execute('SELECT * FROM cashea_settlements ORDER BY received_on DESC,id DESC')]
     for s in settlements:s.pop('snapshot_json')
-    return dict(settings=config,orders=orders,settlements=settlements,weeks=[groups[k] for k in sorted(groups)],
+    return dict(next_receipt_number=f"R-{next_record_id(db,'payments'):06d}",next_order_number=f"CA-{next_record_id(db,'cashea_orders'):06d}",settings=config,orders=orders,settlements=settlements,weeks=[groups[k] for k in sorted(groups)],
         pending=sum(o['financed_amount'] for o in orders if o['state']=='por_liquidar'),
         overdue_count=sum(o['overdue'] for o in orders),note=NOTE)
 
@@ -319,6 +331,9 @@ def detail(db,kind,target):
     row=db.execute('SELECT * FROM '+table+' WHERE id=?',(target,)).fetchone()
     if not row:raise ValidationError('Documento Cashea inexistente.')
     value=json.loads(row['snapshot_json'])
+    if kind=='order':
+        value['invoice_origin']=row['invoice_origin']
+        value['invoice_label']='N.º de orden' if row['invoice_origin']=='recibo' and not row['payment_id'] else 'Número de factura'
     return dict(value,id=row['id'],state=row['state'] if kind=='order' else ('anulada' if row['voided'] else 'liquidada'),
                 void_reason=row['void_reason'],**({'expected_on':row['expected_on']} if kind=='order' else {}))
 
@@ -351,6 +366,12 @@ def integrity_errors(db):
         errors.append('Una orden Cashea tiene comisión o anulación inválida.')
     if db.execute("SELECT 1 FROM cashea_settlements WHERE voided<>(voided_on IS NOT NULL) OR (voided=1 AND trim(void_reason)='')").fetchone():
         errors.append('Una liquidación Cashea tiene anulación inválida.')
+    if db.execute('PRAGMA user_version').fetchone()[0]>=14:
+        if db.execute("""SELECT 1 FROM cashea_orders o LEFT JOIN payments p ON p.id=o.payment_id
+            WHERE o.invoice_origin='recibo' AND (o.invoice_number<>CASE WHEN o.payment_id IS NULL THEN o.code ELSE printf('R-%06d',p.id) END
+                OR o.invoice_key<>o.invoice_number)
+            UNION ALL SELECT 1 FROM cashea_orders a JOIN cashea_orders b ON a.invoice_key=b.invoice_key AND a.id<>b.id WHERE a.invoice_origin='recibo'
+            """).fetchone():errors.append('El número Cashea no coincide con su recibo u orden o está duplicado.')
     from .db import BALANCES
     if db.execute('SELECT 1 FROM ('+BALANCES+') WHERE paid>amount').fetchone():errors.append('La cobertura supera el importe de un cargo.')
     return errors

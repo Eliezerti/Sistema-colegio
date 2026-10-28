@@ -59,7 +59,7 @@ def migrate(path, *, new=False,verified_copy=False):
     path=Path(path).resolve()
     with path_lock(path),closing(connect(path)) as db:
         version=db.execute('PRAGMA user_version').fetchone()[0]
-        if version==VERSION:
+        if version in (13,14):
             verify(db);return
         if version!=12:raise ValueError('Cashea requiere una base íntegra de esquema 12 antes de actualizar.')
         verify(db)

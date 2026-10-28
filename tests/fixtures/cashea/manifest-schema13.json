@@ -1,0 +1,8 @@
+{
+  "filename": "desktop-1.0.74-schema13-ficticio.sqlite3",
+  "schema": 13,
+  "commit": "e3ba2d6e5f02ab1ce4cf1cfbbb6b18ea30a17e5e",
+  "fictional": true,
+  "sha256": "8193052142aca4c8765faae7d19f5fa4798622367104a731ce95919c361ad2d7",
+  "origin": "Código entregado e3ba2d6; fixture publicado 1.0.73 migrado mediante initialize original; dos órdenes manuales duplicadas legítimas."
+}

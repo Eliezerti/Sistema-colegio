@@ -35,7 +35,7 @@ class RetirementTests(unittest.TestCase):
 
     def assert_retired(self,path):
         with closing(connect(path)) as db:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],13)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],14)
             self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
             self.assertFalse(db.execute('PRAGMA foreign_key_check').fetchone())
             tables={r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
@@ -70,13 +70,13 @@ class RetirementTests(unittest.TestCase):
                 self.assertEqual([tuple(r) for r in db.execute('SELECT * FROM audit_links ORDER BY audit_id')][:len(links)],links)
                 self.assertEqual(db.execute("SELECT COUNT(*) FROM audit WHERE action='retire-staff-module'").fetchone()[0],1)
             copy=Path(directory)/'new-backup.sqlite3';consistent_backup(path,copy)
-            self.assertEqual(probe_backup(copy)['schema'],13)
+            self.assertEqual(probe_backup(copy)['schema'],14)
             for private in (b'01029999888877776666',b'BANCO-RETIRADO-TEST'):
                 self.assertNotIn(private,copy.read_bytes())
             from tests.crypto_helpers import configure
             from colegio.backup_export import write_encrypted
             configure(path.parent);cipher=Path(directory)/'new.aulabak';write_encrypted(copy,cipher,path.parent)
-            self.assertEqual(probe_backup(cipher,'FICTICIO-respaldo-seguro-2026')['schema'],13)
+            self.assertEqual(probe_backup(cipher,'FICTICIO-respaldo-seguro-2026')['schema'],14)
             from tests.restore_helpers import approved_restore
             restored=approved_restore(cipher,Path(directory)/'restored',credential='FICTICIO-respaldo-seguro-2026')
             self.assert_retired(restored)
@@ -92,7 +92,7 @@ class RetirementTests(unittest.TestCase):
             raw,_=decrypt(target.read_bytes(),'FICTICIO-respaldo-seguro-2026','password')
             self.assertNotIn(b'01029999888877776666',raw)
             self.assertNotIn(b'BANCO-RETIRADO-TEST',raw)
-            self.assertEqual(probe_backup(target,'FICTICIO-respaldo-seguro-2026')['schema'],13)
+            self.assertEqual(probe_backup(target,'FICTICIO-respaldo-seguro-2026')['schema'],14)
         self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(),before)
 
     def test_backup_failure_blocks_all_ddl_and_preserves_previous_database(self):

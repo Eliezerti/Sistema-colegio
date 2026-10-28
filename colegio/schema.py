@@ -41,7 +41,7 @@ def migrate(path, *, new=False):
     # writers within this process. Never publish automatic backups during migration.
     with path_lock(path), closing(connect(path)) as db:
         version = db.execute('PRAGMA user_version').fetchone()[0]
-        if version == 13:
+        if version in (13,14):
             verify(db)
             return
         if version > VERSION:

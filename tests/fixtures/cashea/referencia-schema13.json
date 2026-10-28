@@ -1,0 +1,601 @@
+{
+  "cash": {
+    "closed_on": "2026-10-27",
+    "lines": [
+      {
+        "method": "Efectivo",
+        "currency": "USD",
+        "income": 9200,
+        "expense": 1500,
+        "net": 7700,
+        "income_usd": 9200,
+        "expense_usd": 1500
+      },
+      {
+        "method": "Pago móvil",
+        "currency": "USD",
+        "income": 14000,
+        "expense": 0,
+        "net": 14000,
+        "income_usd": 14000,
+        "expense_usd": 0
+      },
+      {
+        "method": "Transferencia",
+        "currency": "VES",
+        "income": 270000,
+        "expense": 0,
+        "net": 270000,
+        "income_usd": 2700,
+        "expense_usd": 0
+      }
+    ],
+    "movements": [
+      {
+        "type": "income",
+        "id": 1,
+        "currency": "USD",
+        "received_amount": 5000,
+        "amount": 5000,
+        "method": "Efectivo",
+        "reference": "AUD-FICTICIO-001",
+        "voided": 0,
+        "exchange_rate": "1"
+      },
+      {
+        "type": "income",
+        "id": 2,
+        "currency": "VES",
+        "received_amount": 270000,
+        "amount": 2700,
+        "method": "Transferencia",
+        "reference": "AUD-FICTICIO-002",
+        "voided": 0,
+        "exchange_rate": "100"
+      },
+      {
+        "type": "income",
+        "id": 3,
+        "currency": "USD",
+        "received_amount": 14000,
+        "amount": 14000,
+        "method": "Pago móvil",
+        "reference": "AUD-FICTICIO-003",
+        "voided": 0,
+        "exchange_rate": "1"
+      },
+      {
+        "type": "income",
+        "id": 4,
+        "currency": "USD",
+        "received_amount": 1000,
+        "amount": 1000,
+        "method": "Efectivo",
+        "reference": "AUD-FICTICIO-004",
+        "voided": 0,
+        "exchange_rate": "1"
+      },
+      {
+        "type": "income",
+        "id": 5,
+        "currency": "USD",
+        "received_amount": 1600,
+        "amount": 1600,
+        "method": "Efectivo",
+        "reference": "",
+        "voided": 0,
+        "exchange_rate": "1"
+      },
+      {
+        "type": "income",
+        "id": 6,
+        "currency": "USD",
+        "received_amount": 1600,
+        "amount": 1600,
+        "method": "Efectivo",
+        "reference": "",
+        "voided": 0,
+        "exchange_rate": "1"
+      },
+      {
+        "type": "expense",
+        "id": 1,
+        "currency": "USD",
+        "received_amount": 1500,
+        "amount": 1500,
+        "method": "Efectivo",
+        "reference": "AUD-GASTO-FICTICIO",
+        "voided": 0,
+        "exchange_rate": "1"
+      }
+    ],
+    "preview_hash": "ca288a7c8ee2b3afae78bc1eea71ad15ca63fe075ef8f2c0247bae49a170691c",
+    "income_usd": 25900,
+    "expense_usd": 1500,
+    "active_id": null,
+    "cashea_orders": [
+      {
+        "id": 1,
+        "state": "por_liquidar",
+        "financed_amount": 2400
+      },
+      {
+        "id": 2,
+        "state": "por_liquidar",
+        "financed_amount": 2400
+      }
+    ],
+    "cashea": {
+      "sold": 8000,
+      "initial": 3200,
+      "financed": 4800,
+      "received": 0,
+      "settled_financed": 0,
+      "pending": 4800,
+      "expected_pending": 4800,
+      "differences": 0,
+      "start": "2026-10-27",
+      "end": "2026-10-27"
+    }
+  },
+  "summary": {
+    "active_students": 5,
+    "pending": 16100,
+    "overdue": 16100,
+    "debtors": 3,
+    "income": 25900,
+    "expenses": 1500,
+    "net": 24400,
+    "aging": [
+      12400,
+      3700,
+      0,
+      0
+    ]
+  },
+  "daily": {
+    "title": "Reporte diario de cobros y morosidad",
+    "school": {
+      "school_name": "COLEGIO FICTICIO · AUDITORÍA",
+      "currency": "USD",
+      "due_day": "10",
+      "start_month": "9",
+      "school_year": "2026",
+      "address": "",
+      "phone": "",
+      "rif": "",
+      "email": "",
+      "website": "",
+      "legal_name": "",
+      "fiscal_address": "",
+      "logo": "",
+      "institution_type": "Unidad Educativa Colegio",
+      "backup_directory": "",
+      "cashea_settlement_day": "2",
+      "cashea_invoice_required": "1",
+      "cashea_commission_percent": "0",
+      "cashea_grace_days": "0"
+    },
+    "issued_on": "2026-10-27",
+    "issued_at": "28/10/2026 · 16:04",
+    "operator": "Auditor FICTICIO",
+    "filter_label": "Cobros del 27/10/2026 · Morosidad actual al emitir el reporte",
+    "count_label": "6 cobros válidos · 3 alumnos con deuda vencida",
+    "summaries": [
+      [
+        "Recibido en dólares",
+        "USD 232,00"
+      ],
+      [
+        "Recibido en bolívares",
+        "Bs 2.700,00"
+      ],
+      [
+        "Total cobrado · equivalente USD",
+        "USD 259,00"
+      ],
+      [
+        "Deuda vencida actual · USD",
+        "USD 161,00"
+      ]
+    ],
+    "payment_count": 6,
+    "debtor_count": 3,
+    "arrears_by_grade": [
+      {
+        "grade": "Grado FICTICIO 1",
+        "students": 1,
+        "overdue": 1000
+      },
+      {
+        "grade": "Grado FICTICIO 2",
+        "students": 2,
+        "overdue": 15100
+      }
+    ],
+    "received_usd": 23200,
+    "received_ves": 270000,
+    "income_usd": 25900,
+    "overdue_usd": 16100,
+    "sections": [
+      {
+        "title": "Cobros del día",
+        "headings": [
+          "N.º",
+          "Recibo",
+          "Alumno / grado",
+          "Representante",
+          "Método / referencia",
+          "Recibido",
+          "Equivalente USD / estado"
+        ],
+        "widths": [
+          26,
+          76,
+          163,
+          144,
+          122,
+          117,
+          110
+        ],
+        "lines": [
+          [
+            "1",
+            "R-000006",
+            "Alumno FICTICIO 04\nGrado FICTICIO 2",
+            "Representante FICTICIO 02",
+            "Efectivo\nSin referencia",
+            "USD 16,00",
+            "USD 16,00\nVálido"
+          ],
+          [
+            "2",
+            "R-000005",
+            "Alumno FICTICIO 01\nGrado FICTICIO 1",
+            "Representante FICTICIO 01",
+            "Efectivo\nSin referencia",
+            "USD 16,00",
+            "USD 16,00\nVálido"
+          ],
+          [
+            "3",
+            "R-000004",
+            "Alumno FICTICIO 04\nGrado FICTICIO 2",
+            "Representante FICTICIO 02",
+            "Efectivo\nAUD-FICTICIO-004",
+            "USD 10,00",
+            "USD 10,00\nVálido"
+          ],
+          [
+            "4",
+            "R-000003",
+            "Alumno FICTICIO 03\nGrado FICTICIO 1",
+            "Representante FICTICIO 02",
+            "Pago móvil\nAUD-FICTICIO-003",
+            "USD 140,00",
+            "USD 140,00\nVálido"
+          ],
+          [
+            "5",
+            "R-000002",
+            "Alumno FICTICIO 02\nGrado FICTICIO 2",
+            "Representante FICTICIO 01",
+            "Transferencia\nAUD-FICTICIO-002",
+            "Bs 2.700,00",
+            "USD 27,00\nVálido"
+          ],
+          [
+            "6",
+            "R-000001",
+            "Alumno FICTICIO 01\nGrado FICTICIO 1",
+            "Representante FICTICIO 01",
+            "Efectivo\nAUD-FICTICIO-001",
+            "USD 50,00",
+            "USD 50,00\nVálido"
+          ]
+        ],
+        "empty_message": "No hay cobros con fecha de hoy."
+      },
+      {
+        "title": "Morosidad actual",
+        "headings": [
+          "N.º",
+          "Alumno / código",
+          "Grado",
+          "Representante / contacto",
+          "Vencido USD",
+          "Mayor atraso"
+        ],
+        "widths": [
+          26,
+          180,
+          115,
+          240,
+          105,
+          92
+        ],
+        "lines": [
+          [
+            "1",
+            "Alumno FICTICIO 02\nAL-000002",
+            "Grado FICTICIO 2",
+            "Representante FICTICIO 01\nSin teléfono",
+            "USD 81,00",
+            "47 días"
+          ],
+          [
+            "2",
+            "Alumno FICTICIO 04\nAL-000004",
+            "Grado FICTICIO 2",
+            "Representante FICTICIO 02\nSin teléfono",
+            "USD 70,00",
+            "47 días"
+          ],
+          [
+            "3",
+            "Alumno FICTICIO 01\nAL-000001",
+            "Grado FICTICIO 1",
+            "Representante FICTICIO 01\nSin teléfono",
+            "USD 10,00",
+            "17 días"
+          ]
+        ],
+        "empty_message": "No hay alumnos con deuda vencida."
+      },
+      {
+        "title": "Morosidad por grado",
+        "headings": [
+          "Grado",
+          "Alumnos con deuda",
+          "Vencido USD"
+        ],
+        "widths": [
+          400,
+          180,
+          178
+        ],
+        "lines": [
+          [
+            "Grado FICTICIO 1",
+            "1",
+            "USD 10,00"
+          ],
+          [
+            "Grado FICTICIO 2",
+            "2",
+            "USD 151,00"
+          ]
+        ]
+      }
+    ],
+    "note": "Los totales incluyen cobros válidos; las anulaciones se muestran y se excluyen de los totales. Cada pago conserva su conversión original. La morosidad incluye cargos vencidos pendientes al generar el reporte, también de fichas archivadas."
+  },
+  "monthly": {
+    "title": "Informe mensual de cierre",
+    "school": {
+      "school_name": "COLEGIO FICTICIO · AUDITORÍA",
+      "currency": "USD",
+      "due_day": "10",
+      "start_month": "9",
+      "school_year": "2026",
+      "address": "",
+      "phone": "",
+      "rif": "",
+      "email": "",
+      "website": "",
+      "legal_name": "",
+      "fiscal_address": "",
+      "logo": "",
+      "institution_type": "Unidad Educativa Colegio",
+      "backup_directory": "",
+      "cashea_settlement_day": "2",
+      "cashea_invoice_required": "1",
+      "cashea_commission_percent": "0",
+      "cashea_grace_days": "0"
+    },
+    "issued_on": "2026-10-27",
+    "issued_at": "28/10/2026 · 16:04",
+    "operator": "Auditor FICTICIO",
+    "period": "2026-10",
+    "filter_label": "Movimientos del 2026-10-01 al 2026-10-31 · datos disponibles al emitir",
+    "count_label": "2026-10 · importes originales separados por moneda y método",
+    "income_usd": 25900,
+    "expenses_usd": 1500,
+    "net_usd": 24400,
+    "cashea": {
+      "sold": 8000,
+      "initial": 3200,
+      "financed": 4800,
+      "received": 0,
+      "settled_financed": 0,
+      "pending": 4800,
+      "expected_pending": 4800,
+      "differences": 0,
+      "start": "2026-10-01",
+      "end": "2026-10-31"
+    },
+    "balances": [
+      {
+        "currency": "USD",
+        "method": "Efectivo",
+        "opening": 0,
+        "income": 9200,
+        "expense": 1500,
+        "closing": 7700,
+        "income_usd": 9200,
+        "expense_usd": 1500
+      },
+      {
+        "currency": "USD",
+        "method": "Pago móvil",
+        "opening": 0,
+        "income": 14000,
+        "expense": 0,
+        "closing": 14000,
+        "income_usd": 14000,
+        "expense_usd": 0
+      },
+      {
+        "currency": "VES",
+        "method": "Transferencia",
+        "opening": 0,
+        "income": 270000,
+        "expense": 0,
+        "closing": 270000,
+        "income_usd": 2700,
+        "expense_usd": 0
+      }
+    ],
+    "pending_by_grade": [
+      {
+        "grade": "Grado FICTICIO 1",
+        "pending": 1000
+      },
+      {
+        "grade": "Grado FICTICIO 2",
+        "pending": 15100
+      }
+    ],
+    "annulments": [],
+    "summaries": [
+      [
+        "Cobrado del mes · equivalente USD",
+        "USD 259,00"
+      ],
+      [
+        "Egresos del mes · equivalente USD",
+        "USD 15,00"
+      ],
+      [
+        "Movimiento neto del mes · USD",
+        "USD 244,00"
+      ]
+    ],
+    "sections": [
+      {
+        "title": "Caja por moneda y método",
+        "headings": [
+          "Moneda",
+          "Método",
+          "Saldo previo",
+          "Cobrado",
+          "Egresos",
+          "Saldo al cierre"
+        ],
+        "widths": [
+          65,
+          135,
+          130,
+          130,
+          130,
+          168
+        ],
+        "lines": [
+          [
+            "USD",
+            "Efectivo",
+            "USD 0,00",
+            "USD 92,00",
+            "USD 15,00",
+            "USD 77,00"
+          ],
+          [
+            "USD",
+            "Pago móvil",
+            "USD 0,00",
+            "USD 140,00",
+            "USD 0,00",
+            "USD 140,00"
+          ],
+          [
+            "VES",
+            "Transferencia",
+            "VES 0,00",
+            "VES 2.700,00",
+            "VES 0,00",
+            "VES 2.700,00"
+          ]
+        ]
+      },
+      {
+        "title": "Pendiente actual de cargos con vencimiento hasta fin del mes, por grado",
+        "headings": [
+          "Grado",
+          "Pendiente USD"
+        ],
+        "widths": [
+          550,
+          208
+        ],
+        "lines": [
+          [
+            "Grado FICTICIO 1",
+            "USD 10,00"
+          ],
+          [
+            "Grado FICTICIO 2",
+            "USD 151,00"
+          ]
+        ]
+      },
+      {
+        "title": "Anulaciones realizadas durante el mes",
+        "headings": [
+          "Fecha",
+          "Tipo",
+          "Número",
+          "Motivo"
+        ],
+        "widths": [
+          105,
+          85,
+          110,
+          458
+        ],
+        "lines": []
+      },
+      {
+        "title": "Cashea al corte · financiado no es caja",
+        "headings": [
+          "Concepto",
+          "USD"
+        ],
+        "widths": [
+          550,
+          208
+        ],
+        "lines": [
+          [
+            "Vendido en el mes",
+            "USD 80,00"
+          ],
+          [
+            "Inicial de ventas del mes",
+            "USD 32,00"
+          ],
+          [
+            "Financiado en el mes",
+            "USD 48,00"
+          ],
+          [
+            "Liquidaciones recibidas en el mes",
+            "USD 0,00"
+          ],
+          [
+            "Financiado liquidado en el mes",
+            "USD 0,00"
+          ],
+          [
+            "Por liquidar al corte · bruto",
+            "USD 48,00"
+          ],
+          [
+            "Por liquidar al corte · neto estimado",
+            "USD 48,00"
+          ]
+        ]
+      }
+    ],
+    "note": "Monedas separadas; los equivalentes USD conservan la tasa original. El saldo de caja acumula movimientos válidos hasta fin del mes, según su estado actual, sin inventar efectivo contado. El pendiente es el saldo actual de cargos con vencimiento hasta ese corte; no reconstruye una foto histórica. Las anulaciones se seleccionan por la fecha de la bitácora en Venezuela, aunque el movimiento sea de otro mes. No se incluyen nombres, documentos ni contactos de alumnos."
+  }
+}

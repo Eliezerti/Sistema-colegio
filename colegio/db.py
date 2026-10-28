@@ -156,6 +156,8 @@ def initialize(path, *, verified_copy=False):
             migrate_schema(path)
             from .cashea_schema import migrate as migrate_cashea
             migrate_cashea(path,verified_copy=verified_copy)
+            from .cashea_invoice_schema import migrate as migrate_invoice
+            migrate_invoice(path,verified_copy=verified_copy)
             return
     with closing(connect(path)) as db, db:
         db.execute('PRAGMA journal_mode=WAL')
@@ -254,6 +256,8 @@ def initialize(path, *, verified_copy=False):
     migrate_schema(path, new=new_database)
     from .cashea_schema import migrate as migrate_cashea
     migrate_cashea(path,new=new_database,verified_copy=verified_copy)
+    from .cashea_invoice_schema import migrate as migrate_invoice
+    migrate_invoice(path,new=new_database,verified_copy=verified_copy)
 
 
 

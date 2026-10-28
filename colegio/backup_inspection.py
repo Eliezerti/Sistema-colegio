@@ -60,6 +60,8 @@ def validate(db):
     if db.execute('PRAGMA foreign_key_check').fetchone():
         raise ValueError('El respaldo contiene referencias inválidas. No se reemplazará la base.')
     tables={r['name'] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")}
+    if version>=14 and 'invoice_origin' not in {r['name'] for r in db.execute('PRAGMA table_info(cashea_orders)')}:
+        raise ValueError('El respaldo de esquema 14 no tiene el origen del número Cashea.')
     if version>=13:
         from .cashea_schema import TABLES
         if not set(TABLES)<=tables:raise ValueError('El respaldo de esquema 13 no tiene todas las tablas Cashea.')

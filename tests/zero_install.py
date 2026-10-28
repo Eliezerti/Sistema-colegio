@@ -14,7 +14,7 @@ def assert_empty_database(path):
     with closing(sqlite3.connect(path)) as db:
         assert db.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
         assert not list(db.execute('PRAGMA foreign_key_check'))
-        assert db.execute('PRAGMA user_version').fetchone()[0]==13
+        assert db.execute('PRAGMA user_version').fetchone()[0]==14
         for table in (*BUSINESS,'users','audit','audit_links','sessions'):
             assert db.execute('SELECT COUNT(*) FROM '+table).fetchone()[0]==0,table
         profile=dict(db.execute('SELECT key,value FROM settings'))

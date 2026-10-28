@@ -29,7 +29,7 @@ class CasheaMigrationTests(unittest.TestCase):
 
     def verify(self,path):
         with closing(connect(path)) as db:
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],13)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],14)
             self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
             self.assertFalse(db.execute('PRAGMA foreign_key_check').fetchone())
             self.assertTrue(portable_status(db)['ok']);self.assertTrue(local_status(db)['ok'])
@@ -127,7 +127,7 @@ initialize(sys.argv[1])
             path=self.fixture(directory);configure(path.parent)
             before=hashlib.sha256(path.read_bytes()).hexdigest();cipher=path.parent/'salida.aulabak'
             write_encrypted(path,cipher,path.parent)
-            self.assertEqual(probe_backup(cipher,PASSWORD)['schema'],13)
+            self.assertEqual(probe_backup(cipher,PASSWORD)['schema'],14)
             self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),before)
 
     def test_old_copy_with_configured_second_destination_converts_and_opens_without_writing_there(self):
@@ -140,14 +140,14 @@ initialize(sys.argv[1])
             before=hashlib.sha256(path.read_bytes()).hexdigest()
             cipher=path.parent/'portatil.aulabak'
             write_encrypted(path,cipher,path.parent)
-            self.assertEqual(probe_backup(cipher,PASSWORD)['schema'],13)
+            self.assertEqual(probe_backup(cipher,PASSWORD)['schema'],14)
             origin_files={p.relative_to(path.parent) for p in path.parent.rglob('*')}
             with open_copy(path) as viewer:
-                with closing(viewer.connect_view()) as db:self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],13)
+                with closing(viewer.connect_view()) as db:self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0],14)
             self.assertEqual(origin_files,{p.relative_to(path.parent) for p in path.parent.rglob('*')})
             from tests.restore_helpers import approved_restore
             restored=approved_restore(path,path.parent/'restaurada')
-            self.assertEqual(probe_backup(restored)['schema'],13)
+            self.assertEqual(probe_backup(restored)['schema'],14)
             self.assertEqual(list(Path(second).iterdir()),[],'La conversión y consulta privadas no publican en el destino de la escuela de origen.')
             self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),before)
 

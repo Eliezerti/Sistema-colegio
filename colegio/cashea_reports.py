@@ -24,10 +24,13 @@ def document_pdf(db,kind,target,*,demo=False):
     pdf=PDF('Comprobante Cashea' if kind=='order' else 'Liquidación Cashea',doc['school'],size=(396,612))
     pdf.line(doc['code']+' · '+doc['state'],True)
     if doc['void_reason']:pdf.line('ANULADO: '+doc['void_reason'],True)
+    if kind=='order' and doc['state']=='anulada':pdf.line('Anulada: anular también en el portal de Cashea',True)
     if kind=='order':
         pdf.line('Alumno: '+doc['student']['name'])
         pdf.line('Grado: '+doc['student']['grade_name'])
-        pdf.line('Fecha: '+doc['ordered_on']+' · Factura: '+(doc['invoice_number'] or 'No exigida'))
+        pdf.line('Fecha: '+doc['ordered_on'])
+        pdf.line(doc['invoice_label']+':')
+        pdf.ensure(24);pdf.text(44,pdf.y,doc['invoice_number'] or 'No exigida',14,True);pdf.y+=24
         pdf.table(['Mensualidad','Período','Cubierto USD'],[[c['concept'],c['period'],amount(c['amount'])] for c in doc['charges']],[130,85,105])
         for label,key in (('Total','total_amount'),('Inicial pagada','initial_amount'),('Financiado por Cashea','financed_amount')):pdf.line(label+': '+amount(doc[key]),True)
         pdf.line('Liquidación esperada: '+doc['expected_on'])

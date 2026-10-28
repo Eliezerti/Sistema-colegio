@@ -55,13 +55,13 @@ def main():
             assert original_pdf==client.request(f'receipt/{receipt}.pdf')
         ledger=data/'colegio.sqlite3'
         with closing(sqlite3.connect(ledger)) as db:
-            assert db.execute('PRAGMA user_version').fetchone()[0]==13
+            assert db.execute('PRAGMA user_version').fetchone()[0]==14
             assert db.execute('PRAGMA integrity_check').fetchone()[0]=='ok';assert not db.execute('PRAGMA foreign_key_check').fetchone()
         assert list((data/'backups').glob('antes-cashea-*.sqlite3'))
         digest=hashlib.sha256(ledger.read_bytes()).hexdigest()
         execute(registered_uninstaller(folder),'/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
         assert ledger.is_file() and hashlib.sha256(ledger.read_bytes()).hexdigest()==digest
-        result=dict(previous='1.0.73',version=args.version,schema=13,old_receipt_unchanged=True,totals_preserved_before_cashea=True,
+        result=dict(previous='1.0.73',version=args.version,schema=14,old_receipt_unchanged=True,totals_preserved_before_cashea=True,
             initial_usd=7800,financed_usd=5200,received_ves=520000,settlement_usd=5200,student_balance=0,maintenance=True,uninstall_keeps_data=True)
         (Path(os.environ['RUNNER_TEMP'])/'cashea-upgrade.json').write_text(json.dumps(result,indent=2))
         print('PASS CASHEA WINDOWS: actualización real 1.0.73 → '+args.version+', datos y PDF histórico idénticos, CA/R/CL, VES, saldo y mora cero, integridad y desinstalación conservadora.',flush=True)

@@ -21,7 +21,7 @@ def write_encrypted(source,destination,directory):
 
 
 def write_cashea_migration_backup(source,destination,directory):
-    """Preserve the verified schema-12 rollback copy, using the usual cipher pipeline.
+    """Preserve the verified schema-12/13 rollback copy, using the usual cipher pipeline.
 
     Not exposed through HTTP. No retired staff schema can use this path.
     Re-entering initialize() here would recursively migrate its own prior backup.
@@ -29,12 +29,12 @@ def write_cashea_migration_backup(source,destination,directory):
     from .backup_inspection import readonly,validate
     with readonly(source) as db:
         version,tables=validate(db)
-        if version!=12 or tables.intersection({'employees','positions','salary_receipts','payroll_plans'}):
-            raise ValueError('El respaldo previo de Cashea debe ser de esquema 12, sin Personal.')
-    return _write_encrypted(source,destination,directory,preserve_schema12=True)
+        if version not in (12,13) or tables.intersection({'employees','positions','salary_receipts','payroll_plans'}):
+            raise ValueError('El respaldo previo de Cashea debe ser de esquema 12 o 13, sin Personal.')
+    return _write_encrypted(source,destination,directory,preserve_prior_schema=True)
 
 
-def _write_encrypted(source,destination,directory,*,preserve_schema12=False):
+def _write_encrypted(source,destination,directory,*,preserve_prior_schema=False):
     destination=Path(destination)
     state,nonces=reserve(directory)
     with job_space(directory,destination.parent) as (work,identifier),staged_backup(source,temporary_root=work) as (snapshot,_,digest):
@@ -45,7 +45,7 @@ def _write_encrypted(source,destination,directory,*,preserve_schema12=False):
         from contextlib import closing
         with closing(sqlite3.connect(snapshot)) as db:
             old_version=db.execute('PRAGMA user_version').fetchone()[0]
-        if old_version < SCHEMA_VERSION and not preserve_schema12:
+        if old_version < SCHEMA_VERSION and not preserve_prior_schema:
             from .audit_chain import adopt_restored
             from .db import initialize
             adopt_restored(snapshot)

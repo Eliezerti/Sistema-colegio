@@ -204,6 +204,7 @@ class CasheaTests(unittest.TestCase):
         self.request('cashea-void-settlement',dict(id=settlement['id'],reason='FICTICIO',request_key='cashea-cerrada-anulacion'),status=400)
 
     def test_invoice_duplicates_need_explicit_review_and_reason(self):
+        self.config(cashea_invoice_origin='manual')
         order,data=self.order()
         other=self.order_data(student_id=self.new_student(),invoice_number=data['invoice_number'])
         self.request('cashea-preview',other,status=400)
@@ -215,6 +216,7 @@ class CasheaTests(unittest.TestCase):
         data=self.order_data();data['preview_hash']=self.request('cashea-preview',data)['preview_hash']
         self.request('payments',self.payment(student_id=self.sid,amount='1',paid_on=local_today().isoformat()))
         self.request('cashea-order',data,status=400)
+        self.config(cashea_invoice_origin='manual')
         for overrides in ({'initial_received':'131'},{'invoice_number':''},{'total':'NaN'},{'initial_received':'1.001'},{'initial_currency':'EUR'},{'initial_method':'Cashea'}):
             with self.subTest(overrides=overrides):self.request('cashea-preview',self.order_data(**overrides),status=400)
 
