@@ -1,0 +1,27 @@
+name: Cashea · paquete de revisión
+on:
+  push:
+    branches: [cashea]
+    paths:
+      - docs/interno/cashea-validacion.md
+      - docs/interno/cashea-pruebas.txt
+      - .github/workflows/cashea-paquete.yml
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Empaquetar diff íntegro, archivos y evidencia documentada
+        run: python tests/package_cashea_review.py --output dist/Aula-Cashea-1.0.74-revision.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Aula-Cashea-1.0.74-paquete-final-revision
+          path: dist/Aula-Cashea-1.0.74-revision.zip
+          if-no-files-found: error

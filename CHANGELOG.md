@@ -3,7 +3,7 @@
 - Ventas CA-, inicial con R- normal si es positiva y cobertura financiada separada del dinero recibido. Inicial cero sin recibo R-. Saldo, morosidad, convenios, estados de cuenta y solvencias incluyen la cobertura.
 - Liquidaciones CL- por selección, moneda/tasa original, referencias y diferencias con motivo; ajustes por Administración y anulaciones protegidas. La comisión no crea egreso automático. Todas las escrituras tienen idempotencia, permisos, CSRF y bitácora.
 - Informes PDF/CSV/XLSX, listado externo solo con AL-, sección mensual al corte y depósitos bancarios separados del efectivo físico en caja. Los recibos históricos conservan sus snapshots.
-- Migración aditiva 12 → 13 con copia previa verificada y copia cifrada en el segundo destino configurado; sin retirar registros. Tablas nuevas incluidas en respaldos, restauración, integridad, pisos y modo consulta. [Guía](docs/cashea.md). Resultados reales en docs/interno/cashea-validacion.md al terminar la validación.
+- Migración aditiva 12 → 13 con copia previa verificada y copia cifrada en el segundo destino configurado; sin retirar registros. Tablas nuevas incluidas en respaldos, restauración, integridad, pisos y modo consulta. [Guía](docs/cashea.md). Validación real: Linux, 345 (342 correctas y tres nativas omitidas); Windows, 345 sin omisiones. Tres navegadores correctos en ambos; instalación, impresión nativa, consulta cifrada, actualización real 1.0.73 y conservación del PDF anterior correctas. [Resultados y límites](docs/interno/cashea-validacion.md).
 
 # Corrección de matrículas duplicadas · en revisión
 

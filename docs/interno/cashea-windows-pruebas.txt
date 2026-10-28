@@ -1,0 +1,83 @@
+AULA 1.0.74 · CASHEA · EVIDENCIA WINDOWS
+Código: e5429bc58f2054dbebbe71f3926c67e84dd72f5a
+
+SEGUNDO INTENTO, APROBADO SIN CAMBIOS DE CÓDIGO NI DE PRUEBAS
+https://github.com/Eliezerti/Sistema-colegio/actions/runs/40602264590/attempts/2
+Trabajo: 122770950273
+El trabajo terminó success. Fragmentos literales del registro oficial:
+
+2026-10-28T10:58:36.1977333Z Ran 345 tests in 568.669s
+2026-10-28T10:58:36.1983019Z OK
+2026-10-28T10:58:53.6468691Z PASS B2: inventario final sin módulos excluidos y con servidor, SQLite, cifrado, Tcl/Tk y WebView2.
+2026-10-28T10:59:04.0408481Z Instalador construido: dist\Aula-Colegio-Instalador-1.0.74.exe
+2026-10-28T10:59:44.2934427Z PASS CASHEA: método de cobro, calculadora exacta 130/78/52, revisión/confirmación, PDF 396×612, saldo y mora cero, liquidación seleccionada CL-, recibo de inicial y ajustes.
+2026-10-28T10:59:49.7412971Z PASS: A3 warning, activity without background renewal, configurable timeout, RAM-only drafts, same-user recovery, different-user discard, password clearing, administrative notice.
+2026-10-28T10:59:49.9372227Z PASS: fiscal settings, PNG logo, fiscal letterheads and printing, daily rate checkpoint and reopening, guardian search, live discount, automatic student code, enrollment PDF, automatic arrears without manual monthly generation, BCV payment and receipt PDF, arrears, simplified expense, filtered directory PDFs and printing, daily payments/arrears PDF, reports, family account and solvency PDFs, CSV preview and import, cash close and reopening, backup status, thermal tickets, bulk promotion and archived PDF, payment plan, responsive layout, read-only role.
+2026-10-28T10:59:53.5193119Z PASS: copy viewer banner, safe reload and session end, no rate confirmation, history navigation, server write rejection and unchanged ledger.
+2026-10-28T11:00:05.7430597Z PASS: trial administrator, empty isolated database, simplified expense, reload, multiple tabs, mobile layout and automatic cleanup.
+2026-10-28T11:00:24.6358503Z PASS: actual Excel and CSV downloads, import into empty trial, automatic grades, preserved codes/phones/fees/statuses, preview invalidation, old listing explanation, no copied payments or altered source ledger, guardian PDF states and trial cleanup.
+2026-10-28T11:01:43.9239648Z PASS LIMPIEZA: ejecutable instalado, respaldo cifrado verificable, documentos de prueba retirados, alumno y usuario conservados, bitácora válida y primer recibo R-000001.
+2026-10-28T11:01:43.9348467Z PASS COPIA: WebView2 real, copia cifrada, aviso permanente, perfil Consulta y temporal eliminado.
+2026-10-28T11:01:43.9485866Z PASS B2: Tcl/Tk, ttk, calendario, textos en español y selector nativo abierto/cancelado.
+2026-10-28T11:01:43.9492254Z PASS B2: PDF administrativo, impresión PDF nativa WebView2 y selector Windows abierto/cancelado.
+2026-10-28T11:01:43.9498259Z PASS B2: PDF administrativo, impresión PDF nativa WebView2 y selector Windows abierto/cancelado.
+2026-10-28T11:01:46.6652809Z PASS: instalación, accesos directos, ventanas normal/pruebas, bandeja, actualización y desinstalación conservando datos.
+2026-10-28T11:01:59.4557061Z PASS CASHEA WINDOWS: actualización real 1.0.73 → 1.0.74, datos y PDF histórico idénticos, CA/R/CL, VES, saldo y mora cero, integridad y desinstalación conservadora.
+2026-10-28T11:02:04.8558217Z Artifact download URL: https://github.com/Eliezerti/Sistema-colegio/actions/runs/40602264590/artifacts/12811146395
+2026-10-28T11:02:07.0950142Z Artifact download URL: https://github.com/Eliezerti/Sistema-colegio/actions/runs/40602264590/artifacts/12809953895
+
+PRIMER INTENTO, NO APROBADO
+https://github.com/Eliezerti/Sistema-colegio/actions/runs/40602264590/attempts/1
+Trabajo: 122533062304
+El bloque siguiente se conserva del registro oficial, incluidas sus fechas UTC.
+
+2026-10-27T23:39:01.6783877Z ERROR: test_all_business_posts_fail_closed_and_neither_source_nor_temporary_ledger_changes (test_read_only_copy.ReadOnlyCopyTests.test_all_business_posts_fail_closed_and_neither_source_nor_temporary_ledger_changes) (route='recovery-notice-ack')
+2026-10-27T23:39:01.6785447Z ----------------------------------------------------------------------
+2026-10-27T23:39:01.6787570Z Traceback (most recent call last):
+2026-10-27T23:39:01.6790765Z   File "D:\a\Sistema-colegio\Sistema-colegio\tests\test_read_only_copy.py", line 62, in test_all_business_posts_fail_closed_and_neither_source_nor_temporary_ledger_changes
+2026-10-27T23:39:01.6792657Z     self.assertEqual(request('/api/'+case['route'],case['body'])[0],403)
+2026-10-27T23:39:01.6795156Z                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-27T23:39:01.6797742Z   File "D:\a\Sistema-colegio\Sistema-colegio\tests\test_read_only_copy.py", line 44, in request
+2026-10-27T23:39:01.6800144Z     response=client.getresponse();data=response.read()
+2026-10-27T23:39:01.6802496Z              ^^^^^^^^^^^^^^^^^^^^
+2026-10-27T23:39:01.6805409Z   File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\http\client.py", line 1430, in getresponse
+2026-10-27T23:39:01.6807493Z     response.begin()
+2026-10-27T23:39:01.6810475Z   File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\http\client.py", line 331, in begin
+2026-10-27T23:39:01.6812345Z     version, status, reason = self._read_status()
+2026-10-27T23:39:01.6814822Z                               ^^^^^^^^^^^^^^^^^^^
+2026-10-27T23:39:01.6817820Z   File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\http\client.py", line 292, in _read_status
+2026-10-27T23:39:01.6819713Z     line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+2026-10-27T23:39:01.6822277Z                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-27T23:39:01.6825072Z   File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\socket.py", line 720, in readinto
+2026-10-27T23:39:01.6827346Z     return self._sock.recv_into(b)
+2026-10-27T23:39:01.6830457Z            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-27T23:39:01.6832983Z ConnectionAbortedError: [WinError 10053] An established connection was aborted by the software in your host machine
+2026-10-27T23:39:01.6834902Z 
+2026-10-27T23:39:01.6837693Z ======================================================================
+2026-10-27T23:39:01.6840935Z ERROR: test_retired_routes_are_clear_for_every_profile_without_state_change (test_staff_retirement.RetiredRouteTests.test_retired_routes_are_clear_for_every_profile_without_state_change)
+2026-10-27T23:39:01.6842468Z ----------------------------------------------------------------------
+2026-10-27T23:39:01.6844472Z Traceback (most recent call last):
+2026-10-27T23:39:01.6847790Z   File "D:\a\Sistema-colegio\Sistema-colegio\tests\test_staff_retirement.py", line 152, in test_retired_routes_are_clear_for_every_profile_without_state_change
+2026-10-27T23:39:01.6849574Z     result=f.request(route,{},status=410);self.assertIn('retirada',result['error'])
+2026-10-27T23:39:01.6851636Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-27T23:39:01.6854413Z   File "D:\a\Sistema-colegio\Sistema-colegio\tests\test_system.py", line 202, in request
+2026-10-27T23:39:01.6856522Z     response=conn.getresponse()
+2026-10-27T23:39:01.6859080Z              ^^^^^^^^^^^^^^^^^^
+2026-10-27T23:39:01.6861907Z   File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\http\client.py", line 1430, in getresponse
+2026-10-27T23:39:01.6863753Z     response.begin()
+2026-10-27T23:39:01.6867321Z   File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\http\client.py", line 331, in begin
+2026-10-27T23:39:01.6869781Z     version, status, reason = self._read_status()
+2026-10-27T23:39:01.6871799Z                               ^^^^^^^^^^^^^^^^^^^
+2026-10-27T23:39:01.6874887Z   File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\http\client.py", line 292, in _read_status
+2026-10-27T23:39:01.6877207Z     line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+2026-10-27T23:39:01.6879679Z                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-27T23:39:01.6881897Z   File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\socket.py", line 720, in readinto
+2026-10-27T23:39:01.6884055Z     return self._sock.recv_into(b)
+2026-10-27T23:39:01.6886527Z            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-27T23:39:01.6888961Z ConnectionAbortedError: [WinError 10053] An established connection was aborted by the software in your host machine
+2026-10-27T23:39:01.6891166Z 
+2026-10-27T23:39:01.6894278Z ----------------------------------------------------------------------
+2026-10-27T23:39:01.6896556Z Ran 345 tests in 619.809s
+2026-10-27T23:39:01.6898906Z 
+2026-10-27T23:39:01.6901813Z FAILED (errors=2)
+

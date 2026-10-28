@@ -1,6 +1,6 @@
 # Aula · Control de mensualidades
 
-Cashea · versión 1.0.74, esquema 13, en revisión en la rama `cashea`. [Guía paso a paso](docs/cashea.md) · [Diseño e inventario](DISENO_CASHEA.md). La inicial es un cobro real; la parte financiada cubre la mensualidad sin contar como caja hasta recibir la liquidación. No se conecta a Cashea ni genera facturas fiscales. La instalación nueva sigue vacía.
+Cashea · versión 1.0.74, esquema 13, en revisión en la rama `cashea`. [Guía paso a paso](docs/cashea.md) · [Diseño e inventario](DISENO_CASHEA.md). La inicial es un cobro real; la parte financiada cubre la mensualidad sin contar como caja hasta recibir la liquidación. No se conecta a Cashea ni genera facturas fiscales. La instalación nueva sigue vacía. [Validación 1.0.74](docs/interno/cashea-validacion.md): Linux, 345 pruebas (342 correctas y tres exclusivas de Windows omitidas); Windows, 345 correctas sin omisiones. Los tres navegadores pasaron en ambos; instalación y actualización real desde 1.0.73 verificadas.
 
 Aula administra alumnos, representantes, grados, mensualidades, cobros y egresos mínimos del colegio en una PC Windows. Incluye tasas BCV, descuentos, convenios, pase de año, cierre de caja, reportes, importación de matrículas y Archivo de la institución. Personal y Nómina están retirados.
 
