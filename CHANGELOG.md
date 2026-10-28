@@ -1,3 +1,9 @@
+# Ajuste Cashea · 1.0.74 · esquema 14 · en revisión
+
+- Número Cashea tomado del recibo real R- de la inicial; con inicial cero, CA- sin crear pagos ni reservar recibos. Predicción antes de confirmar, número visible y botón Copiar. Origen Recibo por defecto o Manual obligatorio, configurable solo por Administración; duplicados y anulaciones protegidos.
+- Inicial en Bs con conversión al cambiar moneda, calculadora en la moneda elegida, tasa confirmada y equivalente visibles. Advertencia por diferencia mayor al 1 %; el importe real manda. Sin cambios en el motor de cobros ni recibos históricos.
+- Migración 13 → 14 con copia previa verificada, integridad, claves foráneas y bitácora. Conserva todas las órdenes anteriores como Manual y sus snapshots; pruebas con fixture real ficticio del esquema entregado, fallos y terminación real del proceso. [Guía](docs/cashea.md) · [Validación del ajuste](docs/interno/cashea-ajuste-numero.md).
+
 # Cashea · 1.0.74 · en revisión
 
 - Ventas CA-, inicial con R- normal si es positiva y cobertura financiada separada del dinero recibido. Inicial cero sin recibo R-. Saldo, morosidad, convenios, estados de cuenta y solvencias incluyen la cobertura.

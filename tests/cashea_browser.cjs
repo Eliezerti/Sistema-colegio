@@ -13,15 +13,22 @@ module.exports=async function(page){
   await page.locator('dialog[open] [name="method"]').selectOption('Cashea');
   const sale=page.locator('form[data-endpoint="cashea-order"]');await sale.waitFor();
   assert.equal(await sale.locator('[name="total"]').inputValue(),'130.00');
-  await sale.getByRole('button',{name:'Calcular inicial en USD'}).click();
+  await sale.getByRole('button',{name:'Calcular inicial'}).click();
   assert.equal(await sale.locator('[name="initial_received"]').inputValue(),'78.00');
-  await sale.locator('[name="invoice_number"]').fill('FACTURA-FICTICIA-CASHEA-001');
+  assert.equal(await sale.locator('[name="invoice_number"]').count(),0);
+  assert.equal(await sale.getByText('Revisar una factura duplicada').count(),0);
+  assert.match(await sale.locator('#cashea-invoice-preview').innerText(),/se asignará R-/);
   await sale.getByRole('button',{name:'Revisar venta'}).click();
   await sale.getByRole('button',{name:'Confirmar registro'}).waitFor();
   assert.match(await sale.locator('.cashea-preview').innerText(),/52,00/);
   await sale.getByRole('button',{name:'Confirmar registro'}).click();
   await page.locator('dialog[open] h2').filter({hasText:'CA-000001'}).waitFor();
-  assert.match(await page.locator('dialog[open]').innerText(),/No es factura fiscal|no es factura fiscal/);
+  const initialOrder=await page.evaluate(()=>api('cashea-order/1'));
+  assert.equal(initialOrder.invoice_number,`R-${String(initialOrder.payment_id).padStart(6,'0')}`);
+  assert.equal(await page.locator('dialog[open] .cashea-invoice-number').innerText(),initialOrder.invoice_number);
+  await page.context().grantPermissions(['clipboard-read','clipboard-write']);
+  await page.locator('dialog[open]').getByRole('button',{name:'Copiar',exact:true}).click();
+  assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),initialOrder.invoice_number);
   const pdf=await page.evaluate(async()=>{
     const b=await(await fetch('/api/cashea-order/1.pdf')).arrayBuffer();return new TextDecoder('latin1').decode(b);
   });assert.ok(pdf.includes('/MediaBox [0 0 396 612]'));
@@ -53,5 +60,77 @@ module.exports=async function(page){
   await page.locator('.nav-button[data-id="settings"]').click();
   await page.getByRole('tab',{name:'Cashea',exact:true}).click();
   assert.equal(await page.locator('form[data-endpoint="cashea-settings"] [name="cashea_settlement_day"]').inputValue(),'2');
+  assert.equal(await page.locator('[name="cashea_invoice_origin"]').inputValue(),'recibo');
+  await casheaCurrencyAndManual(page);
   console.log('PASS CASHEA: método de cobro, calculadora exacta 130/78/52, revisión/confirmación, PDF 396×612, saldo y mora cero, liquidación seleccionada CL-, recibo de inicial y ajustes.');
 };
+
+async function casheaCurrencyAndManual(page){
+  const pupil=await page.evaluate(async()=>{
+    const s=await api('state?history=1'),sample=s.students.find(p=>p.name==='Alumno FICTICIO Cashea');
+    const p=await api('students',{name:'Alumno FICTICIO moneda',document:'',birth_date:'',guardian_id:sample.guardian_id,grade_id:sample.grade_id,school_year:sample.school_year,monthly_fee:'40',discount:0,status:'active',billing_start:s.today.slice(0,7),enrollment_start:sample.enrollment_start,enrollment_end:sample.enrollment_end});
+    await refresh();return p;
+  });
+  await page.evaluate(id=>openCasheaOrder(id),pupil.id);
+  let sale=page.locator('form[data-endpoint="cashea-order"]');await sale.waitFor();
+  await sale.locator('[name="initial_percent"]').fill('40');
+  await sale.getByRole('button',{name:'Calcular inicial',exact:true}).click();
+  assert.equal(await sale.locator('[name="initial_received"]').inputValue(),'16.00');
+  // Same-user drafts survive clearing the session cache; predictions live only in the RAM DOM.
+  await page.evaluate(async()=>{captureSessionDraft();casheaView=undefined;await resumeSessionDraft();});
+  assert.match(await sale.locator('#cashea-invoice-preview').innerText(),/se asignará R-/);
+  // The real currency-change handler must convert the existing amount, not relabel USD as Bs.
+  const rate=await page.evaluate(()=>Number(state.rates.find(r=>r.rate_date===state.today).rate));
+  const dates=await page.evaluate(()=>{
+    const d=new Date(state.today+'T12:00:00Z');do{d.setUTCDate(d.getUTCDate()-1);}while(state.rates.some(r=>r.rate_date===d.toISOString().slice(0,10)));
+    return {missing:d.toISOString().slice(0,10),today:state.today};
+  });
+  await sale.locator('[name="ordered_on"]').fill(dates.missing);await sale.locator('[name="initial_currency"]').selectOption('VES');
+  assert.equal(await sale.locator('[name="initial_received"]').inputValue(),'');assert.match(await sale.locator('#cashea-initial-info').innerText(),/Confirma primero/);
+  await sale.locator('[name="ordered_on"]').fill(dates.today);await sale.getByRole('button',{name:'Calcular inicial',exact:true}).click();
+  await sale.locator('[name="initial_currency"]').selectOption('USD');assert.equal(await sale.locator('[name="initial_received"]').inputValue(),'16.00');
+  await sale.locator('[name="initial_currency"]').selectOption('VES');
+  assert.equal(await sale.locator('[name="initial_received"]').inputValue(),(Math.round(1600*rate)/100).toFixed(2));
+  assert.match(await sale.locator('#cashea-initial-info').innerText(),/Tasa confirmada.*Equivalente/s);
+  assert.match(await sale.locator('[name="initial_received"]').locator('..').innerText(),/Inicial recibida \(Bs\)/);
+  await sale.getByRole('button',{name:'Calcular inicial',exact:true}).click();
+  assert.equal(await sale.locator('[name="initial_currency"]').inputValue(),'VES');
+  await sale.locator('[name="initial_received"]').fill('16');
+  assert.match(await sale.locator('#cashea-initial-info').innerText(),/difiere más de 1 %/);
+  await sale.getByRole('button',{name:'Calcular inicial',exact:true}).click();
+  await sale.getByRole('button',{name:'Revisar venta',exact:true}).click();
+  await sale.getByRole('button',{name:'Confirmar registro'}).waitFor();
+  assert.match(await sale.locator('.cashea-preview').innerText(),/24,00/);
+  await sale.getByRole('button',{name:'Confirmar registro'}).click();
+  await page.locator('dialog[open] h2').filter({hasText:'CA-000002'}).waitFor();
+  const ves=await page.evaluate(()=>api('cashea-order/2'));
+  assert.equal(ves.initial_currency,'VES');assert.equal(ves.initial_amount,1600);assert.equal(ves.financed_amount,2400);
+  assert.equal(Number(ves.initial_rate),rate);assert.equal(ves.initial_received,Math.round(1600*rate));
+  await page.locator('dialog[open] [data-action="close"]').first().click();
+  const another=await page.evaluate(async()=>{
+    const s=await api('state?history=1'),p=s.students.find(p=>p.name==='Alumno FICTICIO moneda');
+    const r=await api('students',{name:'Alumno FICTICIO cero/manual',document:'',birth_date:'',guardian_id:p.guardian_id,grade_id:p.grade_id,school_year:p.school_year,monthly_fee:'80',discount:0,status:'active',billing_start:s.today.slice(0,7),enrollment_start:p.enrollment_start,enrollment_end:p.enrollment_end});await refresh();return r;
+  });
+  const before=(await page.evaluate(()=>api('cashea'))).next_receipt_number;
+  await page.evaluate(id=>openCasheaOrder(id),another.id);sale=page.locator('form[data-endpoint="cashea-order"]');await sale.waitFor();
+  await sale.locator('[name="total"]').fill('40');await sale.locator('[name="initial_percent"]').fill('0');
+  await sale.getByRole('button',{name:'Calcular inicial',exact:true}).click();
+  assert.match(await sale.locator('#cashea-invoice-preview').innerText(),/N.º de orden: se asignará CA-/);
+  await sale.getByRole('button',{name:'Revisar venta',exact:true}).click();await sale.getByRole('button',{name:'Confirmar registro'}).waitFor();await sale.getByRole('button',{name:'Confirmar registro'}).click();
+  await page.locator('dialog[open] h2').filter({hasText:'CA-000003'}).first().waitFor();
+  const zero=await page.evaluate(()=>api('cashea-order/3'));assert.equal(zero.invoice_number,zero.code);assert.equal(zero.payment_id,null);
+  assert.equal((await page.evaluate(()=>api('cashea'))).next_receipt_number,before);
+  await page.locator('dialog[open] [data-action="close"]').first().click();
+  await page.locator('.nav-button[data-id="settings"]').click();await page.getByRole('tab',{name:'Cashea',exact:true}).click();
+  const settings=page.locator('form[data-endpoint="cashea-settings"]');await settings.locator('[name="cashea_invoice_origin"]').selectOption('manual');
+  await settings.getByRole('button',{name:'Guardar ajustes Cashea'}).click();await page.waitForFunction(()=>state.settings.cashea_invoice_origin==='manual');
+  await page.evaluate(id=>openCasheaOrder(id),another.id);sale=page.locator('form[data-endpoint="cashea-order"]');await sale.waitFor();
+  assert.equal(await sale.locator('[name="invoice_number"]').getAttribute('required'),'');
+  assert.equal(await sale.getByText('Revisar una factura duplicada').count(),1);
+  await sale.locator('[name="invoice_number"]').fill('MANUAL-FICTICIO-001');await sale.locator('[name="initial_received"]').fill('0');
+  await sale.getByRole('button',{name:'Revisar venta',exact:true}).click();await sale.getByRole('button',{name:'Confirmar registro'}).waitFor();await sale.getByRole('button',{name:'Confirmar registro'}).click();
+  await page.locator('dialog[open] .cashea-invoice-number').filter({hasText:'MANUAL-FICTICIO-001'}).waitFor();
+  await page.locator('dialog[open] [data-action="close"]').first().click();
+  await page.evaluate(async()=>{const s=(await api('cashea')).settings;await api('cashea-settings',{...s,cashea_invoice_origin:'recibo',request_key:requestKey()});await refresh();});
+  console.log('PASS CASHEA AJUSTE: R- real y Copiar, mensualidad 40/16/24, conversión USD→Bs, tasa/equivalente, advertencia >1 %, inicial cero CA- sin consumir R-, ajustes Manual y campo obligatorio.');
+}

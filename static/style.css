@@ -331,3 +331,7 @@ body.readonly-copy{padding-top:44px}.readonly-copy .sidebar{top:44px}.readonly-c
  .receipt-half-letter .signature-row{margin-top:34pt}
  .receipt-half-letter .receipt-bottom{margin-top:8pt;padding-top:6pt}
 }
+
+/* Número que se transcribe al portal de Cashea. */
+.cashea-invoice-number{font-size:1.15em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+h2.cashea-invoice-number{font-size:1.6rem;margin:.35rem 0}

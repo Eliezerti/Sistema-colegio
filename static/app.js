@@ -518,6 +518,7 @@ document.addEventListener('click',async event=>{
       case 'cashea-sale':openCasheaOrder(id);break;
       case 'cashea-settle':await openCasheaSettlement();break;
       case 'cashea-calculate':casheaCalculate();break;
+      case 'cashea-copy':await navigator.clipboard.writeText(id);toast('Número copiado.');break;
       case 'cashea-order':await showCasheaDocument('order',id);break;
       case 'cashea-settlement':await showCasheaDocument('settlement',id);break;
       case 'cashea-void-order':case 'cashea-void-settlement':openCasheaVoid(action,id);break;
