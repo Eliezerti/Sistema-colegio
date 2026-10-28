@@ -5,7 +5,8 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 BASE='324d388'
 ALLOWED={'.py','.js','.cjs','.css','.html','.md','.iss','.ps1','.yml','.yaml','.json','.txt'}
-FIXTURE='tests/fixtures/cashea/desktop-1.0.73-ficticio.sqlite3'
+FIXTURES={'tests/fixtures/cashea/desktop-1.0.73-ficticio.sqlite3':'tests/fixtures/cashea/manifest.json',
+          'tests/fixtures/cashea/desktop-1.0.74-schema13-ficticio.sqlite3':'tests/fixtures/cashea/manifest-schema13.json'}
 SECRETS=(rb'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----',rb'gh[pousr]_[A-Za-z0-9]{30,}',rb'github_pat_[A-Za-z0-9_]{50,}',rb'AKIA[0-9A-Z]{16}')
 
 
@@ -13,19 +14,20 @@ def git(*args):return subprocess.check_output(['git',*args],cwd=ROOT)
 
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--output',required=True);args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--output',required=True);parser.add_argument('--base',default=BASE);args=parser.parse_args()
     if git('status','--porcelain','--untracked-files=no').strip():raise RuntimeError('Confirma los cambios antes de empaquetar: el ZIP corresponde a un commit revisable.')
-    names=git('diff','--name-only','--diff-filter=ACMR',BASE,'HEAD').decode().splitlines()
-    patch=git('diff','--binary','--full-index',BASE,'HEAD')
+    names=git('diff','--name-only','--diff-filter=ACMR',args.base,'HEAD').decode().splitlines()
+    patch=git('diff','--binary','--full-index',args.base,'HEAD')
     entries={'cambios-completos.patch':patch}
     for name in names:
         path=Path(name)
-        if path.is_absolute() or '..' in path.parts or path.suffix.lower() not in ALLOWED and name!=FIXTURE:
+        if path.is_absolute() or '..' in path.parts or path.suffix.lower() not in ALLOWED and name not in FIXTURES:
             raise RuntimeError('Archivo no permitido en el paquete: '+name)
         entries['archivos-modificados/'+name]=git('show','HEAD:'+name)
-    if FIXTURE in names:
-        meta=json.loads(entries['archivos-modificados/tests/fixtures/cashea/manifest.json'])
-        raw=entries['archivos-modificados/'+FIXTURE]
+    for fixture,metadata in FIXTURES.items():
+        if fixture not in names:continue
+        meta=json.loads(git('show','HEAD:'+metadata))
+        raw=entries['archivos-modificados/'+fixture]
         if not meta['fictional'] or hashlib.sha256(raw).hexdigest()!=meta['sha256']:raise RuntimeError('Fixture no comprobado.')
         with sqlite3.connect(':memory:') as db:
             db.deserialize(raw)
@@ -33,10 +35,11 @@ def main():
                 if any('FICTICIO' not in name.upper() for name, in db.execute('SELECT name FROM '+table)):
                     raise RuntimeError('El fixture contiene una persona no marcada ficticia.')
             if db.execute('SELECT COUNT(*) FROM sessions').fetchone()[0]:raise RuntimeError('El fixture tiene sesiones.')
+            if db.execute("SELECT COUNT(*) FROM students WHERE COALESCE(birth_date,'')<>''").fetchone()[0]:raise RuntimeError('El fixture tiene fechas de nacimiento.')
     for name,raw in entries.items():
         if any(re.search(pattern,raw) for pattern in SECRETS):
             raise RuntimeError('Revisar posible secreto o dato personal en '+name)
-    manifest=dict(base=git('rev-parse',BASE).decode().strip(),head=git('rev-parse','HEAD').decode().strip(),
+    manifest=dict(base=git('rev-parse',args.base).decode().strip(),head=git('rev-parse','HEAD').decode().strip(),
         branch=git('branch','--show-current').decode().strip(),files={name:hashlib.sha256(raw).hexdigest() for name,raw in entries.items()},
         review='Solo código comprometido, documentación y fixture explícitamente ficticio. Sin bases del usuario, almacén de claves, .env ni ejecutables. Patrones de secretos comprobados; nombres del fixture marcados FICTICIO. El escaneo no sustituye revisión humana.')
     entries['MANIFIESTO.json']=(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n').encode()

@@ -5,6 +5,8 @@ on:
     paths:
       - docs/interno/cashea-validacion.md
       - docs/interno/cashea-pruebas.txt
+      - docs/interno/cashea-ajuste-numero.md
+      - docs/interno/cashea-ajuste-pruebas.txt
       - .github/workflows/cashea-paquete.yml
 permissions:
   contents: read
@@ -19,9 +21,9 @@ jobs:
         with:
           python-version: '3.12'
       - name: Empaquetar diff íntegro, archivos y evidencia documentada
-        run: python tests/package_cashea_review.py --output dist/Aula-Cashea-1.0.74-revision.zip
+        run: python tests/package_cashea_review.py --base e3ba2d6 --output dist/Aula-Cashea-1.0.74-ajuste-numero.zip
       - uses: actions/upload-artifact@v4
         with:
-          name: Aula-Cashea-1.0.74-paquete-final-revision
-          path: dist/Aula-Cashea-1.0.74-revision.zip
+          name: Aula-Cashea-1.0.74-ajuste-numero
+          path: dist/Aula-Cashea-1.0.74-ajuste-numero.zip
           if-no-files-found: error

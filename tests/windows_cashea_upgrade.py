@@ -40,9 +40,10 @@ def main():
             after=client.request('state?history=1')
             for key in ('students','guardians','grades','charges','payments','expenses','summary','enrollments'):assert before[key]==after[key],key
             assert original_pdf==client.request(f'receipt/{receipt}.pdf');assert cash==client.request('cash-preview')
-            sale=dict(student_id=target,ordered_on=today.isoformat(),total='130',initial_percent='60',initial_received='78',initial_currency='USD',initial_method='Efectivo',invoice_number='FACTURA-FICTICIA-001',request_key='cashea-upgrade-sale-one')
+            sale=dict(student_id=target,ordered_on=today.isoformat(),total='130',initial_percent='60',initial_received='78',initial_currency='USD',initial_method='Efectivo',request_key='cashea-upgrade-sale-one')
             sale['preview_hash']=client.request('cashea-preview',sale)['preview_hash'];order=client.request('cashea-order',sale)
             assert order==client.request('cashea-order',sale)
+            assert order['invoice_number']==f"R-{order['payment_id']:06d}" and order['invoice_origin']=='recibo'
             state=client.request('state?history=1');student=next(s for s in state['students'] if s['id']==target)
             assert student['balance']==student['overdue']==0
             assert client.request('cash-preview')['income_usd']==8800
@@ -53,6 +54,12 @@ def main():
             assert cl['amount']==5200;assert client.request('cash-preview')['income_usd']==14000
             assert client.request('cashea')['pending']==0;assert client.request('maintenance-review')['ok']
             assert original_pdf==client.request(f'receipt/{receipt}.pdf')
+            ves=dict(sale,student_id=old_student,total='40',initial_percent='40',initial_received='1600',initial_currency='VES',initial_method='Pago móvil',request_key='cashea-native-ves-initial')
+            ves['preview_hash']=client.request('cashea-preview',ves)['preview_hash'];native=client.request('cashea-order',ves)
+            actual=client.request(f"receipt/{native['payment_id']}")['payment']
+            assert (actual['currency'],actual['received_amount'],actual['exchange_rate'],actual['amount'])==('VES',160000,'100',1600)
+            assert native['invoice_number']==f"R-{native['payment_id']:06d}"
+            assert client.request('maintenance-review')['ok']
         ledger=data/'colegio.sqlite3'
         with closing(sqlite3.connect(ledger)) as db:
             assert db.execute('PRAGMA user_version').fetchone()[0]==14
@@ -62,7 +69,7 @@ def main():
         execute(registered_uninstaller(folder),'/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
         assert ledger.is_file() and hashlib.sha256(ledger.read_bytes()).hexdigest()==digest
         result=dict(previous='1.0.73',version=args.version,schema=14,old_receipt_unchanged=True,totals_preserved_before_cashea=True,
-            initial_usd=7800,financed_usd=5200,received_ves=520000,settlement_usd=5200,student_balance=0,maintenance=True,uninstall_keeps_data=True)
+            invoice_from_receipt=True,ves_initial_original=160000,ves_initial_equivalent=1600,initial_usd=7800,financed_usd=5200,received_ves=520000,settlement_usd=5200,student_balance=0,maintenance=True,uninstall_keeps_data=True)
         (Path(os.environ['RUNNER_TEMP'])/'cashea-upgrade.json').write_text(json.dumps(result,indent=2))
         print('PASS CASHEA WINDOWS: actualización real 1.0.73 → '+args.version+', datos y PDF histórico idénticos, CA/R/CL, VES, saldo y mora cero, integridad y desinstalación conservadora.',flush=True)
     finally:
