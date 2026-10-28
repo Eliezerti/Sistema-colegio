@@ -1,6 +1,6 @@
 # Aula · Control de mensualidades
 
-Ajuste en desarrollo: el número Cashea toma el R- real de la inicial (CA- con inicial cero); Administración puede elegir Manual. En bolívares la calculadora convierte con la tasa confirmada y muestra el equivalente y diferencias. Se conserva el historial con migración 13 → 14 y copia previa verificada. [Validación del ajuste](docs/interno/cashea-ajuste-numero.md).
+Ajuste en desarrollo: el número Cashea toma el R- real de la inicial (CA- con inicial cero); Administración puede elegir Manual. En bolívares la calculadora convierte con la tasa confirmada y muestra el equivalente y diferencias. Se conserva el historial con migración 13 → 14 y copia previa verificada. [Validación del ajuste](docs/interno/cashea-ajuste-numero.md): Linux, 358 pruebas (355 correctas y tres nativas omitidas); tres navegadores correctos. Windows en validación.
 
 Cashea · versión 1.0.74, esquema 14, en revisión en la rama `cashea`. [Guía paso a paso](docs/cashea.md) · [Diseño e inventario](DISENO_CASHEA.md). La inicial es un cobro real; la parte financiada cubre la mensualidad sin contar como caja hasta recibir la liquidación. No se conecta a Cashea ni genera facturas fiscales. La instalación nueva sigue vacía. [Validación anterior del esquema 13](docs/interno/cashea-validacion.md): Linux, 345 pruebas (342 correctas y tres exclusivas de Windows omitidas); Windows, 345 correctas sin omisiones. Los tres navegadores pasaron en ambos; instalación y actualización real desde 1.0.73 verificadas.
 
