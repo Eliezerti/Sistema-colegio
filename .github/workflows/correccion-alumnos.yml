@@ -77,15 +77,21 @@ jobs:
           name: Aula-1.0.73-correccion-alumnos
           path: dist/Aula-Colegio-Instalador-1.0.73.exe
           if-no-files-found: error
+      - name: Reunir evidencia en una sola carpeta
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force evidencia-correccion | Out-Null
+          Get-ChildItem -Path . -Filter '*-build.log' | Copy-Item -Destination evidencia-correccion
+          Get-ChildItem -Path . -Filter 'browser-*.log' | Copy-Item -Destination evidencia-correccion
+          foreach ($Path in @("$env:RUNNER_TEMP/aula-recibo-native", "$env:TEMP/AulaColegio-Compilacion/logs")) {
+            if (Test-Path $Path) { Copy-Item $Path evidencia-correccion -Recurse -Force }
+          }
+          Get-ChildItem -Path $env:RUNNER_TEMP -Directory -Filter 'defender*' | Copy-Item -Destination evidencia-correccion -Recurse -Force
       - name: Conservar evidencia
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Correccion-alumnos-evidencia
-          path: |
-            *-build.log
-            browser-*.log
-            ${{ runner.temp }}/aula-recibo-native/
-            ${{ runner.temp }}/defender*/
-            C:/Users/runneradmin/AppData/Local/Temp/AulaColegio-Compilacion/logs/
+          path: evidencia-correccion/
           if-no-files-found: warn
