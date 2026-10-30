@@ -1,0 +1,59 @@
+name: Pago adelantado · navegador Windows
+on:
+  workflow_dispatch:
+  push:
+    branches: [cashea]
+    paths: [.github/workflows/pago-adelantado-windows.yml]
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    env:
+      PYTHONUTF8: '1'
+      AULA_BROWSER_EVIDENCE_DIR: ${{ runner.temp }}/aula-browser-evidence
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Preparar dependencias y Chromium
+        shell: pwsh
+        run: |
+          python -m pip install -r requirements.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Falló instalación de dependencias.' }
+          npm install --no-save --package-lock=false --prefix "$env:RUNNER_TEMP/aula-node" playwright@1.58.2
+          if ($LASTEXITCODE -ne 0) { throw 'Falló Playwright.' }
+          "NODE_PATH=$env:RUNNER_TEMP/aula-node/node_modules" >> $env:GITHUB_ENV
+          & "$env:RUNNER_TEMP/aula-node/node_modules/.bin/playwright.cmd" install chromium
+          if ($LASTEXITCODE -ne 0) { throw 'Falló Chromium.' }
+      - name: Navegador normal
+        shell: pwsh
+        run: |
+          python tests/run_browser.py *>&1 | Tee-Object browser-normal.log
+          if ($LASTEXITCODE -ne 0) { throw 'Falló navegador normal.' }
+      - name: Navegador Pruebas
+        if: always()
+        shell: pwsh
+        run: |
+          python tests/run_browser.py --demo *>&1 | Tee-Object browser-demo.log
+          if ($LASTEXITCODE -ne 0) { throw 'Falló navegador Pruebas.' }
+      - name: Navegador importación
+        if: always()
+        shell: pwsh
+        run: |
+          python tests/run_browser.py --roster *>&1 | Tee-Object browser-roster.log
+          if ($LASTEXITCODE -ne 0) { throw 'Falló navegador importación.' }
+      - name: Conservar PDF y logs ficticios para revisar impresión
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pago-adelantado-navegador-Windows
+          path: |
+            *.log
+            ${{ runner.temp }}/aula-browser-evidence/
+          if-no-files-found: error
