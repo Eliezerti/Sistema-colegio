@@ -1,6 +1,6 @@
 # Aula · Control de mensualidades
 
-Nuevo ajuste en revisión: cobro individual de mensualidades por adelantado y selección compartida con Cashea; 3 meses por defecto, dentro del ciclo y matrícula. Sin cambiar el motor, los recibos anteriores ni el esquema 14. [Diseño previo](DISENO_PAGO_ADELANTADO.md) · [Cómo cobrar un mes por adelantado](docs/cobros-y-arqueo.md#cómo-cobrar-un-mes-por-adelantado).
+Nuevo ajuste en revisión: cobro individual de mensualidades por adelantado y selección compartida con Cashea; 3 meses por defecto, dentro del ciclo y matrícula. Sin cambiar el motor, los recibos anteriores ni el esquema 14. Validación Linux del anticipo: 371 pruebas (368 correctas, tres nativas omitidas) y normal/Pruebas/importación correctos; Windows en curso. [Informe y salida real](docs/interno/pago-adelantado-validacion.md). [Diseño previo](DISENO_PAGO_ADELANTADO.md) · [Cómo cobrar un mes por adelantado](docs/cobros-y-arqueo.md#cómo-cobrar-un-mes-por-adelantado).
 
 Ajuste en desarrollo: el número Cashea toma el R- real de la inicial (CA- con inicial cero); Administración puede elegir Manual. En bolívares la calculadora convierte con la tasa confirmada y muestra el equivalente y diferencias. Se conserva el historial con migración 13 → 14 y copia previa verificada. [Resultados y evidencia del ajuste](docs/interno/cashea-ajuste-numero.md).
 

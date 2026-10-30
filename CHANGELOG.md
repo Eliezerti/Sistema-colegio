@@ -1,5 +1,7 @@
 # Mensualidades por adelantado · 1.0.74 · en revisión
 
+- Validación del ajuste en Linux: 371 (368 correctas, tres omisiones nativas) y los tres navegadores correctos; incluye 13 pruebas nuevas. Se conserva el fallo inicial de la inyección del reloj y su corrección sin debilitar aserciones. Windows en curso. [Evidencia completa](docs/interno/pago-adelantado-validacion.md).
+
 - Caja y cobros permite elegir alumnos al día y preparar meses futuros al confirmar el pago; Cashea comparte la selección. Límite de 3 por defecto, configurable de 0 a 12 por Administración, dentro del ciclo activo, matrícula y primer mes a cobrar. Selección consecutiva, tarifa vigente confirmada y abonos parciales al último mes.
 - Preparación mediante `assess_month`, pago y bitácora en una transacción. El día 1 no duplica evaluaciones. Beca completa registra una evaluación sin pago ni número R-. Reintentos y concurrencia conservan un solo pago. Revisar Cashea no prepara meses futuros.
 - Nuevos recibos indican pago por adelantado; estados de cuenta y solvencias lo identifican. Resumen y reportes diario/mensual muestran el subtotal informativo ya incluido en ingresos. Anular conserva el número y deja pendiente el cargo con vencimiento normal.

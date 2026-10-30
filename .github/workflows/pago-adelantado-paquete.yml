@@ -1,0 +1,27 @@
+name: Pago adelantado · paquete de revisión
+on:
+  push:
+    branches: [cashea]
+    paths:
+      - docs/interno/pago-adelantado-validacion.md
+      - docs/interno/pago-adelantado-pruebas.txt
+      - .github/workflows/pago-adelantado-paquete.yml
+permissions:
+  contents: read
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Empaquetar código modificado, diff íntegro y evidencia
+        run: python tests/package_cashea_review.py --base 39d9e8d --output dist/Aula-1.0.74-pago-adelantado-revision.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Aula-1.0.74-pago-adelantado-revision
+          path: dist/Aula-1.0.74-pago-adelantado-revision.zip
+          if-no-files-found: error

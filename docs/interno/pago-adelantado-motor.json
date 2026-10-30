@@ -1,0 +1,22 @@
+{
+  "assess_month": {
+    "unchanged": true,
+    "sha256": "469a51836ad49d3790f99d862c0eb75402eb6a5a6cd93e7bf19888869b167e0b"
+  },
+  "synchronize_monthly_charges": {
+    "unchanged": true,
+    "sha256": "d680c4b024c1c16515cc5f3791d0209a7d6e65396ca3b13d15d8d05c319df8d6"
+  },
+  "record_payment": {
+    "unchanged": true,
+    "sha256": "fc4edb2256c7839b224563fca3e09b3b30f3fa5d3f31308df60e11c516460657"
+  },
+  "convert_received": {
+    "unchanged": true,
+    "sha256": "23bccac3e614d5d303f931078e708ed99e39934fab31216946038d8e0b2eff31"
+  },
+  "next_record_id": {
+    "unchanged": true,
+    "sha256": "94b8aab742925c538ed4591b234e5ccc92e45e173c8e63bba6f229d70826daa1"
+  }
+}
