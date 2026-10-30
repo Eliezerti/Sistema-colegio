@@ -3,6 +3,12 @@ const {scratch}=require('./browser_paths.cjs');
 const assert=require('node:assert/strict');
 module.exports=async function checkSessions(page,expected){
   const click=async action=>page.locator(`[data-action="${action}"]`).first().click();
+  const nav=async id=>{
+    await page.evaluate(()=>{window.sessionNavigationPreviousState=state;});
+    await page.locator(`.nav-button[data-id="${id}"]`).click();
+    await page.waitForFunction(()=>state!==window.sessionNavigationPreviousState);
+    await page.evaluate(()=>{delete window.sessionNavigationPreviousState;});
+  };
   const login=async(username,password)=>{
     await page.locator('.auth-form [name="username"]').fill(username);
     await page.locator('.auth-form [name="password"]').fill(password);
@@ -24,17 +30,26 @@ module.exports=async function checkSessions(page,expected){
     await Promise.all([denied,deniedConsole]);
     expected.active=false;
   };
-  await page.locator('.nav-button[data-id="settings"]').click();
+  // A navigation replaces all settings forms. Await its real response before
+  // editing; otherwise a slow runner can replace the form between fill and submit.
+  const delayedNavigation=async route=>{await new Promise(resolve=>setTimeout(resolve,250));await route.continue();};
+  await page.route('**/api/state?history=1',delayedNavigation);
+  await nav('settings');
+  await page.unroute('**/api/state?history=1',delayedNavigation);
   await page.getByRole('tab',{name:'Usuarios y acceso',exact:true}).click();
   await page.locator('form[data-endpoint="session-preferences"] [name="idle_minutes"]').fill('5');
+  const preferenceRequest=page.waitForRequest(r=>r.url().endsWith('/api/session-preferences')&&r.method()==='POST');
+  const preferenceResponse=page.waitForResponse(r=>r.url().endsWith('/api/session-preferences')&&r.request().method()==='POST');
   await page.locator('form[data-endpoint="session-preferences"] button[type="submit"]').click();
+  assert.equal((await preferenceRequest).postDataJSON().idle_minutes,'5');
+  assert.equal((await preferenceResponse).status(),200);
   await page.waitForFunction(()=>state.settings.session_idle_minutes==='5');
   // Unsaved preferences survive changing configuration tabs.
   await page.locator('form[data-endpoint="session-preferences"] [name="idle_minutes"]').fill('10');
   await page.getByRole('tab',{name:'Identidad y calendario',exact:true}).click();
   await page.getByRole('tab',{name:'Usuarios y acceso',exact:true}).click();
   assert.equal(await page.locator('[name="idle_minutes"]').inputValue(),'10');
-  await page.locator('.nav-button[data-id="guardians"]').click();await click('guardian');
+  await nav('guardians');await click('guardian');
   await page.locator('#modal [name="name"]').fill('Borrador ficticio de recuperación');
   let pulses=0;const count=request=>{if(request.url().endsWith('/api/session-activity'))pulses++;};
   page.on('request',count);
@@ -64,7 +79,7 @@ module.exports=async function checkSessions(page,expected){
   const after=await page.evaluate(async()=>await api('state'));
   for(const table of ['students','guardians','payments','charges'])assert.deepEqual(after[table],before[table],'Resuming cannot submit a draft');
   await click('close');
-  await page.locator('.nav-button[data-id="settings"]').click();await page.getByRole('tab',{name:'Usuarios y acceso',exact:true}).click();
+  await nav('settings');await page.getByRole('tab',{name:'Usuarios y acceso',exact:true}).click();
   await click('user');await page.locator('#modal [name="name"]').fill('Usuario pendiente ficticio');
   await page.locator('#modal [name="password"]').fill('Secreto-no-conservar-2026');
   await expire();
@@ -72,7 +87,7 @@ module.exports=async function checkSessions(page,expected){
   await login('admin','Prueba-segura-2026');await page.locator('#modal[open]').waitFor();
   assert.equal(await page.locator('#modal [name="password"]').inputValue(),'');
   await click('close');
-  await page.locator('.nav-button[data-id="guardians"]').click();await click('guardian');
+  await nav('guardians');await click('guardian');
   await page.locator('#modal [name="name"]').fill('Solo pertenece al administrador');
   await expire();await login('consulta','Consulta-segura');
   assert.equal(await page.locator('#modal[open]').count(),0,'Another user cannot recover the previous draft');
@@ -91,7 +106,7 @@ module.exports=async function checkSessions(page,expected){
   assert.match(await page.locator('.recovery-session-notice').innerText(),/Se cerraron todas las sesiones/);
   await click('recovery-notice-ack');await page.waitForFunction(()=>!document.querySelector('.recovery-session-notice'));
   await page.unroute('**/api/session-status');await page.unroute('**/api/recovery-notice-ack');
-  await page.locator('.nav-button[data-id="guardians"]').click();await click('guardian');
+  await nav('guardians');await click('guardian');
   await page.locator('#modal [name="name"]').fill('Privado aunque falle el borrador');
   // Also work in older WebView2 without structuredClone. Draft data consists of JSON strings.
   await page.evaluate(()=>{window.structuredClone=undefined;});
