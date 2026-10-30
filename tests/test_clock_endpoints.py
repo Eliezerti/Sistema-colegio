@@ -95,12 +95,12 @@ class ClockEndpointTests(unittest.TestCase):
 
     def test_clock_change_before_payment_commit_rolls_back_payment_and_allocations(self):
         self.guard.now=lambda:self.base
-        from colegio.server import record_payment
+        from colegio.advance_payments import record_payment
         def changed_clock(db,data,user_id):
             result=record_payment(db,data,user_id)
             self.guard.now=lambda:self.base+timedelta(days=60)
             return result
-        with patch('colegio.server.record_payment',side_effect=changed_clock):
+        with patch('colegio.advance_payments.record_payment',side_effect=changed_clock):
             self.fixture.request('payments',self.fixture.payment(),status=428)
         with closing(connect(self.fixture.path)) as db:
             self.assertEqual(db.execute('SELECT COUNT(*) FROM payments').fetchone()[0],0)

@@ -156,6 +156,9 @@ def daily_report(state, payment_people=None):
                  ('Recibido en bolívares', amount(collected_ves, 'Bs')),
                  ('Total cobrado · equivalente USD', amount(income)),
                  ('Deuda vencida actual · USD', amount(overdue))]
+    advance_income = sum(p.get('advance_amount', 0) for p in valid)
+    if advance_income:
+        summaries.append(('Cobrado por adelantado (meses futuros)', amount(advance_income)))
     payment_lines = []
     for n, p in enumerate(payments, 1):
         current = student_map[p['student_id']]
@@ -187,6 +190,7 @@ def daily_report(state, payment_people=None):
         'count_label': (f"{len(settlements)} liquidaciones Cashea · " if settlements else '')+f"{len(valid)} {'cobro válido' if len(valid) == 1 else 'cobros válidos'} · "
                        f"{len(debtors)} {'alumno' if len(debtors) == 1 else 'alumnos'} con deuda vencida",
         'summaries': summaries, 'payment_count': len(valid), 'debtor_count': len(debtors),
+        **({'advance_income_usd':advance_income} if advance_income else {}),
         'arrears_by_grade':[dict(grade=g,**by_grade[g]) for g in sorted(by_grade)],
         'received_usd': collected_usd, 'received_ves': collected_ves, 'income_usd': income, 'overdue_usd': overdue,
         'sections': [

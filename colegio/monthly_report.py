@@ -57,16 +57,20 @@ def report(db,state,period):
         except (ValueError,KeyError,TypeError):
             raise ValidationError('No se pudo interpretar una anulación de la bitácora.') from None
     balances=[lines[k] for k in sorted(lines)]
+    advance_income=sum(p.get('advance_amount',0) for p in state['payments']
+        if not p['voided'] and start<=p['paid_on']<=end)
     now=datetime.now(timezone(timedelta(hours=-4)))
     return dict(title='Informe mensual de cierre',school=state['settings'],issued_on=state['today'],
         issued_at=now.strftime('%d/%m/%Y · %H:%M'),operator=state['user']['name'],period=period,
         filter_label=f'Movimientos del {start} al {end} · datos disponibles al emitir',
         count_label=f'{period} · importes originales separados por moneda y método',
         income_usd=income,expenses_usd=expenses,net_usd=income-expenses,
+        **({'advance_income_usd':advance_income} if advance_income else {}),
         cashea=cashea,balances=balances,pending_by_grade=[{'grade':g,'pending':pending[g]} for g in sorted(pending)],
         annulments=annulments,
         summaries=[('Cobrado del mes · equivalente USD',amount(income)),
-            ('Egresos del mes · equivalente USD',amount(expenses)),('Movimiento neto del mes · USD',amount(income-expenses))],
+            ('Egresos del mes · equivalente USD',amount(expenses)),('Movimiento neto del mes · USD',amount(income-expenses))]+
+            ([('Cobrado por adelantado (meses futuros)',amount(advance_income))] if advance_income else []),
         sections=[
             dict(title='Caja por moneda y método',headings=['Moneda','Método','Saldo previo','Cobrado','Egresos','Saldo al cierre'],
                 widths=[65,135,130,130,130,168],lines=[[r['currency'],r['method'],amount(r['opening'],r['currency']),

@@ -410,6 +410,8 @@ def guardian_account(db,guardian_id):
     payments=[dict(p) for p in db.execute('SELECT p.id,p.student_id,p.paid_on,p.amount,p.received_amount,p.currency,p.exchange_rate,p.method,p.reference,p.voided,s.name AS student_name FROM payments p JOIN students s ON s.id=p.student_id WHERE s.guardian_id=? ORDER BY p.paid_on,p.id',(guardian_id,))]
     from .cashea import decorate_charges
     decorate_charges(db,entries)
+    from .advance_payments import decorate, paid_by_charge
+    decorate(entries, paid_by_charge(db))
     return {'guardian':dict(g),'students':students,'charges':entries,'payments':payments,
         'balance':sum(c['balance'] for c in entries),'overdue':sum(c['balance'] for c in entries if c['overdue']),
         'issued_on':local_today().isoformat()}

@@ -8,6 +8,7 @@ Diseño previo a la implementación · 30/10/2026 · rama `cashea`, Aula 1.0.74 
 - `db.py:321`: `synchronize_monthly_charges` llega hasta el mes actual, dentro de matrícula, ciclo y `billing_start`; llama a esa misma evaluación. El día 1 no duplica una evaluación existente.
 - `db.py:350`: `generate_month`, ruta POST `/api/generate` (`server.py:210`), prepara explícitamente un período para **todas** las matrículas elegibles del ciclo. Ya es idempotente; no se necesita un segundo mecanismo de cargos.
 - `static/app.js:376`: `openPayment` limita alumnos a saldo positivo. Solo cuando **ningún** alumno tiene saldo ofrece “Preparar otro período”; `openGenerate` está en `app.js:406`. Si otro alumno debe, la acción no aparece en el formulario. Cashea (`static/cashea.js:27`) también excluye alumnos al día y solo lista cargos existentes.
+- La preparación también tiene un botón permanente en **Mensualidades y cargos** (`static/app.js:239`); por tanto la función sí es accesible en otro módulo. El problema es que no se integra en el cobro individual, requiere salir de él y prepara todo el grupo, no solo el mes del alumno que está pagando.
 - `db.py:380`: `record_payment` convierte con la tasa confirmada, limita el importe a la deuda y aplica desde el vencimiento más antiguo. No se cambiará esa función ni los snapshots históricos.
 
 Referencias de línea de la base indicada, antes del cambio.

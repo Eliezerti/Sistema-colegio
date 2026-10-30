@@ -754,6 +754,7 @@ def administrative_pdf(kind,data):
         g=data['guardian']
         for charge in data.get('charges',[]):
             if charge.get('cashea_label'):pdf.line(charge['student_name']+' · '+charge['period']+' · '+charge['cashea_label'])
+            if charge.get('advance_label'):pdf.line(charge['student_name']+' · '+charge['period']+' · '+charge['advance_label'])
         pdf.line(f"Representante: {g['name']} | Cédula: {g['document']}",True)
         if g['phone']: pdf.line('Contacto: '+g['phone'])
         pdf.table(['Alumno / código','Grado / sección','Año escolar','Estado'],

@@ -74,8 +74,10 @@ def snapshot(db, user):
       gr.name AS grade_name FROM students s JOIN guardians g ON g.id=s.guardian_id
       JOIN grades gr ON gr.id=s.grade_id ORDER BY s.name''')
     from .cashea import cash_rows,decorate_charges
+    from .advance_payments import decorate, paid_by_charge, payment_totals
     settlement_cash=cash_rows(db)
     charge_list = decorate_charges(db,charges(db))
+    decorate(charge_list, paid_by_charge(db))
     student_map = {s['id']: s for s in students}
     today = local_today().isoformat()
     for student in students:
@@ -97,6 +99,9 @@ def snapshot(db, user):
     for payment in payments:
         payment.pop('receipt_snapshot', None)
         payment.pop('request_key', None)
+    advanced = payment_totals(db)
+    for payment in payments:
+        if advanced.get(payment['id']): payment['advance_amount'] = advanced[payment['id']]
     expenses = rows(db, 'SELECT * FROM expenses ORDER BY spent_on DESC,id DESC')
     month = today[:7]
     income = sum(p['amount'] for p in payments if not p['voided'] and p['paid_on'].startswith(month))+sum(p['amount'] for p in settlement_cash if p['received_on'].startswith(month))
@@ -107,6 +112,7 @@ def snapshot(db, user):
             d = c['days_overdue']
             aging[0 if d <= 30 else 1 if d <= 60 else 2 if d <= 90 else 3] += c['balance']
     return {'audit_status': integrity, 'settings': settings, 'today': today, 'user': user, 'students': students,
+            'advance_income_usd':sum(p.get('advance_amount',0) for p in payments if p['paid_on'].startswith(month)),
             'guardians': rows(db, 'SELECT * FROM guardians ORDER BY name'),
             'grades': rows(db, 'SELECT * FROM grades ORDER BY name'),
             'enrollments': rows(db, 'SELECT id,student_id,created_at FROM enrollment_documents ORDER BY id DESC'),
@@ -208,9 +214,15 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
         prior=db.execute(f'SELECT {column} FROM {table} WHERE id=?',(data.get('id'),)).fetchone()
         if prior: ensure_open_day(db,prior[0])
     if endpoint == 'generate':
+        if str(data.get('period','')) > local_today().strftime('%Y-%m') and user['role'] != 'admin':
+            raise PermissionError('Preparar un período completo es de Administración. Para cobrar por adelantado usa Registrar pago y selecciona los meses del alumno.')
         return generate_month(db, data, uid)
+    if endpoint == 'prepare-advance':
+        from .advance_payments import prepare_waived
+        return prepare_waived(db, data, uid)
     if endpoint == 'payments':
-        return record_payment(db, data, uid)
+        from .advance_payments import receive
+        return receive(db, data, uid)
     if endpoint == 'collections':
         student_id = integer(data.get('student_id'), 1, 2147483647)
         note = required(data, 'note', 2000)
@@ -234,6 +246,8 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
                   'school_year': str(integer(data.get('school_year'), 2000, 2100)),
                   'start_month': str(integer(data.get('start_month', 9), 1, 12)),
                   'due_day': str(integer(data.get('due_day'), 1, 31))}
+        if 'advance_months_limit' in data:
+            fields['advance_months_limit'] = str(integer(data['advance_months_limit'], 0, 12))
         old_start = db.execute("SELECT value FROM settings WHERE key='start_month'").fetchone()[0]
         if fields['start_month'] != old_start and db.execute('SELECT 1 FROM students LIMIT 1').fetchone():
             raise ValidationError('El mes de inicio no puede cambiar con matrículas registradas: alteraría el calendario de las mensualidades. Conserva el mes actual.')
@@ -255,7 +269,7 @@ def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, impo
                 fields[key] = str(data[key]).strip()[:limit]
         if 'backup_directory' in data:
             fields['backup_directory'] = prepare_backup_directory(db, data['backup_directory'], uid)
-        db.executemany('UPDATE settings SET value=? WHERE key=?', [(v, k) for k, v in fields.items()])
+        db.executemany('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', fields.items())
         audit(db, uid, 'settings', {k:(bool(v) if k=='logo' else v) for k,v in fields.items()})
         return {'saved': True}
     if endpoint == 'grades':
@@ -902,7 +916,7 @@ class Handler(BaseHTTPRequestHandler):
                 if endpoint not in ('logout','demo-exit'):
                     self.server.clock.require()
                 db.commit()
-                if endpoint in DIRECTORY_ACTIONS or endpoint in ARCHIVE_ACTIONS or endpoint in CASHEA_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','expenses','void-payment','void-expense','close-cash','reopen-cash','settings','backup-directory','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
+                if endpoint in DIRECTORY_ACTIONS or endpoint in ARCHIVE_ACTIONS or endpoint in CASHEA_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','prepare-advance','expenses','void-payment','void-expense','close-cash','reopen-cash','settings','backup-directory','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
                     status=self.server.make_backup()
                     if status.get('local_error') or status.get('secondary_error'):
                         result['backup_warning']=status.get('local_error') or status.get('secondary_error')
@@ -933,6 +947,9 @@ class Handler(BaseHTTPRequestHandler):
             elif endpoint=='cashea':
                 from .cashea import book
                 self.respond(200,book(db))
+            elif endpoint == 'payment-options':
+                from .advance_payments import options
+                self.respond(200, options(db, parse_qs(url.query).get('student_id', [''])[0]))
             elif endpoint.startswith('cashea-order/') or endpoint.startswith('cashea-settlement/'):
                 from .cashea import detail
                 from .cashea_reports import document_pdf

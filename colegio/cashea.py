@@ -68,7 +68,8 @@ def preview(db,data,user):
     config=settings(db)
     total=money(data.get('total'))
     if total<=0:raise ValidationError('El total Cashea debe ser positivo.')
-    pending=[c for c in charges(db,sid) if c['balance']>0]
+    from .advance_payments import pending_with_future
+    advance, future, pending = pending_with_future(db, data)
     remaining=total;plan=[]
     for charge in pending:
         if not remaining:break
@@ -81,6 +82,8 @@ def preview(db,data,user):
     selected=data.get('charge_ids')
     if selected is not None and (not isinstance(selected,list) or selected!=[c['id'] for c in plan]):
         raise ValidationError('Selecciona las mensualidades pendientes más antiguas que cubren el total. Revisa nuevamente los cargos.')
+    if any(c['balance'] and c['id'] not in [p['id'] for p in plan] for c in future):
+        raise ValidationError('El total debe alcanzar el último mes por adelantado seleccionado. Revisa los meses.')
     initial,currency,received,rate=zero_conversion(db,data.get('initial_received','0'),data.get('initial_currency','USD'),on)
     if initial>total:raise ValidationError('La inicial no puede superar el total de la venta.')
     method=data.get('initial_method','Efectivo')
@@ -114,6 +117,9 @@ def preview(db,data,user):
         student_balance_after=sum(c['balance'] for c in pending)-total,
         school={k:v for k,v in db.execute('SELECT key,value FROM settings') if k in ('school_name','legal_name','institution_type','rif','address','fiscal_address','phone','email','logo')},
         operator=user['name'],note=NOTE)
+    if future:
+        result['advance_months'] = future
+        result['advance_quote'] = advance['quote']
     result['preview_hash']=digest(result)
     return result
 
@@ -121,6 +127,11 @@ def preview(db,data,user):
 def create_order(db,data,user):
     value=preview(db,data,user)
     if data.get('preview_hash')!=value['preview_hash']:raise ValidationError('La vista previa cambió. Revisa la venta antes de confirmar.')
+    from .advance_payments import materialize, mark_new_receipt
+    if value.get('advance_months'):
+        mapping, _ = materialize(db, value['student']['id'], value['advance_months'], user['id'])
+        for charge in value['charges']:
+            charge['id'] = mapping.get(charge['id'], charge['id'])
     target=next_record_id(db,'cashea_orders');code=f'CA-{target:06d}'
     state='por_liquidar' if value['financed_amount'] else 'liquidada'
     fields=dict(id=target,code=code,student_id=value['student']['id'],ordered_on=value['ordered_on'],
@@ -140,6 +151,7 @@ def create_order(db,data,user):
             reference=value['initial_reference'],notes='Inicial de '+code,
             request_key='cashea-inicial-'+secrets.token_hex(16),duplicate_reference_confirmed=data.get('duplicate_reference_confirmed'),
             duplicate_reason=data.get('duplicate_reason')),user['id'],cashea=meta)['id']
+        mark_new_receipt(db, payment)
     if value['invoice_origin']=='recibo':
         real=f"R-{payment:06d}" if payment else code
         if real!=value['invoice_number']:raise ValidationError('El correlativo cambió. Revisa la venta nuevamente.')

@@ -21,7 +21,7 @@ POST_ADMIN = ('settings', 'backup-directory', 'grades', 'guardians', 'students',
                'delete-unused-record', 'delete-error-student', 'clock-confirm', 'session-preferences',
               'recovery-notice-ack', 'crypto-prepare', 'crypto-confirm', 'crypto-unlock',
               'probe-backup', 'export-encrypted-backup', 'backup-now', 'backup-cloud-declare', )
-POST_WRITERS = ('generate', 'payments', 'collections', 'rates', 'expenses', 'charges', 'close-cash',
+POST_WRITERS = ('generate', 'payments', 'prepare-advance', 'collections', 'rates', 'expenses', 'charges', 'close-cash',
                 'guardian-documents', 'payment-plans')
 
 
@@ -31,6 +31,7 @@ def cases():
         result.append(dict(method=method, route=route, roles=roles, success=success,
                            key=key or route.split('?')[0], body=body or {}))
     for route in GET_ALL: add('GET', route, (*ALL, 'anonymous') if route=='session' else ALL, 200)
+    add('GET', 'payment-options?student_id=0', ALL, 400, 'payment-options')
     for route in GET_ADMIN: add('GET', route, ADMIN, 200)
     add('GET', 'year-roster?year=2020', ADMIN, 200)
     for kind in ('students', 'guardians'):
