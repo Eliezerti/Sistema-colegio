@@ -1,5 +1,6 @@
 name: Cashea 1.0.74 · revisión
 on:
+  workflow_dispatch:
   push:
     branches: [cashea]
     paths: ['colegio/**','static/**','tests/**','packaging/**','requirements*.txt','.github/workflows/cashea.yml']
@@ -76,13 +77,19 @@ jobs:
             dist/Aula-Colegio-Instalador-1.0.74.exe
             dist/Aula-Cashea-1.0.74-revision.zip
           if-no-files-found: error
+      - name: Instalador de pagos adelantados para el colegio
+        uses: actions/upload-artifact@v4
+        with:
+          name: Aula-Instalador-1.0.74-pago-adelantado
+          path: dist/Aula-Colegio-Instalador-1.0.74.exe
+          if-no-files-found: error
       - name: Reunir evidencia en una sola carpeta
         if: always()
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force evidencia | Out-Null
           Get-ChildItem -Path . -Filter '*.log' | Copy-Item -Destination evidencia
-          foreach ($Path in @("$env:RUNNER_TEMP/aula-recibo-native", "$env:TEMP/AulaColegio-Compilacion/logs", "$env:RUNNER_TEMP/cashea-upgrade.json", "$env:RUNNER_TEMP/cashea-native-CA.pdf")) {
+          foreach ($Path in @("$env:RUNNER_TEMP/aula-recibo-native", "$env:TEMP/AulaColegio-Compilacion/logs", "$env:RUNNER_TEMP/cashea-upgrade.json", "$env:RUNNER_TEMP/cashea-native-CA.pdf", "$env:RUNNER_TEMP/aula-native-anticipo.pdf")) {
             if (Test-Path $Path) { Copy-Item $Path evidencia -Recurse -Force }
           }
       - name: Conservar evidencia
