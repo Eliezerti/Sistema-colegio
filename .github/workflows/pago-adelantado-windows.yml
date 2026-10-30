@@ -13,7 +13,6 @@ jobs:
     timeout-minutes: 15
     env:
       PYTHONUTF8: '1'
-      AULA_BROWSER_EVIDENCE_DIR: ${{ runner.temp }}/aula-browser-evidence
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -25,6 +24,7 @@ jobs:
       - name: Preparar dependencias y Chromium
         shell: pwsh
         run: |
+          "AULA_BROWSER_EVIDENCE_DIR=$env:RUNNER_TEMP/aula-browser-evidence" >> $env:GITHUB_ENV
           python -m pip install -r requirements.txt
           if ($LASTEXITCODE -ne 0) { throw 'Falló instalación de dependencias.' }
           npm install --no-save --package-lock=false --prefix "$env:RUNNER_TEMP/aula-node" playwright@1.58.2
