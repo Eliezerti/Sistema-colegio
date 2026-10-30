@@ -1,4 +1,5 @@
 name: Pago adelantado · navegador Windows
+# Ejecuta solo los navegadores y conserva evidencia ficticia; no publica instaladores.
 on:
   workflow_dispatch:
   push:
