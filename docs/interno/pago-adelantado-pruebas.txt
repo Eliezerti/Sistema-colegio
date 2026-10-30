@@ -4156,3 +4156,82 @@ No se ejecutó impresión física en la impresora del colegio.
     "sha256": "94b8aab742925c538ed4591b234e5ccc92e45e173c8e63bba6f229d70826daa1"
   }
 }
+
+===== REPETICIÓN TRAS CORREGIR EL LECTOR PDF DE PRUEBAS: python tests/run_browser.py; exit 0 =====
+PASS CASHEA AJUSTE: R- real y Copiar, mensualidad 40/16/24, conversión USD→Bs, tasa/equivalente, advertencia >1 %, inicial cero CA- sin consumir R-, ajustes Manual y campo obligatorio.
+PASS CASHEA: método de cobro, calculadora exacta 130/78/52, revisión/confirmación, PDF 396×612, saldo y mora cero, liquidación seleccionada CL-, recibo de inicial y ajustes.
+PASS ANTICIPOS: alumno al día, lista compartida, tarifa, cobro futuro y recibo, saldo/mora cero, Cashea 40/16/24 con revisión sin crear cargo, beca completa sin consumir R-.
+PASS: A3 warning, activity without background renewal, configurable timeout, RAM-only drafts, same-user recovery, different-user discard, password clearing, administrative notice.
+PASS: fiscal settings, PNG logo, fiscal letterheads and printing, daily rate checkpoint and reopening, guardian search, live discount, automatic student code, enrollment PDF, automatic arrears without manual monthly generation, BCV payment and receipt PDF, arrears, simplified expense, filtered directory PDFs and printing, daily payments/arrears PDF, reports, family account and solvency PDFs, CSV preview and import, cash close and reopening, backup status, thermal tickets, bulk promotion and archived PDF, payment plan, responsive layout, read-only role.
+PASS: copy viewer banner, safe reload and session end, no rate confirmation, history navigation, server write rejection and unchanged ledger.
+30/Oct/2026 21:35:35 POST /api/setup 200
+30/Oct/2026 21:35:35 GET /api/session 200
+30/Oct/2026 21:35:35 POST /api/confirm-rate 200
+30/Oct/2026 21:35:35 POST /api/settings 200
+30/Oct/2026 21:35:35 POST /api/grades 200
+30/Oct/2026 21:35:35 POST /api/guardians 200
+30/Oct/2026 21:35:35 POST /api/students 200
+30/Oct/2026 21:35:35 POST /api/payments 200
+30/Oct/2026 21:35:36 GET / 303
+30/Oct/2026 21:35:36 GET / 200
+30/Oct/2026 21:35:36 GET /style.css 200
+30/Oct/2026 21:35:36 GET /session.js 200
+30/Oct/2026 21:35:36 GET /cashea.js 200
+30/Oct/2026 21:35:36 GET /app.js 200
+30/Oct/2026 21:35:36 GET /responsive.js 200
+30/Oct/2026 21:35:36 GET /api/session 200
+30/Oct/2026 21:35:36 GET /favicon.svg 200
+30/Oct/2026 21:35:36 GET /api/session-status 200
+30/Oct/2026 21:35:36 GET /api/state 200
+30/Oct/2026 21:35:36 GET /aula-app.png 200
+30/Oct/2026 21:35:37 GET / 200
+30/Oct/2026 21:35:37 GET /style.css 200
+30/Oct/2026 21:35:37 GET /session.js 200
+30/Oct/2026 21:35:37 GET /app.js 200
+30/Oct/2026 21:35:37 GET /cashea.js 200
+30/Oct/2026 21:35:37 GET /responsive.js 200
+30/Oct/2026 21:35:37 GET /api/session 200
+30/Oct/2026 21:35:37 GET /api/session-status 200
+30/Oct/2026 21:35:37 GET /favicon.svg 200
+30/Oct/2026 21:35:37 GET /api/state 200
+30/Oct/2026 21:35:37 GET /aula-app.png 200
+30/Oct/2026 21:35:37 GET /api/state 200
+30/Oct/2026 21:35:37 POST /api/session-activity 200
+30/Oct/2026 21:35:37 GET /api/state 200
+30/Oct/2026 21:35:37 POST /api/session-activity 200
+30/Oct/2026 21:35:37 GET /api/state 200
+30/Oct/2026 21:35:37 POST /api/session-activity 200
+30/Oct/2026 21:35:37 GET /api/state 200
+30/Oct/2026 21:35:37 GET /api/cashea 200
+30/Oct/2026 21:35:37 POST /api/session-activity 200
+30/Oct/2026 21:35:37 GET /api/state 200
+30/Oct/2026 21:35:37 POST /api/session-activity 200
+30/Oct/2026 21:35:37 GET /api/state 200
+30/Oct/2026 21:35:37 POST /api/payments 403
+30/Oct/2026 21:35:37 POST /api/expenses 403
+30/Oct/2026 21:35:37 POST /api/confirm-rate 403
+30/Oct/2026 21:35:37 POST /api/generate 403
+30/Oct/2026 21:35:37 POST /api/restore 403
+30/Oct/2026 21:35:37 POST /api/settings 403
+30/Oct/2026 21:35:37 POST /api/backup-now 403
+30/Oct/2026 21:35:37 POST /api/crypto-confirm 403
+30/Oct/2026 21:35:37 POST /api/import-roster 403
+30/Oct/2026 21:35:37 POST /api/transition-year 403
+30/Oct/2026 21:35:37 POST /api/cashea-order 403
+30/Oct/2026 21:35:37 POST /api/cashea-settlement 403
+30/Oct/2026 21:35:37 POST /api/cashea-settings 403
+30/Oct/2026 21:35:37 POST /api/cashea-void-order 403
+30/Oct/2026 21:35:37 POST /api/cashea-void-settlement 403
+30/Oct/2026 21:35:37 POST /api/cashea-order-date 403
+30/Oct/2026 21:35:37 GET /api/state 200
+30/Oct/2026 21:35:37 POST /api/logout 200
+30/Oct/2026 21:35:37 GET /api/state 401
+
+===== REPETICIÓN TRAS CORREGIR EL LECTOR PDF DE PRUEBAS: python tests/run_browser.py --demo; exit 0 =====
+PASS: trial administrator, empty isolated database, simplified expense, reload, multiple tabs, mobile layout and automatic cleanup.
+
+===== REPETICIÓN TRAS CORREGIR EL LECTOR PDF DE PRUEBAS: python tests/run_browser.py --roster; exit 0 =====
+PASS: actual Excel and CSV downloads, import into empty trial, automatic grades, preserved codes/phones/fees/statuses, preview invalidation, old listing explanation, no copied payments or altered source ledger, guardian PDF states and trial cleanup.
+
+Regresión Node: PASS PDF: longitud binaria exacta, checksum final CR, LF/CRLF, texto sin comprimir y rechazo de truncado/vacío.
+PDF ficticios reales de Windows: texto/posiciones/escala idénticos entre media carta y carta, 46 bloques BT; se leyó /Length sin truncar el byte final 0x0D.
