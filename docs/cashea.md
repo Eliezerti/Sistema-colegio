@@ -37,3 +37,7 @@ Al convertir, restaurar o abrir un respaldo antiguo en consulta, Aula migra una 
 Para revisar una reversión, cierra Aula y usa 1.0.73 **en otra carpeta de datos** con una copia de la base previa verificada. Para volver al ejecutable anterior de esquema 13, usa su copia previa de esquema 13 en otra carpeta. No abras una base 14 con un ejecutable de esquema 13 o 12. Conserva la base actual y todos los registros posteriores para revisión: volver a la copia previa no traslada operaciones posteriores. La restauración normal de Aula conserva sus advertencias, pisos de numeración e informes de pérdida. Una instalación nueva continúa vacía, sin usuarios por defecto.
 
 La validación de impresora física y la revisión de una liquidación real con el contador requieren al colegio. Las pruebas automatizadas usan exclusivamente información ficticia.
+
+## Mensualidades por adelantado
+
+Puedes seleccionar un alumno al día y marcar al final los meses en gris **Por adelantado**, igual que en Caja y cobros. Se cobran primero los cargos más antiguos, sin saltos. Solo meses del ciclo activo, dentro de matrícula y del máximo configurado por Administración (3 por defecto). La revisión no crea cargos futuros; se preparan al confirmar con la tarifa y beca actuales, que luego no se recalculan. El subtotal informativo de anticipos cuenta solo la inicial recibida; la financiación no es caja. Al anular la orden, el cargo preparado queda pendiente con su vencimiento normal. [Cómo cobrar un mes por adelantado](cobros-y-arqueo.md#cómo-cobrar-un-mes-por-adelantado).

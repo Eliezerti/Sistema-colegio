@@ -335,3 +335,6 @@ body.readonly-copy{padding-top:44px}.readonly-copy .sidebar{top:44px}.readonly-c
 /* Número que se transcribe al portal de Cashea. */
 .cashea-invoice-number{font-size:1.15em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 h2.cashea-invoice-number{font-size:1.6rem;margin:.35rem 0}
+:root .month-choice { display:flex; align-items:flex-start; gap:8px; padding:7px 0; font-weight:400; }
+:root .month-choice input { width:auto; margin-top:3px; }
+:root .month-future { color:#57676b; background:#f3f5f5; border-radius:5px; padding:8px; margin:4px 0; }

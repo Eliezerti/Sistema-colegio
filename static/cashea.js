@@ -15,7 +15,7 @@ function casheaPage(){
 }
 function casheaReviewForm(endpoint,body,label){return `<form data-endpoint="${endpoint}"><input type="hidden" name="request_key" value="${requestKey()}"><input type="hidden" name="preview_hash" value=""><div class="form-grid">${body}</div><section class="cashea-preview" aria-live="polite"></section>${formFoot(label)}</form>`;}
 async function openCasheaOrder(id){
-  const pupils=state.students.filter(s=>s.balance>0);if(!pupils.length){toast('No hay mensualidades pendientes.',true);return;}
+  const pupils=state.students.filter(s=>s.balance>0||(!s.archived&&s.status==='active'));if(!pupils.length){toast('No hay mensualidades pendientes.',true);return;}
   const sid=Number(id)||pupils[0].id;
   try{casheaView=await api('cashea');}catch(error){toast(error.message,true);return;}
   const manual=casheaView.settings.cashea_invoice_origin==='manual';
@@ -30,15 +30,10 @@ async function openCasheaOrder(id){
     (manual?field('Número de factura','invoice_number','','text','required maxlength="100"'):`<div class="field full" id="cashea-invoice-preview" data-next-receipt="${esc(casheaView.next_receipt_number)}" data-next-order="${esc(casheaView.next_order_number)}" aria-live="polite"></div>`)+field('Referencia Cashea (opcional)','reference','','text','maxlength="200"')+
     field('Liquidación esperada (opcional)','expected_on','','date','', 'Vacío: siguiente día configurado, estrictamente posterior a la venta.')+
     (manual?`<details class="full"><summary>Revisar una factura duplicada</summary><label><input type="checkbox" name="invoice_duplicate_confirmed"> Revisé que esta factura ya está en otra orden.</label>${field('Motivo del duplicado','invoice_reason','','text','maxlength="500"')}</details>`:''),'Revisar venta'));
-  casheaChargeChoices(sid);casheaUpdateInitial();
+  await casheaChargeChoices(sid);casheaUpdateInitial();
 }
-function casheaChargeChoices(sid){
-  const box=$('#cashea-charges');if(!box)return;
-  const charges=state.charges.filter(c=>c.student_id===Number(sid)&&c.balance>0).sort((a,b)=>a.due_date.localeCompare(b.due_date)||a.id-b.id);
-  box.innerHTML='<label>Mensualidades · desde la más antigua</label>'+charges.map((c,i)=>`<label><input type="checkbox" data-cashea-charge="${i}" value="${c.id}" data-balance="${c.balance}" ${i===0?'checked':''}> ${esc(c.concept)} · ${esc(c.period)} · ${usd(c.balance)}</label>`).join('')+'<small>Selecciona un grupo consecutivo desde el cargo más antiguo; también puedes ajustar el total para un abono parcial.</small>';
-  casheaChargeTotal();
-}
-function casheaChargeTotal(){const form=$('form[data-endpoint="cashea-order"]');if(!form)return;let total=0;for(const el of form.querySelectorAll('[data-cashea-charge]:checked'))total+=Number(el.dataset.balance);form.elements.total.value=(total/100).toFixed(2);}
+async function casheaChargeChoices(sid){await loadAdvanceChoices(sid,true);}
+function casheaChargeTotal(changed){const form=$('form[data-endpoint="cashea-order"]');if(form)updateAdvanceChoices(form,changed,true);}
 // Integer cents and six-decimal rates; same HALF_UP convention as the server.
 function casheaCents(value){
   if(!/^\d+(\.\d{1,2})?$/.test(value))throw new Error('Escribe un importe o porcentaje con hasta dos decimales.');
@@ -47,7 +42,7 @@ function casheaCents(value){
 const casheaDecimal=cents=>`${cents/100n}.${String(cents%100n).padStart(2,'0')}`;
 const casheaRound=(n,d)=>(n+d/2n)/d;
 function casheaRate(form){
-  const row=state.rates.find(r=>r.rate_date===form.elements.ordered_on.value);
+  const row=state.rates.find(r=>r.rate_date===(form.elements.ordered_on?.value||form.elements.paid_on?.value));
   if(!row)return null;
   // Decimal-valid rates may use scientific notation; expand without floating money.
   const [mantissa,exponent='0']=String(row.rate).toLowerCase().split('e'),[a,b='']=mantissa.split('.');
@@ -115,7 +110,8 @@ async function submitCashea(form){
     if(endpoint==='cashea-order'){
       data.invoice_duplicate_confirmed=!!form.elements.invoice_duplicate_confirmed?.checked;
       data.duplicate_reference_confirmed=form.elements.duplicate_reference_confirmed.checked;
-      data.charge_ids=Array.from(form.querySelectorAll('[data-cashea-charge]:checked'),el=>Number(el.value));
+      if(form.dataset.choicesReady!=='yes')throw new Error('Espera la consulta de mensualidades o abre de nuevo la venta.');
+      Object.assign(data,advanceSelection(form));
     }
     if(endpoint==='cashea-settlement')data.order_ids=Array.from(form.querySelectorAll('[name="order_ids"]:checked'),el=>Number(el.value));
     if(['cashea-order','cashea-settlement'].includes(endpoint)&&!data.preview_hash){
@@ -146,7 +142,7 @@ document.addEventListener('change',event=>{
   if(form.dataset.endpoint==='payments'&&event.target.name==='method'&&event.target.value==='Cashea'){openCasheaOrder(form.elements.student_id.value);return;}
   if(form.dataset.endpoint==='cashea-order'){
     if(event.target.name==='student_id')casheaChargeChoices(event.target.value);
-    if(event.target.hasAttribute('data-cashea-charge'))casheaChargeTotal();
+    if(event.target.hasAttribute('data-cashea-charge'))casheaChargeTotal(event.target);
     casheaUpdateInitial(event.target.name==='initial_currency');casheaResetReview(form);
   }
 });

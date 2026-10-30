@@ -39,3 +39,7 @@ Administración crea usuarios con perfil Administrador, Caja o Consulta y puede 
 En Bitácora filtra y exporta operaciones, revisa valores anteriores y nuevos y comprueba la cadena. Si falla, Aula permite consultar y respaldar, pero bloquea cambios. No borres archivos de control para quitar el aviso. En Protección y mantenimiento, Verificar datos y cobros revisa integridad, referencias, saldos y correlativos sin reparar ni cambiar registros.
 
 Aula se utiliza en esta PC. El acceso privado de otras computadoras fue retirado; para soporte usa el escritorio remoto de Windows. Para consultar desde casa, abre un respaldo en solo lectura.
+
+## Meses por adelantado
+
+En Identidad y calendario → Calendario y reglas de mensualidades, **Máximo de meses por adelantado** permite de 0 a 12 (3 por defecto). Solo Administración lo cambia. Es la cantidad de meses siguientes al actual que se pueden preparar desde el cobro individual y Cashea; no permite salir del ciclo vigente ni de las fechas de matrícula. Cero desactiva nuevas preparaciones, sin borrar cargos ya registrados. La preparación masiva de períodos futuros queda reservada a Administración.
