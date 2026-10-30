@@ -1,0 +1,30 @@
+Windows 41138223826 · job 124345855102 · fuente 0914dd689cb309c7821aaecf337ad49e5a3c89d9.
+Resultado completo del workflow: success. Todos los pasos obligatorios aprobados.
+Comandos: python -m unittest discover -s tests -v; python tests/run_browser.py; --demo; --roster.
+Además: packaging/test_installer.ps1 y tests/windows_cashea_upgrade.py desde el ejecutable instalado.
+Evidencia original completa en Actions y artefacto Cashea-evidencia 13017927159.
+
+2026-10-30T22:39:06.4427317Z Ran 371 tests in 658.903s
+2026-10-30T22:39:06.4430942Z OK
+2026-10-30T22:39:19.1451902Z PASS B2: inventario final sin módulos excluidos y con servidor, SQLite, cifrado, Tcl/Tk y WebView2.
+2026-10-30T22:40:09.6675263Z PASS CASHEA AJUSTE: R- real y Copiar, mensualidad 40/16/24, conversión USD→Bs, tasa/equivalente, advertencia >1 %, inicial cero CA- sin consumir R-, ajustes Manual y campo obligatorio.
+2026-10-30T22:40:09.6676696Z PASS CASHEA: método de cobro, calculadora exacta 130/78/52, revisión/confirmación, PDF 396×612, saldo y mora cero, liquidación seleccionada CL-, recibo de inicial y ajustes.
+2026-10-30T22:40:12.2479044Z PASS ANTICIPOS: alumno al día, lista compartida, tarifa, cobro futuro y recibo, saldo/mora cero, Cashea 40/16/24 con revisión sin crear cargo, beca completa sin consumir R-.
+2026-10-30T22:40:16.9448601Z PASS: A3 warning, activity without background renewal, configurable timeout, RAM-only drafts, same-user recovery, different-user discard, password clearing, administrative notice.
+2026-10-30T22:40:17.0719617Z PASS: fiscal settings, PNG logo, fiscal letterheads and printing, daily rate checkpoint and reopening, guardian search, live discount, automatic student code, enrollment PDF, automatic arrears without manual monthly generation, BCV payment and receipt PDF, arrears, simplified expense, filtered directory PDFs and printing, daily payments/arrears PDF, reports, family account and solvency PDFs, CSV preview and import, cash close and reopening, backup status, thermal tickets, bulk promotion and archived PDF, payment plan, responsive layout, read-only role.
+2026-10-30T22:40:20.0926324Z PASS: copy viewer banner, safe reload and session end, no rate confirmation, history navigation, server write rejection and unchanged ledger.
+2026-10-30T22:40:31.3444139Z PASS: trial administrator, empty isolated database, simplified expense, reload, multiple tabs, mobile layout and automatic cleanup.
+2026-10-30T22:40:49.8236347Z PASS: actual Excel and CSV downloads, import into empty trial, automatic grades, preserved codes/phones/fees/statuses, preview invalidation, old listing explanation, no copied payments or altered source ledger, guardian PDF states and trial cleanup.
+2026-10-30T22:42:00.9139718Z PASS LIMPIEZA: ejecutable instalado, respaldo cifrado verificable, documentos de prueba retirados, alumno y usuario conservados, bitácora válida y primer recibo R-000001.
+2026-10-30T22:42:00.9202418Z PASS COPIA: WebView2 real, copia cifrada, aviso permanente, perfil Consulta y temporal eliminado.
+2026-10-30T22:42:00.9289296Z PASS B2: Tcl/Tk, ttk, calendario, textos en español y selector nativo abierto/cancelado.
+2026-10-30T22:42:00.9292563Z PASS B2: PDF administrativo, impresión PDF nativa WebView2 y selector Windows abierto/cancelado.
+2026-10-30T22:42:00.9295751Z PASS B2: PDF administrativo, impresión PDF nativa WebView2 y selector Windows abierto/cancelado.
+2026-10-30T22:42:00.9356712Z PASS RECIBO: WebView2 media-carta, 396 x 612 puntos, una página, escala predeterminada.
+2026-10-30T22:42:00.9379133Z PASS RECIBO: WebView2 media-carta-en-carta, 612 x 792 puntos, una página, escala predeterminada.
+2026-10-30T22:42:00.9380985Z PASS RECIBO: WebView2 dos-copias, 792 x 612 puntos, una página, escala predeterminada.
+2026-10-30T22:42:02.9312430Z PASS: instalación, accesos directos, ventanas normal/pruebas, bandeja, actualización y desinstalación conservando datos.
+2026-10-30T22:42:15.5900779Z PASS CASHEA WINDOWS: actualización real 1.0.73 → 1.0.74, datos y PDF histórico idénticos, CA/R/CL, VES, saldo y mora cero, integridad y desinstalación conservadora.
+2026-10-30T22:42:15.5903214Z PASS ANTICIPO INSTALADO: cobro futuro y Cashea desde Aula.exe instalado, recibo real de una página, reintento único, caja y bitácora correctos.
+
+ZIP de entrega descargado y comprobado: un único Aula-Colegio-Instalador-1.0.74.exe, encabezado MZ y CRC ZIP correctos.
