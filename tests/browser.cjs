@@ -4,21 +4,8 @@ const {scratch}=require('./browser_paths.cjs');
 const {chromium} = require('playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const zlib = require('node:zlib');
-
-function printedTextLayout(pdf){
-  const layout=[];
-  for(const match of pdf.toString('latin1').matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)){
-    let stream;try{stream=zlib.inflateSync(Buffer.from(match[1],'latin1')).toString('latin1');}catch{continue;}
-    const text=stream.match(/\bBT\b[\s\S]*?\bET\b/g);
-    if(!text)continue;
-    const transforms=(stream.match(/(?:-?\d+(?:\.\d+)?\s+){6}cm/g)||[])
-      .filter(value=>!/^1 0 0 -1 0 \d+ cm$/.test(value));
-    layout.push({text,transforms});
-  }
-  assert.ok(layout.length,'Printed PDF must contain readable text drawing operators');
-  return layout;
-}
+const printedTextLayout = require('./pdf_print_layout.cjs');
+printedTextLayout.selfTest();
 
 (async()=>{
   const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||(fs.existsSync('/usr/bin/chromium')?'/usr/bin/chromium':undefined),headless:true,args:['--no-sandbox']});
