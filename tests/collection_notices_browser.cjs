@@ -58,7 +58,10 @@ module.exports=async function(page){
     const href=await modal.locator('#wa-collection').getAttribute('href');assert.equal(new URL(href).searchParams.get('text'),edited);
     assert.match(href,/^https:\/\/wa.me\/584240000000\?/);
     await page.context().grantPermissions(['clipboard-read','clipboard-write']);
-    await modal.getByRole('button',{name:'Copiar aviso',exact:true}).click();assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),edited);
+    // Windows' native clipboard exposes CRLF; the textarea and WhatsApp URL use LF.
+    // Compare the complete native representation, preserving every character and line.
+    const nativeClipboard=process.platform==='win32'?edited.replace(/\n/g,'\r\n'):edited;
+    await modal.getByRole('button',{name:'Copiar aviso',exact:true}).click();assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),nativeClipboard);
     assert.equal((await page.evaluate(()=>api('state?history=1'))).collections.filter(n=>n.student_id===seeded.pupils[0]).length,0);
     await modal.getByRole('button',{name:'Restablecer texto',exact:true}).click();await ready();
     assert.equal(await page.locator('#collection-text').inputValue(),initial);
