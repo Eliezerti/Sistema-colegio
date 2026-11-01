@@ -1,0 +1,71 @@
+Aula 1.0.74 · Avisos · validación del instalador solicitada después del código
+
+PRIMERA EJECUCIÓN: https://github.com/Eliezerti/Sistema-colegio/actions/runs/41313229093
+2026-11-01T14:05:05.5000066Z Ran 388 tests in 796.270s
+2026-11-01T14:05:05.5188387Z OK
+La compilación fue correcta. Navegador normal falló por CRLF nativo del portapapeles; no se entregó ese instalador.
+Traceback/diferencia reales:
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+2026-11-01T14:06:35.1317501Z + actual - expected
+2026-11-01T14:06:35.1330622Z
+2026-11-01T14:06:35.1338636Z + 'Aviso FICTICIO editado: María 👋\r\nSaldo & consulta, ñ y tildes.'
+2026-11-01T14:06:35.1345442Z - 'Aviso FICTICIO editado: María 👋\nSaldo & consulta, ñ y tildes.'
+2026-11-01T14:06:35.1352097Z
+2026-11-01T14:06:35.1359575Z     at module.exports (D:\a\Sistema-colegio\Sistema-colegio\tests\collection_notices_browser.cjs:61:85)
+2026-11-01T14:06:35.1366493Z     at async D:\a\Sistema-colegio\Sistema-colegio\tests\browser.cjs:510:5 {
+2026-11-01T14:06:35.1373201Z   generatedMessage: true,
+2026-11-01T14:06:35.1379839Z   code: 'ERR_ASSERTION',
+2026-11-01T14:06:35.1386850Z   actual: 'Aviso FICTICIO editado: María 👋\r\nSaldo & consulta, ñ y tildes.',
+2026-11-01T14:06:35.1393547Z   expected: 'Aviso FICTICIO editado: María 👋\nSaldo & consulta, ñ y tildes.',
+2026-11-01T14:06:35.1400402Z   operator: 'strictEqual',
+2026-11-01T14:06:35.1407011Z   diff: 'simple'
+2026-11-01T14:06:35.1414218Z }
+2026-11-01T14:06:35.1423644Z
+
+REPETICIÓN DE LOS TRES NAVEGADORES WINDOWS:
+https://github.com/Eliezerti/Sistema-colegio/actions/runs/41318652019
+2026-11-01T14:57:55.3763115Z PASS CASHEA AJUSTE: R- real y Copiar, mensualidad 40/16/24, conversión USD→Bs, tasa/equivalente, advertencia >1 %, inicial cero CA- sin consumir R-, ajustes Manual y campo obligatorio.
+2026-11-01T14:57:55.3765849Z PASS CASHEA: método de cobro, calculadora exacta 130/78/52, revisión/confirmación, PDF 396×612, saldo y mora cero, liquidación seleccionada CL-, recibo de inicial y ajustes.
+2026-11-01T14:57:57.8083182Z PASS ANTICIPOS: alumno al día, lista compartida, tarifa, cobro futuro y recibo, saldo/mora cero, Cashea 40/16/24 con revisión sin crear cargo, beca completa sin consumir R-.
+2026-11-01T14:58:03.6212561Z PASS: A3 warning, activity without background renewal, configurable timeout, RAM-only drafts, same-user recovery, different-user discard, password clearing, administrative notice.
+2026-11-01T14:58:09.2855602Z PASS AVISOS: cinco tipos, meses y total completo, variantes, edición conservada al salir y URL actual, copiar sin registrar, marca manual idempotente, hermanos, teléfono inválido, ajustes/preview/restauración, respuesta tardía descartada al bloquear sesión y dinero intacto; capturas FICTICIAS.
+2026-11-01T14:58:09.8895386Z PASS: fiscal settings, PNG logo, fiscal letterheads and printing, daily rate checkpoint and reopening, guardian search, live discount, automatic student code, enrollment PDF, automatic arrears without manual monthly generation, BCV payment and receipt PDF, arrears, simplified expense, filtered directory PDFs and printing, daily payments/arrears PDF, reports, family account and solvency PDFs, CSV preview and import, cash close and reopening, backup status, thermal tickets, bulk promotion and archived PDF, payment plan, responsive layout, read-only role.
+2026-11-01T14:58:13.1915779Z PASS: copy viewer banner, safe reload and session end, no rate confirmation, history navigation, server write rejection and unchanged ledger.
+2026-11-01T14:58:26.0388009Z PASS: trial administrator, empty isolated database, simplified expense, reload, multiple tabs, mobile layout and automatic cleanup.
+2026-11-01T14:58:45.2513241Z PASS: actual Excel and CSV downloads, import into empty trial, automatic grades, preserved codes/phones/fees/statuses, preview invalidation, old listing explanation, no copied payments or altered source ledger, guardian PDF states and trial cleanup.
+
+Compilación final y validación instalada: https://github.com/Eliezerti/Sistema-colegio/actions/runs/41318825940
+
+RESULTADO FINAL REAL · Windows Server 2022 · fuente bee48af
+https://github.com/Eliezerti/Sistema-colegio/actions/runs/41318825940
+Todas las etapas terminaron correctamente. Salida seleccionada del log real; log íntegro en el artefacto Cashea-evidencia de esa ejecución.
+2026-11-01T15:08:48.5532910Z Ran 388 tests in 568.150s
+2026-11-01T15:08:48.5536874Z OK
+2026-11-01T15:09:01.8529736Z PASS B2: inventario final sin módulos excluidos y con servidor, SQLite, cifrado, Tcl/Tk y WebView2.
+2026-11-01T15:09:47.1471042Z PASS CASHEA AJUSTE: R- real y Copiar, mensualidad 40/16/24, conversión USD→Bs, tasa/equivalente, advertencia >1 %, inicial cero CA- sin consumir R-, ajustes Manual y campo obligatorio.
+2026-11-01T15:09:47.1474852Z PASS CASHEA: método de cobro, calculadora exacta 130/78/52, revisión/confirmación, PDF 396×612, saldo y mora cero, liquidación seleccionada CL-, recibo de inicial y ajustes.
+2026-11-01T15:09:49.3043595Z PASS ANTICIPOS: alumno al día, lista compartida, tarifa, cobro futuro y recibo, saldo/mora cero, Cashea 40/16/24 con revisión sin crear cargo, beca completa sin consumir R-.
+2026-11-01T15:09:53.6491439Z PASS: A3 warning, activity without background renewal, configurable timeout, RAM-only drafts, same-user recovery, different-user discard, password clearing, administrative notice.
+2026-11-01T15:09:58.3003122Z PASS AVISOS: cinco tipos, meses y total completo, variantes, edición conservada al salir y URL actual, copiar sin registrar, marca manual idempotente, hermanos, teléfono inválido, ajustes/preview/restauración, respuesta tardía descartada al bloquear sesión y dinero intacto; capturas FICTICIAS.
+2026-11-01T15:09:58.8561060Z PASS: fiscal settings, PNG logo, fiscal letterheads and printing, daily rate checkpoint and reopening, guardian search, live discount, automatic student code, enrollment PDF, automatic arrears without manual monthly generation, BCV payment and receipt PDF, arrears, simplified expense, filtered directory PDFs and printing, daily payments/arrears PDF, reports, family account and solvency PDFs, CSV preview and import, cash close and reopening, backup status, thermal tickets, bulk promotion and archived PDF, payment plan, responsive layout, read-only role.
+2026-11-01T15:10:01.5750863Z PASS: copy viewer banner, safe reload and session end, no rate confirmation, history navigation, server write rejection and unchanged ledger.
+2026-11-01T15:10:12.7076456Z PASS: trial administrator, empty isolated database, simplified expense, reload, multiple tabs, mobile layout and automatic cleanup.
+2026-11-01T15:10:30.2954056Z PASS: actual Excel and CSV downloads, import into empty trial, automatic grades, preserved codes/phones/fees/statuses, preview invalidation, old listing explanation, no copied payments or altered source ledger, guardian PDF states and trial cleanup.
+2026-11-01T15:11:35.0393700Z PASS LIMPIEZA: ejecutable instalado, respaldo cifrado verificable, documentos de prueba retirados, alumno y usuario conservados, bitácora válida y primer recibo R-000001.
+2026-11-01T15:11:35.0464344Z PASS COPIA: WebView2 real, copia cifrada, aviso permanente, perfil Consulta y temporal eliminado.
+2026-11-01T15:11:35.0558966Z PASS B2: Tcl/Tk, ttk, calendario, textos en español y selector nativo abierto/cancelado.
+2026-11-01T15:11:35.0563056Z PASS B2: PDF administrativo, impresión PDF nativa WebView2 y selector Windows abierto/cancelado.
+2026-11-01T15:11:35.0566967Z PASS B2: PDF administrativo, impresión PDF nativa WebView2 y selector Windows abierto/cancelado.
+2026-11-01T15:11:35.0638447Z PASS RECIBO: WebView2 media-carta, 396 x 612 puntos, una página, escala predeterminada.
+2026-11-01T15:11:35.0642593Z PASS RECIBO: WebView2 media-carta-en-carta, 612 x 792 puntos, una página, escala predeterminada.
+2026-11-01T15:11:35.0646603Z PASS RECIBO: WebView2 dos-copias, 792 x 612 puntos, una página, escala predeterminada.
+2026-11-01T15:11:37.2798232Z PASS: instalación, accesos directos, ventanas normal/pruebas, bandeja, actualización y desinstalación conservando datos.
+2026-11-01T15:11:48.8932243Z PASS CASHEA WINDOWS: actualización real 1.0.73 → 1.0.74, datos y PDF histórico idénticos, CA/R/CL, VES, saldo y mora cero, integridad y desinstalación conservadora.
+2026-11-01T15:11:48.8934746Z PASS ANTICIPO INSTALADO: cobro futuro y Cashea desde Aula.exe instalado, recibo real de una página, reintento único, caja y bitácora correctos.
+2026-11-01T15:11:48.8936516Z PASS AVISO INSTALADO: JS y generación desde Aula.exe instalado, cinco tipos, mes/total/Cashea, marca manual idempotente y bitácora, sin cambiar dinero ni PDF anterior.
+
+DESCARGA VERIFICADA
+Artefacto: Aula-Instalador-1.0.74-avisos (13089205987)
+Un único archivo: Aula-Colegio-Instalador-1.0.74.exe
+ZIP: 19269721 bytes; EXE: 19771158 bytes. CRC correcto, cabeceras MZ/PE verificadas.
+Sin cambios de código del producto entre la revisión de avisos y esta compilación: cambios solo de pruebas y nombre del artefacto.

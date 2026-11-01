@@ -5,6 +5,7 @@
 - Administración personaliza plantillas, emojis y datos de pago en un apartado independiente, con marcadores validados, vista previa ficticia y originales recuperables. Caja prepara y marca; Consulta solo prepara. El servidor mantiene CSRF, permisos y solo lectura. Sin DDL ni datos nuevos por defecto; motor, recibos y correlativos intactos.
 - Línea base del 01/11: tres fixtures de pruebas tenían relojes distintos; se fijó la fecha completa, sin cambiar importes esperados ni el producto. [Diseño previo](DISENO_AVISOS.md) · [Guía de usuario](docs/avisos-cobranza.md).
 - Validación real Linux: 388 en 345,778 s, 385 correctas y tres omisiones nativas; normal, Pruebas e importación correctos, incluida la regresión de edición manual y bloqueo de sesión. [Informe, fallos iniciales y salida íntegra](docs/interno/avisos-validacion.md). ZIP con diff y dos capturas ficticias revisadas.
+- Instalador solicitado después: Windows, **388 en 568,150 s, correctas sin omisiones**, y tres navegadores correctos. Instalación/actualización/desinstalación, consulta cifrada e impresión nativa correctas; aviso verificado desde el EXE instalado sin cambiar dinero ni PDF anterior. La prueba de portapapeles compara los saltos nativos de Windows; no se cambia el producto ni se excluyen comprobaciones. [Descarga y evidencia](docs/interno/avisos-instalador.md).
 
 # Mensualidades por adelantado · 1.0.74 · en revisión
 

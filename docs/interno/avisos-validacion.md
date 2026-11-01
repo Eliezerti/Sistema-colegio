@@ -14,7 +14,7 @@ Python 3.12.14, cryptography 50.0.0, Node 24.19.0, Playwright 1.62.1 y Chromium 
 | `python tests/run_browser.py --roster` | **Correcto**, salida 0; CSV/Excel, conservación de datos importados y sin copiar pagos. |
 | `python -m unittest discover -s tests -p test_collection_notices.py -v` | 17 nuevas, 2,841 s; **OK**, sin omisiones. Están incluidas en las 388. |
 
-Las tres omisiones locales son DPAPI, mutex/enfoque de ventanas y revisión/restauración con Tk nativo. El workflow de Windows está ejecutándose sobre `4c0badb`: [41313229093](https://github.com/Eliezerti/Sistema-colegio/actions/runs/41313229093). No se presenta esa ejecución como aprobada hasta que termine. La impresión física y el envío/entrega real en WhatsApp no se ejecutaron; este ajuste no cambia la impresión ni añade envío automático.
+Las tres omisiones locales son DPAPI, mutex/enfoque de ventanas y revisión/restauración con Tk nativo. Windows terminó después: **388 pruebas correctas sin omisiones en 568,150 s**, los tres navegadores y las comprobaciones del instalador correctos en [41318825940](https://github.com/Eliezerti/Sistema-colegio/actions/runs/41318825940). La primera ejecución pasó las 388 pero falló en la representación nativa CRLF del portapapeles; se corrigió solo esa prueba. [Entrega, diagnóstico y evidencia real de Windows](avisos-instalador.md). La impresión física y el envío/entrega real en WhatsApp no se ejecutaron; este ajuste no cambia la impresión ni añade envío automático.
 
 ## Cambios y evidencia en el código
 
@@ -49,4 +49,4 @@ Dos capturas del modal, revisadas visualmente: [Cercano](capturas-avisos/aviso-c
 2. Revisar teléfono y WhatsApp con un contacto autorizado: confirmar que el texto copiado/abierto es el editado. Solo la persona decide si enviarlo. Marcar manualmente después, no antes.
 3. Probar hermanos y datos para pagar con la revisión del Administrador; revisar la tasa del día. Consulta debe poder copiar y no marcar.
 
-No hay aprobación técnica de entrega por WhatsApp ni garantía de aprobación Cashea. El instalador previo de pagos adelantados no contiene este ajuste hasta que se construya y valide otro; el entregable de esta tarea es la revisión de código con ZIP, diff y capturas.
+No hay aprobación técnica de entrega por WhatsApp ni garantía de aprobación Cashea. A petición posterior se construyó y validó el [instalador actualizado con avisos](avisos-instalador.md), distinto del instalador anterior de pagos adelantados. La revisión de código conserva ZIP, diff y capturas ficticias.
