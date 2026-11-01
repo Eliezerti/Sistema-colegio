@@ -1,5 +1,5 @@
 Aula 1.0.74 · rama cashea · Avisos de cobranza · 01/11/2026
-Solo fixtures ficticios en carpetas temporales. Salidas reales completas, sin simular aprobaciones.
+Solo fixtures ficticios en carpetas temporales. Salidas reales completas, sin simular aprobaciones; solo espacios de final de línea normalizados.
 
 ========================================================================
 LÍNEA BASE REAL · antes de implementar
@@ -282,7 +282,7 @@ test_exact_partial_batch_settlement_and_idempotency (test_cashea.CasheaTests.tes
 test_existing_payment_plan_counts_financing_and_annulment_restores_it (test_cashea.CasheaTests.test_existing_payment_plan_counts_financing_and_annulment_restores_it) ... ok
 test_hundred_percent_initial_needs_no_settlement_but_can_be_cancelled (test_cashea.CasheaTests.test_hundred_percent_initial_needs_no_settlement_but_can_be_cancelled) ... ok
 test_invoice_duplicates_need_explicit_review_and_reason (test_cashea.CasheaTests.test_invoice_duplicates_need_explicit_review_and_reason) ... ok
-test_missing_historical_rate_future_sale_and_cashea_overdue_alert_with_grace (test_cashea.CasheaTests.test_missing_historical_rate_future_sale_and_cashea_overdue_alert_with_grace) ... 
+test_missing_historical_rate_future_sale_and_cashea_overdue_alert_with_grace (test_cashea.CasheaTests.test_missing_historical_rate_future_sale_and_cashea_overdue_alert_with_grace) ...
 01/Nov/2026 13:05:19 POST /api/confirm-rate 200
 01/Nov/2026 13:05:19 POST /api/settings 200
 01/Nov/2026 13:05:19 POST /api/grades 200
@@ -471,7 +471,7 @@ test_zero_initial_creates_no_receipt_and_financing_is_not_overdue (test_cashea.C
 test_cashier_completes_sale_and_settlement_reader_only_reads_admin_controls_rejected (test_cashea_integrations.CasheaIntegrationTests.test_cashier_completes_sale_and_settlement_reader_only_reads_admin_controls_rejected) ... ok
 test_cipher_restore_preserves_coverage_money_floors_and_loss_reports (test_cashea_integrations.CasheaIntegrationTests.test_cipher_restore_preserves_coverage_money_floors_and_loss_reports) ... ok
 test_concurrent_retry_has_one_order_one_initial_and_one_cached_response (test_cashea_integrations.CasheaIntegrationTests.test_concurrent_retry_has_one_order_one_initial_and_one_cached_response) ... ok
-test_read_only_copy_has_cashea_figures_and_original_is_unchanged (test_cashea_integrations.CasheaIntegrationTests.test_read_only_copy_has_cashea_figures_and_original_is_unchanged) ... 
+test_read_only_copy_has_cashea_figures_and_original_is_unchanged (test_cashea_integrations.CasheaIntegrationTests.test_read_only_copy_has_cashea_figures_and_original_is_unchanged) ...
 01/Nov/2026 13:05:34 POST /api/cashea-preview 400
 01/Nov/2026 13:05:34 POST /api/cashea-preview 200
 01/Nov/2026 13:05:34 POST /api/cashea-order 200
@@ -673,7 +673,7 @@ test_manual_requires_number_and_reviewed_duplicates_but_cannot_reuse_receipt_ori
 test_other_cashier_receipt_invalidates_prediction_without_altering_old_receipt (test_cashea_number.CasheaNumberTests.test_other_cashier_receipt_invalidates_prediction_without_altering_old_receipt) ... ok
 test_settings_origin_invalid_rejected_and_currency_rate_change_invalidates_review (test_cashea_number.CasheaNumberTests.test_settings_origin_invalid_rejected_and_currency_rate_change_invalidates_review) ... ok
 test_ves_stores_original_rate_equivalent_and_warns_strictly_over_one_percent (test_cashea_number.CasheaNumberTests.test_ves_stores_original_rate_equivalent_and_warns_strictly_over_one_percent) ... ok
-test_void_retains_identifier_unique_index_and_new_receipt_advances (test_cashea_number.CasheaNumberTests.test_void_retains_identifier_unique_index_and_new_receipt_advances) ... 
+test_void_retains_identifier_unique_index_and_new_receipt_advances (test_cashea_number.CasheaNumberTests.test_void_retains_identifier_unique_index_and_new_receipt_advances) ...
 01/Nov/2026 13:05:53 POST /api/settings 200
 01/Nov/2026 13:05:53 POST /api/grades 200
 01/Nov/2026 13:05:53 POST /api/guardians 200
@@ -909,7 +909,7 @@ test_error_deletion_backup_failure_preserves_duplicate_and_all_charges (test_ins
 test_error_deletion_backup_restores_duplicate_and_full_ledger (test_institution_archive.InstitutionArchiveTests.test_error_deletion_backup_restores_duplicate_and_full_ledger) ... ok
 test_error_deletion_never_removes_paid_voided_or_financially_documented_students (test_institution_archive.InstitutionArchiveTests.test_error_deletion_never_removes_paid_voided_or_financially_documented_students) ... ok
 test_error_deletion_real_process_termination_keeps_complete_or_intact_record (test_institution_archive.InstitutionArchiveTests.test_error_deletion_real_process_termination_keeps_complete_or_intact_record) ... ok
-test_error_deletion_removes_active_duplicate_and_unpaid_charges_only (test_institution_archive.InstitutionArchiveTests.test_error_deletion_removes_active_duplicate_and_unpaid_charges_only) ... 
+test_error_deletion_removes_active_duplicate_and_unpaid_charges_only (test_institution_archive.InstitutionArchiveTests.test_error_deletion_removes_active_duplicate_and_unpaid_charges_only) ...
 01/Nov/2026 13:06:14 GET /api/cashea-order/1.pdf 200
 01/Nov/2026 13:06:14 GET /api/maintenance-review 200
 01/Nov/2026 13:06:15 POST /api/setup 200
@@ -1100,7 +1100,7 @@ test_fully_paid_student_is_archived_not_deleted_and_receipts_survive (test_insti
 test_guardian_links_remain_protected_even_when_children_are_archived_and_paid (test_institution_archive.InstitutionArchiveTests.test_guardian_links_remain_protected_even_when_children_are_archived_and_paid) ... ok
 test_historical_family_document_protects_reassigned_representative (test_institution_archive.InstitutionArchiveTests.test_historical_family_document_protects_reassigned_representative) ... ok
 test_permissions_csrf_and_stale_preview_are_enforced_on_server (test_institution_archive.InstitutionArchiveTests.test_permissions_csrf_and_stale_preview_are_enforced_on_server) ... ok
-test_unused_guardian_requires_review_password_and_verified_recoverable_copies (test_institution_archive.InstitutionArchiveTests.test_unused_guardian_requires_review_password_and_verified_recoverable_copies) ... 
+test_unused_guardian_requires_review_password_and_verified_recoverable_copies (test_institution_archive.InstitutionArchiveTests.test_unused_guardian_requires_review_password_and_verified_recoverable_copies) ...
 01/Nov/2026 13:06:59 POST /api/confirm-rate 200
 01/Nov/2026 13:06:59 POST /api/settings 200
 01/Nov/2026 13:06:59 POST /api/grades 200
@@ -1283,7 +1283,7 @@ test_encrypted_tier_process_kills_leave_previous_or_complete_copy (test_operatio
 test_local_backup_kills_during_copy_before_publish_and_after_publish (test_operation_kills.OperationKillTests.test_local_backup_kills_during_copy_before_publish_and_after_publish) ... ok
 test_unused_record_kills_after_backup_during_delete_and_after_commit (test_operation_kills.OperationKillTests.test_unused_record_kills_after_backup_during_delete_and_after_commit) ... ok
 test_discovered_endpoints_have_explicit_contracts (test_permission_matrix.PermissionMatrixTests.test_discovered_endpoints_have_explicit_contracts) ... ok
-test_roles_anonymous_and_csrf_match_independent_contract (test_permission_matrix.PermissionMatrixTests.test_roles_anonymous_and_csrf_match_independent_contract) ... 
+test_roles_anonymous_and_csrf_match_independent_contract (test_permission_matrix.PermissionMatrixTests.test_roles_anonymous_and_csrf_match_independent_contract) ...
 01/Nov/2026 13:07:11 GET /api/archive-preview/guardian/2 200
 01/Nov/2026 13:07:11 POST /api/delete-unused-record 400
 01/Nov/2026 13:07:11 GET /api/archive-preview/guardian/2 200
@@ -2001,7 +2001,7 @@ test_preservation_failure_stops_before_replacing_current_data (test_recovery.Rec
 test_secondary_sync_failure_keeps_local_and_previous_external_backup (test_recovery.RecoveryTests.test_secondary_sync_failure_keeps_local_and_previous_external_backup) ... ok
 test_startup_does_not_silently_create_empty_database_after_deletion (test_recovery.RecoveryTests.test_startup_does_not_silently_create_empty_database_after_deletion) ... ok
 test_sync_failure_preserves_previous_backup_and_active_payments (test_recovery.RecoveryTests.test_sync_failure_preserves_previous_backup_and_active_payments) ... ok
-test_upgrade_startup_under_windows_sync_rules_preserves_saved_payment (test_recovery.RecoveryTests.test_upgrade_startup_under_windows_sync_rules_preserves_saved_payment) ... 
+test_upgrade_startup_under_windows_sync_rules_preserves_saved_payment (test_recovery.RecoveryTests.test_upgrade_startup_under_windows_sync_rules_preserves_saved_payment) ...
 01/Nov/2026 13:07:25 POST /api/payments 401
 01/Nov/2026 13:07:25 POST /api/prepare-advance 401
 01/Nov/2026 13:07:25 POST /api/collections 401
@@ -2446,7 +2446,7 @@ test_backup_destination_form_only_edits_destination_and_preserves_financial_reco
 test_backup_destination_scoped_route_keeps_csrf_roles_and_validation (test_system.SystemTests.test_backup_destination_scoped_route_keeps_csrf_roles_and_validation) ... ok
 test_bulk_year_capacity_and_stale_preview_abort_without_partial_changes (test_system.SystemTests.test_bulk_year_capacity_and_stale_preview_abort_without_partial_changes) ... ok
 test_bulk_year_promotions_repeaters_withdrawals_preserve_finances_and_archive (test_system.SystemTests.test_bulk_year_promotions_repeaters_withdrawals_preserve_finances_and_archive) ... ok
-test_cash_close_native_currency_counting_freeze_blocking_reopening_and_stale_preview (test_system.SystemTests.test_cash_close_native_currency_counting_freeze_blocking_reopening_and_stale_preview) ... 
+test_cash_close_native_currency_counting_freeze_blocking_reopening_and_stale_preview (test_system.SystemTests.test_cash_close_native_currency_counting_freeze_blocking_reopening_and_stale_preview) ...
 01/Nov/2026 13:08:00 GET /api/payroll-plan/1 410
 01/Nov/2026 13:08:00 GET /api/payroll-plan/1.pdf 410
 01/Nov/2026 13:08:00 GET /api/salary-receipt/1 410
@@ -2637,7 +2637,7 @@ test_duplicate_reference_warning_requires_reason_and_retries_remain_idempotent (
 test_excel_template_numeric_dates_shared_siblings_and_formula_rejection (test_system.SystemTests.test_excel_template_numeric_dates_shared_siblings_and_formula_rejection) ... ok
 test_expenses_csv_backup_and_restore (test_system.SystemTests.test_expenses_csv_backup_and_restore) ... ok
 test_failed_payment_rolls_back_missing_rate_overpay_and_future (test_system.SystemTests.test_failed_payment_rolls_back_missing_rate_overpay_and_future) ... ok
-test_financial_backups_secondary_destination_failure_and_durability_pragmas (test_system.SystemTests.test_financial_backups_secondary_destination_failure_and_durability_pragmas) ... 
+test_financial_backups_secondary_destination_failure_and_durability_pragmas (test_system.SystemTests.test_financial_backups_secondary_destination_failure_and_durability_pragmas) ...
 01/Nov/2026 13:08:14 GET /api/cash-preview 200
 01/Nov/2026 13:08:14 POST /api/close-cash 400
 01/Nov/2026 13:08:14 POST /api/close-cash 200
@@ -2830,7 +2830,7 @@ test_missing_past_month_uses_old_tariff_before_student_edit (test_system.SystemT
 test_mobile_payments_keep_receipts_idempotency_and_never_enter_physical_cash (test_system.SystemTests.test_mobile_payments_keep_receipts_idempotency_and_never_enter_physical_cash) ... ok
 test_multicurrency_partial_allocations_idempotency_void_and_frozen_receipt (test_system.SystemTests.test_multicurrency_partial_allocations_idempotency_void_and_frozen_receipt) ... ok
 test_payment_plan_existing_debt_installments_and_void_recalculate_compliance (test_system.SystemTests.test_payment_plan_existing_debt_installments_and_void_recalculate_compliance) ... ok
-test_probe_backup_is_readonly_validates_schema_and_never_returns_personal_rows (test_system.SystemTests.test_probe_backup_is_readonly_validates_schema_and_never_returns_personal_rows) ... 
+test_probe_backup_is_readonly_validates_schema_and_never_returns_personal_rows (test_system.SystemTests.test_probe_backup_is_readonly_validates_schema_and_never_returns_personal_rows) ...
 01/Nov/2026 13:08:34 POST /api/confirm-rate 200
 01/Nov/2026 13:08:34 POST /api/settings 200
 01/Nov/2026 13:08:34 POST /api/grades 200
@@ -3029,7 +3029,7 @@ test_levels_are_bounded_and_permanent_copies_never_rotated (test_tanda_d.BackupL
 test_permanent_year_copy_decrypts_and_preserves_financial_totals (test_tanda_d.BackupLevelsTests.test_permanent_year_copy_decrypts_and_preserves_financial_totals) ... ok
 test_default_school_year_uses_current_date (test_tanda_d.CleanupTests.test_default_school_year_uses_current_date) ... ok
 test_floors_private_for_every_profile_and_preserved_in_database (test_tanda_d.CleanupTests.test_floors_private_for_every_profile_and_preserved_in_database) ... ok
-test_historical_payroll_expense_preserved_but_new_rejected (test_tanda_d.CleanupTests.test_historical_payroll_expense_preserved_but_new_rejected) ... 
+test_historical_payroll_expense_preserved_but_new_rejected (test_tanda_d.CleanupTests.test_historical_payroll_expense_preserved_but_new_rejected) ...
 01/Nov/2026 13:08:48 POST /api/probe-backup 200
 01/Nov/2026 13:08:48 POST /api/probe-backup 400
 01/Nov/2026 13:08:48 POST /api/probe-backup 400
@@ -5469,7 +5469,7 @@ test_retired_reset_cannot_erase_original_audit (test_audit_chain.AuditChainTests
 test_rollback_does_not_leak_edits_or_advance_head (test_audit_chain.AuditChainTests.test_rollback_does_not_leak_edits_or_advance_head) ... ok
 test_savepoint_rollback_and_outer_release_keep_only_committed_edits (test_audit_chain.AuditChainTests.test_savepoint_rollback_and_outer_release_keep_only_committed_edits) ... ok
 test_unverifiable_audit_keeps_session_bookkeeping_and_consultation (test_audit_chain.AuditChainTests.test_unverifiable_audit_keeps_session_bookkeeping_and_consultation) ... ok
-test_authentication_rate_gate_and_roles_keep_existing_permissions (test_backup_alerts.BackupAlertAccessTests.test_authentication_rate_gate_and_roles_keep_existing_permissions) ... 
+test_authentication_rate_gate_and_roles_keep_existing_permissions (test_backup_alerts.BackupAlertAccessTests.test_authentication_rate_gate_and_roles_keep_existing_permissions) ...
 01/Nov/2026 13:44:31 POST /api/guardians 200
 01/Nov/2026 13:44:31 POST /api/students 200
 01/Nov/2026 13:44:31 POST /api/grades 200
@@ -5708,7 +5708,7 @@ test_close_keeps_only_initial_in_physical_cash_and_blocks_annulments (test_cashe
 test_commission_and_unexpected_difference_require_reason_and_no_expense (test_cashea.CasheaTests.test_commission_and_unexpected_difference_require_reason_and_no_expense) ... ok
 test_documents_exports_and_solvency_have_coverage_without_minor_identifiers (test_cashea.CasheaTests.test_documents_exports_and_solvency_have_coverage_without_minor_identifiers) ... ok
 test_exact_partial_batch_settlement_and_idempotency (test_cashea.CasheaTests.test_exact_partial_batch_settlement_and_idempotency) ... ok
-test_existing_payment_plan_counts_financing_and_annulment_restores_it (test_cashea.CasheaTests.test_existing_payment_plan_counts_financing_and_annulment_restores_it) ... 
+test_existing_payment_plan_counts_financing_and_annulment_restores_it (test_cashea.CasheaTests.test_existing_payment_plan_counts_financing_and_annulment_restores_it) ...
 01/Nov/2026 13:44:58 POST /api/backup-now 403
 01/Nov/2026 13:44:58 POST /api/login 200
 01/Nov/2026 13:44:58 GET /api/rate-gate 200
@@ -5896,7 +5896,7 @@ test_stale_review_invalid_input_missing_rate_and_wrong_idempotency_body (test_ca
 test_strict_next_wednesday_edit_and_configuration_do_not_reprice_history (test_cashea.CasheaTests.test_strict_next_wednesday_edit_and_configuration_do_not_reprice_history) ... ok
 test_ves_initial_and_bank_settlement_keep_original_currency_and_rate (test_cashea.CasheaTests.test_ves_initial_and_bank_settlement_keep_original_currency_and_rate) ... ok
 test_zero_initial_creates_no_receipt_and_financing_is_not_overdue (test_cashea.CasheaTests.test_zero_initial_creates_no_receipt_and_financing_is_not_overdue) ... ok
-test_cashier_completes_sale_and_settlement_reader_only_reads_admin_controls_rejected (test_cashea_integrations.CasheaIntegrationTests.test_cashier_completes_sale_and_settlement_reader_only_reads_admin_controls_rejected) ... 
+test_cashier_completes_sale_and_settlement_reader_only_reads_admin_controls_rejected (test_cashea_integrations.CasheaIntegrationTests.test_cashier_completes_sale_and_settlement_reader_only_reads_admin_controls_rejected) ...
 01/Nov/2026 13:45:48 POST /api/students 200
 01/Nov/2026 13:45:48 GET /api/state 200
 01/Nov/2026 13:45:48 POST /api/payment-plans 200
@@ -6100,7 +6100,7 @@ test_40_16_24_receipt_is_invoice_and_retries_keep_one_number (test_cashea_number
 test_concurrent_distinct_sales_require_new_review_and_have_unique_real_receipts (test_cashea_number.CasheaNumberTests.test_concurrent_distinct_sales_require_new_review_and_have_unique_real_receipts) ... ok
 test_manual_requires_number_and_reviewed_duplicates_but_cannot_reuse_receipt_origin (test_cashea_number.CasheaNumberTests.test_manual_requires_number_and_reviewed_duplicates_but_cannot_reuse_receipt_origin) ... ok
 test_other_cashier_receipt_invalidates_prediction_without_altering_old_receipt (test_cashea_number.CasheaNumberTests.test_other_cashier_receipt_invalidates_prediction_without_altering_old_receipt) ... ok
-test_settings_origin_invalid_rejected_and_currency_rate_change_invalidates_review (test_cashea_number.CasheaNumberTests.test_settings_origin_invalid_rejected_and_currency_rate_change_invalidates_review) ... 
+test_settings_origin_invalid_rejected_and_currency_rate_change_invalidates_review (test_cashea_number.CasheaNumberTests.test_settings_origin_invalid_rejected_and_currency_rate_change_invalidates_review) ...
 01/Nov/2026 13:46:02 GET /api/session 200
 01/Nov/2026 13:46:02 POST /api/confirm-rate 200
 01/Nov/2026 13:46:02 POST /api/cashea-preview 200
@@ -6349,7 +6349,7 @@ test_early_enrollment_end_keeps_existing_debt_and_does_not_generate_later_months
 test_six_decimal_rate_rounds_each_payment_half_up_and_keeps_historical_rate (test_financial_invariants.FinancialInvariantTests.test_six_decimal_rate_rounds_each_payment_half_up_and_keeps_historical_rate) ... ok
 test_unallocated_and_overallocated_payments_are_detected_without_repair (test_financial_invariants.FinancialInvariantTests.test_unallocated_and_overallocated_payments_are_detected_without_repair) ... ok
 test_valid_and_voided_allocations_are_separate_and_review_is_readonly (test_financial_invariants.FinancialInvariantTests.test_valid_and_voided_allocations_are_separate_and_review_is_readonly) ... ok
-test_five_independent_cashiers_accept_only_payments_within_the_same_debt (test_financial_invariants.FiveCashierTests.test_five_independent_cashiers_accept_only_payments_within_the_same_debt) ... 
+test_five_independent_cashiers_accept_only_payments_within_the_same_debt (test_financial_invariants.FiveCashierTests.test_five_independent_cashiers_accept_only_payments_within_the_same_debt) ...
 01/Nov/2026 13:46:24 POST /api/settings 200
 01/Nov/2026 13:46:24 POST /api/grades 200
 01/Nov/2026 13:46:24 POST /api/guardians 200
@@ -6543,7 +6543,7 @@ test_error_deletion_requires_password_code_confirmation_csrf_and_fresh_review (t
 test_error_deletion_second_destination_failure_and_foreign_allocations_block_deletion (test_institution_archive.InstitutionArchiveTests.test_error_deletion_second_destination_failure_and_foreign_allocations_block_deletion) ... ok
 test_failed_local_or_second_backup_never_deletes (test_institution_archive.InstitutionArchiveTests.test_failed_local_or_second_backup_never_deletes) ... ok
 test_fully_paid_student_is_archived_not_deleted_and_receipts_survive (test_institution_archive.InstitutionArchiveTests.test_fully_paid_student_is_archived_not_deleted_and_receipts_survive) ... ok
-test_guardian_links_remain_protected_even_when_children_are_archived_and_paid (test_institution_archive.InstitutionArchiveTests.test_guardian_links_remain_protected_even_when_children_are_archived_and_paid) ... 
+test_guardian_links_remain_protected_even_when_children_are_archived_and_paid (test_institution_archive.InstitutionArchiveTests.test_guardian_links_remain_protected_even_when_children_are_archived_and_paid) ...
 01/Nov/2026 13:47:01 POST /api/confirm-rate 200
 01/Nov/2026 13:47:01 POST /api/users 200
 01/Nov/2026 13:47:01 POST /api/login 200
@@ -6732,7 +6732,7 @@ test_encrypted_tier_process_kills_leave_previous_or_complete_copy (test_operatio
 test_local_backup_kills_during_copy_before_publish_and_after_publish (test_operation_kills.OperationKillTests.test_local_backup_kills_during_copy_before_publish_and_after_publish) ... ok
 test_unused_record_kills_after_backup_during_delete_and_after_commit (test_operation_kills.OperationKillTests.test_unused_record_kills_after_backup_during_delete_and_after_commit) ... ok
 test_discovered_endpoints_have_explicit_contracts (test_permission_matrix.PermissionMatrixTests.test_discovered_endpoints_have_explicit_contracts) ... ok
-test_roles_anonymous_and_csrf_match_independent_contract (test_permission_matrix.PermissionMatrixTests.test_roles_anonymous_and_csrf_match_independent_contract) ... 
+test_roles_anonymous_and_csrf_match_independent_contract (test_permission_matrix.PermissionMatrixTests.test_roles_anonymous_and_csrf_match_independent_contract) ...
 01/Nov/2026 13:47:14 POST /api/settings 200
 01/Nov/2026 13:47:14 POST /api/grades 200
 01/Nov/2026 13:47:14 POST /api/guardians 200
@@ -7423,7 +7423,7 @@ test_destination_change_does_not_reuse_old_disk_confirmation (test_protection.Pr
 test_non_windows_is_explicitly_unknown_and_runs_no_command (test_protection.ProtectionTests.test_non_windows_is_explicitly_unknown_and_runs_no_command) ... ok
 test_real_same_filesystem_is_detected_without_claiming_windows_bitlocker (test_protection.ProtectionTests.test_real_same_filesystem_is_detected_without_claiming_windows_bitlocker) ... ok
 test_windows_output_is_parsed_and_path_is_not_executable_code (test_protection.ProtectionTests.test_windows_output_is_parsed_and_path_is_not_executable_code) ... ok
-test_all_business_posts_fail_closed_and_neither_source_nor_temporary_ledger_changes (test_read_only_copy.ReadOnlyCopyTests.test_all_business_posts_fail_closed_and_neither_source_nor_temporary_ledger_changes) ... 
+test_all_business_posts_fail_closed_and_neither_source_nor_temporary_ledger_changes (test_read_only_copy.ReadOnlyCopyTests.test_all_business_posts_fail_closed_and_neither_source_nor_temporary_ledger_changes) ...
 01/Nov/2026 13:47:40 POST /api/demo-presence 403
 01/Nov/2026 13:47:40 POST /api/demo-exit 403
 01/Nov/2026 13:47:40 POST /api/demo-exit 403
@@ -7613,7 +7613,7 @@ test_preservation_failure_stops_before_replacing_current_data (test_recovery.Rec
 test_secondary_sync_failure_keeps_local_and_previous_external_backup (test_recovery.RecoveryTests.test_secondary_sync_failure_keeps_local_and_previous_external_backup) ... ok
 test_startup_does_not_silently_create_empty_database_after_deletion (test_recovery.RecoveryTests.test_startup_does_not_silently_create_empty_database_after_deletion) ... ok
 test_sync_failure_preserves_previous_backup_and_active_payments (test_recovery.RecoveryTests.test_sync_failure_preserves_previous_backup_and_active_payments) ... ok
-test_upgrade_startup_under_windows_sync_rules_preserves_saved_payment (test_recovery.RecoveryTests.test_upgrade_startup_under_windows_sync_rules_preserves_saved_payment) ... 
+test_upgrade_startup_under_windows_sync_rules_preserves_saved_payment (test_recovery.RecoveryTests.test_upgrade_startup_under_windows_sync_rules_preserves_saved_payment) ...
 01/Nov/2026 13:47:43 POST /api/export-encrypted-backup 403
 01/Nov/2026 13:47:43 POST /api/backup-now 403
 01/Nov/2026 13:47:43 POST /api/backup-cloud-declare 403
@@ -7991,7 +7991,7 @@ test_backup_destination_form_only_edits_destination_and_preserves_financial_reco
 test_backup_destination_scoped_route_keeps_csrf_roles_and_validation (test_system.SystemTests.test_backup_destination_scoped_route_keeps_csrf_roles_and_validation) ... ok
 test_bulk_year_capacity_and_stale_preview_abort_without_partial_changes (test_system.SystemTests.test_bulk_year_capacity_and_stale_preview_abort_without_partial_changes) ... ok
 test_bulk_year_promotions_repeaters_withdrawals_preserve_finances_and_archive (test_system.SystemTests.test_bulk_year_promotions_repeaters_withdrawals_preserve_finances_and_archive) ... ok
-test_cash_close_native_currency_counting_freeze_blocking_reopening_and_stale_preview (test_system.SystemTests.test_cash_close_native_currency_counting_freeze_blocking_reopening_and_stale_preview) ... 
+test_cash_close_native_currency_counting_freeze_blocking_reopening_and_stale_preview (test_system.SystemTests.test_cash_close_native_currency_counting_freeze_blocking_reopening_and_stale_preview) ...
 01/Nov/2026 13:48:18 GET /api/payroll-plan/1 410
 01/Nov/2026 13:48:18 GET /api/payroll-plan/1.pdf 410
 01/Nov/2026 13:48:18 GET /api/salary-receipt/1 410
@@ -8182,7 +8182,7 @@ test_duplicate_reference_warning_requires_reason_and_retries_remain_idempotent (
 test_excel_template_numeric_dates_shared_siblings_and_formula_rejection (test_system.SystemTests.test_excel_template_numeric_dates_shared_siblings_and_formula_rejection) ... ok
 test_expenses_csv_backup_and_restore (test_system.SystemTests.test_expenses_csv_backup_and_restore) ... ok
 test_failed_payment_rolls_back_missing_rate_overpay_and_future (test_system.SystemTests.test_failed_payment_rolls_back_missing_rate_overpay_and_future) ... ok
-test_financial_backups_secondary_destination_failure_and_durability_pragmas (test_system.SystemTests.test_financial_backups_secondary_destination_failure_and_durability_pragmas) ... 
+test_financial_backups_secondary_destination_failure_and_durability_pragmas (test_system.SystemTests.test_financial_backups_secondary_destination_failure_and_durability_pragmas) ...
 01/Nov/2026 13:48:39 GET /api/cash-preview 200
 01/Nov/2026 13:48:39 POST /api/close-cash 400
 01/Nov/2026 13:48:39 POST /api/close-cash 200
@@ -8375,7 +8375,7 @@ test_missing_past_month_uses_old_tariff_before_student_edit (test_system.SystemT
 test_mobile_payments_keep_receipts_idempotency_and_never_enter_physical_cash (test_system.SystemTests.test_mobile_payments_keep_receipts_idempotency_and_never_enter_physical_cash) ... ok
 test_multicurrency_partial_allocations_idempotency_void_and_frozen_receipt (test_system.SystemTests.test_multicurrency_partial_allocations_idempotency_void_and_frozen_receipt) ... ok
 test_payment_plan_existing_debt_installments_and_void_recalculate_compliance (test_system.SystemTests.test_payment_plan_existing_debt_installments_and_void_recalculate_compliance) ... ok
-test_probe_backup_is_readonly_validates_schema_and_never_returns_personal_rows (test_system.SystemTests.test_probe_backup_is_readonly_validates_schema_and_never_returns_personal_rows) ... 
+test_probe_backup_is_readonly_validates_schema_and_never_returns_personal_rows (test_system.SystemTests.test_probe_backup_is_readonly_validates_schema_and_never_returns_personal_rows) ...
 01/Nov/2026 13:49:04 POST /api/confirm-rate 200
 01/Nov/2026 13:49:04 POST /api/settings 200
 01/Nov/2026 13:49:04 POST /api/grades 200
@@ -8574,7 +8574,7 @@ test_levels_are_bounded_and_permanent_copies_never_rotated (test_tanda_d.BackupL
 test_permanent_year_copy_decrypts_and_preserves_financial_totals (test_tanda_d.BackupLevelsTests.test_permanent_year_copy_decrypts_and_preserves_financial_totals) ... ok
 test_default_school_year_uses_current_date (test_tanda_d.CleanupTests.test_default_school_year_uses_current_date) ... ok
 test_floors_private_for_every_profile_and_preserved_in_database (test_tanda_d.CleanupTests.test_floors_private_for_every_profile_and_preserved_in_database) ... ok
-test_historical_payroll_expense_preserved_but_new_rejected (test_tanda_d.CleanupTests.test_historical_payroll_expense_preserved_but_new_rejected) ... 
+test_historical_payroll_expense_preserved_but_new_rejected (test_tanda_d.CleanupTests.test_historical_payroll_expense_preserved_but_new_rejected) ...
 01/Nov/2026 13:49:19 POST /api/probe-backup 200
 01/Nov/2026 13:49:19 POST /api/probe-backup 400
 01/Nov/2026 13:49:19 POST /api/probe-backup 400
@@ -9046,5 +9046,3 @@ $ python tests/run_browser.py --roster
 PASS: actual Excel and CSV downloads, import into empty trial, automatic grades, preserved codes/phones/fees/statuses, preview invalidation, old listing explanation, no copied payments or altered source ledger, guardian PDF states and trial cleanup.
 
 EXIT_CODE=0
-
-
