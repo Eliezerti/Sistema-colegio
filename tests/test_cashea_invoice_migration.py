@@ -50,7 +50,7 @@ class CasheaInvoiceMigrationTests(unittest.TestCase):
                 self.assertEqual(db.execute("SELECT value FROM settings WHERE key='cashea_invoice_origin'").fetchone()[0],'recibo')
                 self.assertEqual(audit,[tuple(r) for r in db.execute('SELECT * FROM audit ORDER BY id')][:len(audit)])
                 self.assertEqual(links,[tuple(r) for r in db.execute('SELECT * FROM audit_links ORDER BY audit_id')][:len(links)])
-                with patch('colegio.server.local_today',return_value=date(2026,10,27)):s=snapshot(db,dict(id=1,role='admin',name='Auditor FICTICIO'))
+                with patch('colegio.server.local_today',return_value=date(2026,10,27)), patch('colegio.db.local_today',return_value=date(2026,10,27)):s=snapshot(db,dict(id=1,role='admin',name='Auditor FICTICIO'))
                 self.assertEqual(s['summary'],golden['summary']);self.assertEqual(cash_summary(db,'2026-10-27'),golden['cash'])
                 for actual,expected in ((daily_report(s),golden['daily']),(report(db,s,'2026-10'),golden['monthly'])):
                     # Compare all money, rows and sections; exclude only the added preference and emission clock.

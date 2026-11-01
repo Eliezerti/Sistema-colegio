@@ -17,7 +17,8 @@ class AdvancePaymentTests(unittest.TestCase):
     def setUp(self):
         for target in ('colegio.db.local_today', 'colegio.server.local_today',
                        'colegio.cashea.local_today', 'colegio.administration.local_today',
-                       'colegio.advance_payments.local_today', __name__ + '.local_today'):
+                       'colegio.advance_payments.local_today', 'tests.test_system.local_today',
+                       'tests.test_cashea.local_today', __name__ + '.local_today'):
             mocked = patch(target, return_value=date(2026, 10, 30))
             mocked.start()
             self.addCleanup(mocked.stop)

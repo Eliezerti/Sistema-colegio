@@ -54,7 +54,7 @@ class CasheaMigrationTests(unittest.TestCase):
                 self.assertEqual(audit,[tuple(r) for r in db.execute('SELECT * FROM audit ORDER BY id')][:len(audit)])
                 self.assertEqual(links,[tuple(r) for r in db.execute('SELECT * FROM audit_links ORDER BY audit_id')][:len(links)])
                 self.assertEqual(cash_summary(db,'2026-10-27'),golden['cash'])
-                with patch('colegio.server.local_today',return_value=date(2026,10,27)):
+                with patch('colegio.server.local_today',return_value=date(2026,10,27)), patch('colegio.db.local_today',return_value=date(2026,10,27)):
                     state=snapshot(db,dict(id=1,role='admin',name='Auditor FICTICIO'))
                 self.assertEqual(state['summary'],golden['summary'])
                 daily=daily_report(state);self.assertEqual({k:daily[k] for k in golden['daily']},golden['daily'])
