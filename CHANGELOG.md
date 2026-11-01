@@ -1,3 +1,10 @@
+# Avisos de cobranza · 1.0.74 · en revisión
+
+- Cinco tipos de mensaje y tres versiones deterministas, saludo venezolano y nombres completos. Meses en palabras y concepto, seis cargos más antiguos por alumno y total vencido completo; equivalente en Bs solo con tasa de hoy. Hermanos, Cashea y datos para pagar opcionales.
+- Texto editable, Otra versión y Restablecer texto; WhatsApp toma la edición actual y valida el teléfono venezolano. No se envía nada automáticamente. Marcar como enviado es manual, idempotente y auditado, con seguimiento y último aviso.
+- Administración personaliza plantillas, emojis y datos de pago en un apartado independiente, con marcadores validados, vista previa ficticia y originales recuperables. Caja prepara y marca; Consulta solo prepara. El servidor mantiene CSRF, permisos y solo lectura. Sin DDL ni datos nuevos por defecto; motor, recibos y correlativos intactos.
+- Línea base del 01/11: tres fixtures de pruebas tenían relojes distintos; se fijó la fecha completa, sin cambiar importes esperados ni el producto. [Diseño previo](DISENO_AVISOS.md) · [Guía de usuario](docs/avisos-cobranza.md).
+
 # Mensualidades por adelantado · 1.0.74 · en revisión
 
 - Validación del ajuste en Linux: 371 (368 correctas, tres omisiones nativas) y los tres navegadores correctos; incluye 13 pruebas nuevas. Se conserva el fallo inicial de la inyección del reloj y su corrección sin debilitar aserciones. Windows: 371 correctas sin omisiones y los tres navegadores correctos; lector de PDF de pruebas corregido para no truncar un checksum binario, con regresión y mismas aserciones de impresión. Instalador solicitado posteriormente: validación íntegra de Windows correcta, 371 pruebas en 658,903 s, tres navegadores, instalación/actualización/desinstalación conservadoras e impresión nativa; anticipo y Cashea comprobados desde el ejecutable instalado. [Entrega](docs/interno/pago-adelantado-instalador.md). [Evidencia completa](docs/interno/pago-adelantado-validacion.md).

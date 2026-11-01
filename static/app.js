@@ -261,6 +261,7 @@ const settingsSections = [
   ['identity','Identidad y calendario','settings'],
   ['maintenance','Protección y mantenimiento','shield'],
   ['cashea','Cashea','payments'],
+  ['notices','Avisos de cobranza','arrears'],
   ['users','Usuarios y acceso','guardians'],
   ['audit','Bitácora','book']
 ];
@@ -285,12 +286,12 @@ document.addEventListener('keydown',event=>{
 });
 function rememberSettingsDrafts(savedEndpoint){
   if(page!=='settings'||!state?.settings)return;
-  for(const form of document.querySelectorAll('form[data-endpoint="settings"],form[data-endpoint="backup-directory"],form[data-endpoint="session-preferences"],form[data-endpoint="cashea-settings"]')){
+  for(const form of document.querySelectorAll('form[data-endpoint="settings"],form[data-endpoint="backup-directory"],form[data-endpoint="session-preferences"],form[data-endpoint="cashea-settings"],form[data-endpoint="collection-notice-settings"]')){
     const endpoint=form.dataset.endpoint;
     if(endpoint===savedEndpoint){delete settingsDrafts[endpoint];continue;}
     const values={};
     for(const input of form.querySelectorAll('input[name],select[name],textarea[name]')){
-      const stored=endpoint==='session-preferences'?(state.settings.session_idle_minutes||15):state.settings[input.name];
+      const stored=endpoint==='collection-notice-settings'?noticeSettingValue(input.name):endpoint==='session-preferences'?(state.settings.session_idle_minutes||15):state.settings[input.name];
       if(input.value!==String(stored??''))values[input.name]=input.value;
     }
     settingsDrafts[endpoint]=values;
@@ -300,7 +301,7 @@ function settingsPage(){
   const s=state.settings;
   const panels={identity:settingsIdentity({...s,...settingsDrafts.settings}),
     maintenance:settingsMaintenance({...s,...settingsDrafts['backup-directory']}),
-    cashea:casheaSettingsPanel({...s,...settingsDrafts['cashea-settings']}),users:settingsUsers(),audit:settingsAudit()};
+    cashea:casheaSettingsPanel({...s,...settingsDrafts['cashea-settings']}),notices:noticeSettingsPanel(),users:settingsUsers(),audit:settingsAudit()};
   return heading('Configuración','Elige un apartado para trabajar con orden.')+
     `<div class="settings-intro"><div>${schoolLogo()}<div><b>${esc(s.school_name)}</b><span>${esc(s.legal_name||'Completa la razón social de tu colegio')}</span></div></div><span class="badge">Una PC · Base USD</span></div>`+
     `<div class="settings-sections" role="tablist" aria-label="Apartados de configuración">${settingsSections.map(([id,label,name])=>`<button type="button" role="tab" id="settings-tab-${id}" aria-controls="settings-panel-${id}" aria-selected="${settingsSection===id}" tabindex="${settingsSection===id?0:-1}" data-action="settings-section" data-id="${id}">${icon(name)}<span>${label}</span></button>`).join('')}</div>`+
@@ -478,11 +479,8 @@ function account(id) {
   const list=state.charges.filter(c=>c.student_id===s.id), payments=state.payments.filter(p=>p.student_id===s.id);
   showModal(esc(s.name),`${esc(s.grade_name)} · ${esc(s.guardian_name)} · ${esc(s.guardian_phone)}`,`<div class="mini-summary"><div><small>Saldo pendiente USD</small><b>${usd(s.balance)}</b></div><div><small>Deuda vencida USD</small><b class="text-red">${usd(s.overdue)}</b></div></div><div class="actions">${writable()?btn('Registrar pago','payment','primary',s.id)+btn('Crear cargo','charge','',s.id):''}${admin()?btn('Editar matrícula','student','',s.id)+btn('Corregir mensualidades','correct-billing','',s.id):''}${btn('Preparar aviso','collection','',s.id)}${writable()&&s.overdue?btn('Convenio de pago','payment-plan','',s.id):''}${writable()?btn('Seguimiento','followup','',s.id):''}</div><h3 style="margin:22px 0 10px">Estado de cuenta</h3><div class="detail-table">${table(['Concepto / período','Vence','Cargo','Abono','Saldo',''],list,c=>`<td>${esc(c.concept)}${c.cashea_label?`<span class="sub">${esc(c.cashea_label)}</span>`:''}${c.advance_label?`<span class="sub">${esc(c.advance_label)}</span>`:''}<span class="sub">${esc(c.period)}</span></td><td>${dateLabel(c.due_date)}</td><td>${usd(c.amount)}</td><td>${usd(c.paid)}</td><td class="money ${c.overdue?'text-red':''}">${usd(c.balance)}</td><td>${admin()&&!c.paid?btn('Anular cargo','cancel-charge','small',c.id):''}</td>`,'No hay cargos activos')}</div><h3 style="margin:22px 0 10px">Pagos</h3><div class="detail-table">${planLinks(s.id)}${table(['Recibo','Fecha','USD','Estado',''],payments,p=>`<td>R-${String(p.id).padStart(6,'0')}</td><td>${dateLabel(p.paid_on)}</td><td>${usd(p.amount)}</td><td>${badge(p.voided?'Anulado':'Válido',p.voided?'red':'')}</td><td>${btn('Ver','receipt','small',p.id)}</td>`,'Sin pagos')}</div>`);
 }
-function collection(id) {
-  const s=state.students.find(s=>s.id===Number(id));
-  const text=`Estimado/a ${s.guardian_name}: ${state.settings.school_name} le informa que ${s.name} presenta un saldo vencido de USD ${number(s.overdue/100)} al ${dateLabel(state.today)}.${todayRate()?` Su equivalente de referencia es Bs ${number(s.overdue/100*Number(todayRate().rate))}, a la tasa BCV registrada para hoy (Bs ${todayRate().rate}/USD). Al pagar se aplicará la tasa vigente de la fecha del pago.`:''} Por favor, comuníquese con administración para regularizar su cuenta. Gracias.`;
-  showModal('Aviso de cobranza',`Representante: ${esc(s.guardian_name)} · ${esc(s.guardian_phone)||'Sin teléfono'}`,`<p class="hint">Revisa el texto antes de compartirlo. El sistema prepara el aviso; no envía mensajes.</p><label class="field"><textarea id="collection-text" rows="8">${esc(text)}</textarea></label><div class="form-actions">${btn('Copiar aviso','copy-collection','primary')}${whatsappLink(s.guardian_phone,text)}</div>`);
-}
+async function collection(id) {await openCollectionNotice(id);}
+
 function openVoid(endpoint,id) {
   showModal(endpoint==='cancel-charge'?'Anular cargo':'Anular operación','La anulación conserva el registro y su motivo en la bitácora. Si era un pago adelantado, la mensualidad preparada queda pendiente con su vencimiento normal.',recordForm(endpoint,`<input type="hidden" name="id" value="${Number(id)}">${textarea('Motivo obligatorio','reason')}`,{},'Confirmar anulación'));
   $('textarea',modal).required=true;
@@ -610,7 +608,7 @@ document.addEventListener('click',async event=>{
       case 'student-delete-review':await openStudentDeletion(id);break;
       case 'enrollment':await enrollmentDocument(id);break;case 'payment':await openPayment(id);break;case 'expense':openExpense();break;
       case 'charge':openCharge(id);break;case 'generate':openGenerate();break;
-      case 'rates':openRates();break;case 'account':account(id);break;case 'collection':collection(id);break;case 'followup':openFollowup(id);break;
+      case 'rates':openRates();break;case 'account':account(id);break;case 'collection':await collection(id);break;case 'followup':openFollowup(id);break;
       case 'delete-grade':case 'archive-student':case 'archive-guardian':case 'restore-student':case 'restore-guardian':openDirectoryAction(action,id);break;
       case 'correct-billing':openBillingCorrection(id);break;
       case 'void-payment':case 'void-expense':case 'cancel-charge':openVoid(action,id);break;
@@ -963,8 +961,8 @@ function dashboardUpcoming(due){
 }
 
 function whatsappLink(phone,text){
-  let digits=String(phone||'').replace(/\D/g,'');if(digits.length===11&&digits[0]==='0')digits='58'+digits.slice(1);else if(digits.length===10)digits='58'+digits;
-  if(!/^58\d{10}$/.test(digits))return '<small>Completa un teléfono venezolano válido para abrir WhatsApp.</small>';
+  const digits=String(phone||'');
+  if(!/^58[0-9]{10}$/.test(digits))return '<button type="button" class="btn" disabled>Abrir WhatsApp con el aviso</button>';
   return `<a id="wa-collection" class="btn" href="https://wa.me/${digits}?text=${encodeURIComponent(text)}" target="_blank" rel="noopener noreferrer">Abrir WhatsApp con el aviso</a>`;
 }
 

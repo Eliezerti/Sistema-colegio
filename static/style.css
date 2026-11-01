@@ -338,3 +338,13 @@ h2.cashea-invoice-number{font-size:1.6rem;margin:.35rem 0}
 :root .month-choice { display:flex; align-items:flex-start; gap:8px; padding:7px 0; font-weight:400; }
 :root .month-choice input { width:auto; margin-top:3px; }
 :root .month-future { color:#57676b; background:#f3f5f5; border-radius:5px; padding:8px; margin:4px 0; }
+.collection-notice-form .notice-options{display:flex;flex-direction:column;gap:8px;margin:14px 0}
+.collection-notice-form .notice-options label{display:flex;align-items:center;gap:8px}
+.collection-notice-form .notice-options input{width:auto}
+.collection-notice-form .notice-last{font-size:12px;color:var(--muted);margin:12px 0}
+.collection-notice-form textarea{min-height:270px;font-size:14px;line-height:1.5}
+.collection-notice-form .notice-variants{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0}
+.collection-notice-form .notice-whatsapp{display:flex;flex-direction:column;gap:5px}
+.collection-notice-form .notice-phone-error{max-width:290px;white-space:normal}
+.notice-settings-form .notice-template-slot[hidden],.notice-settings-form .notice-example[hidden]{display:none!important}
+.notice-settings-form textarea{min-height:180px}

@@ -507,6 +507,7 @@ printedTextLayout.selfTest();
     await require('./cashea_browser.cjs')(page);
     await require('./advance_browser.cjs')(page);
     await require('./session_browser.cjs')(page,expectedSessionError);
+    await require('./collection_notices_browser.cjs')(page);
     await nav('settings');await settingsTab('Protección y mantenimiento');
     assert.equal(await page.locator('[data-action="reset-review"],.reset-settings').count(),0);
     const finalState=await page.evaluate(async()=>await(await fetch('/api/state?history=1')).json());

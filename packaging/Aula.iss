@@ -40,6 +40,7 @@ Source: "..\build\MicrosoftEdgeWebview2Setup.exe"; DestDir: "{tmp}"; Flags: dele
 
 Source: "..\docs\alcance-legal.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "..\docs\archivo-institucion.html"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\docs\avisos-cobranza.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "..\docs\cashea.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "..\docs\carpeta-nube.html"; DestDir: "{app}\docs"; Flags: ignoreversion
 Source: "..\docs\cifrado-respaldos.html"; DestDir: "{app}\docs"; Flags: ignoreversion
