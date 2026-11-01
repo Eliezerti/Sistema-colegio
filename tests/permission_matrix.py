@@ -13,7 +13,7 @@ GET_ALL = ('session', 'session-status', 'clock-status', 'rate-gate', 'state', 'c
            'backup-status', 'daily-report', 'daily-report.pdf', 'monthly-report','monthly-report.pdf','monthly-report.csv', 'health', 'export', 'cashea','cashea-report','cashea-report.csv','cashea-report.pdf','cashea-report.xlsx')
 GET_ADMIN = ('audit', 'audit.csv', 'audit.pdf', 'import-template', 'import-guide',
              'backup', 'maintenance-review')
-POST_ADMIN = ('settings', 'backup-directory', 'grades', 'guardians', 'students',
+POST_ADMIN = ('settings', 'collection-notice-settings','collection-notice-template-preview', 'backup-directory', 'grades', 'guardians', 'students',
               'users', 'password', 'void-payment', 'void-expense', 'cancel-charge',
                 'import-roster', 'reopen-cash', 'transition-year',
               'cancel-plan', 'correct-billing-start', 'archive-student', 'archive-guardian',
@@ -21,7 +21,7 @@ POST_ADMIN = ('settings', 'backup-directory', 'grades', 'guardians', 'students',
                'delete-unused-record', 'delete-error-student', 'clock-confirm', 'session-preferences',
               'recovery-notice-ack', 'crypto-prepare', 'crypto-confirm', 'crypto-unlock',
               'probe-backup', 'export-encrypted-backup', 'backup-now', 'backup-cloud-declare', )
-POST_WRITERS = ('generate', 'payments', 'prepare-advance', 'collections', 'rates', 'expenses', 'charges', 'close-cash',
+POST_WRITERS = ('generate', 'payments', 'prepare-advance', 'collections', 'collection-notice-mark', 'rates', 'expenses', 'charges', 'close-cash',
                 'guardian-documents', 'payment-plans')
 
 
@@ -32,6 +32,7 @@ def cases():
                            key=key or route.split('?')[0], body=body or {}))
     for route in GET_ALL: add('GET', route, (*ALL, 'anonymous') if route=='session' else ALL, 200)
     add('GET', 'payment-options?student_id=0', ALL, 400, 'payment-options')
+    add('GET', 'collection-notice?student_id=0', ALL, 400, 'collection-notice')
     for route in GET_ADMIN: add('GET', route, ADMIN, 200)
     add('GET', 'year-roster?year=2020', ADMIN, 200)
     for kind in ('students', 'guardians'):

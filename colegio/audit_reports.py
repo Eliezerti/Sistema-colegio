@@ -9,6 +9,7 @@ from .directory_reports import directory_pdf
 
 
 LABELS = {'edit-values':'Cambio de datos', 'restore-backup':'Restauración de respaldo',
+    'collection_notice_settings':'Plantillas y opciones de avisos', 'collection_notice_sent':'Aviso marcado manualmente como enviado',
     'advance-months-prepared':'Meses preparados para cobro adelantado', 'advance-waiver':'Meses con beca completa evaluados',
     'local-admin-password-reset':'Recuperación local de contraseña', 'trial-payments-cleared':'Limpieza única de cobros de prueba', 'reset_records':'Vaciado de registros',
     'setup':'Configuración inicial', 'settings':'Datos del colegio', 'rate':'Tasa BCV registrada',

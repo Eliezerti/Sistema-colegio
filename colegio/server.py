@@ -70,6 +70,8 @@ def snapshot(db, user):
     if owns_transaction:
         db.commit()
     settings = {k:v for k,v in db.execute('SELECT key,value FROM settings') if not k.startswith('id_floor_')}
+    from .collection_notices import settings as notice_settings
+    notice_config = notice_settings(db) if user['role']=='admin' else None
     students = rows(db, '''SELECT s.*,g.name AS guardian_name,g.phone AS guardian_phone,g.email AS guardian_email,
       gr.name AS grade_name FROM students s JOIN guardians g ON g.id=s.guardian_id
       JOIN grades gr ON gr.id=s.grade_id ORDER BY s.name''')
@@ -112,6 +114,7 @@ def snapshot(db, user):
             d = c['days_overdue']
             aging[0 if d <= 30 else 1 if d <= 60 else 2 if d <= 90 else 3] += c['balance']
     return {'audit_status': integrity, 'settings': settings, 'today': today, 'user': user, 'students': students,
+            **({'collection_notice_settings':notice_config} if notice_config is not None else {}),
             'advance_income_usd':sum(p.get('advance_amount',0) for p in payments if p['paid_on'].startswith(month)),
             'guardians': rows(db, 'SELECT * FROM guardians ORDER BY name'),
             'grades': rows(db, 'SELECT * FROM grades ORDER BY name'),
@@ -171,9 +174,13 @@ def prepare_backup_directory(db, value, uid):
 def mutate(db, endpoint, data, user, *, synchronize=True, import_code=None, import_archived=False, demo=False, _cashea_order=None):
     uid = user['id']
     db.audit_user = uid
-    admin_paths = {'settings','backup-directory','grades','guardians','students','users','password','void-payment','void-expense','cancel-charge','import-roster','reopen-cash','transition-year','cancel-plan','correct-billing-start'} | DIRECTORY_ACTIONS | ARCHIVE_ACTIONS
+    admin_paths = {'settings','collection-notice-settings','collection-notice-template-preview','backup-directory','grades','guardians','students','users','password','void-payment','void-expense','cancel-charge','import-roster','reopen-cash','transition-year','cancel-plan','correct-billing-start'} | DIRECTORY_ACTIONS | ARCHIVE_ACTIONS
     if user['role'] == 'reader' or (endpoint in (admin_paths | CASHEA_ADMIN) and user['role'] != 'admin'):
         raise PermissionError('Tu perfil no permite esta operación.')
+    # These actions only edit notice preferences/notes; they must not generate charges.
+    if endpoint in ('collection-notice-settings','collection-notice-template-preview','collection-notice-mark'):
+        from .collection_notices import action
+        return action(db,endpoint,data,user)
     if endpoint == 'backup-directory':
         if not isinstance(data.get('backup_directory'), str):
             raise ValidationError('Indica la ruta de la carpeta de copias o déjala vacía.')
@@ -615,7 +622,7 @@ class Handler(BaseHTTPRequestHandler):
                 raise PermissionError('Copia de solo lectura: no se permiten cambios, tasas, cobros ni respaldos.')
             if not post and not url.path.startswith('/api/'):
                 assets = {'/': 'index.html', '/app.js': 'app.js', '/session.js': 'session.js', '/style.css': 'style.css', '/favicon.svg': 'favicon.svg',
-                          '/'+LOGO_FILE: LOGO_FILE, '/responsive.js': 'responsive.js', '/cashea.js':'cashea.js'}
+                          '/'+LOGO_FILE: LOGO_FILE, '/responsive.js': 'responsive.js', '/cashea.js':'cashea.js', '/collection-notices.js':'collection_notices.js'}
                 if url.path not in assets:
                     self.respond(404, {'error': 'Página inexistente.'})
                     return
@@ -639,7 +646,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not self.server.access.allowed_origin(host,self.headers.get('Origin'),self.server.server_port):
                     raise PermissionError('Origen no permitido.')
                 length = int(self.headers.get('Content-Length', '0'))
-                maximum=46_000_000 if endpoint in ('probe-backup','export-encrypted-backup') else 3_000_000 if endpoint in ('import-roster','transition-year','settings') else 65536
+                maximum=46_000_000 if endpoint in ('probe-backup','export-encrypted-backup') else 3_000_000 if endpoint in ('import-roster','transition-year','settings','collection-notice-settings','collection-notice-template-preview','collection-notice-mark') else 65536
                 if not 0 < length <= maximum or 'application/json' not in self.headers.get('Content-Type', ''):
                     raise ValidationError('Envía un objeto JSON válido (máximo 64 KB).')
                 data = json.loads(self.rfile.read(length))
@@ -916,7 +923,7 @@ class Handler(BaseHTTPRequestHandler):
                 if endpoint not in ('logout','demo-exit'):
                     self.server.clock.require()
                 db.commit()
-                if endpoint in DIRECTORY_ACTIONS or endpoint in ARCHIVE_ACTIONS or endpoint in CASHEA_ACTIONS or endpoint in ('students','correct-billing-start','cancel-charge','payments','prepare-advance','expenses','void-payment','void-expense','close-cash','reopen-cash','settings','backup-directory','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
+                if endpoint in DIRECTORY_ACTIONS or endpoint in ARCHIVE_ACTIONS or endpoint in CASHEA_ACTIONS or endpoint in ('collection-notice-settings','collection-notice-mark','students','correct-billing-start','cancel-charge','payments','prepare-advance','expenses','void-payment','void-expense','close-cash','reopen-cash','settings','backup-directory','guardian-documents','payment-plans','cancel-plan') or (endpoint in ('import-roster','transition-year') and data.get('preview') is not True):
                     status=self.server.make_backup()
                     if status.get('local_error') or status.get('secondary_error'):
                         result['backup_warning']=status.get('local_error') or status.get('secondary_error')
@@ -950,6 +957,9 @@ class Handler(BaseHTTPRequestHandler):
             elif endpoint == 'payment-options':
                 from .advance_payments import options
                 self.respond(200, options(db, parse_qs(url.query).get('student_id', [''])[0]))
+            elif endpoint == 'collection-notice':
+                from .collection_notices import preview
+                self.respond(200,preview(db,{k:v[0] for k,v in parse_qs(url.query).items()}))
             elif endpoint.startswith('cashea-order/') or endpoint.startswith('cashea-settlement/'):
                 from .cashea import detail
                 from .cashea_reports import document_pdf
