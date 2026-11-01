@@ -2,6 +2,8 @@
 
 Avisos de cobranza en revisión: cinco tipos con tres versiones editables, meses y total vencido completo, hermanos opcionales, Cashea y datos para pagar. Copiar y abrir WhatsApp usan la edición actual; el envío y su registro son manuales. Ajustes independientes para Administración; sin cambios en cobros, recibos ni esquema. [Cómo preparar un aviso de cobranza](docs/avisos-cobranza.md) · [Diseño previo](DISENO_AVISOS.md).
 
+Validación real del aviso en Linux: 388 pruebas, 385 correctas y tres omisiones nativas de Windows; los tres navegadores correctos. [Informe y salidas completas](docs/interno/avisos-validacion.md).
+
 [Instalador actualizado con pagos adelantados](https://github.com/Eliezerti/Sistema-colegio/actions/runs/41138223826/artifacts/13017567946): 1.0.74 de revisión, validado en Windows con 371 pruebas, tres navegadores, instalación/actualización y conservación de datos. [Evidencia de entrega](docs/interno/pago-adelantado-instalador.md). Extrae el ZIP y ejecuta `Aula-Colegio-Instalador-1.0.74.exe` con Aula cerrado, usando la misma cuenta de Windows.
 
 Nuevo ajuste en revisión: cobro individual de mensualidades por adelantado y selección compartida con Cashea; 3 meses por defecto, dentro del ciclo y matrícula. Sin cambiar el motor, los recibos anteriores ni el esquema 14. Validación Linux del anticipo: 371 pruebas (368 correctas, tres nativas omitidas) y normal/Pruebas/importación correctos. Windows: 371 correctas sin omisiones y los tres navegadores correctos; la corrección adicional afecta únicamente al lector de PDF de las pruebas, no al producto. [Informe y salida real](docs/interno/pago-adelantado-validacion.md). [Diseño previo](DISENO_PAGO_ADELANTADO.md) · [Cómo cobrar un mes por adelantado](docs/cobros-y-arqueo.md#cómo-cobrar-un-mes-por-adelantado).
@@ -38,7 +40,7 @@ Las copias nuevas externas y descargadas están cifradas. El segundo destino con
 
 Consulta las guías de [cifrado](docs/cifrado-respaldos.md), [restauración segura](docs/restauracion-segura.md), [sesiones](docs/sesiones-acceso.md) y [bitácora](docs/bitacora.md). Si otros intentos bloquean un ingreso, Administración puede generar un código local de un uso desde Inicio de Windows, con su contraseña actual. El límite contra fuerza bruta se conserva.
 
-El esquema sigue en 12. No se reinician correlativos existentes ni se cambian importes históricos. Los egresos antiguos de categoría Nómina se conservan; la categoría no se admite en nuevos egresos. Se mantienen A1–A5, WAL/FULL, permisos, CSRF y respaldos verificados. La actualización de una base antigua conserva una copia previa; no reutiliza números de recibos al restaurar.
+El esquema vigente de esta rama es 14. El ajuste de avisos no lo cambia. No se reinician correlativos existentes ni se cambian importes históricos. Los egresos antiguos de categoría Nómina se conservan; la categoría no se admite en nuevos egresos. Se mantienen A1–A5, WAL/FULL, permisos, CSRF y respaldos verificados. La actualización de una base antigua conserva una copia previa; no reutiliza números de recibos al restaurar.
 
 ## Validación
 

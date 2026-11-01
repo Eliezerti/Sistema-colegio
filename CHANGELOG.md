@@ -4,6 +4,7 @@
 - Texto editable, Otra versión y Restablecer texto; WhatsApp toma la edición actual y valida el teléfono venezolano. No se envía nada automáticamente. Marcar como enviado es manual, idempotente y auditado, con seguimiento y último aviso.
 - Administración personaliza plantillas, emojis y datos de pago en un apartado independiente, con marcadores validados, vista previa ficticia y originales recuperables. Caja prepara y marca; Consulta solo prepara. El servidor mantiene CSRF, permisos y solo lectura. Sin DDL ni datos nuevos por defecto; motor, recibos y correlativos intactos.
 - Línea base del 01/11: tres fixtures de pruebas tenían relojes distintos; se fijó la fecha completa, sin cambiar importes esperados ni el producto. [Diseño previo](DISENO_AVISOS.md) · [Guía de usuario](docs/avisos-cobranza.md).
+- Validación real Linux: 388 en 345,778 s, 385 correctas y tres omisiones nativas; normal, Pruebas e importación correctos, incluida la regresión de edición manual y bloqueo de sesión. [Informe, fallos iniciales y salida íntegra](docs/interno/avisos-validacion.md). ZIP con diff y dos capturas ficticias revisadas.
 
 # Mensualidades por adelantado · 1.0.74 · en revisión
 
