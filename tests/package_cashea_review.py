@@ -7,6 +7,9 @@ BASE='324d388'
 ALLOWED={'.py','.js','.cjs','.css','.html','.md','.iss','.ps1','.yml','.yaml','.json','.txt'}
 FIXTURES={'tests/fixtures/cashea/desktop-1.0.73-ficticio.sqlite3':'tests/fixtures/cashea/manifest.json',
           'tests/fixtures/cashea/desktop-1.0.74-schema13-ficticio.sqlite3':'tests/fixtures/cashea/manifest-schema13.json'}
+CAPTURES={'docs/interno/capturas-avisos/aviso-cercano-ficticio.png',
+          'docs/interno/capturas-avisos/aviso-hermanos-ficticio.png'}
+CAPTURE_MANIFEST='docs/interno/capturas-avisos/manifest.json'
 SECRETS=(rb'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----',rb'gh[pousr]_[A-Za-z0-9]{30,}',rb'github_pat_[A-Za-z0-9_]{50,}',rb'AKIA[0-9A-Z]{16}')
 
 
@@ -21,9 +24,18 @@ def main():
     entries={'cambios-completos.patch':patch}
     for name in names:
         path=Path(name)
-        if path.is_absolute() or '..' in path.parts or path.suffix.lower() not in ALLOWED and name not in FIXTURES:
+        if path.is_absolute() or '..' in path.parts or path.suffix.lower() not in ALLOWED and name not in FIXTURES and name not in CAPTURES:
             raise RuntimeError('Archivo no permitido en el paquete: '+name)
         entries['archivos-modificados/'+name]=git('show','HEAD:'+name)
+    for capture in CAPTURES.intersection(names):
+        meta=json.loads(git('show','HEAD:'+CAPTURE_MANIFEST))
+        raw=entries['archivos-modificados/'+capture]
+        if not meta.get('fictional') or not meta.get('visually_reviewed') or hashlib.sha256(raw).hexdigest()!=meta['files'].get(capture):
+            raise RuntimeError('Captura sin comprobación ficticia y revisión visual: '+capture)
+        if not raw.startswith(b'\x89PNG\r\n\x1a\n') or len(raw)>2_000_000:
+            raise RuntimeError('Captura PNG inválida o demasiado grande: '+capture)
+        # Its audit metadata must travel with it, even when the caller chose a newer base.
+        entries['archivos-modificados/'+CAPTURE_MANIFEST]=git('show','HEAD:'+CAPTURE_MANIFEST)
     for fixture,metadata in FIXTURES.items():
         if fixture not in names:continue
         meta=json.loads(git('show','HEAD:'+metadata))
@@ -41,7 +53,7 @@ def main():
             raise RuntimeError('Revisar posible secreto o dato personal en '+name)
     manifest=dict(base=git('rev-parse',args.base).decode().strip(),head=git('rev-parse','HEAD').decode().strip(),
         branch=git('branch','--show-current').decode().strip(),files={name:hashlib.sha256(raw).hexdigest() for name,raw in entries.items()},
-        review='Solo código comprometido, documentación y fixture explícitamente ficticio. Sin bases del usuario, almacén de claves, .env ni ejecutables. Patrones de secretos comprobados; nombres del fixture marcados FICTICIO. El escaneo no sustituye revisión humana.')
+        review='Solo código comprometido, documentación, fixtures y capturas explícitamente ficticios. PNG limitados a la lista exacta, con firma, tamaño y huella del manifiesto revisados. Sin bases del usuario, almacén de claves, .env ni ejecutables. Patrones de secretos comprobados; nombres del fixture marcados FICTICIO. El escaneo no sustituye revisión humana.')
     entries['MANIFIESTO.json']=(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n').encode()
     output=Path(args.output);output.parent.mkdir(parents=True,exist_ok=True)
     with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED,compresslevel=9) as archive:

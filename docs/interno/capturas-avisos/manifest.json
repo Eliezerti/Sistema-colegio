@@ -1,0 +1,11 @@
+{
+  "fictional": true,
+  "visually_reviewed": true,
+  "generator": "tests/collection_notices_browser.cjs mediante python tests/run_browser.py",
+  "date": "2026-11-01",
+  "description": "Solo el modal. Colegio FICTICIO Avisos, representante María de Prueba Ficticia y alumnos FICTICIOS, en base temporal de pruebas. Sin datos del usuario ni fondo de otras fichas.",
+  "files": {
+    "docs/interno/capturas-avisos/aviso-cercano-ficticio.png": "51fa074e957ccbd6ea3ac909076867b9eb1e12edb0ebfa7f004f09e1a5d8dc4d",
+    "docs/interno/capturas-avisos/aviso-hermanos-ficticio.png": "9b2e6640ac1bbe8f11245cf3e3d85c9d72bde2d13b903a32d0ee444c62bf2e40"
+  }
+}
