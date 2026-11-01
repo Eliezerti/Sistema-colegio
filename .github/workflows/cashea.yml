@@ -77,10 +77,10 @@ jobs:
             dist/Aula-Colegio-Instalador-1.0.74.exe
             dist/Aula-Cashea-1.0.74-revision.zip
           if-no-files-found: error
-      - name: Instalador de pagos adelantados para el colegio
+      - name: Instalador con avisos de cobranza para el colegio
         uses: actions/upload-artifact@v4
         with:
-          name: Aula-Instalador-1.0.74-pago-adelantado
+          name: Aula-Instalador-1.0.74-avisos
           path: dist/Aula-Colegio-Instalador-1.0.74.exe
           if-no-files-found: error
       - name: Reunir evidencia en una sola carpeta

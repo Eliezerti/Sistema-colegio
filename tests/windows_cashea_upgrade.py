@@ -93,6 +93,32 @@ def main():
             assert future_order['invoice_number']==f"R-{future_order['payment_id']:06d}"
             assert client.request('maintenance-review')['ok']
             assert original_pdf==client.request(f'receipt/{receipt}.pdf')
+            # Verify the notice module and its static asset from the installed EXE.
+            with client.opener.open('http://127.0.0.1:8765/collection-notices.js',timeout=30) as response:
+                assert b'openCollectionNotice' in response.read()
+            notice_student=client.request('students',dict(pupil,name='Alumna avisos FICTICIA',monthly_fee='40',
+                status='inactive',school_year=year-1,billing_start=f'{year-1}-09',
+                enrollment_start=f'{year-1}-09-01',enrollment_end=f'{year}-08-31'))['id']
+            client.request('charges',dict(student_id=notice_student,period=f'{year-1}-09',
+                concept='Mensualidad',amount='40',due_date=f'{year-1}-09-10'))
+            before_notice=client.request('state?history=1');cash_notice=client.request('cash-preview')
+            notice=client.request(f'collection-notice?student_id={notice_student}')
+            assert notice['eligible'] and notice['type']=='late' and len(notice['types'])==5
+            assert 'Septiembre '+str(year-1) in notice['text'] and 'USD 40,00' in notice['text']
+            assert 'Cashea' in notice['text']
+            marked=dict(student_id=notice_student,type=notice['type'],variant=notice['variant'],siblings=False,
+                student_ids=notice['student_ids'],message=notice['text'],request_key='FICTICIO-aviso-instalado')
+            first_mark=client.request('collection-notice-mark',marked)
+            retry_mark=client.request('collection-notice-mark',marked)
+            assert first_mark['saved'] and retry_mark['duplicate'] and first_mark['note_ids']==retry_mark['note_ids']
+            assert client.request(f'collection-notice?student_id={notice_student}')['last_notice']['days']==0
+            after_notice=client.request('state?history=1')
+            for key in ('summary','charges','payments','expenses','cashea_cash','cash_closures'):
+                assert before_notice[key]==after_notice[key],key
+            assert len(after_notice['collections'])==len(before_notice['collections'])+1
+            assert cash_notice==client.request('cash-preview')
+            assert original_pdf==client.request(f'receipt/{receipt}.pdf')
+            assert client.request('maintenance-review')['ok']
         ledger=data/'colegio.sqlite3'
         with closing(sqlite3.connect(ledger)) as db:
             assert db.execute('PRAGMA user_version').fetchone()[0]==14
@@ -102,11 +128,13 @@ def main():
         execute(registered_uninstaller(folder),'/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
         assert ledger.is_file() and hashlib.sha256(ledger.read_bytes()).hexdigest()==digest
         result=dict(previous='1.0.73',version=args.version,schema=14,old_receipt_unchanged=True,totals_preserved_before_cashea=True,
+            collection_notice_installed=True,collection_notice_asset=True,collection_notice_idempotent=True,collection_notice_finances_unchanged=True,
             advance_payment=True,advance_cashea=True,advance_receipt_single_page=True,
             invoice_from_receipt=True,ves_initial_original=160000,ves_initial_equivalent=1600,initial_usd=7800,financed_usd=5200,received_ves=520000,settlement_usd=5200,student_balance=0,maintenance=True,uninstall_keeps_data=True)
         (Path(os.environ['RUNNER_TEMP'])/'cashea-upgrade.json').write_text(json.dumps(result,indent=2))
         print('PASS CASHEA WINDOWS: actualización real 1.0.73 → '+args.version+', datos y PDF histórico idénticos, CA/R/CL, VES, saldo y mora cero, integridad y desinstalación conservadora.',flush=True)
         print('PASS ANTICIPO INSTALADO: cobro futuro y Cashea desde Aula.exe instalado, recibo real de una página, reintento único, caja y bitácora correctos.',flush=True)
+        print('PASS AVISO INSTALADO: JS y generación desde Aula.exe instalado, cinco tipos, mes/total/Cashea, marca manual idempotente y bitácora, sin cambiar dinero ni PDF anterior.',flush=True)
     finally:
         if data.exists():shutil.rmtree(data)
 
